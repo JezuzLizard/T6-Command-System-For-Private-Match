@@ -1,0 +1,129 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+
+        {
+            "label": "build all",
+            "type": "shell",
+            "command": "${cwd}/.vscode/ConsoleApp1.exe",
+            "args": [
+                "${workspaceFolder}\\scripts", "${workspaceFolder}\\build"
+            ],
+            "problemMatcher": [
+                //(^.*:*.gsc)|(^Bad syntax)|(WARNING)(:\s+)(.*)$|(\d*)\.$
+                {
+                    // The problem is owned by the cpp language service.
+                    //"owner": "gsc",
+                    // The file name for reported problems is relative to the opened folder.
+                    "fileLocation": ["absolute"],
+                    // The actual pattern to match problems in the output.
+                    "pattern":[
+                        {
+                            "regexp": "(^Bad syntax)|(\\s\\d*)",
+                            "message": 1,
+                            "line": 4
+                        },
+                        {
+                            // The regular expression. Example to match: helloWorld.c:5:3: warning: implicit declaration of function ‘printf’ [-Wimplicit-function-declaration]
+                            "regexp": "(^.*:*.gsc)",
+                            // The first match group matches the file name which is relative.
+                            "file": 1
+                        },
+                        {
+                            "regexp": "(WARNING)",
+                            // The fourth match group matches the problem's severity. Can be ignored. Then all problems are captured as errors.
+                            "severity": 1
+                        }
+                    ]
+                }
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "build folder",
+            "type": "shell",
+            "command": "${cwd}/.vscode/ConsoleApp1.exe",
+            "args": [
+                "${fileDirname}", "${workspaceFolder}\\build\\", "${workspaceFolder}"
+            ],
+            "problemMatcher": [
+                //(^.*:*.gsc)|(^Bad syntax)|(WARNING)(:\s+)(.*)$|(\d*)\.$
+                {
+                    // The problem is owned by the cpp language service.
+                    //"owner": "gsc",
+                    // The file name for reported problems is relative to the opened folder.
+                    "fileLocation": ["absolute"],
+                    // The actual pattern to match problems in the output.
+                    "pattern":[
+                        {
+                            "regexp": "(^Bad syntax)|(\\s\\d*)",
+                            "message": 1,
+                            "line": 4
+                        },
+                        {
+                            // The regular expression. Example to match: helloWorld.c:5:3: warning: implicit declaration of function ‘printf’ [-Wimplicit-function-declaration]
+                            "regexp": "(^.*:*.gsc)",
+                            // The first match group matches the file name which is relative.
+                            "file": 1
+                        },
+                        {
+                            "regexp": "(WARNING)",
+                            // The fourth match group matches the problem's severity. Can be ignored. Then all problems are captured as errors.
+                            "severity": 1
+                        }
+                    ]
+                }
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "build file",
+            "type": "shell",
+            "command": "${cwd}/.vscode/ConsoleApp1.exe",
+            "args": [
+                "${file}", "${workspaceFolder}\\build\\", "${workspaceFolder}"
+            ],
+            "problemMatcher": [
+                //(^.*:*.gsc)|(^Bad syntax)|(WARNING)(:\s+)(.*)$|(\d*)\.$
+                {
+                    // The problem is owned by the cpp language service.
+                    //"owner": "gsc",
+                    // The file name for reported problems is relative to the opened folder.
+                    "fileLocation": ["absolute"],
+                    // The actual pattern to match problems in the output.
+                    "pattern":[
+                        {
+                            "regexp": "(^Bad syntax)|(\\s\\d*)",
+                            "message": 1,
+                            "line": 4
+                        },
+                        {
+                            // The regular expression. Example to match: helloWorld.c:5:3: warning: implicit declaration of function ‘printf’ [-Wimplicit-function-declaration]
+                            "regexp": "(^.*:*.gsc)",
+                            // The first match group matches the file name which is relative.
+                            "file": 1
+                        },
+                        {
+                            "regexp": "(WARNING)",
+                            // The fourth match group matches the problem's severity. Can be ignored. Then all problems are captured as errors.
+                            "severity": 1
+                        }
+                    ]
+                }
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+
+    ]
+}

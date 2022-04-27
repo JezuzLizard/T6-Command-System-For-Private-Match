@@ -1,0 +1,76 @@
+#include common_scripts/utility;
+#include maps/mp/_utility;
+#include scripts/cmd_system_modules/_cmd_util;
+#include scripts/cmd_system_modules/_com;
+
+parse_cmd_message( message )
+{
+	if ( message == "" )
+	{
+		return [];
+	}
+	//Strip command tokens.
+	stripped_message = message;
+	if ( is_command_token( message[ 0 ] ) )
+	{
+		stripped_message = "";
+		for ( i = 1; i < message.size; i++ )
+		{
+			stripped_message += message[ i ];
+		}
+	}
+	multi_cmds = [];
+	command_keys = [];
+	multiple_cmds_keys = strTok( stripped_message, "," );
+	// if ( !isDefined( multiple_cmds_keys ) )
+	// {
+	// 	assertmsg( "scripts//cmd_system_modules::parse_cmd_message() multiple_cmd_keys is undefined!" );
+	// }
+
+	for ( i = 0; i < multiple_cmds_keys.size; i++ )
+	{
+		cmd_args = strTok( multiple_cmds_keys[ i ], " " );
+		cmdname = get_cmd_from_alias( cmd_args[ 0 ] );
+		if ( cmdname != "" )
+		{
+			command_keys[ "cmdname" ] = cmdname;
+			arrayRemoveIndex( cmd_args, 0 );
+			command_keys[ "args" ] = [];
+			command_keys[ "args" ] = cmd_args;
+			multi_cmds[ multi_cmds.size ] = command_keys;
+		}
+	}
+	return multi_cmds;
+}
+
+get_cmd_from_alias( alias )
+{
+	command_keys = getArrayKeys( level.custom_commands );
+	for ( i = 0; i < command_keys.size; i++ )
+	{
+		for ( j = 0; j < level.custom_commands[ command_keys[ i ] ].aliases.size; j++ )
+		{
+			if ( alias == level.custom_commands[ command_keys[ i ] ].aliases[ j ] )
+			{
+				return command_keys[ i ];
+			}
+		}
+	}
+	return "";
+}
+
+get_voteable_from_alias( alias )
+{
+	vote_keys = getArrayKeys( level.custom_votes );
+	for ( i = 0; i < vote_keys.size; i++ )
+	{
+		for ( j = 0; j < level.custom_votes[ vote_keys[ i ] ].aliases.size; j++ )
+		{
+			if ( alias == level.custom_votes[ vote_keys[ i ] ].aliases[ j ] )
+			{
+				return vote_keys[ i ];
+			}
+		}
+	}
+	return "";
+}
