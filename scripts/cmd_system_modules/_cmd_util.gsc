@@ -78,6 +78,61 @@ perk_list_zm()
 	}
 }
 
+get_powerup_from_alias_zm( alias )
+{
+	switch ( alias )
+	{
+		case "nuke":
+			return "nuke";
+		case "insta":
+		case "instakill":
+			return "insta_kill";
+		case "double":
+		case "doublepoints":
+			return "double_points";
+		case "max":
+		case "maxammo":
+			return "full_ammo";
+		case "carp":
+		case "carpenter":
+			return "carpenter";
+		case "sale":
+		case "firesale":
+			return "fire_sale";
+		case "perk":
+		case "freeperk":
+			return "free_perk";
+		case "blood":
+		case "zombieblood":
+			return "zombie_blood";
+		case "points":
+			return "bonus_points";
+		case "teampoints":
+			return "bonus_points_team";
+		default:
+			return alias;
+	}
+}
+
+powerup_list_zm()
+{
+	switch ( level.script )
+	{
+		case "zm_transit":
+			return array( "nuke", "insta_kill", "double_points", "full_ammo", "carpenter" );
+		case "zm_nuked":
+			return array( "nuke", "insta_kill", "double_points", "full_ammo", "fire_sale" );
+		case "zm_highrise":
+			return array( "nuke", "insta_kill", "double_points", "full_ammo", "carpenter", "free_perk" );
+		case "zm_prison":
+			return array( "nuke", "insta_kill", "double_points", "full_ammo", "fire_sale" );
+		case "zm_buried":
+			return array( "nuke", "insta_kill", "double_points", "full_ammo", "carpenter", "free_perk", "fire_sale" );
+		case "zm_tomb":
+			return array( "nuke", "insta_kill", "double_points", "full_ammo", "free_perk", "fire_sale", "zombie_blood", "bonus_points", "bonus_points_team" );
+	}
+}
+
 get_perma_perk_from_alias( alias )
 {
 	switch ( alias )
@@ -299,24 +354,79 @@ cast_bool_to_str( bool, binary_string_options )
 	return bool + "";
 }
 
-CMD_ADDCOMMAND( cmdname, cmdaliases, cmdusage, cmdfunc, cmdpower, is_threaded_cmd )
+CMD_ADDSERVERCOMMAND( cmdname, cmdaliases, cmdusage, cmdfunc, cmdpower, is_threaded_cmd )
 {
 	aliases = strTok( cmdaliases, " " );
-	level.custom_commands[ cmdname ] = spawnStruct();
-	level.custom_commands[ cmdname ].usage = cmdusage;
-	level.custom_commands[ cmdname ].func = cmdfunc;
-	level.custom_commands[ cmdname ].aliases = aliases;
-	level.custom_commands[ cmdname ].power = cmdpower;
-	level.custom_commands_total++;
-	if ( ceil( level.custom_commands_total / level.custom_commands_page_max ) >= level.custom_commands_page_count )
+	level.server_commands[ cmdname ] = spawnStruct();
+	level.server_commands[ cmdname ].usage = cmdusage;
+	level.server_commands[ cmdname ].func = cmdfunc;
+	level.server_commands[ cmdname ].aliases = aliases;
+	level.server_commands[ cmdname ].power = cmdpower;
+	level.server_commands_total++;
+	if ( ceil( level.server_commands_total / level.server_commands_page_max ) >= level.server_commands_page_count )
 	{
-		level.custom_commands_page_count++;
+		level.server_commands_page_count++;
 	}
 	if ( is_true( is_threaded_cmd ) )
 	{
-		level.custom_threaded_commands[ cmdname ] = true;
+		level.server_threaded_commands[ cmdname ] = true;
 	}
 }
+
+CMD_REMOVESERVERCOMMAND( cmdname )
+{
+	new_command_array = [];
+	cmd_keys = getArrayKeys( level.server_commands );
+	foreach ( cmd in cmd_keys )
+	{
+		if ( cmdname != cmd )
+		{
+			new_command_array[ cmd ] = spawnStruct();
+			new_command_array[ cmd ].usage = level.server_commands[ cmd ].usage;
+			new_command_array[ cmd ].func = level.server_commands[ cmd ].func;
+			new_command_array[ cmd ].aliases = level.server_commands[ cmd ].aliases;
+			new_command_array[ cmd ].power = level.server_commands[ cmd ].power;
+		}
+	}
+	level.server_commands = new_command_array;
+} 
+
+CMD_ADDCLIENTCOMMAND( cmdname, cmdaliases, cmdusage, cmdfunc, cmdpower, is_threaded_cmd )
+{
+	aliases = strTok( cmdaliases, " " );
+	level.client_commands[ cmdname ] = spawnStruct();
+	level.client_commands[ cmdname ].usage = cmdusage;
+	level.client_commands[ cmdname ].func = cmdfunc;
+	level.client_commands[ cmdname ].aliases = aliases;
+	level.client_commands[ cmdname ].power = cmdpower;
+	level.server_commands_total++;
+	if ( ceil( level.server_commands_total / level.server_commands_page_max ) >= level.server_commands_page_count )
+	{
+		level.server_commands_page_count++;
+	}
+	if ( is_true( is_threaded_cmd ) )
+	{
+		level.server_threaded_commands[ cmdname ] = true;
+	}
+}
+
+CMD_REMOVECLIENTCOMMAND( cmdname )
+{
+	new_command_array = [];
+	cmd_keys = getArrayKeys( level.client_commands );
+	foreach ( cmd in cmd_keys )
+	{
+		if ( cmdname != cmd )
+		{
+			new_command_array[ cmd ] = spawnStruct();
+			new_command_array[ cmd ].usage = level.client_commands[ cmd ].usage;
+			new_command_array[ cmd ].func = level.client_commands[ cmd ].func;
+			new_command_array[ cmd ].aliases = level.client_commands[ cmd ].aliases;
+			new_command_array[ cmd ].power = level.client_commands[ cmd ].power;
+		}
+	}
+	level.client_commands = new_command_array;
+} 
 
 // CMD_CONFIG_UPDATE()
 // {
@@ -337,7 +447,7 @@ VOTE_ADDVOTEABLE( vote_type, vote_type_aliases, usage, pre_vote_execute_func, po
 	if ( !isDefined( level.custom_votes[ vote_type ] ) )
 	{
 		level.custom_votes_total++;
-		if ( ceil( level.custom_votes_total / level.custom_commands_page_max ) >= level.custom_votes_page_count )
+		if ( ceil( level.custom_votes_total / level.server_commands_page_max ) >= level.custom_votes_page_count )
 		{
 			level.custom_votes_page_count++;
 		}
@@ -351,15 +461,15 @@ VOTE_ADDVOTEABLE( vote_type, vote_type_aliases, usage, pre_vote_execute_func, po
 
 CMD_EXECUTE( cmdname, arg_list )
 {
-	if ( is_true( level.custom_threaded_commands[ cmdname ] ) )
+	if ( is_true( level.server_threaded_commands[ cmdname ] ) )
 	{
-		self thread [[ level.custom_commands[ cmdname ].func ]]( arg_list );
+		self thread [[ level.server_commands[ cmdname ].func ]]( arg_list );
 		return;
 	}
 	else 
 	{
 		result = [];
-		result = self [[ level.custom_commands[ cmdname ].func ]]( arg_list );
+		result = self [[ level.server_commands[ cmdname ].func ]]( arg_list );
 	}
 	channel = "iprint";
 	if ( result[ "filter" ] != "cmderror" )
@@ -392,4 +502,9 @@ set_clientdvars_on_connect()
 			player setClientDvar( dvar[ "name" ], dvar[ "value" ] );
 		}
 	}
+}
+
+cheats_enabled()
+{
+	return getDvarInt( "sv_cheats" ); 
 }

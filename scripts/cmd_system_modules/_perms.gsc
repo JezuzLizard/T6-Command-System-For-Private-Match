@@ -21,6 +21,10 @@ CMD_INIT_PERMS()
 
 CMD_COOLDOWN()
 {
+	if ( self == level.host )
+	{
+		return;
+	}
 	if ( is_true( self.is_admin ) )
 	{
 		return;
@@ -44,6 +48,10 @@ CMD_COOLDOWN()
 
 can_use_multi_cmds()
 {
+	if ( self == level.host )
+	{
+		return true;
+	}
 	if ( is_true( self.is_admin ) )
 	{
 		return true;
@@ -60,9 +68,17 @@ can_use_multi_cmds()
 	return false;
 }
 
-has_permission_for_cmd( cmdname )
+has_permission_for_cmd( cmdname, is_clientcmd )
 {
-	if ( self.cmdpower >= level.custom_commands[ cmdname ].power )
+	if ( self == level.host )
+	{
+		return true;
+	}
+	if ( is_clientcmd && ( self.cmdpower_client >= level.client_commands[ cmdname ].power ) )
+	{
+		return true;
+	}
+	if ( self.cmdpower_server >= level.server_commands[ cmdname ].power )
 	{
 		return true;
 	}

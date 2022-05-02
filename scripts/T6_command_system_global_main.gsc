@@ -5,6 +5,8 @@
 #include scripts/cmd_system_modules/_vote;
 #include scripts/cmd_system_modules/_listener;
 #include scripts/cmd_system_modules/_perms;
+#include scripts/cmd_system_modules/global_client_commands;
+#include scripts/cmd_system_modules/global_client_threaded_commands;
 #include scripts/cmd_system_modules/global_commands;
 #include scripts/cmd_system_modules/global_threaded_commands;
 #include scripts/cmd_system_modules/global_voteables;
@@ -16,9 +18,9 @@ main()
 {
 	COM_INIT();
 	level.custom_commands_restart_countdown = 5;
-	level.custom_commands_total = 0;
-	level.custom_commands_page_count = 0;
-	level.custom_commands_page_max = 5;
+	level.server_commands_total = 0;
+	level.server_commands_page_count = 0;
+	level.server_commands_page_max = 5;
 	level.custom_commands_listener_timeout = getDvarIntDefault( "tcs_cmd_listener_timeout", 12 );
 	level.custom_commands_cooldown_time = getDvarIntDefault( "tcs_cmd_cd", 5 );
 	level.CMD_POWER_ANY = 1;
@@ -38,25 +40,26 @@ main()
 	}
 	// "/" is always useable by default
 	CMD_INIT_PERMS();
-	level.custom_commands = [];
-	CMD_ADDCOMMAND( "cvar", "cvar cv", "cvar <name|guid|clientnum|self> <cvarname> <newval>", ::CMD_CVAR_f, level.CMD_POWER_ADMIN );
-	CMD_ADDCOMMAND( "dvar", "dvar dv", "dvar <dvarname> <newval>", ::CMD_SERVER_DVAR_f, level.CMD_POWER_ADMIN );
-	CMD_ADDCOMMAND( "cvarall", "cvarall cva", "cvarall <dvarname> <newval", ::CMD_CVARALL_f, level.CMD_POWER_ADMIN );
-	CMD_ADDCOMMAND( "cmdlist", "cmdlist cl", "cmdlist", ::CMD_UTILITY_CMDLIST_f, level.CMD_POWER_ELEVATED_USER, true );
-	CMD_ADDCOMMAND( "playerlist", "playerlist plist", "playerlist [team]", ::CMD_PLAYERLIST_f, level.CMD_POWER_TRUSTED, true );
-	CMD_ADDCOMMAND( "votestart", "votestart vs", "votestart <voteable> [arg1] [arg2] [arg3] [arg4]", ::CMD_VOTESTART_f, level.CMD_POWER_TRUSTED, true );
-	CMD_ADDCOMMAND( "votelist", "votelist vl", "votelist", ::CMD_UTILITY_VOTELIST_f, level.CMD_POWER_TRUSTED, true );
-	CMD_ADDCOMMAND( "god", "god gd", "god <name|guid|clientnum|self>", ::CMD_GOD_f, level.CMD_POWER_ADMIN );
-	CMD_ADDCOMMAND( "notarget", "notarget nt", "notarget <name|guid|clientnum|self>", ::CMD_NOTARGET_f, level.CMD_POWER_ADMIN );
-	CMD_ADDCOMMAND( "invisible", "invisible inv", "invisible <name|guid|clientnum|self>", ::CMD_INVISIBLE_f, level.CMD_POWER_ADMIN );
-	CMD_ADDCOMMAND( "setrank", "setrank sr", "setrank <name|guid|clientnum|self> <rank>", ::CMD_SETRANK_f, level.CMD_POWER_ADMIN );
+	level.server_commands = [];
+	CMD_ADDSERVERCOMMAND( "cvar", "cvar cv", "cvar <name|guid|clientnum|self> <cvarname> <newval>", ::CMD_CVAR_f, level.CMD_POWER_ADMIN );
+	CMD_ADDSERVERCOMMAND( "dvar", "dvar dv", "dvar <dvarname> <newval>", ::CMD_SERVER_DVAR_f, level.CMD_POWER_ADMIN );
+	CMD_ADDSERVERCOMMAND( "cvarall", "cvarall cva", "cvarall <dvarname> <newval>", ::CMD_CVARALL_f, level.CMD_POWER_ADMIN );
+	CMD_ADDSERVERCOMMAND( "cmdlist", "cmdlist cl", "cmdlist", ::CMD_UTILITY_CMDLIST_f, level.CMD_POWER_ELEVATED_USER, true );
+	CMD_ADDSERVERCOMMAND( "playerlist", "playerlist plist", "playerlist [team]", ::CMD_PLAYERLIST_f, level.CMD_POWER_TRUSTED, true );
+	CMD_ADDSERVERCOMMAND( "votestart", "votestart vs", "votestart <voteable> [arg1] [arg2] [arg3] [arg4]", ::CMD_VOTESTART_f, level.CMD_POWER_TRUSTED, true );
+	CMD_ADDSERVERCOMMAND( "votelist", "votelist vl", "votelist", ::CMD_UTILITY_VOTELIST_f, level.CMD_POWER_TRUSTED, true );
+	CMD_ADDSERVERCOMMAND( "givegod", "givegod ggd", "givegod <name|guid|clientnum|self>", ::CMD_GOD_f, level.CMD_POWER_ADMIN );
+	CMD_ADDSERVERCOMMAND( "givenotarget", "givenotarget gnt", "notarget <name|guid|clientnum|self>", ::CMD_NOTARGET_f, level.CMD_POWER_ADMIN );
+	CMD_ADDSERVERCOMMAND( "giveinvisible", "giveinvisible ginv", "invisible <name|guid|clientnum|self>", ::CMD_INVISIBLE_f, level.CMD_POWER_ADMIN );
+	CMD_ADDSERVERCOMMAND( "setrank", "setrank sr", "setrank <name|guid|clientnum|self> <rank>", ::CMD_SETRANK_f, level.CMD_POWER_ADMIN );
 	VOTE_INIT();
 
-	CMD_ADDCOMMANDLISTENER( "listener_cmdlist", "showmore" );
-	CMD_ADDCOMMANDLISTENER( "listener_cmdlist", "page" );
-	CMD_ADDCOMMANDLISTENER( "listener_playerlist", "showmore" );
-	CMD_ADDCOMMANDLISTENER( "listener_playerlist", "page" );
-
+	CMD_ADDSERVERCOMMANDLISTENER( "listener_cmdlist", "showmore" );
+	CMD_ADDSERVERCOMMANDLISTENER( "listener_cmdlist", "page" );
+	CMD_ADDSERVERCOMMANDLISTENER( "listener_playerlist", "showmore" );
+	CMD_ADDSERVERCOMMANDLISTENER( "listener_playerlist", "page" );
+	CMD_ADDSERVERCOMMANDLISTENER( "listener_voteables", "showmore" );
+	CMD_ADDSERVERCOMMANDLISTENER( "listener_voteables", "page" );
 	level thread COMMAND_BUFFER();
 	level thread end_commands_on_end_game();
 	level thread scr_dvar_command_watcher();
@@ -66,6 +69,7 @@ main()
 
 init()
 {
+	level waittill( "connected", player );
 	foreach ( player in level.players )
 	{
 		if ( player isHost() )
@@ -157,7 +161,8 @@ COMMAND_BUFFER()
 		{
 			cmdname = multi_cmds[ cmd_index ][ "cmdname" ];
 			args = multi_cmds[ cmd_index ][ "args" ];
-			if ( !player has_permission_for_cmd( cmdname ) )
+			is_clientcmd = multi_cmds[ cmd_index ][ "is_clientcmd" ];
+			if ( !player has_permission_for_cmd( cmdname, is_clientcmd ) )
 			{
 				level COM_PRINTF( channel, "cmderror", "You do not have permission to use " + cmdname + " command.", player );
 			}

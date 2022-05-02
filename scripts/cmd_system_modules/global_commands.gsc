@@ -21,7 +21,7 @@ CMD_SERVER_DVAR_f( arg_list )
 	else 
 	{
 		result[ "filter" ] = "cmderror";
-		result[ "message" ] = "dvar: Failed to set dvar due to missing params";
+		result[ "message" ] = "dvar: Usage dvar <dvarname> <newval>";
 	}
 	return result;
 }
@@ -47,7 +47,7 @@ CMD_CVARALL_f( arg_list )
 	else 
 	{
 		result[ "filter" ] = "cmderror";
-		result[ "message" ] = "cvarall: Failed to set cvar for all players due to missing params";
+		result[ "message" ] = "cvarall: Usage cvarall <dvarname> <newval>";
 	}
 	return result;
 }
@@ -75,7 +75,7 @@ CMD_CVAR_f( arg_list )
 	else 
 	{
 		result[ "filter" ] = "cmderror";
-		result[ "message" ] = "cvar: Failed to set cvar due to missing params";
+		result[ "message" ] = "cvar: Usage cvar <name|guid|clientnum|self> <cvarname> <newval>";
 	}
 	return result;
 }
@@ -208,27 +208,27 @@ CMD_SETRANK_f( arg_list )
 				switch ( arg_list[ 1 ] )
 				{
 					case "any":
-						target.cmdpower = 1;
+						target.cmdpower_server = 1;
 						new_rank = "any";
 						break;
 					case "trusted":
-						target.cmdpower = 20;
+						target.cmdpower_server = 20;
 						new_rank = "trusted";
 						break;
 					case "elevated":
-						target.cmdpower = 40;
+						target.cmdpower_server = 40;
 						new_rank = "elevated";
 						break;
 					case "moderator":
-						target.cmdpower = 60;
+						target.cmdpower_server = 60;
 						target.tcs_rank = "moderator";
 						break;
 					case "admin":
-						target.cmdpower = 80;
+						target.cmdpower_server = 80;
 						new_rank = "admin";
 						break;
 					case "owner":
-						target.cmdpower = 100;
+						target.cmdpower_server = 100;
 						new_rank = "owner";
 						break;
 					default:

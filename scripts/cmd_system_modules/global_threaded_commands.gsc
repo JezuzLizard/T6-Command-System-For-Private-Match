@@ -122,14 +122,14 @@ CMD_PLAYERLIST_f( arg_list )
 		players = getPlayers();
 	}
 	remaining_players = players.size;
-	remaining_pages = ceil( remaining_players / level.custom_commands_page_max );
+	remaining_pages = ceil( remaining_players / level.server_commands_page_max );
 	players_to_display = [];
 	for ( i = 0; i < players.size; i++ )
 	{
 		message = players[ i ].name + players[ i ] getGUID() + players[ i ] getEntityNumber() + ""; //remember to add rank as a listing option
 		players_to_display[ players_to_display.size ] = message;
 		remaining_players--;
-		if ( ( players_to_display.size > level.custom_commands_page_max ) && remaining_players != 0 )
+		if ( ( players_to_display.size > level.server_commands_page_max ) && remaining_players != 0 )
 		{
 			if ( current_page == user_defined_page )
 			{
@@ -186,13 +186,13 @@ CMD_UTILITY_CMDLIST_f( arg_list )
 	channel = self COM_GET_CMD_FEEDBACK_CHANNEL();
 	current_page = 1;
 	user_defined_page = 1;
-	remaining_cmds = level.custom_commands_total;
-	cmdnames = getArrayKeys( level.custom_commands );
+	remaining_cmds = level.server_commands_total;
+	cmdnames = getArrayKeys( level.server_commands );
 	for ( i = 0; i < cmdnames.size; i++ )
 	{
 		if ( self has_permission_for_cmd( cmdnames[ i ] ) )
 		{
-			message = "^4" + level.custom_commands[ cmdnames[ i ] ].usage;
+			message = "^4" + level.server_commands[ cmdnames[ i ] ].usage;
 			if ( channel == "con" )
 			{
 				level COM_PRINTF( channel, "notitle", message, self );
@@ -203,7 +203,7 @@ CMD_UTILITY_CMDLIST_f( arg_list )
 			}
 		}
 		remaining_cmds--;
-		if ( ( cmds_to_display.size > level.custom_commands_page_max ) && remaining_cmds != 0 )
+		if ( ( cmds_to_display.size > level.server_commands_page_max ) && remaining_cmds != 0 )
 		{
 			if ( current_page == user_defined_page )
 			{
@@ -211,7 +211,7 @@ CMD_UTILITY_CMDLIST_f( arg_list )
 				{
 					level COM_PRINTF( channel, "cmdinfo", message, self );
 				}
-				level COM_PRINTF( channel, "cmdinfo", "Displaying page " + current_page + " out of " + level.custom_commands_page_count + " do /showmore or /page <num> to display more commands.", self );
+				level COM_PRINTF( channel, "cmdinfo", "Displaying page " + current_page + " out of " + level.server_commands_page_count + " do /showmore or /page <num> to display more commands.", self );
 				self setup_command_listener( "listener_cmdlist" );
 				result = self wait_command_listener( "listener_cmdlist" );
 				self clear_command_listener( "listener_cmdlist" );
@@ -223,13 +223,13 @@ CMD_UTILITY_CMDLIST_f( arg_list )
 				{
 					if ( !isDefined( result[ 1 ] ) )
 					{
-						level COM_PRINTF( channel, "cmderror", "Page number arg sent to cmdlist is undefined. Valid inputs are 1 thru " + level.custom_commands_page_count, self );
+						level COM_PRINTF( channel, "cmderror", "Page number arg sent to cmdlist is undefined. Valid inputs are 1 thru " + level.server_commands_page_count, self );
 						return;
 					}
 					user_defined_page = int( result[ 1 ] );
-					if ( user_defined_page > level.custom_commands_page_count || user_defined_page == 0 )
+					if ( user_defined_page > level.server_commands_page_count || user_defined_page == 0 )
 					{
-						level COM_PRINTF( channel, "cmderror", "Page number " + result[ 1 ] + " sent to cmdlist is invalid. Valid inputs are 1 thru " + level.custom_commands_page_count, self );
+						level COM_PRINTF( channel, "cmderror", "Page number " + result[ 1 ] + " sent to cmdlist is invalid. Valid inputs are 1 thru " + level.server_commands_page_count, self );
 						return;
 					}
 				}
@@ -265,7 +265,7 @@ CMD_UTILITY_VOTELIST_f( arg_list )
 	{
 		voteables_to_display[ voteables_to_display.size ] = "^4" + level.custom_votes[ voteables_keys[ i ] ].usage;
 		remaining_cmds--;
-		if ( ( voteables_to_display.size > level.custom_commands_page_max ) && remaining_cmds != 0 )
+		if ( ( voteables_to_display.size > level.server_commands_page_max ) && remaining_cmds != 0 )
 		{
 			if ( current_page == user_defined_page )
 			{
@@ -273,7 +273,7 @@ CMD_UTILITY_VOTELIST_f( arg_list )
 				{
 					level COM_PRINTF( channel, "cmdinfo", message, self );
 				}
-				level COM_PRINTF( channel, "cmdinfo", "Displaying page " + current_page + " out of " + level.custom_commands_page_count + " do /showmore or /page <num> to display more voteables.", self );
+				level COM_PRINTF( channel, "cmdinfo", "Displaying page " + current_page + " out of " + level.server_commands_page_count + " do /showmore or /page <num> to display more voteables.", self );
 				self setup_command_listener( "listener_voteables" );
 				result = self wait_command_listener( "listener_voteables" );
 				self clear_command_listener( "listener_voteables" );
@@ -289,9 +289,9 @@ CMD_UTILITY_VOTELIST_f( arg_list )
 						level COM_PRINTF( channel, "cmderror", "Page number arg sent to votelist is undefined. Valid inputs are 1 thru ", self );
 						return;
 					}
-					if ( user_defined_page > level.custom_commands_page_count || user_defined_page == 0 )
+					if ( user_defined_page > level.server_commands_page_count || user_defined_page == 0 )
 					{
-						level COM_PRINTF( channel, "cmderror", "Page number " + result[ 1 ] + " sent to votelist is invalid. Valid inputs are 1 thru " + level.custom_commands_page_count, self );
+						level COM_PRINTF( channel, "cmderror", "Page number " + result[ 1 ] + " sent to votelist is invalid. Valid inputs are 1 thru " + level.server_commands_page_count, self );
 						return;
 					}
 				}

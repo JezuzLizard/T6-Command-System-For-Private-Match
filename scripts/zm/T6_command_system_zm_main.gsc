@@ -15,15 +15,64 @@
 main()
 {
 	flag_wait( "tcs_init_done" );
-	CMD_ADDCOMMAND( "spectator", "spectator spec", "spectator <name|guid|clientnum|self>", ::CMD_SPECTATOR_f, level.CMD_POWER_ADMIN );
-	CMD_ADDCOMMAND( "togglerespawn", "togglerespawn togresp", "togglerespawn <name|guid|clientnum|self>", ::CMD_TOGGLERESPAWN_f, level.CMD_POWER_ADMIN );
-	CMD_ADDCOMMAND( "killactors", "killactors ka", "killactors", ::CMD_KILLACTORS_f, level.CMD_POWER_ADMIN );
-	CMD_ADDCOMMAND( "respawnspectators", "respawnspectators respspec", "respawnspectators", ::CMD_RESPAWNSPECTATORS_f, level.CMD_POWER_ADMIN );
-	CMD_ADDCOMMAND( "pause", "pause pa", "pause [minutes]", ::CMD_PAUSE_f, level.CMD_POWER_ADMIN );
-	CMD_ADDCOMMAND( "unpause", "unpause up", "unpause", ::CMD_UNPAUSE_f, level.CMD_POWER_ADMIN );
-	CMD_ADDCOMMAND( "giveperk", "giveperk gp", "giveperk <name|guid|clientnum|self> <perkname> ...", ::CMD_GIVEPERK_f, level.CMD_POWER_ADMIN );
-	CMD_ADDCOMMAND( "givepermaperk", "givepermaperk gpp", "givepermaperk <name|guid|clientnum|self> <perkname> ...", ::CMD_GIVEPERMAPERK_f, level.CMD_POWER_ADMIN );
-	CMD_ADDCOMMAND( "givepoints", "givepoints gpo", "givepoints <name|guid|clientnum|self> <amount>", ::CMD_GIVEPOINTS_f, level.CMD_POWER_ADMIN );
+	CMD_ADDSERVERCOMMAND( "spectator", "spectator spec", "spectator <name|guid|clientnum|self>", ::CMD_SPECTATOR_f, level.CMD_POWER_ADMIN );
+	CMD_ADDSERVERCOMMAND( "togglerespawn", "togglerespawn togresp", "togglerespawn <name|guid|clientnum|self>", ::CMD_TOGGLERESPAWN_f, level.CMD_POWER_ADMIN );
+	CMD_ADDSERVERCOMMAND( "killactors", "killactors ka", "killactors", ::CMD_KILLACTORS_f, level.CMD_POWER_ADMIN );
+	CMD_ADDSERVERCOMMAND( "respawnspectators", "respawnspectators respspec", "respawnspectators", ::CMD_RESPAWNSPECTATORS_f, level.CMD_POWER_ADMIN );
+	CMD_ADDSERVERCOMMAND( "pause", "pause pa", "pause [minutes]", ::CMD_PAUSE_f, level.CMD_POWER_ADMIN );
+	CMD_ADDSERVERCOMMAND( "unpause", "unpause up", "unpause", ::CMD_UNPAUSE_f, level.CMD_POWER_ADMIN );
+	CMD_ADDSERVERCOMMAND( "giveperk", "giveperk gp", "giveperk <name|guid|clientnum|self> <perkname> ...", ::CMD_GIVEPERK_f, level.CMD_POWER_ADMIN );
+	CMD_ADDSERVERCOMMAND( "givepermaperk", "givepermaperk gpp", "givepermaperk <name|guid|clientnum|self> <perkname> ...", ::CMD_GIVEPERMAPERK_f, level.CMD_POWER_ADMIN );
+	CMD_ADDSERVERCOMMAND( "givepoints", "givepoints gpts", "givepoints <name|guid|clientnum|self> <amount>", ::CMD_GIVEPOINTS_f, level.CMD_POWER_ADMIN );
+	CMD_ADDSERVERCOMMAND( "givepowerup", "givepowerup gpow", "givepowerup <name|guid|clientnum|self> <powerupname>", ::CMD_GIVEPOWERUP_f, level.CMD_POWER_ADMIN );
+}
+
+CMD_GIVEPOWERUP_f( arg_list )
+{
+	result = [];
+	if ( array_validate( arg_list ) && arg_list.size == 2 )
+	{
+		target = self find_player_in_server( arg_list[ 0 ] );
+		if ( !isDefined( target ) )
+		{
+			result[ "filter" ] = "cmderror";
+			result[ "message" ] = "giveperk: Could not find player";
+		}
+		else 
+		{
+			powerup_name = get_powerup_from_alias_zm( arg_list[ 1 ] );
+			valid_powerup_list = powerup_list_zm();
+			powerup_is_available = isInArray( valid_powerup_list, powerup_name );
+			if ( !powerup_is_available )
+			{
+				result[ "filter" ] = "cmderror";
+				result[ "message" ] = "givepowerup: Powerup " + powerup_name + " is not available on this map";	
+			}
+			else 
+			{
+				target give_powerup_zm( powerup_name );
+				result[ "filter" ] = "cmdinfo";
+				result[ "message" ] = "givepowerup: Gave perk " + powerup_name + " to " + target.name;	
+			}
+		}
+	}
+	else 
+	{
+		result[ "filter" ] = "cmderror";
+		result[ "message" ] = "givepowerup: Usage givepowerup <name|guid|clientnum|self> <powerupname>";
+	}
+	return result;
+}
+
+give_powerup_zm( powerup_name )
+{
+	direction = self getplayerangles();
+	direction_vec = anglestoforward( direction );
+	eye = self geteye();
+	scale = 8000;
+	direction_vec = ( direction_vec[0] * scale, direction_vec[1] * scale, direction_vec[2] * scale );
+	trace = bullettrace( eye, eye + direction_vec, 0, undefined );
+	level thread maps\mp\zombies\_zm_powerups::specific_powerup_drop( powerup_name, trace["position"] );
 }
 
 CMD_KILLACTORS_f( arg_list )
@@ -60,7 +109,7 @@ CMD_GIVEPERK_f( arg_list )
 				}
 				else 
 				{
-					target give_perk_zm( perk );
+					target give_perk_zm( perk_name );
 					result[ "filter" ] = "cmdinfo";
 					result[ "message" ] = "giveperk: Gave perk " + perk_name + " to " + target.name;	
 				}
