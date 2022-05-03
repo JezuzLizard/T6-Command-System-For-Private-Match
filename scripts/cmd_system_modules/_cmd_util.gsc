@@ -362,14 +362,14 @@ CMD_ADDSERVERCOMMAND( cmdname, cmdaliases, cmdusage, cmdfunc, cmdpower, is_threa
 	level.server_commands[ cmdname ].func = cmdfunc;
 	level.server_commands[ cmdname ].aliases = aliases;
 	level.server_commands[ cmdname ].power = cmdpower;
-	level.server_commands_total++;
-	if ( ceil( level.server_commands_total / level.server_commands_page_max ) >= level.server_commands_page_count )
+	level.commands_total++;
+	if ( ceil( level.commands_total / level.commands_page_max ) >= level.commands_page_count )
 	{
-		level.server_commands_page_count++;
+		level.commands_page_count++;
 	}
 	if ( is_true( is_threaded_cmd ) )
 	{
-		level.server_threaded_commands[ cmdname ] = true;
+		level.threaded_commands[ cmdname ] = true;
 	}
 }
 
@@ -387,8 +387,13 @@ CMD_REMOVESERVERCOMMAND( cmdname )
 			new_command_array[ cmd ].aliases = level.server_commands[ cmd ].aliases;
 			new_command_array[ cmd ].power = level.server_commands[ cmd ].power;
 		}
+		else 
+		{
+			level.threaded_commands[ cmd ] = false;
+		}
 	}
 	level.server_commands = new_command_array;
+	recalculate_command_page_counts();
 } 
 
 CMD_ADDCLIENTCOMMAND( cmdname, cmdaliases, cmdusage, cmdfunc, cmdpower, is_threaded_cmd )
@@ -399,14 +404,14 @@ CMD_ADDCLIENTCOMMAND( cmdname, cmdaliases, cmdusage, cmdfunc, cmdpower, is_threa
 	level.client_commands[ cmdname ].func = cmdfunc;
 	level.client_commands[ cmdname ].aliases = aliases;
 	level.client_commands[ cmdname ].power = cmdpower;
-	level.server_commands_total++;
-	if ( ceil( level.server_commands_total / level.server_commands_page_max ) >= level.server_commands_page_count )
+	level.commands_total++;
+	if ( ceil( level.commands_total / level.commands_page_max ) >= level.commands_page_count )
 	{
-		level.server_commands_page_count++;
+		level.commands_page_count++;
 	}
 	if ( is_true( is_threaded_cmd ) )
 	{
-		level.server_threaded_commands[ cmdname ] = true;
+		level.threaded_commands[ cmdname ] = true;
 	}
 }
 
@@ -424,9 +429,28 @@ CMD_REMOVECLIENTCOMMAND( cmdname )
 			new_command_array[ cmd ].aliases = level.client_commands[ cmd ].aliases;
 			new_command_array[ cmd ].power = level.client_commands[ cmd ].power;
 		}
+		else 
+		{
+			level.threaded_commands[ cmd ] = false;
+		}
 	}
 	level.client_commands = new_command_array;
+	recalculate_command_page_counts();
 } 
+
+recalculate_command_page_counts()
+{
+	total_commands = arrayCombine( level.server_commands, level.client_commands, 1, 0 );
+	level.commands_page_count = 0;
+	for ( level.commands_total = 0; i < total_commands.size; level.commands_total++ )
+	{
+		if ( ceil( level.commands_total / level.commands_page_max ) >= level.commands_page_count )
+		{
+			level.commands_page_count++;
+		}
+	}
+
+}
 
 // CMD_CONFIG_UPDATE()
 // {
@@ -447,7 +471,7 @@ VOTE_ADDVOTEABLE( vote_type, vote_type_aliases, usage, pre_vote_execute_func, po
 	if ( !isDefined( level.custom_votes[ vote_type ] ) )
 	{
 		level.custom_votes_total++;
-		if ( ceil( level.custom_votes_total / level.server_commands_page_max ) >= level.custom_votes_page_count )
+		if ( ceil( level.custom_votes_total / level.commands_page_max ) >= level.custom_votes_page_count )
 		{
 			level.custom_votes_page_count++;
 		}
@@ -459,9 +483,34 @@ VOTE_ADDVOTEABLE( vote_type, vote_type_aliases, usage, pre_vote_execute_func, po
 	}
 }
 
+VOTE_REMOVEVOTEABLE( vote_type )
+{
+	new_command_array = [];
+	vote_keys = getArrayKeys( level.custom_votes );
+	level.custom_votes_total = 0;
+	level.custom_votes_page_count = 0;
+	foreach ( vote in vote_keys )
+	{
+		if ( vote_type != vote )
+		{
+			new_command_array[ vote ] = spawnStruct();
+			new_command_array[ vote ].pre_func = level.custom_votes[ vote ].pre_func;
+			new_command_array[ vote ].post_func = level.custom_votes[ vote ].post_func;
+			new_command_array[ vote ].usage = level.custom_votes[ vote ].usage;
+			new_command_array[ vote ].aliases = level.custom_votes[ vote ].aliases;
+			level.custom_votes_total++;
+			if ( ceil( level.custom_votes_total / level.commands_page_max ) >= level.custom_votes_page_count )
+			{
+				level.custom_votes_page_count++;
+			}
+		}
+	}
+	level.custom_votes = new_command_array;
+} 
+
 CMD_EXECUTE( cmdname, arg_list )
 {
-	if ( is_true( level.server_threaded_commands[ cmdname ] ) )
+	if ( is_true( level.threaded_commands[ cmdname ] ) )
 	{
 		self thread [[ level.server_commands[ cmdname ].func ]]( arg_list );
 		return;
@@ -491,7 +540,7 @@ CMD_EXECUTE( cmdname, arg_list )
 	}
 }
 
-set_clientdvars_on_connect()
+tcs_on_connect()
 {
 	level endon( "end_commands" );
 	while ( true )
@@ -501,10 +550,35 @@ set_clientdvars_on_connect()
 		{
 			player setClientDvar( dvar[ "name" ], dvar[ "value" ] );
 		}
+		if ( player isHost() )
+		{
+			player.cmdpower_server = level.CMD_POWER_HOST;
+			player.cmdpower_client = level.CMD_POWER_HOST;
+			player.tcs_rank = level.TCS_RANK_HOST;
+			level.host = player;
+		}
+		else if ( array_validate( level.tcs_player_entries ) )
+		{
+			foreach ( entry in level.tcs_player_entries )
+			{
+				if ( find_player_in_server( entry.player_entry ) == player )
+				{
+					player.cmdpower_server = entry.cmdpower_server;
+					player.cmdpower_client = entry.cmdpower_client;
+					player.tcs_rank = entry.rank;
+				}
+			}
+		}
+		else 
+		{
+			player.cmdpower_server = getDvarIntDefault( "tcs_cmdpower_server_default", level.CMD_POWER_USER );
+			player.cmdpower_client = getDvarIntDefault( "tcs_cmdpower_client_default", level.CMD_POWER_USER );
+			player.tcs_rank = getDvarStringDefault( "tcs_default_rank", level.TCS_RANK_USER );
+		}
 	}
 }
 
 cheats_enabled()
 {
-	return getDvarInt( "sv_cheats" ); 
+	return getDvarIntDefault( "tcs_cheats", 1 ); 
 }

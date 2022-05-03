@@ -5,18 +5,110 @@
 
 CMD_INIT_PERMS()
 {
-	level.server_users = [];
-	level.server_users[ "admins" ] = spawnStruct();
-	level.server_users[ "admins" ].names = [];
-	level.server_users[ "admins" ].guids = [];
-	level.server_users[ "admins" ].cmd_rate_limit = -1;
-	str_keys = strTok( getDvar( "server_admin_guids" ), "," );
-	int_keys = [];
-	foreach ( key in str_keys )
+	level.tcs_player_entries = [];
+	player_perm_list = getDvar( "tcs_player_cmd_perms" );
+	if ( player_perm_list != "" )
 	{
-		int_keys[ int_keys.size ] = int( key );
+		player_entries = strTok( player_perm_list, "," );
+		index = 0;
+		foreach ( player_entry in player_entries )
+		{
+			player_entry_array = strTok( player_entry, " " );
+			if ( isDefined( player_entry_array[ 0 ] ) && isDefined( player_entry_array[ 1 ] ) && isDefined( player_entry_array[ 2 ] ) && isDefined( player_entry_array[ 3 ] ) )
+			{
+				level.tcs_player_entries[ level.tcs_player_entries.size ] = spawnStruct(); 
+				level.tcs_player_entries[ level.tcs_player_entries.size -1 ].player_entry = player_entry_array[ 0 ];
+				level.tcs_player_entries[ level.tcs_player_entries.size -1 ].rank = player_entry_array[ 1 ];
+				level.tcs_player_entries[ level.tcs_player_entries.size -1 ].cmdpower_server = int( player_entry_array[ 2 ] );
+				level.tcs_player_entries[ level.tcs_player_entries.size -1 ].cmdpower_client = int( player_entry_array[ 3 ] );
+			}
+			else 
+			{
+				level COM_PRINTF( "con|g_log", "permserror", "tcs_player_cmd_perms index " + index + " has (player_entry " + isDefined( player_entry_array[ 0 ] ) + "), (rank " + isDefined( player_entry_array[ 1 ] ) + "), (cmdpower_server " + isDefined( player_entry_array[ 2 ] ) + "), (cmdpower_client " + isDefined( player_entry_array[ 3 ] ) + ")" );
+				level COM_PRINTF( "con|g_log", "permserror", "Please check your tcd_player_cmd_perms dvar" );
+			}
+			index++;
+		}
 	}
-	level.server_users[ "admins" ].guids = int_keys;
+}
+
+add_player_perms_entry( player )
+{
+	if ( player_exists_in_perms_system( player ) )
+	{
+		set_player_perms_entry( player );
+		return;
+	}
+	player_perm_list = getDvar( "tcs_player_cmd_perms" );
+	if ( player_perm_list != "" )
+	{
+		player_entry = player.name + " " + player.tcs_rank + " " + player.cmdpower_server + " " + player.cmdpower_client;
+		if ( player_perm_list[ player_perm_list.size - 1 ] == "," )
+		{
+			player_perm_list = player_perm_list + player_entry;
+		}
+		else 
+		{
+			player_perm_list = player_perm_list + "," + player_entry;
+		}
+		if ( player_perm_list.size > 1024 )
+		{
+			return;
+		}
+		setDvar( "tcs_player_cmd_perms", player_perm_list );
+		CMD_INIT_PERMS();
+	}
+}
+
+set_player_perms_entry( player )
+{
+	player_perm_list = getDvar( "tcs_player_cmd_perms" );
+	if ( player_perm_list != "" )
+	{
+		player_entries = strTok( player_perm_list, "," );
+		index = 0;
+		found_player = false;
+		foreach ( player_entry in player_entries )
+		{
+			player_entry_array = strTok( player_entry, " " );
+			if ( find_player_in_server( player_entry_array[ 0 ] ) == player )
+			{
+				player_entry_array[ 1 ] = player.tcs_rank;
+				player_entry_array[ 2 ] = player.cmdpower_server + "";
+				player_entry_array[ 3 ] = player.cmdpower_client + "";
+				found_player = true;
+				break;
+			}
+			index++;
+		}
+		if ( found_player )
+		{
+			player_entries[ index ] = player_entry_array[ 0 ] + " " + player_entry_array[ 1 ] + " " + player_entry_array[ 2 ] + " " + player_entry_array[ 3 ];
+			new_perms_list = "";
+			foreach ( player_entry in player_entries )
+			{
+				new_perms_list += player_entry + ",";
+			}
+			if ( new_perms_list.size > 1024 )
+			{
+				return;
+			}
+			setDvar( "tcs_player_cmd_perms", new_perms_list );
+			CMD_INIT_PERMS();
+		}
+	}
+}
+
+player_exists_in_perms_system( player )
+{
+	for ( i = 0; i < level.tcs_player_entries.size; i++ )
+	{
+		if ( find_player_in_server( level.tcs_player_entries.player_entry ) == player )
+		{
+			return true;
+		}
+	}
+	return false;
 }
 
 CMD_COOLDOWN()
@@ -25,18 +117,9 @@ CMD_COOLDOWN()
 	{
 		return;
 	}
-	if ( is_true( self.is_admin ) )
+	if ( self.cmdpower_server >= level.TCS_RANK_TRUSTED_USER || self.cmdpower_client >= level.TCS_RANK_TRUSTED_USER )
 	{
 		return;
-	}
-	player_guid = self getGUID();
-	foreach ( guid in level.server_users[ "admins" ].guids )
-	{
-		if ( player_guid == guid )
-		{
-			self.is_admin = true;
-			return;
-		}
 	}
 	player.cmd_cooldown = level.custom_commands_cooldown_time;
 	while ( player.cmd_cooldown > 0 )
@@ -52,18 +135,9 @@ can_use_multi_cmds()
 	{
 		return true;
 	}
-	if ( is_true( self.is_admin ) )
+	if ( self.cmdpower_server >= level.CMD_POWER_CHEAT || self.cmdpower_client >= level.CMD_POWER_CHEAT )
 	{
 		return true;
-	}
-	player_guid = self getGUID();
-	foreach ( guid in level.server_users[ "admins" ].guids )
-	{
-		if ( player_guid == guid )
-		{
-			self.is_admin = true;
-			return true;
-		}
 	}
 	return false;
 }

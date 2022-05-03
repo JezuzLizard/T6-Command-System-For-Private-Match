@@ -18,17 +18,25 @@ main()
 {
 	COM_INIT();
 	level.custom_commands_restart_countdown = 5;
-	level.server_commands_total = 0;
-	level.server_commands_page_count = 0;
-	level.server_commands_page_max = 5;
+	level.commands_total = 0;
+	level.commands_page_count = 0;
+	level.commands_page_max = 5;
 	level.custom_commands_listener_timeout = getDvarIntDefault( "tcs_cmd_listener_timeout", 12 );
 	level.custom_commands_cooldown_time = getDvarIntDefault( "tcs_cmd_cd", 5 );
-	level.CMD_POWER_ANY = 1;
-	level.CMD_POWER_TRUSTED = 20;
+	level.CMD_POWER_NONE = 0;
+	level.CMD_POWER_USER = 1;
+	level.CMD_POWER_TRUSTED_USER = 20;
 	level.CMD_POWER_ELEVATED_USER = 40;
 	level.CMD_POWER_MODERATOR = 60;
-	level.CMD_POWER_ADMIN = 80;
-	level.CMD_POWER_OWNER = 100;
+	level.CMD_POWER_CHEAT = 80;
+	level.CMD_POWER_HOST = 100;
+	level.TCS_RANK_NONE = "none";
+	level.TCS_RANK_USER = "user";
+	level.TCS_RANK_TRUSTED_USER = "trusted";
+	level.TCS_RANK_ELEVATED_USER = "elevated";
+	level.TCS_RANK_MODERATOR = "moderator";
+	level.TCS_RANK_CHEAT = "cheat";
+	level.TCS_RANK_HOST = "host";
 	level.FL_GODMODE = 1;
 	level.FL_DEMI_GODMODE = 2;
 	level.FL_NOTARGET = 4;
@@ -40,46 +48,43 @@ main()
 	}
 	// "/" is always useable by default
 	CMD_INIT_PERMS();
+	level.tcs_add_server_command_func = ::CMD_ADDSERVERCOMMAND;
+	level.tcs_add_client_command_func = ::CMD_ADDCLIENTCOMMAND;
+	level.tcs_add_voteable_func = ::VOTE_ADDVOTEABLE;
+	level.tcs_remove_server_command = ::CMD_REMOVESERVERCOMMAND;
+	level.tcs_remove_client_command = ::CMD_REMOVECLIENTCOMMAND;
+	level.tcs_remove_voteable_func = ::VOTE_REMOVEVOTEABLE;
 	level.server_commands = [];
-	CMD_ADDSERVERCOMMAND( "cvar", "cvar cv", "cvar <name|guid|clientnum|self> <cvarname> <newval>", ::CMD_CVAR_f, level.CMD_POWER_ADMIN );
-	CMD_ADDSERVERCOMMAND( "dvar", "dvar dv", "dvar <dvarname> <newval>", ::CMD_SERVER_DVAR_f, level.CMD_POWER_ADMIN );
-	CMD_ADDSERVERCOMMAND( "cvarall", "cvarall cva", "cvarall <dvarname> <newval>", ::CMD_CVARALL_f, level.CMD_POWER_ADMIN );
-	CMD_ADDSERVERCOMMAND( "cmdlist", "cmdlist cl", "cmdlist", ::CMD_UTILITY_CMDLIST_f, level.CMD_POWER_ELEVATED_USER, true );
-	CMD_ADDSERVERCOMMAND( "playerlist", "playerlist plist", "playerlist [team]", ::CMD_PLAYERLIST_f, level.CMD_POWER_TRUSTED, true );
-	CMD_ADDSERVERCOMMAND( "votestart", "votestart vs", "votestart <voteable> [arg1] [arg2] [arg3] [arg4]", ::CMD_VOTESTART_f, level.CMD_POWER_TRUSTED, true );
-	CMD_ADDSERVERCOMMAND( "votelist", "votelist vl", "votelist", ::CMD_UTILITY_VOTELIST_f, level.CMD_POWER_TRUSTED, true );
-	CMD_ADDSERVERCOMMAND( "givegod", "givegod ggd", "givegod <name|guid|clientnum|self>", ::CMD_GOD_f, level.CMD_POWER_ADMIN );
-	CMD_ADDSERVERCOMMAND( "givenotarget", "givenotarget gnt", "notarget <name|guid|clientnum|self>", ::CMD_NOTARGET_f, level.CMD_POWER_ADMIN );
-	CMD_ADDSERVERCOMMAND( "giveinvisible", "giveinvisible ginv", "invisible <name|guid|clientnum|self>", ::CMD_INVISIBLE_f, level.CMD_POWER_ADMIN );
-	CMD_ADDSERVERCOMMAND( "setrank", "setrank sr", "setrank <name|guid|clientnum|self> <rank>", ::CMD_SETRANK_f, level.CMD_POWER_ADMIN );
+	CMD_ADDSERVERCOMMAND( "cvar", "cvar cv", "cvar <name|guid|clientnum|self> <cvarname> <newval>", ::CMD_CVAR_f, level.CMD_POWER_CHEAT );
+	CMD_ADDSERVERCOMMAND( "dvar", "dvar dv", "dvar <dvarname> <newval>", ::CMD_SERVER_DVAR_f, level.CMD_POWER_CHEAT );
+	CMD_ADDSERVERCOMMAND( "cvarall", "cvarall cva", "cvarall <dvarname> <newval>", ::CMD_CVARALL_f, level.CMD_POWER_CHEAT );
+	CMD_ADDSERVERCOMMAND( "givegod", "givegod ggd", "givegod <name|guid|clientnum|self>", ::CMD_GOD_f, level.CMD_POWER_CHEAT );
+	CMD_ADDSERVERCOMMAND( "givenotarget", "givenotarget gnt", "notarget <name|guid|clientnum|self>", ::CMD_NOTARGET_f, level.CMD_POWER_CHEAT );
+	CMD_ADDSERVERCOMMAND( "giveinvisible", "giveinvisible ginv", "invisible <name|guid|clientnum|self>", ::CMD_INVISIBLE_f, level.CMD_POWER_CHEAT );
+	CMD_ADDSERVERCOMMAND( "setrank", "setrank sr", "setrank <name|guid|clientnum|self> <rank>", ::CMD_SETRANK_f, level.CMD_POWER_HOST );
+
+	level.client_commands = [];
+	CMD_ADDCLIENTCOMMAND( "cmdlist", "cmdlist cl", "cmdlist", ::CMD_CMDLIST_f, level.CMD_POWER_NONE, true );
+	CMD_ADDCLIENTCOMMAND( "votelist", "votelist vl", "votelist", ::CMD_UTILITY_VOTELIST_f, level.CMD_POWER_NONE, true );
+	CMD_ADDCLIENTCOMMAND( "playerlist", "playerlist plist", "playerlist [team]", ::CMD_PLAYERLIST_f, level.CMD_POWER_NONE, true );
+	CMD_ADDCLIENTCOMMAND( "votestart", "votestart vs", "votestart <voteable> [arg1] [arg2] [arg3] [arg4]", ::CMD_VOTESTART_f, level.CMD_POWER_TRUSTED_USER, true );
 	VOTE_INIT();
 
-	CMD_ADDSERVERCOMMANDLISTENER( "listener_cmdlist", "showmore" );
-	CMD_ADDSERVERCOMMANDLISTENER( "listener_cmdlist", "page" );
-	CMD_ADDSERVERCOMMANDLISTENER( "listener_playerlist", "showmore" );
-	CMD_ADDSERVERCOMMANDLISTENER( "listener_playerlist", "page" );
-	CMD_ADDSERVERCOMMANDLISTENER( "listener_voteables", "showmore" );
-	CMD_ADDSERVERCOMMANDLISTENER( "listener_voteables", "page" );
+	CMD_ADDCOMMANDLISTENER( "listener_cmdlist", "showmore" );
+	CMD_ADDCOMMANDLISTENER( "listener_cmdlist", "page" );
+	CMD_ADDCOMMANDLISTENER( "listener_playerlist", "showmore" );
+	CMD_ADDCOMMANDLISTENER( "listener_playerlist", "page" );
+	CMD_ADDCOMMANDLISTENER( "listener_voteables", "showmore" );
+	CMD_ADDCOMMANDLISTENER( "listener_voteables", "page" );
 	level thread COMMAND_BUFFER();
 	level thread end_commands_on_end_game();
 	level thread scr_dvar_command_watcher();
-	level thread set_clientdvars_on_connect();
-	flag_set( "tcs_init_done" );
+	level thread tcs_on_connect();
+	level.command_init_done = true;
 }
 
 init()
 {
-	level waittill( "connected", player );
-	foreach ( player in level.players )
-	{
-		if ( player isHost() )
-		{
-			level.host = player;
-			level.host.cmd_power = 100;
-			level.host.is_admin = true;
-			break;
-		}
-	}
 }
 
 scr_dvar_command_watcher()
@@ -123,26 +128,26 @@ COMMAND_BUFFER()
 			continue;
 		}
 		message = toLower( message );
-		found_listener = false;
-		if ( array_validate( player.cmd_listeners ) )
-		{
-			listener_cmds_args = strTok( message, " " );
-			cmdname = listener_cmds_args[ 0 ];
-			listener_keys = getArrayKeys( player.cmd_listeners );
-			foreach ( listener in listener_keys )
-			{
-				if ( CMD_ISCOMMANDLISTENER( listener, cmdname ) && player CMD_ISCOMMANDLISTENER_ACTIVE( listener ) )
-				{
-					player CMD_EXECUTELISTENER( listener, listener_cmds_args );
-					found_listener = true;
-					break;
-				}
-			}
-			if ( found_listener )
-			{
-				continue;
-			}
-		}
+		// found_listener = false;
+		// if ( array_validate( player.cmd_listeners ) )
+		// {
+		// 	listener_cmds_args = strTok( message, " " );
+		// 	cmdname = listener_cmds_args[ 0 ];
+		// 	listener_keys = getArrayKeys( player.cmd_listeners );
+		// 	foreach ( listener in listener_keys )
+		// 	{
+		// 		if ( CMD_ISCOMMANDLISTENER( listener, cmdname ) && player CMD_ISCOMMANDLISTENER_ACTIVE( listener ) )
+		// 		{
+		// 			player CMD_EXECUTELISTENER( listener, listener_cmds_args );
+		// 			found_listener = true;
+		// 			break;
+		// 		}
+		// 	}
+		// 	if ( found_listener )
+		// 	{
+		// 		continue;
+		// 	}
+		// }
 		channel = player COM_GET_CMD_FEEDBACK_CHANNEL();
 		multi_cmds = parse_cmd_message( message );
 		if ( multi_cmds.size < 1 )

@@ -13,6 +13,9 @@ COM_INIT()
 	COM_ADDFILTER( "scrinfo", 1 );
 	COM_ADDFILTER( "scrwarning", 1 );
 	COM_ADDFILTER( "screrror", 1 );
+	COM_ADDFILTER( "permsinfo", 1 );
+	COM_ADDFILTER( "permswarning", 1 );
+	COM_ADDFILTER( "permserror", 1 ); 
 	COM_ADDFILTER( "debug", 0 );
 	COM_ADDFILTER( "obituary", 1 );
 	COM_ADDFILTER( "notitle", 1 );
@@ -116,10 +119,7 @@ COM_IPRINTLN( channel, message, players, arg_list )
 	{
 		for ( i = 0; i < players.size; i++ )
 		{
-			if ( isPlayer( players[ i ] ) )
-			{
-				players[ i ] iPrintLn( message );
-			}
+			players[ i ] iPrintLn( message );
 		}
 	}
 	else if ( isDefined( players ) )
@@ -136,10 +136,7 @@ COM_IPRINTLNBOLD( channel, message, players, arg_list )
 {
 	for ( i = 0; i < level.players.size; i++ )
 	{
-		if ( isPlayer( level.players[ i ] ) )
-		{
-			level.players[ i ] iPrintLnBold( message );
-		}
+		level.players[ i ] iPrintLnBold( message );
 	}
 }
 

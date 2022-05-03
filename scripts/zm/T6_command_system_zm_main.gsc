@@ -14,17 +14,20 @@
 
 main()
 {
-	flag_wait( "tcs_init_done" );
-	CMD_ADDSERVERCOMMAND( "spectator", "spectator spec", "spectator <name|guid|clientnum|self>", ::CMD_SPECTATOR_f, level.CMD_POWER_ADMIN );
-	CMD_ADDSERVERCOMMAND( "togglerespawn", "togglerespawn togresp", "togglerespawn <name|guid|clientnum|self>", ::CMD_TOGGLERESPAWN_f, level.CMD_POWER_ADMIN );
-	CMD_ADDSERVERCOMMAND( "killactors", "killactors ka", "killactors", ::CMD_KILLACTORS_f, level.CMD_POWER_ADMIN );
-	CMD_ADDSERVERCOMMAND( "respawnspectators", "respawnspectators respspec", "respawnspectators", ::CMD_RESPAWNSPECTATORS_f, level.CMD_POWER_ADMIN );
-	CMD_ADDSERVERCOMMAND( "pause", "pause pa", "pause [minutes]", ::CMD_PAUSE_f, level.CMD_POWER_ADMIN );
-	CMD_ADDSERVERCOMMAND( "unpause", "unpause up", "unpause", ::CMD_UNPAUSE_f, level.CMD_POWER_ADMIN );
-	CMD_ADDSERVERCOMMAND( "giveperk", "giveperk gp", "giveperk <name|guid|clientnum|self> <perkname> ...", ::CMD_GIVEPERK_f, level.CMD_POWER_ADMIN );
-	CMD_ADDSERVERCOMMAND( "givepermaperk", "givepermaperk gpp", "givepermaperk <name|guid|clientnum|self> <perkname> ...", ::CMD_GIVEPERMAPERK_f, level.CMD_POWER_ADMIN );
-	CMD_ADDSERVERCOMMAND( "givepoints", "givepoints gpts", "givepoints <name|guid|clientnum|self> <amount>", ::CMD_GIVEPOINTS_f, level.CMD_POWER_ADMIN );
-	CMD_ADDSERVERCOMMAND( "givepowerup", "givepowerup gpow", "givepowerup <name|guid|clientnum|self> <powerupname>", ::CMD_GIVEPOWERUP_f, level.CMD_POWER_ADMIN );
+	while ( !is_true( level.command_init_done ) )
+	{
+		wait 0.05;
+	}
+	CMD_ADDSERVERCOMMAND( "spectator", "spectator spec", "spectator <name|guid|clientnum|self>", ::CMD_SPECTATOR_f, level.CMD_POWER_CHEAT );
+	CMD_ADDSERVERCOMMAND( "togglerespawn", "togglerespawn togresp", "togglerespawn <name|guid|clientnum|self>", ::CMD_TOGGLERESPAWN_f, level.CMD_POWER_CHEAT );
+	CMD_ADDSERVERCOMMAND( "killactors", "killactors ka", "killactors", ::CMD_KILLACTORS_f, level.CMD_POWER_CHEAT );
+	CMD_ADDSERVERCOMMAND( "respawnspectators", "respawnspectators respspec", "respawnspectators", ::CMD_RESPAWNSPECTATORS_f, level.CMD_POWER_CHEAT );
+	CMD_ADDSERVERCOMMAND( "pause", "pause pa", "pause [minutes]", ::CMD_PAUSE_f, level.CMD_POWER_CHEAT );
+	CMD_ADDSERVERCOMMAND( "unpause", "unpause up", "unpause", ::CMD_UNPAUSE_f, level.CMD_POWER_CHEAT );
+	CMD_ADDSERVERCOMMAND( "giveperk", "giveperk gp", "giveperk <name|guid|clientnum|self> <perkname> ...", ::CMD_GIVEPERK_f, level.CMD_POWER_CHEAT );
+	CMD_ADDSERVERCOMMAND( "givepermaperk", "givepermaperk gpp", "givepermaperk <name|guid|clientnum|self> <perkname> ...", ::CMD_GIVEPERMAPERK_f, level.CMD_POWER_CHEAT );
+	CMD_ADDSERVERCOMMAND( "givepoints", "givepoints gpts", "givepoints <name|guid|clientnum|self> <amount>", ::CMD_GIVEPOINTS_f, level.CMD_POWER_CHEAT );
+	CMD_ADDSERVERCOMMAND( "givepowerup", "givepowerup gpow", "givepowerup <name|guid|clientnum|self> <powerupname>", ::CMD_GIVEPOWERUP_f, level.CMD_POWER_CHEAT );
 }
 
 CMD_GIVEPOWERUP_f( arg_list )

@@ -13,8 +13,8 @@ VOTE_INIT()
 	level.custom_votes_page_count = 0;
 	level.vote_timeout = getDvarIntDefault( "tcs_vote_timelimit_seconds", 30 );
 	level.vote_start_anonymous = getDvarIntDefault( "tcs_anonymous_vote_start", 1 );
-	CMD_ADDSERVERCOMMANDLISTENER( "listener_vote", "yes" );
-	CMD_ADDSERVERCOMMANDLISTENER( "listener_vote", "no" );
+	CMD_ADDCOMMANDLISTENER( "listener_vote", "yes" );
+	CMD_ADDCOMMANDLISTENER( "listener_vote", "no" );
 	VOTE_ADDVOTEABLE( "cvarall", "cvarall ca", "votestart cvarall <dvarname> <newval>", ::VOTEABLE_CVARALL_PRE_f, ::VOTEABLE_CVARALL_POST_f );
 	VOTE_ADDVOTEABLE( "kick", "kick k", "votestart kick <name|guid|clientnum|self>", ::VOTEABLE_KICK_PRE_f, ::VOTEABLE_KICK_POST_f );
 }

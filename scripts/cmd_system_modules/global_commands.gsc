@@ -169,7 +169,6 @@ CMD_INVISIBLE_f( arg_list )
 		}
 		else 
 		{
-			is_invisible = is_true( target.is_invisible );
 			result[ "filter" ] = "cmdinfo";
 			result[ "message" ] = "invisible: Toggled invisibility for " + target.name;
 		}
@@ -205,44 +204,73 @@ CMD_SETRANK_f( arg_list )
 		{
 			if ( isDefined( arg_list[ 1 ] ) )
 			{
-				switch ( arg_list[ 1 ] )
+				if ( self.cmdpower_server > target.cmdpower_server )
 				{
-					case "any":
-						target.cmdpower_server = 1;
-						new_rank = "any";
-						break;
-					case "trusted":
-						target.cmdpower_server = 20;
-						new_rank = "trusted";
-						break;
-					case "elevated":
-						target.cmdpower_server = 40;
-						new_rank = "elevated";
-						break;
-					case "moderator":
-						target.cmdpower_server = 60;
-						target.tcs_rank = "moderator";
-						break;
-					case "admin":
-						target.cmdpower_server = 80;
-						new_rank = "admin";
-						break;
-					case "owner":
-						target.cmdpower_server = 100;
-						new_rank = "owner";
-						break;
-					default:
-						break;
-				}
-				if ( isDefined( new_rank ) )
-				{
-					result[ "filter" ] = "cmdinfo";
-					result[ "message" ] = "setrank: Target's new rank is " + new_rank;
+					switch ( arg_list[ 1 ] )
+					{
+						case "none":
+							new_cmdpower_server = level.CMD_POWER_NONE;
+							new_cmdpower_client = level.CMD_POWER_NONE;
+							new_rank = level.TCS_RANK_NONE;
+							break;
+						case "user":
+							new_cmdpower_server = level.CMD_POWER_USER;
+							new_cmdpower_client = level.CMD_POWER_USER;
+							new_rank = level.TCS_RANK_USER;
+							break;
+						case "trs":
+						case "trusted":
+							new_cmdpower_server = level.CMD_POWER_TRUSTED_USER;
+							new_cmdpower_client = level.CMD_POWER_TRUSTED_USER;
+							new_rank = level.TCS_RANK_TRUSTED_USER;
+							break;
+						case "ele":
+						case "elevated":
+							new_cmdpower_server = level.CMD_POWER_ELEVATED_USER;
+							new_cmdpower_client = level.CMD_POWER_ELEVATED_USER;
+							new_rank = level.TCS_RANK_ELEVATED_USER;
+							break;
+						case "mod":
+						case "moderator":
+							new_cmdpower_server = level.CMD_POWER_MODERATOR;
+							new_cmdpower_client = level.CMD_POWER_MODERATOR;
+							new_rank = level.TCS_RANK_MODERATOR;
+							break;
+						case "cht":
+						case "cheat":
+							new_cmdpower_server = level.CMD_POWER_CHEAT;
+							new_cmdpower_client = level.CMD_POWER_CHEAT;
+							new_rank = level.TCS_RANK_CHEAT;
+							break;
+						case "host":
+						case "owner":
+							new_cmdpower_server = level.CMD_POWER_HOST;
+							new_cmdpower_client = level.CMD_POWER_HOST;
+							new_rank = level.TCS_RANK_HOST;
+							break;
+						default:
+							break;
+					}
+					if ( isDefined( new_rank ) )
+					{
+						result[ "filter" ] = "cmdinfo";
+						result[ "message" ] = "setrank: Target's new rank is " + new_rank;
+						target.tcs_rank = new_rank;
+						target.cmdpower_server = new_cmdpower_server;
+						target.cmdpower_client = new_cmdpower_client;
+						add_player_perms_entry( target );
+						level COM_PRINTF( COM_GET_CMD_FEEDBACK_CHANNEL(), "cmdinfo", "Your new rank is " + new_rank, target );
+					}
+					else 
+					{
+						result[ "filter" ] = "cmderror";
+						result[ "message" ] = "setrank: Invalid rank " + arg_list[ 1 ];
+					}
 				}
 				else 
 				{
 					result[ "filter" ] = "cmderror";
-					result[ "message" ] = "setrank: Invalid rank " + arg_list[ 1 ];
+					result[ "message" ] = "setrank: Insufficient cmdpower to set " + target.name "'s rank";
 				}
 			}
 			else 
