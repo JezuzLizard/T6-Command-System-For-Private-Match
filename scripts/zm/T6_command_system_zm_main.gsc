@@ -1,16 +1,16 @@
-#include maps/mp/zombies/_zm;
-#include maps/mp/zombies/_zm_perks;
-#include maps/mp/zombies/_zm_score;
+#include maps\mp\zombies\_zm;
+#include maps\mp\zombies\_zm_perks;
+#include maps\mp\zombies\_zm_score;
+#include maps\mp\zombies\_zm_weapons;
 
-#include scripts/cmd_system_modules/_cmd_util;
-#include scripts/cmd_system_modules/_com;
-#include scripts/cmd_system_modules/_text_parser;
-#include scripts/cmd_system_modules/_vote;
-#include scripts/cmd_system_modules/_listener;
-#include scripts/cmd_system_modules/_perms;
+#include scripts\cmd_system_modules\_cmd_util;
+#include scripts\cmd_system_modules\_com;
+#include scripts\cmd_system_modules\_text_parser;
+#include scripts\cmd_system_modules\_listener;
+#include scripts\cmd_system_modules\_perms;
 
-#include common_scripts/utility;
-#include maps/mp/_utility;
+#include common_scripts\utility;
+#include maps\mp\_utility;
 
 main()
 {
@@ -28,6 +28,7 @@ main()
 	CMD_ADDSERVERCOMMAND( "givepermaperk", "givepermaperk gpp", "givepermaperk <name|guid|clientnum|self> <perkname> ...", ::CMD_GIVEPERMAPERK_f, level.CMD_POWER_CHEAT );
 	CMD_ADDSERVERCOMMAND( "givepoints", "givepoints gpts", "givepoints <name|guid|clientnum|self> <amount>", ::CMD_GIVEPOINTS_f, level.CMD_POWER_CHEAT );
 	CMD_ADDSERVERCOMMAND( "givepowerup", "givepowerup gpow", "givepowerup <name|guid|clientnum|self> <powerupname>", ::CMD_GIVEPOWERUP_f, level.CMD_POWER_CHEAT );
+	CMD_ADDSERVERCOMMAND( "giveweapon", "giveweapon gwep", "giveweapon <name|guid|clientnum|self> <weapon>", ::CMD_GIVEWEAPON_f, level.CMD_POWER_CHEAT );
 }
 
 CMD_GIVEPOWERUP_f( arg_list )
@@ -132,7 +133,7 @@ CMD_GIVEPERK_f( arg_list )
 	else 
 	{
 		result[ "filter" ] = "cmderror";
-		result[ "message" ] = "giveperk: Usage giveperk <name|guid|clientnum|self> <perkname>";
+		result[ "message" ] = "giveperk: Usage giveperk <name|guid|clientnum|self> <perkname> ...";
 	}
 	return result;
 }
@@ -232,7 +233,7 @@ CMD_GIVEPERMAPERK_f( arg_list )
 						target give_perma_perk( perma_perk_name );
 					}
 				}
-				number = arg_list.size - 1;
+				number = arg_list.size;
 				result[ "filter" ] = "cmdinfo";
 				result[ "message" ] = "givepermaperk: Gave " + number + " perma perks to " + target.name;
 			}
@@ -262,7 +263,7 @@ CMD_GIVEPERMAPERK_f( arg_list )
 	else 
 	{
 		result[ "filter" ] = "cmderror";
-		result[ "message" ] = "givepermaperk: Usage givepermaperk <name|guid|clientnum|self> <perkname>";
+		result[ "message" ] = "givepermaperk: Usage givepermaperk <name|guid|clientnum|self> <perkname> ...";
 	}
 	return result;
 }
@@ -311,7 +312,6 @@ CMD_GIVEPOINTS_f( arg_list )
 CMD_SPECTATOR_f( arg_list )
 {
 	result = [];
-	should_respawn = arg_list[ 1 ];
 	if ( array_validate( arg_list ) )
 	{
 		target = self find_player_in_server( arg_list[ 0 ] );
@@ -329,7 +329,10 @@ CMD_SPECTATOR_f( arg_list )
 	if ( isDefined( target ) )
 	{
 		target spawnspectator();
-		target.tcs_original_respawn = target.spectator_respawn;
+		if ( !isDefined( target.tcs_original_respawn ) )
+		{
+			target.tcs_original_respawn = target.spectator_respawn;
+		}
 		target.spectator_respawn = undefined;
 	}
 	return result;
@@ -349,16 +352,25 @@ CMD_TOGGLERESPAWN_f( arg_list )
 		}
 		else 
 		{
-			currently_respawning = isDefined( target.spectator_respawn );
 			result[ "filter" ] = "cmdinfo";
-			result[ "message" ] = ( currently_respawning ? "togglerespawn: " + target.name + " will no longer respawn" : "togglerespawn: " + target.name + " will respawn again" );
+			result[ "message" ] = "togglerespawn: " + target.name + " has their respawn toggled";
 		}
 	}
 	if ( isDefined( target ) )
 	{
 		currently_respawning = isDefined( target.spectator_respawn );
-		target.tcs_original_respawn = target.spectator_respawn;
-		target.spectator_respawn = currently_respawning ? undefined : target.tcs_original_respawn;
+		if ( !isDefined( target.tcs_original_respawn ) )
+		{
+			target.tcs_original_respawn = target.spectator_respawn;
+		}
+		if ( currently_respawning )
+		{
+			target.spectator_respawn = undefined;
+		}
+		else 
+		{
+			target.spectator_respawn = target.tcs_original_respawn;
+		}
 	}
 	return result;
 }
@@ -384,4 +396,9 @@ CMD_RESPAWNSPECTATORS_f( arg_list )
 			}
 		}
 	}
+}
+
+CMD_GIVEWEAPON_f( arg_list )
+{
+
 }

@@ -1,18 +1,15 @@
 
-#include scripts/cmd_system_modules/_cmd_util;
-#include scripts/cmd_system_modules/_com;
-#include scripts/cmd_system_modules/_text_parser;
-#include scripts/cmd_system_modules/_vote;
-#include scripts/cmd_system_modules/_listener;
-#include scripts/cmd_system_modules/_perms;
-#include scripts/cmd_system_modules/global_client_commands;
-#include scripts/cmd_system_modules/global_client_threaded_commands;
-#include scripts/cmd_system_modules/global_commands;
-#include scripts/cmd_system_modules/global_threaded_commands;
-#include scripts/cmd_system_modules/global_voteables;
+#include scripts\cmd_system_modules\_cmd_util;
+#include scripts\cmd_system_modules\_com;
+#include scripts\cmd_system_modules\_text_parser;
+#include scripts\cmd_system_modules\_perms;
+#include scripts\cmd_system_modules\global_client_commands;
+#include scripts\cmd_system_modules\global_client_threaded_commands;
+#include scripts\cmd_system_modules\global_commands;
+#include scripts\cmd_system_modules\global_threaded_commands;
 
-#include common_scripts/utility;
-#include maps/mp/_utility;
+#include common_scripts\utility;
+#include maps\mp\_utility;
 
 main()
 {
@@ -20,8 +17,7 @@ main()
 	level.custom_commands_restart_countdown = 5;
 	level.commands_total = 0;
 	level.commands_page_count = 0;
-	level.commands_page_max = 5;
-	level.custom_commands_listener_timeout = getDvarIntDefault( "tcs_cmd_listener_timeout", 12 );
+	level.commands_page_max = 4;
 	level.custom_commands_cooldown_time = getDvarIntDefault( "tcs_cmd_cd", 5 );
 	level.CMD_POWER_NONE = 0;
 	level.CMD_POWER_USER = 1;
@@ -46,14 +42,12 @@ main()
 	{
 		level.custom_commands_tokens = strTok( tokens, " " );
 	}
-	// "/" is always useable by default
+	// "\" is always useable by default
 	CMD_INIT_PERMS();
 	level.tcs_add_server_command_func = ::CMD_ADDSERVERCOMMAND;
 	level.tcs_add_client_command_func = ::CMD_ADDCLIENTCOMMAND;
-	level.tcs_add_voteable_func = ::VOTE_ADDVOTEABLE;
 	level.tcs_remove_server_command = ::CMD_REMOVESERVERCOMMAND;
 	level.tcs_remove_client_command = ::CMD_REMOVECLIENTCOMMAND;
-	level.tcs_remove_voteable_func = ::VOTE_REMOVEVOTEABLE;
 	level.server_commands = [];
 	CMD_ADDSERVERCOMMAND( "cvar", "cvar cv", "cvar <name|guid|clientnum|self> <cvarname> <newval>", ::CMD_CVAR_f, level.CMD_POWER_CHEAT );
 	CMD_ADDSERVERCOMMAND( "dvar", "dvar dv", "dvar <dvarname> <newval>", ::CMD_SERVER_DVAR_f, level.CMD_POWER_CHEAT );
@@ -64,18 +58,13 @@ main()
 	CMD_ADDSERVERCOMMAND( "setrank", "setrank sr", "setrank <name|guid|clientnum|self> <rank>", ::CMD_SETRANK_f, level.CMD_POWER_HOST );
 
 	level.client_commands = [];
-	CMD_ADDCLIENTCOMMAND( "cmdlist", "cmdlist cl", "cmdlist", ::CMD_CMDLIST_f, level.CMD_POWER_NONE, true );
-	CMD_ADDCLIENTCOMMAND( "votelist", "votelist vl", "votelist", ::CMD_UTILITY_VOTELIST_f, level.CMD_POWER_NONE, true );
-	CMD_ADDCLIENTCOMMAND( "playerlist", "playerlist plist", "playerlist [team]", ::CMD_PLAYERLIST_f, level.CMD_POWER_NONE, true );
-	CMD_ADDCLIENTCOMMAND( "votestart", "votestart vs", "votestart <voteable> [arg1] [arg2] [arg3] [arg4]", ::CMD_VOTESTART_f, level.CMD_POWER_TRUSTED_USER, true );
-	VOTE_INIT();
+	// CMD_ADDCLIENTCOMMAND( "cmdlist", "cmdlist cl", "cmdlist", ::CMD_CMDLIST_f, level.CMD_POWER_NONE, true );
+	// CMD_ADDCLIENTCOMMAND( "playerlist", "playerlist plist", "playerlist [team]", ::CMD_PLAYERLIST_f, level.CMD_POWER_NONE, true );
 
-	CMD_ADDCOMMANDLISTENER( "listener_cmdlist", "showmore" );
-	CMD_ADDCOMMANDLISTENER( "listener_cmdlist", "page" );
-	CMD_ADDCOMMANDLISTENER( "listener_playerlist", "showmore" );
-	CMD_ADDCOMMANDLISTENER( "listener_playerlist", "page" );
-	CMD_ADDCOMMANDLISTENER( "listener_voteables", "showmore" );
-	CMD_ADDCOMMANDLISTENER( "listener_voteables", "page" );
+	// CMD_ADDCOMMANDLISTENER( "listener_cmdlist", "showmore" );
+	// CMD_ADDCOMMANDLISTENER( "listener_cmdlist", "page" );
+	// CMD_ADDCOMMANDLISTENER( "listener_playerlist", "showmore" );
+	// CMD_ADDCOMMANDLISTENER( "listener_playerlist", "page" );
 	level thread COMMAND_BUFFER();
 	level thread end_commands_on_end_game();
 	level thread scr_dvar_command_watcher();
@@ -95,7 +84,7 @@ scr_dvar_command_watcher()
 		dvar_value = getDvar( "scrcmd" );
 		if ( dvar_value != "" )
 		{
-			level notify( "say", dvar_value, level.host, false );
+			level notify( "say", dvar_value, undefined, false );
 			setDvar( "scrcmd", "" );
 		}
 		wait 0.05;
@@ -112,11 +101,13 @@ COMMAND_BUFFER()
 		{
 			continue;
 		}
+
+		//Testing code remove on release
 		if ( !isDefined( level.host ) )
 		{
 			level.host = level.players[ 0 ];
-			level.host.cmd_power = 100;
-			level.host.is_admin = true;
+			level.host.cmdpower_server = level.CMD_POWER_HOST;
+			level.host.cmdpower_client = level.CMD_POWER_HOST;
 		}
 		if ( !isDefined( player ) )
 		{
@@ -128,26 +119,6 @@ COMMAND_BUFFER()
 			continue;
 		}
 		message = toLower( message );
-		// found_listener = false;
-		// if ( array_validate( player.cmd_listeners ) )
-		// {
-		// 	listener_cmds_args = strTok( message, " " );
-		// 	cmdname = listener_cmds_args[ 0 ];
-		// 	listener_keys = getArrayKeys( player.cmd_listeners );
-		// 	foreach ( listener in listener_keys )
-		// 	{
-		// 		if ( CMD_ISCOMMANDLISTENER( listener, cmdname ) && player CMD_ISCOMMANDLISTENER_ACTIVE( listener ) )
-		// 		{
-		// 			player CMD_EXECUTELISTENER( listener, listener_cmds_args );
-		// 			found_listener = true;
-		// 			break;
-		// 		}
-		// 	}
-		// 	if ( found_listener )
-		// 	{
-		// 		continue;
-		// 	}
-		// }
 		channel = player COM_GET_CMD_FEEDBACK_CHANNEL();
 		multi_cmds = parse_cmd_message( message );
 		if ( multi_cmds.size < 1 )
@@ -169,11 +140,11 @@ COMMAND_BUFFER()
 			is_clientcmd = multi_cmds[ cmd_index ][ "is_clientcmd" ];
 			if ( !player has_permission_for_cmd( cmdname, is_clientcmd ) )
 			{
-				level COM_PRINTF( channel, "cmderror", "You do not have permission to use " + cmdname + " command.", player );
+				level COM_PRINTF( channel, "cmderror", "You do not have permission to use " + cmdname + " command", player );
 			}
 			else
 			{
-				player CMD_EXECUTE( cmdname, args );
+				player CMD_EXECUTE( cmdname, args, is_clientcmd );
 				player thread CMD_COOLDOWN();
 			}
 		}

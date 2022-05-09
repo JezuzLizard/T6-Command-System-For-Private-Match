@@ -1,11 +1,11 @@
-#include scripts/cmd_system_modules/_cmd_util;
-#include scripts/cmd_system_modules/_com;
-#include scripts/cmd_system_modules/_listener;
-#include scripts/cmd_system_modules/_perms;
-#include scripts/cmd_system_modules/_text_parser;
+#include scripts\cmd_system_modules\_cmd_util;
+#include scripts\cmd_system_modules\_com;
+#include scripts\cmd_system_modules\_listener;
+#include scripts\cmd_system_modules\_perms;
+#include scripts\cmd_system_modules\_text_parser;
 
-#include common_scripts/utility;
-#include maps/mp/_utility;
+#include common_scripts\utility;
+#include maps\mp\_utility;
 
 CMD_SERVER_DVAR_f( arg_list )
 {
@@ -270,7 +270,7 @@ CMD_SETRANK_f( arg_list )
 				else 
 				{
 					result[ "filter" ] = "cmderror";
-					result[ "message" ] = "setrank: Insufficient cmdpower to set " + target.name "'s rank";
+					result[ "message" ] = "setrank: Insufficient cmdpower to set " + target.name + "'s rank";
 				}
 			}
 			else 

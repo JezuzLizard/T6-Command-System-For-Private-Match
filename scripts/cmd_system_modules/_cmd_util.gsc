@@ -1,6 +1,6 @@
-#include common_scripts/utility;
-#include maps/mp/_utility;
-#include scripts/cmd_system_modules/_com;
+#include common_scripts\utility;
+#include maps\mp\_utility;
+#include scripts\cmd_system_modules\_com;
 
 get_perk_from_alias_zm( alias )
 {
@@ -442,7 +442,7 @@ recalculate_command_page_counts()
 {
 	total_commands = arrayCombine( level.server_commands, level.client_commands, 1, 0 );
 	level.commands_page_count = 0;
-	for ( level.commands_total = 0; i < total_commands.size; level.commands_total++ )
+	for ( level.commands_total = 0; level.commands_total < total_commands.size; level.commands_total++ )
 	{
 		if ( ceil( level.commands_total / level.commands_page_max ) >= level.commands_page_count )
 		{
@@ -462,65 +462,83 @@ recalculate_command_page_counts()
 // 	}
 // }
 
-VOTE_ADDVOTEABLE( vote_type, vote_type_aliases, usage, pre_vote_execute_func, post_vote_execute_func )
-{
-	if ( !isDefined( level.custom_votes ) )
-	{
-		level.custom_votes = [];
-	}
-	if ( !isDefined( level.custom_votes[ vote_type ] ) )
-	{
-		level.custom_votes_total++;
-		if ( ceil( level.custom_votes_total / level.commands_page_max ) >= level.custom_votes_page_count )
-		{
-			level.custom_votes_page_count++;
-		}
-		level.custom_votes[ vote_type ] = spawnStruct();
-		level.custom_votes[ vote_type ].pre_func = pre_vote_execute_func;
-		level.custom_votes[ vote_type ].post_func = post_vote_execute_func;
-		level.custom_votes[ vote_type ].usage = usage;
-		level.custom_votes[ vote_type ].aliases = vote_type_aliases;
-	}
-}
+// VOTE_ADDVOTEABLE( vote_type, vote_type_aliases, usage, pre_vote_execute_func, post_vote_execute_func )
+// {
+// 	if ( !isDefined( level.custom_votes ) )
+// 	{
+// 		level.custom_votes = [];
+// 	}
+// 	if ( !isDefined( level.custom_votes[ vote_type ] ) )
+// 	{
+// 		level.custom_votes_total++;
+// 		if ( ceil( level.custom_votes_total / level.commands_page_max ) >= level.custom_votes_page_count )
+// 		{
+// 			level.custom_votes_page_count++;
+// 		}
+// 		level.custom_votes[ vote_type ] = spawnStruct();
+// 		level.custom_votes[ vote_type ].pre_func = pre_vote_execute_func;
+// 		level.custom_votes[ vote_type ].post_func = post_vote_execute_func;
+// 		level.custom_votes[ vote_type ].usage = usage;
+// 		level.custom_votes[ vote_type ].aliases = vote_type_aliases;
+// 	}
+// }
 
-VOTE_REMOVEVOTEABLE( vote_type )
-{
-	new_command_array = [];
-	vote_keys = getArrayKeys( level.custom_votes );
-	level.custom_votes_total = 0;
-	level.custom_votes_page_count = 0;
-	foreach ( vote in vote_keys )
-	{
-		if ( vote_type != vote )
-		{
-			new_command_array[ vote ] = spawnStruct();
-			new_command_array[ vote ].pre_func = level.custom_votes[ vote ].pre_func;
-			new_command_array[ vote ].post_func = level.custom_votes[ vote ].post_func;
-			new_command_array[ vote ].usage = level.custom_votes[ vote ].usage;
-			new_command_array[ vote ].aliases = level.custom_votes[ vote ].aliases;
-			level.custom_votes_total++;
-			if ( ceil( level.custom_votes_total / level.commands_page_max ) >= level.custom_votes_page_count )
-			{
-				level.custom_votes_page_count++;
-			}
-		}
-	}
-	level.custom_votes = new_command_array;
-} 
+// VOTE_REMOVEVOTEABLE( vote_type )
+// {
+// 	new_command_array = [];
+// 	vote_keys = getArrayKeys( level.custom_votes );
+// 	level.custom_votes_total = 0;
+// 	level.custom_votes_page_count = 0;
+// 	foreach ( vote in vote_keys )
+// 	{
+// 		if ( vote_type != vote )
+// 		{
+// 			new_command_array[ vote ] = spawnStruct();
+// 			new_command_array[ vote ].pre_func = level.custom_votes[ vote ].pre_func;
+// 			new_command_array[ vote ].post_func = level.custom_votes[ vote ].post_func;
+// 			new_command_array[ vote ].usage = level.custom_votes[ vote ].usage;
+// 			new_command_array[ vote ].aliases = level.custom_votes[ vote ].aliases;
+// 			level.custom_votes_total++;
+// 			if ( ceil( level.custom_votes_total / level.commands_page_max ) >= level.custom_votes_page_count )
+// 			{
+// 				level.custom_votes_page_count++;
+// 			}
+// 		}
+// 	}
+// 	level.custom_votes = new_command_array;
+// } 
 
-CMD_EXECUTE( cmdname, arg_list )
+CMD_EXECUTE( cmdname, arg_list, is_clientcmd )
 {
 	if ( is_true( level.threaded_commands[ cmdname ] ) )
 	{
-		self thread [[ level.server_commands[ cmdname ].func ]]( arg_list );
+		if ( is_clientcmd )
+		{
+			self thread [[ level.client_commands[ cmdname ].func ]]( arg_list );
+		}
+		else 
+		{
+			self thread [[ level.server_commands[ cmdname ].func ]]( arg_list );
+		}
 		return;
 	}
 	else 
 	{
 		result = [];
-		result = self [[ level.server_commands[ cmdname ].func ]]( arg_list );
+		if ( is_clientcmd )
+		{
+			result = self [[ level.client_commands[ cmdname].func ]]( arg_list );
+		}
+		else 
+		{
+			result = self [[ level.server_commands[ cmdname ].func ]]( arg_list );
+		}
 	}
-	channel = "iprint";
+	if ( !isDefined( result ) )
+	{
+		return;
+	}
+	channel = self COM_GET_CMD_FEEDBACK_CHANNEL();
 	if ( result[ "filter" ] != "cmderror" )
 	{
 		cmd_log = self.name + " executed " + result[ "message" ];
@@ -576,9 +594,4 @@ tcs_on_connect()
 			player.tcs_rank = getDvarStringDefault( "tcs_default_rank", level.TCS_RANK_USER );
 		}
 	}
-}
-
-cheats_enabled()
-{
-	return getDvarIntDefault( "tcs_cheats", 1 ); 
 }

@@ -1,7 +1,7 @@
-#include common_scripts/utility;
-#include maps/mp/_utility;
-#include scripts/cmd_system_modules/_cmd_util;
-#include scripts/cmd_system_modules/_com;
+#include common_scripts\utility;
+#include maps\mp\_utility;
+#include scripts\cmd_system_modules\_cmd_util;
+#include scripts\cmd_system_modules\_com;
 
 CMD_INIT_PERMS()
 {
@@ -103,7 +103,7 @@ player_exists_in_perms_system( player )
 {
 	for ( i = 0; i < level.tcs_player_entries.size; i++ )
 	{
-		if ( find_player_in_server( level.tcs_player_entries.player_entry ) == player )
+		if ( find_player_in_server( level.tcs_player_entries[ i ].player_entry ) == player )
 		{
 			return true;
 		}
