@@ -25,7 +25,7 @@ CMD_INIT_PERMS()
 			else 
 			{
 				level COM_PRINTF( "con|g_log", "permserror", "tcs_player_cmd_perms index " + index + " has (player_entry " + isDefined( player_entry_array[ 0 ] ) + "), (rank " + isDefined( player_entry_array[ 1 ] ) + "), (cmdpower_server " + isDefined( player_entry_array[ 2 ] ) + "), (cmdpower_client " + isDefined( player_entry_array[ 3 ] ) + ")" );
-				level COM_PRINTF( "con|g_log", "permserror", "Please check your tcd_player_cmd_perms dvar" );
+				level COM_PRINTF( "con|g_log", "permserror", "Please check your tcs_player_cmd_perms dvar" );
 			}
 			index++;
 		}

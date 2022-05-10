@@ -53,10 +53,10 @@ main()
 	level.server_commands = [];
 	CMD_ADDSERVERCOMMAND( "setcvar", "setcvar scv", "setcvar <name|guid|clientnum|self> <cvarname> <newval>", ::CMD_SETCVAR_f, level.CMD_POWER_CHEAT );
 	CMD_ADDSERVERCOMMAND( "dvar", "dvar dv", "dvar <dvarname> <newval>", ::CMD_SERVER_DVAR_f, level.CMD_POWER_CHEAT );
-	CMD_ADDSERVERCOMMAND( "cvarall", "cvarall cva", "cvarall <dvarname> <newval>", ::CMD_CVARALL_f, level.CMD_POWER_CHEAT );
+	CMD_ADDSERVERCOMMAND( "cvarall", "cvarall cva", "cvarall <cvarname> <newval>", ::CMD_CVARALL_f, level.CMD_POWER_CHEAT );
 	CMD_ADDSERVERCOMMAND( "givegod", "givegod ggd", "givegod <name|guid|clientnum|self>", ::CMD_GIVEGOD_f, level.CMD_POWER_CHEAT );
-	CMD_ADDSERVERCOMMAND( "givenotarget", "givenotarget gnt", "notarget <name|guid|clientnum|self>", ::CMD_GIVENOTARGET_f, level.CMD_POWER_CHEAT );
-	CMD_ADDSERVERCOMMAND( "giveinvisible", "giveinvisible ginv", "invisible <name|guid|clientnum|self>", ::CMD_GIVEINVISIBLE_f, level.CMD_POWER_CHEAT );
+	CMD_ADDSERVERCOMMAND( "givenotarget", "givenotarget gnt", "givenotarget <name|guid|clientnum|self>", ::CMD_GIVENOTARGET_f, level.CMD_POWER_CHEAT );
+	CMD_ADDSERVERCOMMAND( "giveinvisible", "giveinvisible ginv", "giveinvisible <name|guid|clientnum|self>", ::CMD_GIVEINVISIBLE_f, level.CMD_POWER_CHEAT );
 	CMD_ADDSERVERCOMMAND( "setrank", "setrank sr", "setrank <name|guid|clientnum|self> <rank>", ::CMD_SETRANK_f, level.CMD_POWER_HOST );
 
 	CMD_ADDSERVERCOMMAND( "execonallplayers", "execonallplayers execonall exall", "execonallplayers <cmdname> [cmdargs] ...", ::CMD_EXECONALLPLAYERS_f, level.CMD_POWER_HOST );
@@ -70,7 +70,7 @@ main()
 	CMD_ADDCLIENTCOMMAND( "printorigin", "printorigin printorg por", "printorigin", ::CMD_PRINTORIGIN_f, level.CMD_POWER_NONE );
 	CMD_ADDCLIENTCOMMAND( "printangles", "printangles printang pan", "printangles", ::CMD_PRINTANGLES_f, level.CMD_POWER_NONE );
 	CMD_ADDCLIENTCOMMAND( "bottomlessclip", "bottomlessclip botclip bcl", "bottomlessclip", ::CMD_BOTTOMLESSCLIP_f, level.CMD_POWER_CHEAT );
-	CMD_ADDCLIENTCOMMAND( "teleport", "teleport tele", "teleport <name|guid|clientnum|origin>", ::CMD_TELEPORT_f, level.CMD_POWER_CHEAT );
+	//CMD_ADDCLIENTCOMMAND( "teleport", "teleport tele", "teleport <name|guid|clientnum|origin>", ::CMD_TELEPORT_f, level.CMD_POWER_CHEAT );
 	CMD_ADDCLIENTCOMMAND( "cvar", "cvar cv", "cvar <cvarname> <newval>", ::CMD_CVAR_f, level.CMD_POWER_CHEAT );
 	// CMD_ADDCLIENTCOMMAND( "cmdlist", "cmdlist cl", "cmdlist", ::CMD_CMDLIST_f, level.CMD_POWER_NONE, true );
 	// CMD_ADDCLIENTCOMMAND( "playerlist", "playerlist plist", "playerlist [team]", ::CMD_PLAYERLIST_f, level.CMD_POWER_NONE, true );
@@ -96,7 +96,7 @@ scr_dvar_command_watcher()
 	wait 1;
 	while ( true )
 	{
-		dvar_value = getDvar( "scrcmd" );
+		dvar_value = getDvar( "tcscmd" );
 		if ( dvar_value != "" )
 		{
 			level notify( "say", dvar_value, undefined, false );
@@ -115,14 +115,6 @@ COMMAND_BUFFER()
 		if ( isDefined( player ) && !isHidden && !is_command_token( message[ 0 ] ) )
 		{
 			continue;
-		}
-
-		//Testing code remove on release
-		if ( !isDefined( level.host ) )
-		{
-			level.host = level.players[ 0 ];
-			level.host.cmdpower_server = level.CMD_POWER_HOST;
-			level.host.cmdpower_client = level.CMD_POWER_HOST;
 		}
 		if ( !isDefined( player ) )
 		{
