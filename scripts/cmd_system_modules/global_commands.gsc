@@ -42,17 +42,17 @@ CMD_CVARALL_f( arg_list )
 		new_dvar[ "value" ] = dvar_value; 
 		level.clientdvars[ level.clientdvars.size ] = new_dvar;
 		result[ "filter" ] = "cmdinfo";
-		result[ "message" ] = "cvarall: Successfully set " + dvar_name + " to " + dvar_value + " for all players";
+		result[ "message" ] = "Successfully set " + dvar_name + " to " + dvar_value + " for all players";
 	}
 	else 
 	{
 		result[ "filter" ] = "cmderror";
-		result[ "message" ] = "cvarall: Usage cvarall <dvarname> <newval>";
+		result[ "message" ] = "Usage cvarall <dvarname> <newval>";
 	}
 	return result;
 }
 
-CMD_CVAR_f( arg_list )
+CMD_SETCVAR_f( arg_list )
 {
 	result = [];
 	if ( array_validate( arg_list ) && arg_list.size == 3 )
@@ -64,23 +64,23 @@ CMD_CVAR_f( arg_list )
 			dvar_value = arg_list[ 2 ];
 			player setClientDvar( dvar_name, dvar_value );
 			result[ "filter" ] = "cmdinfo";
-			result[ "message" ] = "cvar: Successfully set " + player.name + " " + dvar_name + " to " + dvar_value;
+			result[ "message" ] = "Successfully set " + player.name + "'s " + dvar_name + " to " + dvar_value;
 		}
 		else 
 		{
 			result[ "filter" ] = "cmderror";
-			result[ "message" ] = "cvar: Could not find player";
+			result[ "message" ] = "Could not find player";
 		}
 	}
 	else 
 	{
 		result[ "filter" ] = "cmderror";
-		result[ "message" ] = "cvar: Usage cvar <name|guid|clientnum|self> <cvarname> <newval>";
+		result[ "message" ] = "Usage cvar <name|guid|clientnum|self> <cvarname> <newval>";
 	}
 	return result;
 }
 
-CMD_GOD_f( arg_list )
+CMD_GIVEGOD_f( arg_list )
 {
 	result = [];
 	if ( array_validate( arg_list ) )
@@ -89,36 +89,36 @@ CMD_GOD_f( arg_list )
 		if ( !isDefined( target ) )
 		{
 			result[ "filter" ] = "cmderror";
-			result[ "message" ] = "god: Could not find player";
+			result[ "message" ] = "Could not find player";
 		}
 		else 
 		{
 			result[ "filter" ] = "cmdinfo";
-			result[ "message" ] = "god: Toggled god for " + target.name;
+			result[ "message" ] = "Toggled god for " + target.name;
 		}
 	}
 	else
 	{
 		result[ "filter" ] = "cmderror";
-		result[ "message" ] = "god: Usage god <name|guid|clientnum|self>";
+		result[ "message" ] = "Usage givegod <name|guid|clientnum|self>";
 	}
 	if ( isDefined( target ) )
 	{
-		if ( !is_true( target.is_invulnerable ) )
+		if ( !is_true( target.tcs_is_invulnerable ) )
 		{
 			target enableInvulnerability();
-			target.is_invulnerable = true;
+			target.tcs_is_invulnerable = true;
 		}
 		else 
 		{
 			target disableInvulnerability();
-			target.is_invulnerable = false;
+			target.tcs_is_invulnerable = false;
 		}
 	}
 	return result;
 }
 
-CMD_NOTARGET_f( arg_list )
+CMD_GIVENOTARGET_f( arg_list )
 {
 	result = [];
 	if ( array_validate( arg_list ) )
@@ -127,36 +127,36 @@ CMD_NOTARGET_f( arg_list )
 		if ( !isDefined( target ) )
 		{
 			result[ "filter" ] = "cmderror";
-			result[ "message" ] = "notarget: Could not find player";
+			result[ "message" ] = "Could not find player";
 		}
 		else 
 		{
 			result[ "filter" ] = "cmdinfo";
-			result[ "message" ] = "notarget: Toggled notarget for " + target.name;
+			result[ "message" ] = "Toggled notarget for " + target.name;
 		}
 	}
 	else
 	{
 		result[ "filter" ] = "cmderror";
-		result[ "message" ] = "notarget: Usage notarget <name|guid|clientnum|self>";
+		result[ "message" ] = "Usage givenotarget <name|guid|clientnum|self>";
 	}
 	if ( isDefined( target ) )
 	{
-		if ( !is_true( target.is_notarget ) )
+		if ( !is_true( target.tcs_is_notarget ) )
 		{
 			target.ignoreme = true;
-			target.is_notarget = true;
+			target.tcs_is_notarget = true;
 		}
 		else 
 		{
 			target.ignoreme = false;
-			target.is_notarget = false;
+			target.tcs_is_notarget = false;
 		}
 	}
 	return result;
 }
 
-CMD_INVISIBLE_f( arg_list )
+CMD_GIVEINVISIBLE_f( arg_list )
 {
 	result = [];
 	if ( array_validate( arg_list ) )
@@ -165,30 +165,30 @@ CMD_INVISIBLE_f( arg_list )
 		if ( !isDefined( target ) )
 		{
 			result[ "filter" ] = "cmderror";
-			result[ "message" ] = "invisible: Could not find player";
+			result[ "message" ] = "Could not find player";
 		}
 		else 
 		{
 			result[ "filter" ] = "cmdinfo";
-			result[ "message" ] = "invisible: Toggled invisibility for " + target.name;
+			result[ "message" ] = "Toggled invisibility for " + target.name;
 		}
 	}
 	else
 	{
 		result[ "filter" ] = "cmderror";
-		result[ "message" ] = "invisible: Usage invisible <name|guid|clientnum|self>";
+		result[ "message" ] = "Usage giveinvisible <name|guid|clientnum|self>";
 	}
 	if ( isDefined( target ) )
 	{
-		if ( !is_true( target.is_invisible ) )
+		if ( !is_true( target.tcs_is_invisible ) )
 		{
 			target hide();
-			target.is_invisible = true;
+			target.tcs_is_invisible = true;
 		}
 		else 
 		{
 			target show();
-			target.is_invisible = false;
+			target.tcs_is_invisible = false;
 		}
 	}
 	return result;
@@ -254,41 +254,138 @@ CMD_SETRANK_f( arg_list )
 					if ( isDefined( new_rank ) )
 					{
 						result[ "filter" ] = "cmdinfo";
-						result[ "message" ] = "setrank: Target's new rank is " + new_rank;
+						result[ "message" ] = "Target's new rank is " + new_rank;
 						target.tcs_rank = new_rank;
 						target.cmdpower_server = new_cmdpower_server;
 						target.cmdpower_client = new_cmdpower_client;
 						add_player_perms_entry( target );
-						level COM_PRINTF( COM_GET_CMD_FEEDBACK_CHANNEL(), "cmdinfo", "Your new rank is " + new_rank, target );
+						level COM_PRINTF( target COM_GET_CMD_FEEDBACK_CHANNEL(), "cmdinfo", "Your new rank is " + new_rank, target );
 					}
 					else 
 					{
 						result[ "filter" ] = "cmderror";
-						result[ "message" ] = "setrank: Invalid rank " + arg_list[ 1 ];
+						result[ "message" ] = "Invalid rank " + arg_list[ 1 ];
 					}
 				}
 				else 
 				{
 					result[ "filter" ] = "cmderror";
-					result[ "message" ] = "setrank: Insufficient cmdpower to set " + target.name + "'s rank";
+					result[ "message" ] = "Insufficient cmdpower to set " + target.name + "'s rank";
 				}
 			}
 			else 
 			{
 				result[ "filter" ] = "cmderror";
-				result[ "message" ] = "setrank: Usage setrank <name|guid|clientnum|self> <rank>";	
+				result[ "message" ] = "Usage setrank <name|guid|clientnum|self> <rank>";	
 			}
 		}
 		else 
 		{
 			result[ "filter" ] = "cmderror";
-			result[ "message" ] = "setrank: Could not find player";	
+			result[ "message" ] = "Could not find player";	
 		}
 	}
 	else 
 	{
 		result[ "filter" ] = "cmderror";
-		result[ "message" ] = "setrank: Usage setrank <name|guid|clientnum|self> <rank>";	
+		result[ "message" ] = "Usage setrank <name|guid|clientnum|self> <rank>";	
 	}
 	return result;
 }
+
+/*
+	Executes a client command on all players in the server. 
+*/
+CMD_EXECONALLPLAYERS_f( arg_list )
+{
+	result = [];
+	if ( array_validate( arg_list ) )
+	{
+		cmd_to_execute = get_client_cmd_from_alias( arg_list[ 0 ] );
+		if ( cmd_to_execute != "" )
+		{
+			var_args = [];
+			for ( i = 1; i < arg_list.size; i++ )
+			{
+				var_args[ i - 1 ] = arg_list[ i ];
+			}
+			foreach ( player in level.players )
+			{
+				player thread CMD_EXECUTE( cmd_to_execute, var_args, true, level.tcs_use_silent_commands, true );
+			}
+			result[ "filter" ] = "cmdinfo";
+			result[ "message" ] = "Executed " + cmd_to_execute + " on all players";			
+		}
+		else 
+		{
+			result[ "filter" ] = "cmderror";
+			if ( isDefined( arg_list[ 0 ] ) )
+			{
+				result[ "message" ] = "Cmd " + arg_list[ 0 ] + " is invalid";
+			}
+			else 
+			{
+				result[ "message" ] = "Cmd is invalid";
+			}
+		}
+	}
+	else 
+	{
+		result[ "filter" ] = "cmderror";
+		result[ "message" ] = "execonallplayers <cmdname> [cmdargs]...";
+	}
+	return result;
+}
+
+CMD_EXECONTEAM_f( arg_list )
+{
+	result = [];
+	if ( array_validate( arg_list ) )
+	{
+		team = arg_list[ 0 ];
+		cmd = arg_list[ 1 ];
+		if ( isDefined( level.teams[ team ] ) )
+		{
+			cmd_to_execute = get_client_cmd_from_alias( cmd );
+			if ( cmd_to_execute != "" )
+			{
+				var_args = [];
+				for ( i = 2; i < arg_list.size; i++ )
+				{
+					var_args[ i - 2 ] = arg_list[ i ];
+				}
+				players = getPlayers( team );
+				foreach ( player in players )
+				{
+					player thread CMD_EXECUTE( cmd_to_execute, var_args, true, level.tcs_use_silent_commands, true );
+				}
+				result[ "filter" ] = "cmdinfo";
+				result[ "message" ] = "Executed " + cmd_to_execute + " on team " + team;			
+			}
+			else 
+			{
+				result[ "filter" ] = "cmderror";
+				if ( isDefined( cmd ) )
+				{
+					result[ "message" ] = "Cmd " + cmd + " is invalid";
+				}
+				else 
+				{
+					result[ "message" ] = "Cmd is invalid";
+				}
+			}
+		}
+		else 
+		{
+			result[ "filter" ] = "cmderror";
+			result[ "message" ] = "Team " + team + " is invalid";
+		}
+	}
+	else 
+	{
+		result[ "filter" ] = "cmderror";
+		result[ "message" ] = "execonteam <team> <cmdname> [cmdargs]...";
+	}
+	return result;	
+}
+

@@ -121,10 +121,10 @@ CMD_COOLDOWN()
 	{
 		return;
 	}
-	player.cmd_cooldown = level.custom_commands_cooldown_time;
-	while ( player.cmd_cooldown > 0 )
+	self.cmd_cooldown = level.custom_commands_cooldown_time;
+	while ( self.cmd_cooldown > 0 )
 	{
-		player.cmd_cooldown--;
+		self.cmd_cooldown--;
 		wait 1;
 	}
 }

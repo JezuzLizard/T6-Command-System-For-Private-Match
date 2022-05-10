@@ -19,6 +19,8 @@ main()
 	level.commands_page_count = 0;
 	level.commands_page_max = 4;
 	level.custom_commands_cooldown_time = getDvarIntDefault( "tcs_cmd_cd", 5 );
+	level.tcs_use_silent_commands = getDvarIntDefault( "tcs_silent_cmds", 0 );
+	level.tcs_logprint_cmd_usage = getDvarIntDefault( "tcs_logprint_cmd_usage", 1 );
 	level.CMD_POWER_NONE = 0;
 	level.CMD_POWER_USER = 1;
 	level.CMD_POWER_TRUSTED_USER = 20;
@@ -49,15 +51,27 @@ main()
 	level.tcs_remove_server_command = ::CMD_REMOVESERVERCOMMAND;
 	level.tcs_remove_client_command = ::CMD_REMOVECLIENTCOMMAND;
 	level.server_commands = [];
-	CMD_ADDSERVERCOMMAND( "cvar", "cvar cv", "cvar <name|guid|clientnum|self> <cvarname> <newval>", ::CMD_CVAR_f, level.CMD_POWER_CHEAT );
+	CMD_ADDSERVERCOMMAND( "setcvar", "setcvar scv", "setcvar <name|guid|clientnum|self> <cvarname> <newval>", ::CMD_SETCVAR_f, level.CMD_POWER_CHEAT );
 	CMD_ADDSERVERCOMMAND( "dvar", "dvar dv", "dvar <dvarname> <newval>", ::CMD_SERVER_DVAR_f, level.CMD_POWER_CHEAT );
 	CMD_ADDSERVERCOMMAND( "cvarall", "cvarall cva", "cvarall <dvarname> <newval>", ::CMD_CVARALL_f, level.CMD_POWER_CHEAT );
-	CMD_ADDSERVERCOMMAND( "givegod", "givegod ggd", "givegod <name|guid|clientnum|self>", ::CMD_GOD_f, level.CMD_POWER_CHEAT );
-	CMD_ADDSERVERCOMMAND( "givenotarget", "givenotarget gnt", "notarget <name|guid|clientnum|self>", ::CMD_NOTARGET_f, level.CMD_POWER_CHEAT );
-	CMD_ADDSERVERCOMMAND( "giveinvisible", "giveinvisible ginv", "invisible <name|guid|clientnum|self>", ::CMD_INVISIBLE_f, level.CMD_POWER_CHEAT );
+	CMD_ADDSERVERCOMMAND( "givegod", "givegod ggd", "givegod <name|guid|clientnum|self>", ::CMD_GIVEGOD_f, level.CMD_POWER_CHEAT );
+	CMD_ADDSERVERCOMMAND( "givenotarget", "givenotarget gnt", "notarget <name|guid|clientnum|self>", ::CMD_GIVENOTARGET_f, level.CMD_POWER_CHEAT );
+	CMD_ADDSERVERCOMMAND( "giveinvisible", "giveinvisible ginv", "invisible <name|guid|clientnum|self>", ::CMD_GIVEINVISIBLE_f, level.CMD_POWER_CHEAT );
 	CMD_ADDSERVERCOMMAND( "setrank", "setrank sr", "setrank <name|guid|clientnum|self> <rank>", ::CMD_SETRANK_f, level.CMD_POWER_HOST );
 
+	CMD_ADDSERVERCOMMAND( "execonallplayers", "execonallplayers execonall exall", "execonallplayers <cmdname> [cmdargs] ...", ::CMD_EXECONALLPLAYERS_f, level.CMD_POWER_HOST );
+	CMD_ADDSERVERCOMMAND( "execonteam", "execonteam execteam exteam", "execonteam <team> <cmdname> [cmdargs] ...", ::CMD_EXECONTEAM_f, level.CMD_POWER_HOST );
+
 	level.client_commands = [];
+	CMD_ADDCLIENTCOMMAND( "togglehud", "togglehud toghud", "togglehud", ::CMD_TOGGLEHUD_f, level.CMD_POWER_NONE );
+	CMD_ADDCLIENTCOMMAND( "god", "god", "god", ::CMD_GOD_f, level.CMD_POWER_CHEAT );
+	CMD_ADDCLIENTCOMMAND( "notarget", "notarget nt", "notarget", ::CMD_NOTARGET_f, level.CMD_POWER_CHEAT );
+	CMD_ADDCLIENTCOMMAND( "invisible", "invisible invis", "invisible", ::CMD_INVISIBLE_f, level.CMD_POWER_CHEAT );
+	CMD_ADDCLIENTCOMMAND( "printorigin", "printorigin printorg por", "printorigin", ::CMD_PRINTORIGIN_f, level.CMD_POWER_NONE );
+	CMD_ADDCLIENTCOMMAND( "printangles", "printangles printang pan", "printangles", ::CMD_PRINTANGLES_f, level.CMD_POWER_NONE );
+	CMD_ADDCLIENTCOMMAND( "bottomlessclip", "bottomlessclip botclip bcl", "bottomlessclip", ::CMD_BOTTOMLESSCLIP_f, level.CMD_POWER_CHEAT );
+	CMD_ADDCLIENTCOMMAND( "teleport", "teleport tele", "teleport <name|guid|clientnum|origin>", ::CMD_TELEPORT_f, level.CMD_POWER_CHEAT );
+	CMD_ADDCLIENTCOMMAND( "cvar", "cvar cv", "cvar <cvarname> <newval>", ::CMD_CVAR_f, level.CMD_POWER_CHEAT );
 	// CMD_ADDCLIENTCOMMAND( "cmdlist", "cmdlist cl", "cmdlist", ::CMD_CMDLIST_f, level.CMD_POWER_NONE, true );
 	// CMD_ADDCLIENTCOMMAND( "playerlist", "playerlist plist", "playerlist [team]", ::CMD_PLAYERLIST_f, level.CMD_POWER_NONE, true );
 
@@ -79,13 +93,14 @@ init()
 scr_dvar_command_watcher()
 {
 	level endon( "end_commands" );
+	wait 1;
 	while ( true )
 	{
 		dvar_value = getDvar( "scrcmd" );
 		if ( dvar_value != "" )
 		{
 			level notify( "say", dvar_value, undefined, false );
-			setDvar( "scrcmd", "" );
+			setDvar( "tcscmd", "" );
 		}
 		wait 0.05;
 	}
@@ -113,13 +128,13 @@ COMMAND_BUFFER()
 		{
 			player = level.host;
 		}
+		channel = player COM_GET_CMD_FEEDBACK_CHANNEL();
 		if ( isDefined( player.cmd_cooldown ) && player.cmd_cooldown > 0 )
 		{
 			level COM_PRINTF( channel, "cmderror", "You cannot use another command for " + player.cmd_cooldown + " seconds", player );
 			continue;
 		}
 		message = toLower( message );
-		channel = player COM_GET_CMD_FEEDBACK_CHANNEL();
 		multi_cmds = parse_cmd_message( message );
 		if ( multi_cmds.size < 1 )
 		{
@@ -144,7 +159,7 @@ COMMAND_BUFFER()
 			}
 			else
 			{
-				player CMD_EXECUTE( cmdname, args, is_clientcmd );
+				player CMD_EXECUTE( cmdname, args, is_clientcmd, level.tcs_use_silent_commands, level.tcs_logprint_cmd_usage );
 				player thread CMD_COOLDOWN();
 			}
 		}

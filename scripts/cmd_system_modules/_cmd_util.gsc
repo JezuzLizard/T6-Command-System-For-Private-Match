@@ -61,6 +61,7 @@ get_perk_from_alias_zm( alias )
 
 perk_list_zm()
 {
+	gametype = getDvar( "ui_zm_mapstartlocation" );
 	switch ( level.script )
 	{
 		case "zm_transit":
@@ -70,9 +71,23 @@ perk_list_zm()
 		case "zm_highrise":
 			return array( "specialty_armorvest", "specialty_rof", "specialty_quickrevive", "specialty_fastreload", "specialty_additionalprimaryweapon", "specialty_finalstand" );
 		case "zm_prison":
-			return array( "specialty_armorvest", "specialty_rof", "specialty_fastreload", "specialty_deadshot", "specialty_grenadepulldeath" );
+			if ( gametype == "zgrief" )
+			{
+				return array( "specialty_armorvest", "specialty_rof", "specialty_fastreload", "specialty_deadshot", "specialty_grenadepulldeath" );
+			}
+			else 
+			{
+				return array( "specialty_armorvest", "specialty_rof", "specialty_fastreload", "specialty_deadshot", "specialty_additionalprimaryweapon", "specialty_flakjacket" );
+			}
 		case "zm_buried":
-			return array( "specialty_armorvest", "specialty_rof", "specialty_quickrevive", "specialty_fastreload", "specialty_longersprint", "specialty_additionalprimaryweapon", "specialty_nomotionsensor" );
+			if ( gametype == "zgrief" )
+			{
+				return array( "specialty_armorvest", "specialty_rof", "specialty_quickrevive", "specialty_fastreload", "specialty_longersprint", "specialty_additionalprimaryweapon" );
+			}
+			else 
+			{
+				return array( "specialty_armorvest", "specialty_rof", "specialty_quickrevive", "specialty_fastreload", "specialty_longersprint", "specialty_additionalprimaryweapon", "specialty_nomotionsensor" );
+			}
 		case "zm_tomb":
 			return level._random_perk_machine_perk_list;
 	}
@@ -91,6 +106,7 @@ get_powerup_from_alias_zm( alias )
 		case "doublepoints":
 			return "double_points";
 		case "max":
+		case "ammo":
 		case "maxammo":
 			return "full_ammo";
 		case "carp":
@@ -116,18 +132,40 @@ get_powerup_from_alias_zm( alias )
 
 powerup_list_zm()
 {
+	gametype = getDvar( "g_gametype" );
 	switch ( level.script )
 	{
 		case "zm_transit":
-			return array( "nuke", "insta_kill", "double_points", "full_ammo", "carpenter" );
+			if ( gametype == "zgrief" )
+			{
+				return array( "nuke", "insta_kill", "double_points", "full_ammo", "meat_stink", "teller_withdrawl" );
+			}
+			else 
+			{
+				return array( "nuke", "insta_kill", "double_points", "full_ammo", "carpenter", "teller_withdrawl" );
+			}
 		case "zm_nuked":
 			return array( "nuke", "insta_kill", "double_points", "full_ammo", "fire_sale" );
 		case "zm_highrise":
 			return array( "nuke", "insta_kill", "double_points", "full_ammo", "carpenter", "free_perk" );
 		case "zm_prison":
-			return array( "nuke", "insta_kill", "double_points", "full_ammo", "fire_sale" );
+			if ( gametype == "zgrief" )
+			{
+				return array( "nuke", "insta_kill", "double_points", "full_ammo", "fire_sale", "meat_stink" );
+			}
+			else 
+			{
+				return array( "nuke", "insta_kill", "double_points", "full_ammo", "fire_sale" );
+			}
 		case "zm_buried":
-			return array( "nuke", "insta_kill", "double_points", "full_ammo", "carpenter", "free_perk", "fire_sale" );
+			if ( gametype == "zgrief" )
+			{
+				return array( "nuke", "insta_kill", "double_points", "full_ammo", "carpenter", "free_perk", "fire_sale", "teller_withdrawl", "random_weapon", "meat_stink" );
+			}
+			else 
+			{
+				return array( "nuke", "insta_kill", "double_points", "full_ammo", "carpenter", "free_perk", "fire_sale", "teller_withdrawl", "random_weapon" );
+			}
 		case "zm_tomb":
 			return array( "nuke", "insta_kill", "double_points", "full_ammo", "free_perk", "fire_sale", "zombie_blood", "bonus_points", "bonus_points_team" );
 	}
@@ -181,6 +219,31 @@ get_perma_perk_from_alias( alias )
 		default: 
 			return alias;
 	}
+}
+
+weapon_is_available( weapon )
+{
+	possible_weapons = getArrayKeys( level.zombie_include_weapons );
+	weapon_is_available = false;
+	for ( i = 0; i < possible_weapons.size; i++ )
+	{
+		if ( weapon == possible_weapons[ i ] )
+		{
+			weapon_is_available = true;
+			break;
+		}
+	}
+	return weapon_is_available;
+}
+
+get_all_weapons()
+{
+	return getArrayKeys( level.zombie_include_weapons );
+}
+
+weapon_is_upgrade( weapon )
+{
+	return isSubStr( weapon, "upgraded" );
 }
 
 array_validate( array )
@@ -508,7 +571,7 @@ recalculate_command_page_counts()
 // 	level.custom_votes = new_command_array;
 // } 
 
-CMD_EXECUTE( cmdname, arg_list, is_clientcmd )
+CMD_EXECUTE( cmdname, arg_list, is_clientcmd, silent, nologprint )
 {
 	if ( is_true( level.threaded_commands[ cmdname ] ) )
 	{
@@ -534,7 +597,7 @@ CMD_EXECUTE( cmdname, arg_list, is_clientcmd )
 			result = self [[ level.server_commands[ cmdname ].func ]]( arg_list );
 		}
 	}
-	if ( !isDefined( result ) )
+	if ( !isDefined( result ) || is_true( silent ) )
 	{
 		return;
 	}
@@ -542,7 +605,10 @@ CMD_EXECUTE( cmdname, arg_list, is_clientcmd )
 	if ( result[ "filter" ] != "cmderror" )
 	{
 		cmd_log = self.name + " executed " + result[ "message" ];
-		level COM_PRINTF( "g_log", result[ "filter" ], cmd_log, self );
+		if ( !is_true( nologprint ) )
+		{
+			level COM_PRINTF( "g_log", result[ "filter" ], cmd_log, self );
+		}
 		if ( isDefined( result[ "channels" ] ) )
 		{
 			level COM_PRINTF( result[ "channels" ], result[ "filter" ], result[ "message" ], self );
@@ -564,9 +630,11 @@ tcs_on_connect()
 	while ( true )
 	{
 		level waittill( "connected", player );
+		index = 1;
 		foreach ( dvar in level.clientdvars )
 		{
-			player setClientDvar( dvar[ "name" ], dvar[ "value" ] );
+			player setClientDvarThread( dvar[ "name" ], dvar[ "value" ], index );
+			index++;
 		}
 		if ( player isHost() )
 		{
@@ -594,4 +662,11 @@ tcs_on_connect()
 			player.tcs_rank = getDvarStringDefault( "tcs_default_rank", level.TCS_RANK_USER );
 		}
 	}
+}
+
+//If we have a lot of clientdvars in the pool delay setting them to prevent client command overflow error.
+setClientDvarThread( dvar, value, index )
+{
+	wait( index * 0.25 );
+	self setClientDvar( dvar, value );
 }

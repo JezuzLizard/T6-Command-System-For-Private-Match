@@ -8,12 +8,15 @@
 #include scripts\cmd_system_modules\_text_parser;
 #include scripts\cmd_system_modules\_listener;
 #include scripts\cmd_system_modules\_perms;
+#include scripts\zm\cmd_system_modules_zm\_overrides;
+#include scripts\zm\cmd_system_modules_zm\_zm_cmd_util;
 
 #include common_scripts\utility;
 #include maps\mp\_utility;
 
 main()
 {
+	replaceFunc( maps\mp\zombies\_zm_pers_upgrades_system::pers_upgrades_monitor, ::pers_upgrades_monitor_override );
 	while ( !is_true( level.command_init_done ) )
 	{
 		wait 0.05;
@@ -29,6 +32,15 @@ main()
 	CMD_ADDSERVERCOMMAND( "givepoints", "givepoints gpts", "givepoints <name|guid|clientnum|self> <amount>", ::CMD_GIVEPOINTS_f, level.CMD_POWER_CHEAT );
 	CMD_ADDSERVERCOMMAND( "givepowerup", "givepowerup gpow", "givepowerup <name|guid|clientnum|self> <powerupname>", ::CMD_GIVEPOWERUP_f, level.CMD_POWER_CHEAT );
 	CMD_ADDSERVERCOMMAND( "giveweapon", "giveweapon gwep", "giveweapon <name|guid|clientnum|self> <weapon>", ::CMD_GIVEWEAPON_f, level.CMD_POWER_CHEAT );
+	CMD_ADDSERVERCOMMAND( "toggleperssystemforplayer", "toggleperssystemforplayer tpsfp", "toggleperssystemforplayer <name|guid|clientnum|self>", ::CMD_TOGGLEPERSSYSTEMFORPLAYER_f, level.CMD_POWER_CHEAT );
+
+	CMD_ADDCLIENTCOMMAND( "perk", "perk pk", "perk <perkname> ...", ::CMD_PERK_f, level.CMD_POWER_CHEAT );
+	CMD_ADDCLIENTCOMMAND( "permaperk", "permaperk pp", "permaperk <perkname> ...", ::CMD_PERMAPERK_f, level.CMD_POWER_CHEAT );
+	CMD_ADDCLIENTCOMMAND( "points", "points pts", "points <amount>", ::CMD_POINTS_f, level.CMD_POWER_CHEAT );
+	CMD_ADDCLIENTCOMMAND( "powerup", "powerup pow", "powerup <powerupname>", ::CMD_POWERUP_f, level.CMD_POWER_CHEAT );
+	CMD_ADDCLIENTCOMMAND( "weapon", "weapon wep", "weapon <weaponname>", ::CMD_WEAPON_f, level.CMD_POWER_CHEAT );
+	CMD_ADDCLIENTCOMMAND( "toggleperssystem", "toggleperssystem tps", ::CMD_TOGGLEPERSSYSTEM_f, level.CMD_POWER_CHEAT );
+	level.zm_command_init_done = true;
 }
 
 CMD_GIVEPOWERUP_f( arg_list )
@@ -37,12 +49,7 @@ CMD_GIVEPOWERUP_f( arg_list )
 	if ( array_validate( arg_list ) && arg_list.size == 2 )
 	{
 		target = self find_player_in_server( arg_list[ 0 ] );
-		if ( !isDefined( target ) )
-		{
-			result[ "filter" ] = "cmderror";
-			result[ "message" ] = "giveperk: Could not find player";
-		}
-		else 
+		if ( isDefined( target ) )
 		{
 			powerup_name = get_powerup_from_alias_zm( arg_list[ 1 ] );
 			valid_powerup_list = powerup_list_zm();
@@ -50,20 +57,25 @@ CMD_GIVEPOWERUP_f( arg_list )
 			if ( !powerup_is_available )
 			{
 				result[ "filter" ] = "cmderror";
-				result[ "message" ] = "givepowerup: Powerup " + powerup_name + " is not available on this map";	
+				result[ "message" ] = "Powerup " + powerup_name + " is not available on this map";	
 			}
 			else 
 			{
 				target give_powerup_zm( powerup_name );
 				result[ "filter" ] = "cmdinfo";
-				result[ "message" ] = "givepowerup: Gave perk " + powerup_name + " to " + target.name;	
+				result[ "message" ] = "Spawned " + powerup_name + " for " + target.name;	
 			}
+		}
+		else 
+		{
+			result[ "filter" ] = "cmderror";
+			result[ "message" ] = "Could not find player";
 		}
 	}
 	else 
 	{
 		result[ "filter" ] = "cmderror";
-		result[ "message" ] = "givepowerup: Usage givepowerup <name|guid|clientnum|self> <powerupname>";
+		result[ "message" ] = "Usage givepowerup <name|guid|clientnum|self> <powerupname>";
 	}
 	return result;
 }
@@ -72,11 +84,14 @@ give_powerup_zm( powerup_name )
 {
 	direction = self getplayerangles();
 	direction_vec = anglestoforward( direction );
-	eye = self geteye();
-	scale = 8000;
+	scale = 20;
 	direction_vec = ( direction_vec[0] * scale, direction_vec[1] * scale, direction_vec[2] * scale );
-	trace = bullettrace( eye, eye + direction_vec, 0, undefined );
-	level thread maps\mp\zombies\_zm_powerups::specific_powerup_drop( powerup_name, trace["position"] );
+	trace = bullettrace( direction_vec, direction_vec, 0, undefined );
+	powerup = maps\mp\zombies\_zm_powerups::specific_powerup_drop( powerup_name, trace["position"] );
+	if ( powerup_name == "teller_withdrawl" )
+	{
+		powerup.value = 1000;
+	}
 }
 
 CMD_KILLACTORS_f( arg_list )
@@ -84,7 +99,7 @@ CMD_KILLACTORS_f( arg_list )
 	result = [];
 	maps\mp\zombies\_zm_game_module::kill_all_zombies();
 	result[ "filter" ] = "cmdinfo";
-	result[ "message" ] = "killactors: Killed all zombies";
+	result[ "message" ] = "Killed all zombies";
 	return result;
 }
 
@@ -94,53 +109,60 @@ CMD_GIVEPERK_f( arg_list )
 	if ( array_validate( arg_list ) && arg_list.size > 1 )
 	{
 		target = self find_player_in_server( arg_list[ 0 ] );
-		if ( !isDefined( target ) )
+		if ( isDefined( target ) )
 		{
-			result[ "filter" ] = "cmderror";
-			result[ "message" ] = "giveperk: Could not find player";
-		}
-		else 
-		{
-			perk_name = get_perk_from_alias_zm( arg_list[ 1 ] );
-			if ( perk_name != "all" )
+			for ( i = 1; i < arg_list.size; i++ )
 			{
-				valid_perk_list = perk_list_zm();
-				perk_is_available = isInArray( valid_perk_list, perk_name );
-				if ( !perk_is_available )
+				perk_name = get_perk_from_alias_zm( arg_list[ i ] );
+				if ( perk_name != "all" )
 				{
-					result[ "filter" ] = "cmderror";
-					result[ "message" ] = "giveperk: Perk " + perk_name + " is not available on this map";	
+					valid_perk_list = perk_list_zm();
+					perk_is_available = isInArray( valid_perk_list, perk_name );
+					if ( !perk_is_available )
+					{
+						result[ "filter" ] = "cmderror";
+						result[ "message" ] = "Perk " + perk_name + " is not available on this map";	
+					}
+					else 
+					{
+						target give_perk_zm( perk_name );
+						result[ "filter" ] = "cmdinfo";
+						result[ "message" ] = "Gave perk " + perk_name + " to " + target.name;	
+					}
 				}
 				else 
 				{
-					target give_perk_zm( perk_name );
+					valid_perk_list = perk_list_zm();
+					foreach ( perk in valid_perk_list )
+					{
+						target give_perk_zm( perk );
+					}
 					result[ "filter" ] = "cmdinfo";
-					result[ "message" ] = "giveperk: Gave perk " + perk_name + " to " + target.name;	
+					result[ "message" ] = "Gave perk all perks to " + target.name;
+					break;
 				}
 			}
-			else 
-			{
-				valid_perk_list = perk_list_zm();
-				foreach ( perk in valid_perk_list )
-				{
-					target give_perk_zm( perk );
-				}
-				result[ "filter" ] = "cmdinfo";
-				result[ "message" ] = "giveperk: Gave perk all perks to " + target.name;
-			}
+		}
+		else 
+		{
+			result[ "filter" ] = "cmderror";
+			result[ "message" ] = "Could not find player";
 		}
 	}
 	else 
 	{
 		result[ "filter" ] = "cmderror";
-		result[ "message" ] = "giveperk: Usage giveperk <name|guid|clientnum|self> <perkname> ...";
+		result[ "message" ] = "Usage giveperk <name|guid|clientnum|self> <perkname> ...";
 	}
 	return result;
 }
 
-give_perk_zm( perkname )
+give_perk_zm( perkname, index )
 {
-	self give_perk( perkname, true );
+	if ( !self hasPerk( perkname ) )
+	{
+		self give_perk( perkname, false );
+	}
 }
 
 CMD_PAUSE_f( arg_list )
@@ -151,13 +173,13 @@ CMD_PAUSE_f( arg_list )
 		duration = int( arg_list[ 0 ] );
 		level thread game_pause( duration );
 		result[ "filter" ] = "cmdinfo";
-		result[ "message" ] = "pause: Game paused for " + duration + " minutes";
+		result[ "message" ] = "Game paused for " + duration + " minutes";
 	}
 	else 
 	{
 		level thread game_pause( -1 );
 		result[ "filter" ] = "cmdinfo";
-		result[ "message" ] = "pause: Game paused indefinitely use unpause to end the pause";
+		result[ "message" ] = "Game paused indefinitely use unpause to end the pause";
 	}
 	return result;
 }
@@ -169,6 +191,7 @@ game_pause( duration )
 	foreach ( player in level.players )
 	{
 		player enableInvulnerability();
+		player.target.tcs_is_invulnerable = true;
 	}
 	level thread unpause_after_time( duration );
 }
@@ -195,7 +218,7 @@ CMD_UNPAUSE_f( arg_list )
 	result = [];
 	game_unpause();
 	result[ "filter" ] = "cmdinfo";
-	result[ "message" ] = "unpause: Game unpaused";
+	result[ "message" ] = "Game unpaused";
 	return result;
 }
 
@@ -207,6 +230,7 @@ game_unpause()
 	foreach ( player in level.players )
 	{
 		player disableInvulnerability();
+		player.target.tcs_is_invulnerable = false;
 	}
 }
 
@@ -216,54 +240,34 @@ CMD_GIVEPERMAPERK_f( arg_list )
 	if ( array_validate( arg_list ) && arg_list.size > 1 )
 	{
 		target = self find_player_in_server( arg_list[ 0 ] );
-		if ( !isDefined( target ) )
+		if ( isDefined( target ) )
 		{
-			result[ "filter" ] = "cmderror";
-			result[ "message" ] = "givepermaperk: Could not find player";
-		}
-		else 
-		{
-			if ( arg_list.size > 2 )
-			{
-				for ( i = 1; i < arg_list.size; i++ )
-				{
-					perma_perk_name = get_perma_perk_from_alias( arg_list[ i ] );
-					if ( perma_perk_name != arg_list[ i ] && perma_perk_name != "all" )
-					{
-						target give_perma_perk( perma_perk_name );
-					}
-				}
-				number = arg_list.size;
-				result[ "filter" ] = "cmdinfo";
-				result[ "message" ] = "givepermaperk: Gave " + number + " perma perks to " + target.name;
-			}
-			else 
+			for ( i = 1; i < arg_list.size; i++ )
 			{
 				perma_perk_name = get_perma_perk_from_alias( arg_list[ i ] );
 				if ( perma_perk_name != arg_list[ i ] && perma_perk_name != "all" )
 				{
 					target give_perma_perk( perma_perk_name );
-					result[ "filter" ] = "cmdinfo";
-					result[ "message" ] = "givepermaperk: Gave perma perk" + perma_perk_name + " to " + target.name;
 				}
 				else if ( perma_perk_name == "all" )
 				{
 					target give_all_perma_perks();
 					result[ "filter" ] = "cmdinfo";
-					result[ "message" ] = "givepermaperk: Gave all perma perks to " + target.name;
-				}
-				else
-				{
-					result[ "filter" ] = "cmderror";
-					result[ "message" ] = "givepermaperk: Perk " + perma_perk_name + " is not a valid perma perk";	
+					result[ "message" ] = "Gave all perma perks to " + target.name;
+					break;
 				}
 			}
+		}
+		else 
+		{
+			result[ "filter" ] = "cmderror";
+			result[ "message" ] = "Could not find player";
 		}
 	}
 	else 
 	{
 		result[ "filter" ] = "cmderror";
-		result[ "message" ] = "givepermaperk: Usage givepermaperk <name|guid|clientnum|self> <perkname> ...";
+		result[ "message" ] = "Usage givepermaperk <name|guid|clientnum|self> <perkname> ...";
 	}
 	return result;
 }
@@ -275,8 +279,7 @@ give_perma_perk( perk_name )
 
 give_all_perma_perks()
 {
-	perk_keys = level.pers_upgrades_keys;
-	foreach ( key in perk_keys )
+	foreach ( key in level.pers_upgrades_keys )
 	{
 		self give_perma_perk( level.pers_upgrades[ key ].stat_names[ 0 ] );
 	}
@@ -288,23 +291,24 @@ CMD_GIVEPOINTS_f( arg_list )
 	if ( array_validate( arg_list ) && arg_list.size == 2 )
 	{
 		target = self find_player_in_server( arg_list[ 0 ] );
-		if ( !isDefined( target ) )
-		{
-			result[ "filter" ] = "cmderror";
-			result[ "message" ] = "givepoints: Could not find player";
-		}
-		else 
+		if ( isDefined( target ) )
 		{
 			points = int( arg_list[ 1 ] );
 			target add_to_player_score( points );
 			result[ "filter" ] = "cmdinfo";
-			result[ "message" ] = "givepoints: Gave " + target.name + " " + points + " points";
+			result[ "message" ] = "Gave " + target.name + " " + points + " points";
+		}
+		else 
+		{
+
+			result[ "filter" ] = "cmderror";
+			result[ "message" ] = "Could not find player";
 		}
 	}
 	else
 	{
 		result[ "filter" ] = "cmderror";
-		result[ "message" ] = "givepoints: Usage givepoints <name|guid|clientnum|self> <amount>";
+		result[ "message" ] = "Usage givepoints <name|guid|clientnum|self> <amount>";
 	}
 	return result;
 }
@@ -315,15 +319,16 @@ CMD_SPECTATOR_f( arg_list )
 	if ( array_validate( arg_list ) )
 	{
 		target = self find_player_in_server( arg_list[ 0 ] );
-		if ( !isDefined( target ) )
+		if ( isDefined( target ) )
 		{
-			result[ "filter" ] = "cmderror";
-			result[ "message" ] = "spectator: Could not find player";
+			result[ "filter" ] = "cmdinfo";
+			result[ "message" ] = "Successfully made " + target.name + " a spectator";
 		}
 		else 
 		{
-			result[ "filter" ] = "cmdinfo";
-			result[ "message" ] = "spectator: Successfully made " + target.name + " a spectator";
+
+			result[ "filter" ] = "cmderror";
+			result[ "message" ] = "Could not find player";
 		}
 	}
 	if ( isDefined( target ) )
@@ -345,15 +350,16 @@ CMD_TOGGLERESPAWN_f( arg_list )
 	if ( array_validate( arg_list ) )
 	{
 		target = self find_player_in_server( arg_list[ 0 ] );
-		if ( !isDefined( target ) )
+		if ( isDefined( target ) )
 		{
-			result[ "filter" ] = "cmderror";
-			result[ "message" ] = "togglerespawn: Could not find player";
+			result[ "filter" ] = "cmdinfo";
+			result[ "message" ] = target.name + " has their respawn toggled";
 		}
 		else 
 		{
-			result[ "filter" ] = "cmdinfo";
-			result[ "message" ] = "togglerespawn: " + target.name + " has their respawn toggled";
+
+			result[ "filter" ] = "cmderror";
+			result[ "message" ] = "Could not find player";
 		}
 	}
 	if ( isDefined( target ) )
@@ -377,6 +383,7 @@ CMD_TOGGLERESPAWN_f( arg_list )
 
 CMD_RESPAWNSPECTATORS_f( arg_list )
 {
+	result = [];
 	players = getPlayers();
 	for ( i = 0; i < players.size; i++ )
 	{
@@ -396,9 +403,250 @@ CMD_RESPAWNSPECTATORS_f( arg_list )
 			}
 		}
 	}
+	result[ "filter" ] = "cmdinfo";
+	result[ "message" ] = "Successfully respawned all spectators";
+	return result;
 }
 
 CMD_GIVEWEAPON_f( arg_list )
 {
+	result = [];
+	if ( array_validate( arg_list ) && arg_list.size > 1 )
+	{
+		target = self find_player_in_server( arg_list[ 0 ] );
+		if ( isDefined( target ) )
+		{
+			target notify( "stop_player_too_many_weapons_monitor" );
+			level.get_player_weapon_limit = ::unlimited_weapons;
+			for ( i = 1; i < arg_list.size; i++ )
+			{
+				weapon = arg_list[ i ];
+				weapon_can_be_given = weapon_is_available( weapon );
+				if ( weapon_can_be_given )
+				{
+					target thread weapon_give_custom_thread( weapon, weapon_is_upgrade( weapon ), false, i );
+					result[ "filter" ] = "cmdinfo";
+					result[ "message" ] = "Gave " + weapon + " to " + target.name;
+				}
+				else 
+				{
+					result[ "filter" ] = "cmderror";
+					result[ "message" ] = weapon + " is not available on this map";
+				}
+			}
+		}
+		else 
+		{
+			result[ "filter" ] = "cmderror";
+			result[ "message" ] = "Could not find player";
+		}
+	}
+	else 
+	{
+		result[ "filter" ] = "cmderror";
+		result[ "message" ] = "Usage giveweapon <name|guid|clientnum|self> <weapon> ...";
+	}
+	return result;
+}
 
+unlimited_weapons( player )
+{
+	return 10;
+}
+
+CMD_POWERUP_f( arg_list )
+{
+	result = [];
+	if ( array_validate( arg_list ) )
+	{
+		powerup_name = get_powerup_from_alias_zm( arg_list[ 0 ] );
+		valid_powerup_list = powerup_list_zm();
+		powerup_is_available = isInArray( valid_powerup_list, powerup_name );
+		if ( !powerup_is_available )
+		{
+			result[ "filter" ] = "cmderror";
+			result[ "message" ] = "Powerup " + powerup_name + " is not available on this map";	
+		}
+		else 
+		{
+			self give_powerup_zm( powerup_name );
+			result[ "filter" ] = "cmdinfo";
+			result[ "message" ] = "Spawned " + powerup_name + " for you";	
+		}
+	}
+	else 
+	{
+		result[ "filter" ] = "cmderror";
+		result[ "message" ] = "Usage powerup <powerupname>";
+	}
+	return result;
+}
+
+CMD_PERK_f( arg_list )
+{
+	result = [];
+	if ( array_validate( arg_list ) )
+	{
+		for ( i = 0; i < arg_list.size; i++ )
+		{
+			perk_name = get_perk_from_alias_zm( arg_list[ i ] );
+			if ( perk_name != "all" )
+			{
+				valid_perk_list = perk_list_zm();
+				perk_is_available = isInArray( valid_perk_list, perk_name );
+				if ( !perk_is_available )
+				{
+					result[ "filter" ] = "cmderror";
+					result[ "message" ] = "Perk " + perk_name + " is not available on this map";	
+				}
+				else 
+				{
+					self give_perk_zm( perk_name );
+					result[ "filter" ] = "cmdinfo";
+					result[ "message" ] = "Gave you " + perk_name ;	
+				}
+			}
+			else 
+			{
+				valid_perk_list = perk_list_zm();
+				foreach ( perk in valid_perk_list )
+				{
+					self give_perk_zm( perk );
+				}
+				result[ "filter" ] = "cmdinfo";
+				result[ "message" ] = "Gave you all perks";
+				break;
+			}
+		}
+	}
+	else 
+	{
+		result[ "filter" ] = "cmderror";
+		result[ "message" ] = "Usage perk <perkname> ...";
+	}
+	return result;
+}
+
+CMD_POINTS_f( arg_list )
+{
+	result = [];
+	if ( array_validate( arg_list ) )
+	{
+		points = int( arg_list[ 0 ] );
+		self add_to_player_score( points );
+		result[ "filter" ] = "cmdinfo";
+		result[ "message" ] = "Gave you " + points + " points";
+	}
+	else
+	{
+		result[ "filter" ] = "cmderror";
+		result[ "message" ] = "Usage points <amount>";
+	}
+	return result;
+}
+
+CMD_PERMAPERK_f( arg_list )
+{
+	result = [];
+	if ( array_validate( arg_list ) )
+	{
+		for ( i = 0; i < arg_list.size; i++ )
+		{
+			perma_perk_name = get_perma_perk_from_alias( arg_list[ i ] );
+			if ( perma_perk_name != arg_list[ i ] && perma_perk_name != "all" )
+			{
+				self give_perma_perk( perma_perk_name );
+				result[ "filter" ] = "cmdinfo";
+				result[ "message" ] = "Gave you " + perma_perk_name;
+			}
+			else if ( perma_perk_name == "all" )
+			{
+				self give_all_perma_perks();
+				result[ "filter" ] = "cmdinfo";
+				result[ "message" ] = "Gave you all perma perks";
+				break;
+			}
+		}
+	}
+	else 
+	{
+		result[ "filter" ] = "cmderror";
+		result[ "message" ] = "Usage permaperk <perkname> ...";
+	}
+	return result;
+}
+
+CMD_WEAPON_f( arg_list )
+{
+	result = [];
+	if ( array_validate( arg_list ) )
+	{
+		self notify( "stop_player_too_many_weapons_monitor" );
+		level.get_player_weapon_limit = ::unlimited_weapons;
+		for ( i = 0; i < arg_list.size; i++ )
+		{
+			weapon = arg_list[ i ];
+			weapon_can_be_given = weapon_is_available( weapon );
+			if ( weapon_can_be_given )
+			{
+				self thread weapon_give_custom_thread( weapon, weapon_is_upgrade( weapon ), true, i );
+				result[ "filter" ] = "cmdinfo";
+				result[ "message" ] = "Gave you " + weapon;
+			}
+			else 
+			{
+				result[ "filter" ] = "cmderror";
+				result[ "message" ] = weapon + " is not available on this map";
+			}
+		}
+	}
+	else 
+	{
+		result[ "filter" ] = "cmderror";
+		result[ "message" ] = "Usage weapon <weapon> ...";
+	}
+	return result;
+}
+
+weapon_give_custom_thread( weapon, is_upgraded, should_switch_weapon, index )
+{
+	wait( 0.05 * index );
+	self weapon_give_custom( weapon, is_upgraded, should_switch_weapon );
+}
+
+CMD_TOGGLEPERSSYSTEMFORPLAYER_f( arg_list )
+{
+	result = [];
+	if ( array_validate( arg_list ) )
+	{
+		target = self find_player_in_server( arg_list[ 0 ] );
+		if ( isDefined( target ) )
+		{
+			on_off = cast_bool_to_str( is_true( target.tcs_disable_pers_system ), "on off" );
+			target.tcs_disable_pers_system = !is_true( target.tcs_disable_pers_system );
+			result[ "filter" ] = "cmdinfo";
+			result[ "message" ] = "Toggled pers system for " + target.name + " " + on_off;
+		}
+		else 
+		{
+			result[ "filter" ] = "cmderror";
+			result[ "message" ] = "Could not find player";
+		}
+	}
+	else 
+	{
+		result[ "filter" ] = "cmderror";
+		result[ "message" ] = "Usage toggleperssystemforplayer <name|guid|clientnum|self>";
+	}
+	return result;
+}
+
+CMD_TOGGLEPERSSYSTEM_f( arg_list )
+{
+	result = [];
+	on_off = cast_bool_to_str( !is_true( self.tcs_disable_pers_system ), "on off" );
+	self.tcs_disable_pers_system = !is_true( self.tcs_disable_pers_system );
+	result[ "filter" ] = "cmdinfo";
+	result[ "message" ] = "Toggled your pers system " + on_off;
+	return result;
 }

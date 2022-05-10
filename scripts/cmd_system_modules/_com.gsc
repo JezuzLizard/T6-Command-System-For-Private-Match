@@ -86,7 +86,7 @@ COM_CAPS_MSG_TITLE( channel, filter, players )
 		}
 		else if ( isSubStr( filter, "info" ) )
 		{
-			color_code = "^4";
+			color_code = "^2";
 		}
 		else 
 		{
