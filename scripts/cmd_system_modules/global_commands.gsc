@@ -142,16 +142,7 @@ CMD_GIVENOTARGET_f( arg_list )
 	}
 	if ( isDefined( target ) )
 	{
-		if ( !is_true( target.tcs_is_notarget ) )
-		{
-			target.ignoreme = true;
-			target.tcs_is_notarget = true;
-		}
-		else 
-		{
-			target.ignoreme = false;
-			target.tcs_is_notarget = false;
-		}
+		target.ignoreme = !target.ignoreme;
 	}
 	return result;
 }
@@ -388,4 +379,3 @@ CMD_EXECONTEAM_f( arg_list )
 	}
 	return result;	
 }
-

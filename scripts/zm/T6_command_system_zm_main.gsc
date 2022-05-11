@@ -39,7 +39,7 @@ main()
 	CMD_ADDCLIENTCOMMAND( "points", "points pts", "points <amount>", ::CMD_POINTS_f, level.CMD_POWER_CHEAT );
 	//CMD_ADDCLIENTCOMMAND( "powerup", "powerup pow", "powerup <powerupname>", ::CMD_POWERUP_f, level.CMD_POWER_CHEAT );
 	CMD_ADDCLIENTCOMMAND( "weapon", "weapon wep", "weapon <weaponname> ...", ::CMD_WEAPON_f, level.CMD_POWER_CHEAT );
-	CMD_ADDCLIENTCOMMAND( "toggleperssystem", "toggleperssystem tps", ::CMD_TOGGLEPERSSYSTEM_f, level.CMD_POWER_CHEAT );
+	CMD_ADDCLIENTCOMMAND( "toggleperssystem", "toggleperssystem tps", "toggleperssystem", ::CMD_TOGGLEPERSSYSTEM_f, level.CMD_POWER_CHEAT );
 	level.zm_command_init_done = true;
 }
 
@@ -416,8 +416,11 @@ CMD_GIVEWEAPON_f( arg_list )
 		target = self find_player_in_server( arg_list[ 0 ] );
 		if ( isDefined( target ) )
 		{
-			target notify( "stop_player_too_many_weapons_monitor" );
-			level.get_player_weapon_limit = ::unlimited_weapons;
+			if ( arg_list.size > 2 )
+			{
+				target notify( "stop_player_too_many_weapons_monitor" );
+				level.get_player_weapon_limit = ::unlimited_weapons;
+			}
 			for ( i = 1; i < arg_list.size; i++ )
 			{
 				weapon = arg_list[ i ];
@@ -581,8 +584,11 @@ CMD_WEAPON_f( arg_list )
 	result = [];
 	if ( array_validate( arg_list ) )
 	{
-		self notify( "stop_player_too_many_weapons_monitor" );
-		level.get_player_weapon_limit = ::unlimited_weapons;
+		if ( arg_list.size > 2 )
+		{
+			self notify( "stop_player_too_many_weapons_monitor" );
+			level.get_player_weapon_limit = ::unlimited_weapons;
+		}
 		for ( i = 0; i < arg_list.size; i++ )
 		{
 			weapon = arg_list[ i ];

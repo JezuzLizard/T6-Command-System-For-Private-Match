@@ -21,6 +21,7 @@ main()
 	level.custom_commands_cooldown_time = getDvarIntDefault( "tcs_cmd_cd", 5 );
 	level.tcs_use_silent_commands = getDvarIntDefault( "tcs_silent_cmds", 0 );
 	level.tcs_logprint_cmd_usage = getDvarIntDefault( "tcs_logprint_cmd_usage", 1 );
+	level.tcs_listener_timeout_time = getDvarFloatDefault( "tcs_listener_timeout_time", 10.0 );
 	level.CMD_POWER_NONE = 0;
 	level.CMD_POWER_USER = 1;
 	level.CMD_POWER_TRUSTED_USER = 20;
@@ -72,13 +73,10 @@ main()
 	CMD_ADDCLIENTCOMMAND( "bottomlessclip", "bottomlessclip botclip bcl", "bottomlessclip", ::CMD_BOTTOMLESSCLIP_f, level.CMD_POWER_CHEAT );
 	//CMD_ADDCLIENTCOMMAND( "teleport", "teleport tele", "teleport <name|guid|clientnum|origin>", ::CMD_TELEPORT_f, level.CMD_POWER_CHEAT );
 	CMD_ADDCLIENTCOMMAND( "cvar", "cvar cv", "cvar <cvarname> <newval>", ::CMD_CVAR_f, level.CMD_POWER_CHEAT );
-	// CMD_ADDCLIENTCOMMAND( "cmdlist", "cmdlist cl", "cmdlist", ::CMD_CMDLIST_f, level.CMD_POWER_NONE, true );
-	// CMD_ADDCLIENTCOMMAND( "playerlist", "playerlist plist", "playerlist [team]", ::CMD_PLAYERLIST_f, level.CMD_POWER_NONE, true );
-
-	// CMD_ADDCOMMANDLISTENER( "listener_cmdlist", "showmore" );
-	// CMD_ADDCOMMANDLISTENER( "listener_cmdlist", "page" );
-	// CMD_ADDCOMMANDLISTENER( "listener_playerlist", "showmore" );
-	// CMD_ADDCOMMANDLISTENER( "listener_playerlist", "page" );
+	CMD_ADDCLIENTCOMMAND( "cmdlist", "cmdlist cl", "cmdlist [pagenumber]", ::CMD_CMDLIST_f, level.CMD_POWER_NONE, true );
+	CMD_ADDCLIENTCOMMAND( "playerlist", "playerlist plist", "playerlist [pagenumber] [team]", ::CMD_PLAYERLIST_f, level.CMD_POWER_NONE, true );
+	CMD_ADDCLIENTCOMMAND( "showmore", "showmore show", "showmore", ::CMD_SHOWMORE_f, level.CMD_POWER_NONE );
+	CMD_ADDCLIENTCOMMAND( "page", "page pg", "page <pagenumber>", ::CMD_PAGE_f, level.CMD_POWER_NONE );
 	level thread COMMAND_BUFFER();
 	level thread end_commands_on_end_game();
 	level thread scr_dvar_command_watcher();

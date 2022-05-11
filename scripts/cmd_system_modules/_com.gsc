@@ -63,44 +63,31 @@ COM_IS_CHANNEL_ACTIVE( channel )
 
 COM_CAPS_MSG_TITLE( channel, filter, players )
 {
-	if ( channel == "g_log" || channel == "con" )
+	if ( filter == "notitle" || channel == "con" )
 	{
-		if ( channel == "g_log" && filter != "notitle" )
-		{
-			return toUpper( filter ) + ":";
-		}
-		else 
-		{
-			return "";
-		}
+		return "";
 	}
-	else
+	if ( channel == "g_log" )
 	{
-		if ( isSubStr( filter, "error" ) )
-		{
-			color_code = "^1";
-		}
-		else if ( isSubStr( filter, "warning" ) )
-		{
-			color_code = "^3";
-		}
-		else if ( isSubStr( filter, "info" ) )
-		{
-			color_code = "^2";
-		}
-		else 
-		{
-			color_code = "";
-		}
-		if ( filter != "notitle" )
-		{
-			return color_code + toUpper( filter ) + ":";
-		}
-		else 
-		{
-			return "";
-		}
+		return toUpper( filter ) + ":";
 	}
+	if ( isSubStr( filter, "error" ) )
+	{
+		color_code = "^1";
+	}
+	else if ( isSubStr( filter, "warning" ) )
+	{
+		color_code = "^3";
+	}
+	else if ( isSubStr( filter, "info" ) )
+	{
+		color_code = "^2";
+	}
+	else 
+	{
+		color_code = "";
+	}
+	return color_code + toUpper( filter ) + ":";
 }
 
 COM_PRINT( channel, message, players, arg_list )

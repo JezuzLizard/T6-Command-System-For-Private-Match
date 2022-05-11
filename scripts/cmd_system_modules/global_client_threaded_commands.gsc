@@ -8,26 +8,26 @@
 
 CMD_PLAYERLIST_f( arg_list )
 {
-	self notify( "listener_playerlist" );
-	self endon( "listener_playerlist" );
+	self notif( "new_command_listener" );
+	self endon( "new_command_listener" );
 	channel = self COM_GET_CMD_FEEDBACK_CHANNEL();
 	current_page = 1;
 	user_defined_page = 1;
 	if ( array_validate( arg_list ) )
 	{
-		team_name = arg_list[ 0 ];
-		if ( isDefined( level.teams[ team_name ] ) )
+		team = arg_list[ 0 ];
+		if ( isDefined( level.teams[ team ] ) )
 		{
-			players = getPlayers( team_name );
+			players = getPlayers( team );
 			if ( players.size == 0 )
 			{
-				level COM_PRINTF( channel, "cmderror", "playerlist team " + team_name + " is empty", self );
+				level COM_PRINTF( channel, "cmderror", "playerlist team " + team + " is empty", self );
 				return;
 			}
 		}
 		else 
 		{
-			level COM_PRINTF( channel, "cmderror", "playerlist: Received bad team " + team_name, self );
+			level COM_PRINTF( channel, "cmderror", "playerlist: Received bad team " + team, self );
 			return;
 		}
 	}
@@ -40,7 +40,7 @@ CMD_PLAYERLIST_f( arg_list )
 	players_to_display = [];
 	for ( i = 0; i < players.size; i++ )
 	{
-		message = players[ i ].name + " " + players[ i ] getGUID() + " " + players[ i ] getEntityNumber() + ""; //remember to add rank as a listing option
+		message = players[ i ].name + " " + players[ i ] getGUID() + " " + players[ i ] getEntityNumber() + " " + player.tcs_rank; //remember to add rank as a listing option
 		players_to_display[ players_to_display.size ] = message;
 		remaining_players--;
 		if ( ( players_to_display.size > level.commands_page_max ) && remaining_players != 0 )
@@ -49,24 +49,23 @@ CMD_PLAYERLIST_f( arg_list )
 			{
 				foreach ( message in players_to_display )
 				{
-					level COM_PRINTF( channel, "cmdinfo", message, self );
+					level COM_PRINTF( channel, "notitle", message, self );
 				}
-				level COM_PRINTF( channel, "cmdinfo", "Displaying page " + current_page + " out of " + remaining_pages + " do showmore or page <num> to display more players.", self );
-				self setup_command_listener( "listener_playerlist" );
-				result = self wait_command_listener( "listener_playerlist" );
-				self clear_command_listener( "listener_playerlist" );
+				//level COM_PRINTF( channel, "cmdinfo", "Displaying page " + current_page + " out of " + remaining_pages + " do showmore or page <num> to display more players.", self );
+				self thread command_listener_timeout();
+				result = self command_listener_wait_for_user_input();
 				if ( !isDefined( result[ 0 ] ) || result[ 0 ] == "timeout" )
 				{
 					return;
 				}
-				else if ( isSubStr( result[ 0 ], "page" ) )
+				else if ( result[ 0 ] == "page" )
 				{
-					user_defined_page = int( result[ 1 ] );
-					if ( !isDefined( user_defined_page ) )
+					if ( !isDefined( result[ 1 ] ) )
 					{
-						level COM_PRINTF( channel, "cmderror", "Page number arg sent to playerlist is undefined. Valid inputs are 1 thru " +  remaining_pages, self );
+						level COM_PRINTF( channel, "cmderror", "Usage page <pagenumber>, Valid inputs are 1 thru " +  remaining_pages, self );
 						return;
 					}
+					user_defined_page = int( result[ 1 ] );
 					if ( user_defined_page > remaining_pages || user_defined_page == 0 )
 					{
 						level COM_PRINTF( channel, "cmderror", "Page number " + result[ 1 ] + " sent to playerlist is invalid. Valid inputs are 1 thru " + remaining_pages, self );
@@ -85,7 +84,7 @@ CMD_PLAYERLIST_f( arg_list )
 		{
 			foreach ( message in players_to_display )
 			{
-				level COM_PRINTF( channel, "cmdinfo", message, self );
+				level COM_PRINTF( channel, "notitle", message, self );
 			}
 		}
 	}
@@ -93,8 +92,8 @@ CMD_PLAYERLIST_f( arg_list )
 
 CMD_CMDLIST_f( arg_list )
 {
-	self notify( "listener_cmdlist" );
-	self endon( "listener_cmdlist" );
+	self notify( "new_command_listener" );
+	self endon( "new_command_listener" );
 	namespace_filter = arg_list[ 0 ];
 	cmds_to_display = [];
 	channel = self COM_GET_CMD_FEEDBACK_CHANNEL();
@@ -106,14 +105,7 @@ CMD_CMDLIST_f( arg_list )
 	for ( i = 0; i < cmdnames.size; i++ )
 	{
 		message = "^4" + all_commands[ cmdnames[ i ] ].usage;
-		if ( channel == "con" )
-		{
-			level COM_PRINTF( channel, "notitle", message, self );
-		}
-		else 
-		{
-			cmds_to_display[ cmds_to_display.size ] = message;
-		}
+		cmds_to_display[ cmds_to_display.size ] = message;
 		remaining_cmds--;
 		if ( ( cmds_to_display.size > level.commands_page_max ) && remaining_cmds != 0 )
 		{
@@ -121,21 +113,20 @@ CMD_CMDLIST_f( arg_list )
 			{
 				foreach ( message in cmds_to_display )
 				{
-					level COM_PRINTF( channel, "cmdinfo", message, self );
+					level COM_PRINTF( channel, "notitle", message, self );
 				}
-				level COM_PRINTF( channel, "cmdinfo", "Displaying page " + current_page + " out of " + level.commands_page_count + " do \showmore or \page <num> to display more commands.", self );
-				self setup_command_listener( "listener_cmdlist" );
-				result = self wait_command_listener( "listener_cmdlist" );
-				self clear_command_listener( "listener_cmdlist" );
+				//level COM_PRINTF( channel, "cmdinfo", "Displaying page " + current_page + " out of " + level.commands_page_count + " do \showmore or \page <num> to display more commands.", self );
+				self thread command_listener_timeout();
+				result = self command_listener_wait_for_user_input();
 				if ( !isDefined( result[ 0 ] ) || result[ 0 ] == "timeout" )
 				{
 					return;
 				}
-				else if ( isSubStr( result[ 0 ], "page" ) )
+				else if ( result[ 0 ] == "page" )
 				{
 					if ( !isDefined( result[ 1 ] ) )
 					{
-						level COM_PRINTF( channel, "cmderror", "Page number arg sent to cmdlist is undefined. Valid inputs are 1 thru " + level.commands_page_count, self );
+						level COM_PRINTF( channel, "cmderror", "Usage page <pagenumber>, Valid inputs are 1 thru " + level.commands_page_count, self );
 						return;
 					}
 					user_defined_page = int( result[ 1 ] );
@@ -157,7 +148,7 @@ CMD_CMDLIST_f( arg_list )
 		{
 			foreach ( message in cmds_to_display )
 			{
-				level COM_PRINTF( channel, "cmdinfo", message, self );
+				level COM_PRINTF( channel, "notitle", message, self );
 			}
 		}
 	}

@@ -417,6 +417,16 @@ cast_bool_to_str( bool, binary_string_options )
 	return bool + "";
 }
 
+repackage_args( arg_list )
+{
+	args_string = "";
+	foreach ( arg in arg_list )
+	{
+		args_string = args_string + arg + " ";
+	}
+	return args_string;
+}
+
 CMD_ADDSERVERCOMMAND( cmdname, cmdaliases, cmdusage, cmdfunc, cmdpower, is_threaded_cmd )
 {
 	aliases = strTok( cmdaliases, " " );
@@ -597,7 +607,7 @@ CMD_EXECUTE( cmdname, arg_list, is_clientcmd, silent, nologprint )
 			result = self [[ level.server_commands[ cmdname ].func ]]( arg_list );
 		}
 	}
-	if ( !isDefined( result ) || is_true( silent ) )
+	if ( !isDefined( result ) || result.size == 0 || is_true( silent ) )
 	{
 		return;
 	}

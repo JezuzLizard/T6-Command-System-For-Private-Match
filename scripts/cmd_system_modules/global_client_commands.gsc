@@ -187,3 +187,31 @@ CMD_CVAR_f( arg_list )
 	}
 	return result;
 }
+
+CMD_SHOWMORE_f( arg_list )
+{
+	result = [];
+	cmd_and_args = [];
+	cmd_and_args[ 0 ] = "showmore";
+	for ( i = 1; i < arg_list.size; i++ )
+	{
+		cmd_and_args[ i ] = arg_list[ i - 1 ]; 
+	}
+	args_string = repackage_args( cmd_and_args );
+	self notify( "listener", args_string );
+	return result;
+}
+
+CMD_PAGE_f( arg_list )
+{
+	result = [];
+	cmd_and_args = [];
+	cmd_and_args[ 0 ] = "page";
+	for ( i = 1; i < arg_list.size; i++ )
+	{
+		cmd_and_args[ i ] = arg_list[ i - 1 ]; 
+	}
+	args_string = repackage_args( cmd_and_args );
+	self notify( "listener", args_string );
+	return result;
+}
