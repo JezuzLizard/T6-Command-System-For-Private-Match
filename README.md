@@ -117,3 +117,6 @@ CMD_GOD_f( arg_list )
 }
 ```
 The result is an array of up to 3 different keys but only 2 are required. "filter" is the way the system determines if the command errored. if "filter" is "cmderror" it has a different color. "message" is the message to tell the CMD_EXECUTE() function to print when the command is executed. "channels" can be optionally defined if the coder wants to explicitly tell CMD_EXECUTE() to print to specific channels like "con".
+
+## Removing commands
+If you want to remove a command simply call CMD_REMOVESERVERCOMMAND( cmdname ); or CMD_REMOVECLIENTCOMMAND( cmdname ); if its a client command after the command system is initialized.
