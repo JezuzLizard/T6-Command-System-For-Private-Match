@@ -153,12 +153,7 @@ CMD_TELEPORT_f( arg_list )
 		}
 		else 
 		{
-			direction = target getplayerangles();
-			direction_vec = anglestoforward( direction );
-			scale = 500;
-			direction_vec = ( direction_vec[0] * scale, direction_vec[1] * scale, direction_vec[2] * scale );
-			trace = bullettrace( direction_vec, direction_vec, 0, undefined );
-			self setOrigin( trace[ "position" ] );
+			self setOrigin( self.origin + anglesToForward( self.angles ) * 64 + anglesToRight( self.angles ) * 64 );
 			result[ "filter" ] = "cmdinfo";
 			result[ "message" ] = "Successfully teleported to " + target.name + "'s position";
 		}

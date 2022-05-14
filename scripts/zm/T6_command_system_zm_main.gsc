@@ -30,14 +30,14 @@ main()
 	CMD_ADDSERVERCOMMAND( "giveperk", "giveperk gp", "giveperk <name|guid|clientnum|self> <perkname> ...", ::CMD_GIVEPERK_f, level.CMD_POWER_CHEAT );
 	CMD_ADDSERVERCOMMAND( "givepermaperk", "givepermaperk gpp", "givepermaperk <name|guid|clientnum|self> <perkname> ...", ::CMD_GIVEPERMAPERK_f, level.CMD_POWER_CHEAT );
 	CMD_ADDSERVERCOMMAND( "givepoints", "givepoints gpts", "givepoints <name|guid|clientnum|self> <amount>", ::CMD_GIVEPOINTS_f, level.CMD_POWER_CHEAT );
-	//CMD_ADDSERVERCOMMAND( "givepowerup", "givepowerup gpow", "givepowerup <name|guid|clientnum|self> <powerupname>", ::CMD_GIVEPOWERUP_f, level.CMD_POWER_CHEAT );
+	CMD_ADDSERVERCOMMAND( "givepowerup", "givepowerup gpow", "givepowerup <name|guid|clientnum|self> <powerupname>", ::CMD_GIVEPOWERUP_f, level.CMD_POWER_CHEAT );
 	CMD_ADDSERVERCOMMAND( "giveweapon", "giveweapon gwep", "giveweapon <name|guid|clientnum|self> <weapon> ...", ::CMD_GIVEWEAPON_f, level.CMD_POWER_CHEAT );
 	CMD_ADDSERVERCOMMAND( "toggleperssystemforplayer", "toggleperssystemforplayer tpsfp", "toggleperssystemforplayer <name|guid|clientnum|self>", ::CMD_TOGGLEPERSSYSTEMFORPLAYER_f, level.CMD_POWER_CHEAT );
-
+	CMD_ADDSERVERCOMMAND( "toggleoutofplayableareamonitor", "toggleoutofplayableareamonitor togoopam", "toggleoutofplayableareamonitor", ::CMD_TOGGLEOUTOFPLAYABLEAREAMONITOR_f, level.CMD_POWER_CHEAT );
 	CMD_ADDCLIENTCOMMAND( "perk", "perk pk", "perk <perkname> ...", ::CMD_PERK_f, level.CMD_POWER_CHEAT );
 	CMD_ADDCLIENTCOMMAND( "permaperk", "permaperk pp", "permaperk <perkname> ...", ::CMD_PERMAPERK_f, level.CMD_POWER_CHEAT );
 	CMD_ADDCLIENTCOMMAND( "points", "points pts", "points <amount>", ::CMD_POINTS_f, level.CMD_POWER_CHEAT );
-	//CMD_ADDCLIENTCOMMAND( "powerup", "powerup pow", "powerup <powerupname>", ::CMD_POWERUP_f, level.CMD_POWER_CHEAT );
+	CMD_ADDCLIENTCOMMAND( "powerup", "powerup pow", "powerup <powerupname>", ::CMD_POWERUP_f, level.CMD_POWER_CHEAT );
 	CMD_ADDCLIENTCOMMAND( "weapon", "weapon wep", "weapon <weaponname> ...", ::CMD_WEAPON_f, level.CMD_POWER_CHEAT );
 	CMD_ADDCLIENTCOMMAND( "toggleperssystem", "toggleperssystem tps", "toggleperssystem", ::CMD_TOGGLEPERSSYSTEM_f, level.CMD_POWER_CHEAT );
 	level.zm_command_init_done = true;
@@ -82,12 +82,8 @@ CMD_GIVEPOWERUP_f( arg_list )
 
 give_powerup_zm( powerup_name )
 {
-	direction = self getplayerangles();
-	direction_vec = anglestoforward( direction );
-	scale = 20;
-	direction_vec = ( direction_vec[0] * scale, direction_vec[1] * scale, direction_vec[2] * scale );
-	trace = bullettrace( direction_vec, direction_vec, 0, undefined );
-	powerup = maps\mp\zombies\_zm_powerups::specific_powerup_drop( powerup_name, trace["position"] );
+	powerup_loc = self.origin + anglesToForward( self.angles ) * 64 + anglesToRight( self.angles ) * 64;
+	powerup = maps\mp\zombies\_zm_powerups::specific_powerup_drop( powerup_name, powerup_loc );
 	if ( powerup_name == "teller_withdrawl" )
 	{
 		powerup.value = 1000;
@@ -654,5 +650,29 @@ CMD_TOGGLEPERSSYSTEM_f( arg_list )
 	self.tcs_disable_pers_system = !is_true( self.tcs_disable_pers_system );
 	result[ "filter" ] = "cmdinfo";
 	result[ "message" ] = "Toggled your pers system " + on_off;
+	return result;
+}
+
+CMD_TOGGLEOUTOFPLAYABLEAREAMONITOR_f( arg_list )
+{
+	result = [];
+	on_off = cast_bool_to_str( !is_true( level.player_out_of_playable_area_monitor ), "on off" );
+	level.player_out_of_playable_area_monitor = !level.player_out_of_playable_area_monitor;
+	if ( on_off == "on" )
+	{
+		foreach ( player in level.players )
+		{
+			player thread player_out_of_playable_area_monitor();
+		}
+	}
+	else 
+	{
+		foreach ( player in level.players )
+		{
+			player notify( "stop_player_out_of_playable_area_monitor" );
+		}
+	}
+	result[ "filter" ] = "cmdinfo";
+	result[ "message" ] = "Out of playable area monitor " + on_off;
 	return result;
 }

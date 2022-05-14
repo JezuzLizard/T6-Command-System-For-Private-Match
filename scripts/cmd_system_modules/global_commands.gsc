@@ -16,12 +16,12 @@ CMD_SERVER_DVAR_f( arg_list )
 		dvar_value = arg_list[ 1 ];
 		setDvar( dvar_name, dvar_value );
 		result[ "filter" ] = "cmdinfo";
-		result[ "message" ] = "dvar: Successfully set " + dvar_name + " to " + dvar_value;
+		result[ "message" ] = "Successfully set " + dvar_name + " to " + dvar_value;
 	}
 	else 
 	{
 		result[ "filter" ] = "cmderror";
-		result[ "message" ] = "dvar: Usage dvar <dvarname> <newval>";
+		result[ "message" ] = "Usage dvar <dvarname> <newval>";
 	}
 	return result;
 }
