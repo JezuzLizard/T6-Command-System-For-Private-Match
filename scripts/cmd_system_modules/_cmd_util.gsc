@@ -642,7 +642,7 @@ tcs_on_connect()
 		level waittill( "connected", player );
 		foreach ( index, dvar in level.clientdvars )
 		{
-			player setClientDvarThread( dvar[ "name" ], dvar[ "value" ], index );
+			player thread setClientDvarThread( dvar[ "name" ], dvar[ "value" ], index );
 		}
 		if ( player isHost() )
 		{

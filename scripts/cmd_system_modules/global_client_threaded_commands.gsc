@@ -8,7 +8,7 @@
 
 CMD_PLAYERLIST_f( arg_list )
 {
-	self notif( "new_command_listener" );
+	self notify( "new_command_listener" );
 	self endon( "new_command_listener" );
 	channel = self COM_GET_CMD_FEEDBACK_CHANNEL();
 	current_page = 1;
@@ -21,13 +21,13 @@ CMD_PLAYERLIST_f( arg_list )
 			players = getPlayers( team );
 			if ( players.size == 0 )
 			{
-				level COM_PRINTF( channel, "cmderror", "playerlist team " + team + " is empty", self );
+				level COM_PRINTF( channel, "cmderror", "Team " + team + " is empty", self );
 				return;
 			}
 		}
 		else 
 		{
-			level COM_PRINTF( channel, "cmderror", "playerlist: Received bad team " + team, self );
+			level COM_PRINTF( channel, "cmderror", "Received bad team " + team, self );
 			return;
 		}
 	}
@@ -40,7 +40,7 @@ CMD_PLAYERLIST_f( arg_list )
 	players_to_display = [];
 	for ( i = 0; i < players.size; i++ )
 	{
-		message = players[ i ].name + " " + players[ i ] getGUID() + " " + players[ i ] getEntityNumber() + " " + player.tcs_rank; //remember to add rank as a listing option
+		message = players[ i ].name + " " + players[ i ] getGUID() + " " + players[ i ] getEntityNumber() + " " + players[ i ].tcs_rank;
 		players_to_display[ players_to_display.size ] = message;
 		remaining_players--;
 		if ( ( players_to_display.size > level.commands_page_max ) && remaining_players != 0 )
@@ -94,7 +94,6 @@ CMD_CMDLIST_f( arg_list )
 {
 	self notify( "new_command_listener" );
 	self endon( "new_command_listener" );
-	namespace_filter = arg_list[ 0 ];
 	cmds_to_display = [];
 	channel = self COM_GET_CMD_FEEDBACK_CHANNEL();
 	current_page = 1;
@@ -104,7 +103,7 @@ CMD_CMDLIST_f( arg_list )
 	cmdnames = getArrayKeys( all_commands );
 	for ( i = 0; i < cmdnames.size; i++ )
 	{
-		message = "^4" + all_commands[ cmdnames[ i ] ].usage;
+		message = all_commands[ cmdnames[ i ] ].usage;
 		cmds_to_display[ cmds_to_display.size ] = message;
 		remaining_cmds--;
 		if ( ( cmds_to_display.size > level.commands_page_max ) && remaining_cmds != 0 )
