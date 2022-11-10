@@ -119,6 +119,10 @@ player_exists_in_perms_system( player )
 
 cmd_cooldown()
 {
+	if ( is_true( level.doing_command_system_unittest ) )
+	{
+		return;
+	}
 	if ( is_true( self.is_server ) )
 	{
 		return;
@@ -141,6 +145,10 @@ cmd_cooldown()
 
 can_use_multi_cmds()
 {
+	if ( is_true( level.doing_command_system_unittest ) )
+	{
+		return true;
+	}
 	if ( is_true( self.is_server ) )
 	{
 		return true;
@@ -158,6 +166,10 @@ can_use_multi_cmds()
 
 has_permission_for_cmd( cmdname, is_clientcmd )
 {
+	if ( is_true( level.doing_command_system_unittest ) )
+	{
+		return true;
+	}
 	if ( is_true( self.is_server ) )
 	{
 		return true;

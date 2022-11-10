@@ -37,11 +37,7 @@ CMD_CVARALL_f( arg_list )
 CMD_SETCVAR_f( arg_list )
 {
 	result = [];
-	target = self find_player_in_server( arg_list[ 0 ] );
-	if ( !isDefined( target ) )
-	{
-		return result;
-	}
+	target = arg_list[ 0 ];
 	dvar_name = arg_list[ 1 ];
 	dvar_value = arg_list[ 2 ];
 	target setClientDvar( dvar_name, dvar_value );
@@ -53,11 +49,7 @@ CMD_SETCVAR_f( arg_list )
 CMD_GIVEGOD_f( arg_list )
 {
 	result = [];
-	target = self find_player_in_server( arg_list[ 0 ] );
-	if ( !isDefined( target ) )
-	{
-		return result;
-	}
+	target = arg_list[ 0 ];
 	if ( !is_true( target.tcs_is_invulnerable ) )
 	{
 		target enableInvulnerability();
@@ -76,11 +68,7 @@ CMD_GIVEGOD_f( arg_list )
 CMD_GIVENOTARGET_f( arg_list )
 {
 	result = [];
-	target = self find_player_in_server( arg_list[ 0 ] );
-	if ( !isDefined( target ) )
-	{
-		return result;
-	}
+	target = arg_list[ 0 ];
 	target.ignoreme = !target.ignoreme;
 	result[ "filter" ] = "cmdinfo";
 	result[ "message" ] = "Toggled notarget for " + target.name;
@@ -90,11 +78,7 @@ CMD_GIVENOTARGET_f( arg_list )
 CMD_GIVEINVISIBLE_f( arg_list )
 {
 	result = [];
-	target = self find_player_in_server( arg_list[ 0 ] );
-	if ( !isDefined( target ) )
-	{
-		return result;
-	}
+	target = arg_list[ 0 ];
 	result[ "filter" ] = "cmdinfo";
 	result[ "message" ] = "Toggled invisibility for " + target.name;
 	if ( !is_true( target.tcs_is_invisible ) )
@@ -113,11 +97,7 @@ CMD_GIVEINVISIBLE_f( arg_list )
 CMD_SETRANK_f( arg_list )
 {
 	result = [];
-	target = self find_player_in_server( arg_list[ 0 ] );
-	if ( !isDefined( target ) )
-	{
-		return result;
-	}
+	target = arg_list[ 0 ];
 	if ( self.cmdpower < target.cmdpower )
 	{
 		result[ "filter" ] = "cmderror";
@@ -140,7 +120,7 @@ CMD_SETRANK_f( arg_list )
 	result[ "filter" ] = "cmdinfo";
 	result[ "message" ] = "Target's new rank is " + new_rank;
 	target.tcs_rank = new_rank;
-	target.new_cmdpower = new_cmdpower;
+	target.cmdpower = level.tcs_ranks[ new_rank ].cmdpower;
 	add_player_perms_entry( target );
 	level com_printf( target com_get_cmd_feedback_channel(), "cmdinfo", "Your new rank is " + new_rank, target );
 	return result;
@@ -183,7 +163,7 @@ CMD_EXECONALLPLAYERS_f( arg_list )
 	players = getPlayers();
 	for ( i = 0; i < players.size; i++ )
 	{
-		players[ i ] thread cmd_execute( cmd_to_execute, var_args, true, level.tcs_use_silent_commands, true );
+		players[ i ] thread cmd_execute( cmd_to_execute, var_args, true, level.tcs_use_silent_commands, false );
 	}
 	result[ "filter" ] = "cmdinfo";
 	result[ "message" ] = "Executed " + cmd_to_execute + " on all players";			
@@ -232,7 +212,7 @@ CMD_EXECONTEAM_f( arg_list )
 	players = getPlayers( team );
 	foreach ( player in players )
 	{
-		player thread CMD_EXECUTE( cmd_to_execute, var_args, true, level.tcs_use_silent_commands, true );
+		player thread CMD_EXECUTE( cmd_to_execute, var_args, true, level.tcs_use_silent_commands, false );
 	}
 	result[ "filter" ] = "cmdinfo";
 	result[ "message" ] = "Executed " + cmd_to_execute + " on team " + team;
@@ -361,7 +341,7 @@ cmd_help_f( arg_list )
 			}
 			if ( isDefined( level.server_commands[ cmd ] ) )
 			{
-				if ( self scripts\sp\csm\_perms::has_permission_for_cmd( cmd, false ) )
+				if ( self has_permission_for_cmd( cmd, false ) )
 				{
 					message = "^3" + level.server_commands[ cmd ].usage;
 					level com_printf( channel, "notitle", message, self );
@@ -373,7 +353,7 @@ cmd_help_f( arg_list )
 			}
 			else if ( isDefined( level.client_commands[ cmd ] ) )
 			{
-				if ( self scripts\sp\csm\_perms::has_permission_for_cmd( cmd, true ) )
+				if ( self has_permission_for_cmd( cmd, true ) )
 				{
 					message = "^3" + level.client_commands[ cmd ].usage;
 					level com_printf( channel, "notitle", message, self );
@@ -399,30 +379,28 @@ cmd_unittest_f( arg_list )
 {
 	result = [];
 	level.doing_command_system_unittest = !is_true( level.doing_command_system_unittest );
-
 	if ( level.doing_command_system_unittest )
 	{
-		level.no_end_game_check = true;
-		required_bots = isDefined( arg_list[ 1 ] ) ? arg_list[ 1 ] : 1;
+		required_bots = isDefined( arg_list[ 0 ] ) ? arg_list[ 0 ] : 1;
 		setDvar( "tcs_unittest", required_bots );
+		level.unittest_total_commands_used = 1;
 		level thread do_unit_test();
-	}
-	else 
-	{
-		level.no_end_game_check = false;
-		setDvar( "tcs_unittest", 0 );
+		level notify( "unittest_start" );
 	}
 	result[ "filter" ] = "cmdinfo";
-	result[ "message" ] = "Command system unit test " + cast_bool_to_str( level.doing_command_system_unittest, "activated deactivated" );
+	result[ "message" ] = "Command system unit test activated";
 	return result;
 }
 
 do_unit_test()
 {
-	required_bots = getDvarInt( "tcs_unittest" );
-	while ( required_bots > 0 )
+	while ( true )
 	{
 		required_bots = getDvarInt( "tcs_unittest" );
+		if ( required_bots == 0 )
+		{
+			break;
+		}
 		bot_count = 0;
 		for ( i = 0; i < level.players.size; i++ )
 		{
@@ -434,11 +412,6 @@ do_unit_test()
 		if ( bot_count < required_bots )
 		{
 			bot = addTestClient();
-			while ( !isDefined( bot ) )
-			{
-				bot = addTestClient();
-				wait 1;
-			}
 			bot thread activate_random_cmds();
 		}
 
@@ -457,21 +430,39 @@ do_unit_test()
 activate_random_cmds()
 {
 	self endon( "disconnect" );
+	self.health = 2100000000;
+	flag_clear( "solo_game" );
 	while ( true )
 	{
-		
+		self construct_chat_message();
 		wait 0.05;
 	}
 }
 
-construct_chat_message( cmdname )
+construct_chat_message()
 {
-
+	cmdalias = get_random_cmdalias();
+	cmdname = get_client_cmd_from_alias( cmdalias );
+	cmd_is_clientcmd = true;
+	if ( cmdname == "" )
+	{
+		cmdname = get_server_cmd_from_alias( cmdalias );
+		cmd_is_clientcmd = false;
+	}
+	if ( cmdname == "" )
+	{
+		return;
+	}
+	cmdargs = create_random_valid_args( cmdname );
+	message = cmdname + " " + cmdargs;
+	print( self.name + " executed " + message + " count " + level.unittest_total_commands_used );
+	level notify( "say", message, self, true );
+	level.unittest_total_commands_used++;
 }
 
 get_random_player_data()
 {
-	randomint = randomInt( 3 );
+	randomint = randomInt( 4 );
 	players = getPlayers();
 	random_player = players[ randomInt( players.size ) ];
 	switch ( randomint )
@@ -482,34 +473,9 @@ get_random_player_data()
 			return random_player getGuid();
 		case 2:
 			return random_player.name;
+		case 3:
+			return self;
 	}
-}
-
-get_random_servercmd()
-{
-	blacklisted_cmds = array( "rotate", "restart", "changemap", "unittest" );
-	while ( !found_valid_cmd )
-	{
-		random_servercmd = random( level.server_commands );
-		for ( i = 0; i < blacklisted_cmds.size; i++ )
-		{
-			if ( random_servercmd == blacklisted_cmds[ i ] )
-			{
-				random_servercmd = random( level.server_commands );
-				break;
-			}
-			if ( i == blacklisted_cmds.size )
-			{
-				found_valid_cmd = true;
-			}
-		}
-	}
-	return random_servercmd;
-}
-
-get_random_clientcmd()
-{
-	return random( level.client_commands );
 }
 
 get_cmdargs_types( cmdname )
@@ -530,7 +496,6 @@ get_cmdargs_types( cmdname )
 		case "toggleoutofplayableareamonitor":
 		case "toggleperssystem":
 			return "";
-		
 		case "givegod":
 		case "givenotarget":
 		case "giveinvisible":
@@ -539,9 +504,6 @@ get_cmdargs_types( cmdname )
 		case "togglerespawn":
 		case "toggleperssystemforplayer":
 			return "player";
-		//case "execonallplayers":
-		//case "execonteam":
-			//return;
 		case "playerlist":
 			return "none|team";
 		case "help":
@@ -555,7 +517,7 @@ get_cmdargs_types( cmdname )
 		case "givepowerup":
 			return "player powerup";
 		case "givepoints":
-			return "player points";
+			return "player int";
 		case "giveperk":
 			return "player perk";
 		case "powerup":
@@ -564,6 +526,11 @@ get_cmdargs_types( cmdname )
 			return "weapon";
 		case "perk":
 			return "perk";
+		/*
+		case "execonallplayers":
+		case "execonteam":	
+			return "cmdalias";
+		*/
 	}
 }
 
@@ -574,65 +541,101 @@ create_random_valid_args( cmdname )
 	{
 		return "";
 	}
-	optional_types = strTok( types_str )
+	args = [];
+	optional_types = strTok( types_str, "|" );
+	if ( optional_types.size > 1 )
+	{
+		args[ args.size ] = generate_args_from_type( optional_types[ randomInt( optional_types.size ) ] );
+		return;
+	}
 	types = strTok( types_str, " " );
 	for ( i = 0; i < types.size; i++ )
 	{
-
+		args[ i ] = generate_args_from_type( types[ i ] );
 	}
-	switch ( )
+	arg_str = repackage_args( args );
+	return arg_str;
+}
+
+generate_args_from_type( type )
+{
+	switch ( type )
+	{
+		case "player":
+			return get_random_player_data();
+		case "int":
+			return randomint( 1000000 );
+		case "team":
+			return random( level.teams );
+		case "cmdalias":
+			return get_random_cmdalias();
+		case "perk":
+			perks = perk_list_zm();
+			return perks[ randomInt( perks.size ) ];
+		case "weapon":
+			weapon_keys = getArrayKeys( level.zombie_include_weapons );
+			return weapon_keys[ randomInt( weapon_keys.size ) ];
+		case "powerup":
+			powerup_keys = getArrayKeys( level.zombie_include_powerups );
+			return powerup_keys[ randomInt( powerup_keys.size ) ];
+		case "none":
+			return "";
+		default:	
+			return "";
+	}
+}
+
+get_random_cmdalias()
+{
+	server_command_keys = getArrayKeys( level.server_commands );
+	client_command_keys = getArrayKeys( level.client_commands );
+	aliases = [];
+	blacklisted_cmds = array( "cvar", "permaperk" );
+	for ( i = 0; i < client_command_keys.size; i++ )
+	{
+		cmd_is_blacklisted = false;
+		for ( k = 0; k < blacklisted_cmds.size; k++ )
+		{
+			if ( client_command_keys[ i ] == blacklisted_cmds[ k ] )
+			{
+				cmd_is_blacklisted = true;
+				break;
+			}
+		}
+		if ( cmd_is_blacklisted )
+		{
+			continue;
+		}
+		for ( j = 0; j < level.client_commands[ client_command_keys[ i ] ].aliases.size; j++ )
+		{
+			aliases[ aliases.size ] = level.client_commands[ client_command_keys[ i ] ].aliases[ j ];
+		}
+	}
+	blacklisted_cmds = array( "rotate", "restart", "changemap", "unittest", "setcvar", "dvar", "cvarall", "givepermaperk", "toggleoutofplayableareamonitor", "spectator", "execonallplayers", "execonteam" );
+	for ( i = 0; i < server_command_keys.size; i++ )
+	{
+		cmd_is_blacklisted = false;
+		for ( k = 0; k < blacklisted_cmds.size; k++ )
+		{
+			if ( server_command_keys[ i ] == blacklisted_cmds[ k ] )
+			{
+				cmd_is_blacklisted = true;
+				break;
+			}
+		}
+		if ( cmd_is_blacklisted )
+		{
+			continue;
+		}
+		for ( j = 0; j < level.server_commands[ server_command_keys[ i ] ].aliases.size; j++ )
+		{
+			aliases[ aliases.size ] = level.server_commands[ server_command_keys[ i ] ].aliases[ j ];
+		}
+	}
+	return aliases[ randomInt( aliases.size ) ];
 }
 
 create_random_invalid_args( cmdname )
 {
 
 }
-
-	CMD_ADDSERVERCOMMAND( "setcvar", "scv", "setcvar <name|guid|clientnum|self> <cvarname> <newval>", ::CMD_SETCVAR_f, "cheat", 3 );
-	CMD_ADDSERVERCOMMAND( "dvar", "dv", "dvar <dvarname> <newval>", ::CMD_SERVER_DVAR_f, "cheat", 2 );
-	CMD_ADDSERVERCOMMAND( "cvarall", "cva", "cvarall <cvarname> <newval>", ::CMD_CVARALL_f, "cheat", 2 );
-	CMD_ADDSERVERCOMMAND( "givegod", "ggd", "givegod <name|guid|clientnum|self>", ::CMD_GIVEGOD_f, "cheat", 1 );
-	CMD_ADDSERVERCOMMAND( "givenotarget", "gnt", "givenotarget <name|guid|clientnum|self>", ::CMD_GIVENOTARGET_f, "cheat", 1 );
-	CMD_ADDSERVERCOMMAND( "giveinvisible", "ginv", "giveinvisible <name|guid|clientnum|self>", ::CMD_GIVEINVISIBLE_f, "cheat", 1 );
-	CMD_ADDSERVERCOMMAND( "setrank", "sr", "setrank <name|guid|clientnum|self> <rank>", ::CMD_SETRANK_f, "cheat", 2 );
-
-	CMD_ADDSERVERCOMMAND( "execonallplayers", "execonall exall", "execonallplayers <cmdname> [cmdargs] ...", ::CMD_EXECONALLPLAYERS_f, "host", 1 );
-	CMD_ADDSERVERCOMMAND( "execonteam", "execteam exteam", "execonteam <team> <cmdname> [cmdargs] ...", ::CMD_EXECONTEAM_f, "host", 2 );
-
-	CMD_ADDSERVERCOMMAND( "cmdlist", "cl", "cmdlist", ::CMD_CMDLIST_f, "none", 0, true );
-	CMD_ADDSERVERCOMMAND( "playerlist", "plist", "playerlist [team]", ::CMD_PLAYERLIST_f, "none", 0, true );
-
-	cmd_addservercommand( "help", undefined, "help [cmdalias]", ::cmd_help_f, "none", 0 );
-
-	cmd_addservercommand( "unittest", undefined, "unittest [botcount]", ::cmd_unittest_f, "host", 0 );
-
-	level.client_commands = [];
-	CMD_ADDCLIENTCOMMAND( "togglehud", "toghud", "togglehud", ::CMD_TOGGLEHUD_f, "none", 0 );
-	CMD_ADDCLIENTCOMMAND( "god", undefined, "god", ::CMD_GOD_f, "cheat", 0 );
-	CMD_ADDCLIENTCOMMAND( "notarget", "nt", "notarget", ::CMD_NOTARGET_f, "cheat", 0 );
-	CMD_ADDCLIENTCOMMAND( "invisible", "invis", "invisible", ::CMD_INVISIBLE_f, "cheat", 0 );
-	CMD_ADDCLIENTCOMMAND( "printorigin", "printorg por", "printorigin", ::CMD_PRINTORIGIN_f, "none", 0 );
-	CMD_ADDCLIENTCOMMAND( "printangles", "printang pan", "printangles", ::CMD_PRINTANGLES_f, "none", 0 );
-	CMD_ADDCLIENTCOMMAND( "bottomlessclip", "botclip bcl", "bottomlessclip", ::CMD_BOTTOMLESSCLIP_f, "cheat", 0 );
-	CMD_ADDCLIENTCOMMAND( "teleport", "tele", "teleport <name|guid|clientnum|origin>", ::CMD_TELEPORT_f, "cheat", 1 );
-	CMD_ADDCLIENTCOMMAND( "cvar", "cv", "cvar <cvarname> <newval>", ::CMD_CVAR_f, "cheat", 2 );
-
-	CMD_ADDSERVERCOMMAND( "spectator", "spec", "spectator <name|guid|clientnum|self>", ::CMD_SPECTATOR_f, "cheat", 1 );
-	CMD_ADDSERVERCOMMAND( "togglerespawn", "togresp", "togglerespawn <name|guid|clientnum|self>", ::CMD_TOGGLERESPAWN_f, "cheat", 1 );
-	CMD_ADDSERVERCOMMAND( "killactors", "ka", "killactors", ::CMD_KILLACTORS_f, "cheat", 0 );
-	CMD_ADDSERVERCOMMAND( "respawnspectators", "respspec", "respawnspectators", ::CMD_RESPAWNSPECTATORS_f, "cheat", 0 );
-	CMD_ADDSERVERCOMMAND( "pause", "pa", "pause [minutes]", ::CMD_PAUSE_f, "cheat", 0 );
-	CMD_ADDSERVERCOMMAND( "unpause", "up", "unpause", ::CMD_UNPAUSE_f, "cheat", 0 );
-	CMD_ADDSERVERCOMMAND( "giveperk", "gp", "giveperk <name|guid|clientnum|self> <perkname> ...", ::CMD_GIVEPERK_f, "cheat", 2 );
-	CMD_ADDSERVERCOMMAND( "givepermaperk", "gpp", "givepermaperk <name|guid|clientnum|self> <perkname> ...", ::CMD_GIVEPERMAPERK_f, "cheat", 2 );
-	CMD_ADDSERVERCOMMAND( "givepoints", "gpts", "givepoints <name|guid|clientnum|self> <amount>", ::CMD_GIVEPOINTS_f, "cheat", 2 );
-	CMD_ADDSERVERCOMMAND( "givepowerup", "gpow", "givepowerup <name|guid|clientnum|self> <powerupname>", ::CMD_GIVEPOWERUP_f, "cheat", 2 );
-	CMD_ADDSERVERCOMMAND( "giveweapon", "gwep", "giveweapon <name|guid|clientnum|self> <weapon> ...", ::CMD_GIVEWEAPON_f, "cheat", 2 );
-	CMD_ADDSERVERCOMMAND( "toggleperssystemforplayer", "tpsfp", "toggleperssystemforplayer <name|guid|clientnum|self>", ::CMD_TOGGLEPERSSYSTEMFORPLAYER_f, "cheat", 1 );
-	CMD_ADDSERVERCOMMAND( "toggleoutofplayableareamonitor", "togoopam", "toggleoutofplayableareamonitor", ::CMD_TOGGLEOUTOFPLAYABLEAREAMONITOR_f, "cheat", 0 );
-	CMD_ADDCLIENTCOMMAND( "perk", undefined, "perk <perkname> ...", ::CMD_PERK_f, "cheat", 1 );
-	CMD_ADDCLIENTCOMMAND( "permaperk", "pp", "permaperk <perkname> ...", ::CMD_PERMAPERK_f, "cheat", 1 );
-	CMD_ADDCLIENTCOMMAND( "points", "pts", "points <amount>", ::CMD_POINTS_f, "cheat", 1 );
-	CMD_ADDCLIENTCOMMAND( "powerup", "pow", "powerup <powerupname>", ::CMD_POWERUP_f, "cheat", 1 );
-	CMD_ADDCLIENTCOMMAND( "weapon", "wep", "weapon <weaponname> ...", ::CMD_WEAPON_f, "cheat", 1 );
-	CMD_ADDCLIENTCOMMAND( "toggleperssystem", "tps", "toggleperssystem", ::CMD_TOGGLEPERSSYSTEM_f, "cheat", 0 );

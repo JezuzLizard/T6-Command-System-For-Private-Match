@@ -1,5 +1,5 @@
 #include common_scripts\utility;
-#include maps\_utility;
+#include maps\mp\_utility;
 #include scripts\cmd_system_modules\_cmd_util;
 
 com_init()
@@ -69,7 +69,7 @@ com_caps_msg_title( channel, filter )
 	}
 	if ( channel == "g_log" )
 	{
-		return to_upper( filter ) + ":";
+		return toUpper( filter ) + ":";
 	}
 	if ( isSubStr( filter, "error" ) )
 	{
@@ -87,12 +87,12 @@ com_caps_msg_title( channel, filter )
 	{
 		color_code = "";
 	}
-	return color_code + to_upper( filter ) + ":";
+	return color_code + toUpper( filter ) + ":";
 }
 
 com_print( message, players, arg_list )
 {
-	printConsole( message );
+	print( message );
 }
 
 com_logprint( message, players, arg_list )
@@ -102,6 +102,10 @@ com_logprint( message, players, arg_list )
 
 com_iprintln( message, player, arg_list )
 {
+	if ( is_true( level.doing_command_system_unittest ) )
+	{
+		return;
+	}
 	if ( isDefined( player ) && !is_true( player.is_server ) )
 	{
 		player iPrintLn( message );
@@ -110,6 +114,10 @@ com_iprintln( message, player, arg_list )
 
 com_iprintln_array( message, players, arg_list )
 {
+	if ( is_true( level.doing_command_system_unittest ) )
+	{
+		return;
+	}
 	for ( i = 0; i < players.size; i++ )
 	{
 		players[ i ] iPrintLn( message );
@@ -118,6 +126,10 @@ com_iprintln_array( message, players, arg_list )
 
 com_iprintlnbold( message, players, arg_list )
 {
+	if ( is_true( level.doing_command_system_unittest ) )
+	{
+		return;
+	}
 	for ( i = 0; i < level.players.size; i++ )
 	{
 		level.players[ i ] iPrintLnBold( message );

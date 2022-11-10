@@ -104,3 +104,31 @@ pers_upgrades_monitor_override()
 		wait 0.05;
 	}
 }
+
+wait_network_frame_override()
+{
+	wait 0.1;
+}
+
+checkforalldead_override()
+{
+	return;
+}
+
+check_end_game_intermission_delay_override()
+{
+	while ( is_true( level.doing_command_system_unittest ) )
+	{
+		wait 1;
+	}
+}
+
+never_end_game()
+{
+	return false;
+}
+
+player_fake_death_override()
+{
+	return;
+}

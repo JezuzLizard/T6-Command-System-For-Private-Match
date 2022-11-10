@@ -291,7 +291,7 @@ find_player_in_server( clientnum_guid_or_name, noprint )
 	{
 		partial_message = "clientnums";	
 	}
-	channel = self scripts\sp\csm\_com::com_get_cmd_feedback_channel();
+	channel = com_get_cmd_feedback_channel();
 	if ( !isDefined( clientnum_guid_or_name ) )
 	{
 		if ( !noprint )
@@ -368,6 +368,44 @@ find_player_in_server( clientnum_guid_or_name, noprint )
 	return undefined;
 }
 
+is_player_valid( player, checkignoremeflag, ignore_laststand_players )
+{
+	if ( !isdefined( player ) )
+		return 0;
+
+	if ( !isalive( player ) )
+		return 0;
+
+	if ( !isplayer( player ) )
+		return 0;
+
+	if ( isdefined( player.is_zombie ) && player.is_zombie == 1 )
+		return 0;
+
+	if ( player.sessionstate == "spectator" )
+		return 0;
+
+	if ( player.sessionstate == "intermission" )
+		return 0;
+
+	if ( isdefined( self.intermission ) && self.intermission )
+		return 0;
+
+	if ( !( isdefined( ignore_laststand_players ) && ignore_laststand_players ) )
+	{
+		if ( isDefined( player.revivetrigger ) || is_true( player.lastand ) )
+			return 0;
+	}
+
+	if ( isdefined( checkignoremeflag ) && checkignoremeflag && player.ignoreme )
+		return 0;
+
+	if ( isdefined( level.is_player_valid_override ) )
+		return [[ level.is_player_valid_override ]]( player );
+
+	return 1;
+}
+
 getDvarStringDefault( dvarname, default_value )
 {
 	cur_dvar_value = getDvar( dvarname );
@@ -377,6 +415,7 @@ getDvarStringDefault( dvarname, default_value )
 	}
 	else 
 	{
+		setDvar( dvarname, default_value );
 		return default_value;
 	}
 }
@@ -474,7 +513,7 @@ repackage_args( arg_list )
 	return args_string;
 }
 
-cmd_addservercommand( cmdname, cmdaliases, cmdusage, cmdfunc, rankgroup, minargs, is_threaded_cmd )
+cmd_addservercommand( cmdname, cmdaliases, cmdusage, cmdfunc, rankgroup, minargs, uses_player_validity_check, is_threaded_cmd )
 {
 	if ( !isDefined( level.tcs_ranks[ rankgroup ] ) )
 	{
@@ -498,6 +537,7 @@ cmd_addservercommand( cmdname, cmdaliases, cmdusage, cmdfunc, rankgroup, minargs
 	level.server_commands[ cmdname ].aliases = aliases;
 	level.server_commands[ cmdname ].power = level.tcs_ranks[ rankgroup ].cmdpower;
 	level.server_commands[ cmdname ].minargs = minargs;
+	level.server_commands[ cmdname ].uses_player_validity_check = uses_player_validity_check;
 	level.commands_total++;
 	if ( is_true( is_threaded_cmd ) )
 	{
@@ -512,6 +552,14 @@ cmd_addservercommand( cmdname, cmdaliases, cmdusage, cmdfunc, rankgroup, minargs
 		level.server_command_groups[ rankgroup ] = [];
 	}
 	level.server_command_groups[ rankgroup ][ cmdname ] = true;
+	if ( isSubStr( cmdusage, "name|guid|clientnum" ) )
+	{
+		if ( !isDefined( level.cmds_using_find_player ) )
+		{
+			level.cmds_using_find_player = [];
+		}
+		level.cmds_using_find_player[ cmdname ] = true;
+	}
 }
 
 cmd_removeservercommand( cmdname )
@@ -529,6 +577,7 @@ cmd_removeservercommand( cmdname )
 			new_command_array[ cmd ].aliases = level.server_commands[ cmd ].aliases;
 			new_command_array[ cmd ].power = level.server_commands[ cmd ].power;
 			new_command_array[ cmd ].minargs = level.server_commands[ cmd ].minargs;
+			new_command_array[ cmd ].uses_player_validity_check = level.server_commands[ cmd ].uses_player_validity_check;
 		}
 		else 
 		{
@@ -555,7 +604,7 @@ cmd_setservercommandcmdpower( cmdname, power )
 	}
 }
 
-cmd_addclientcommand( cmdname, cmdaliases, cmdusage, cmdfunc, rankgroup, minargs, is_threaded_cmd )
+cmd_addclientcommand( cmdname, cmdaliases, cmdusage, cmdfunc, rankgroup, minargs, uses_player_validity_check, is_threaded_cmd )
 {
 	if ( !isDefined( level.tcs_ranks[ rankgroup ] ) )
 	{
@@ -578,6 +627,7 @@ cmd_addclientcommand( cmdname, cmdaliases, cmdusage, cmdfunc, rankgroup, minargs
 	level.client_commands[ cmdname ].aliases = aliases;
 	level.client_commands[ cmdname ].power = level.tcs_ranks[ rankgroup ].cmdpower;
 	level.client_commands[ cmdname ].minargs = minargs;
+	level.client_commands[ cmdname ].uses_player_validity_check = uses_player_validity_check;
 	level.commands_total++;
 	if ( is_true( is_threaded_cmd ) )
 	{
@@ -609,6 +659,7 @@ cmd_removeclientcommand( cmdname )
 			new_command_array[ cmd ].aliases = level.client_commands[ cmd ].aliases;
 			new_command_array[ cmd ].power = level.client_commands[ cmd ].power;
 			new_command_array[ cmd ].minargs = level.client_commands[ cmd ].minargs;
+			new_command_array[ cmd ].uses_player_validity_check = level.client_commands[ cmd ].uses_player_validity_check;
 		}
 		else 
 		{
@@ -635,9 +686,8 @@ cmd_setclientcommandcmdpower( cmdname, power )
 	}
 }
 
-cmd_execute( cmdname, arg_list, is_clientcmd, silent, nologprint )
+cmd_execute( cmdname, arg_list, is_clientcmd, silent, logprint )
 {
-	// An attempt at printing the usage if the min args isn't met
 	channel = self com_get_cmd_feedback_channel();
 	result = [];
 	if ( !test_cmd_is_valid( cmdname, arg_list, is_clientcmd ) )
@@ -646,6 +696,14 @@ cmd_execute( cmdname, arg_list, is_clientcmd, silent, nologprint )
 	}
 	if ( is_clientcmd )
 	{
+		if ( is_true( level.client_commands[ cmdname ].uses_player_validity_check ) )
+		{
+			if ( isDefined( level.tcs_player_is_valid_check ) && ![[ level.tcs_player_is_valid_check ]]( self ) )
+			{
+				level com_printf( channel, "cmderror", "You are not in a valid state for " + cmdname + " to work", self );
+				return;
+			}
+		}
 		if ( is_true( level.threaded_commands[ cmdname ] ) )
 		{
 			self thread [[ level.client_commands[ cmdname ].func ]]( arg_list );
@@ -658,6 +716,22 @@ cmd_execute( cmdname, arg_list, is_clientcmd, silent, nologprint )
 	}
 	else 
 	{
+		if ( is_true ( level.cmds_using_find_player[ cmdname ] ) )
+		{
+			arg_list[ 0 ] = self find_player_in_server( arg_list[ 0 ] );
+			if ( !isDefined( arg_list[ 0 ] ) )
+			{
+				return;
+			}
+			if ( is_true( level.server_commands[ cmdname ].uses_player_validity_check ) )
+			{
+				if ( isDefined( level.tcs_player_is_valid_check ) && ![[ level.tcs_player_is_valid_check ]]( arg_list[ 0 ] ) )
+				{
+					level com_printf( channel, "cmderror", "Target " + arg_list[ 1 ].name + " is not in a valid state for " + cmdname + " to work", self );
+					return;
+				}
+			}
+		}
 		if ( is_true( level.threaded_commands[ cmdname ] ) )
 		{
 			self thread [[ level.server_commands[ cmdname ].func ]]( arg_list );
@@ -675,8 +749,13 @@ cmd_execute( cmdname, arg_list, is_clientcmd, silent, nologprint )
 	channel = self com_get_cmd_feedback_channel();
 	if ( result[ "filter" ] != "cmderror" )
 	{
-		cmd_log = self.name + " executed " + result[ "message" ];
-		if ( !is_true( nologprint ) )
+		count = "";
+		if ( is_true( level.doing_command_system_unittest ) )
+		{
+			count = " count " + level.unittest_total_commands_used;
+		}
+		cmd_log = self.name + " executed " + cmdname + " " + repackage_args( arg_list ) + count;
+		if ( is_true( logprint ) )
 		{
 			level com_printf( "g_log", result[ "filter" ], cmd_log, self );
 		}
@@ -823,7 +902,7 @@ test_cmd_is_valid( cmdname, arg_list, is_clientcmd )
 	}
 	else
 	{
-		if ( arg_list.size < level.server_commands[ cmdname ].min_args )
+		if ( arg_list.size < level.server_commands[ cmdname ].minargs )
 		{
 			level com_printf( channel, "cmderror", "Usage: " + level.server_commands[ cmdname ].usage, self );
 			return false;

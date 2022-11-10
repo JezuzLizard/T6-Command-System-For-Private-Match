@@ -135,18 +135,7 @@ CMD_TELEPORT_f( arg_list )
 	target = self find_player_in_server( arg_list[ 0 ] );
 	if ( !isDefined( target ) )
 	{
-		origin = cast_to_vector( arg_list[ 0 ] );
-		if ( isVec( origin ) )
-		{
-			self setOrigin( origin );
-			result[ "filter" ] = "cmdinfo";
-			result[ "message" ] = "You have successfully teleported";
-		}
-		else 
-		{
-			result[ "filter" ] = "cmderror";
-			result[ "message" ] = "Invalid origin, format is (x,y,z)";
-		}
+		return result;
 	}
 	else 
 	{

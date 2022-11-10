@@ -12,6 +12,9 @@
 main()
 {
 	COM_INIT();
+	level.server = spawnStruct();
+	level.server.playername = "Server";
+	level.server.is_server = true;
 	level.custom_commands_restart_countdown = 5;
 	level.commands_total = 0;
 	level.commands_page_count = 0;
@@ -90,35 +93,36 @@ main()
 	level.tcs_com_get_feedback_channel = ::com_get_cmd_feedback_channel;
 	level.tcs_find_player_in_server = ::find_player_in_server;
 	level.tcs_check_cmd_collisions = ::check_for_command_alias_collisions;
+	level.tcs_player_is_valid_check = scripts\cmd_system_modules\_cmd_util::is_player_valid;
 	level.server_commands = [];
-	CMD_ADDSERVERCOMMAND( "setcvar", "scv", "setcvar <name|guid|clientnum|self> <cvarname> <newval>", ::CMD_SETCVAR_f, "cheat", 3 );
-	CMD_ADDSERVERCOMMAND( "dvar", "dv", "dvar <dvarname> <newval>", ::CMD_SERVER_DVAR_f, "cheat", 2 );
-	CMD_ADDSERVERCOMMAND( "cvarall", "cva", "cvarall <cvarname> <newval>", ::CMD_CVARALL_f, "cheat", 2 );
-	CMD_ADDSERVERCOMMAND( "givegod", "ggd", "givegod <name|guid|clientnum|self>", ::CMD_GIVEGOD_f, "cheat", 1 );
-	CMD_ADDSERVERCOMMAND( "givenotarget", "gnt", "givenotarget <name|guid|clientnum|self>", ::CMD_GIVENOTARGET_f, "cheat", 1 );
-	CMD_ADDSERVERCOMMAND( "giveinvisible", "ginv", "giveinvisible <name|guid|clientnum|self>", ::CMD_GIVEINVISIBLE_f, "cheat", 1 );
-	CMD_ADDSERVERCOMMAND( "setrank", "sr", "setrank <name|guid|clientnum|self> <rank>", ::CMD_SETRANK_f, "cheat", 2 );
+	CMD_ADDSERVERCOMMAND( "setcvar", "scv", "setcvar <name|guid|clientnum|self> <cvarname> <newval>", ::CMD_SETCVAR_f, "cheat", 3, false );
+	CMD_ADDSERVERCOMMAND( "dvar", "dv", "dvar <dvarname> <newval>", ::CMD_SERVER_DVAR_f, "cheat", 2, false );
+	CMD_ADDSERVERCOMMAND( "cvarall", "cva", "cvarall <cvarname> <newval>", ::CMD_CVARALL_f, "cheat", 2, false );
+	CMD_ADDSERVERCOMMAND( "givegod", "ggd", "givegod <name|guid|clientnum|self>", ::CMD_GIVEGOD_f, "cheat", 1, true );
+	CMD_ADDSERVERCOMMAND( "givenotarget", "gnt", "givenotarget <name|guid|clientnum|self>", ::CMD_GIVENOTARGET_f, "cheat", 1, true );
+	CMD_ADDSERVERCOMMAND( "giveinvisible", "ginv", "giveinvisible <name|guid|clientnum|self>", ::CMD_GIVEINVISIBLE_f, "cheat", 1, true );
+	CMD_ADDSERVERCOMMAND( "setrank", "sr", "setrank <name|guid|clientnum|self> <rank>", ::CMD_SETRANK_f, "cheat", 2, false );
 
-	CMD_ADDSERVERCOMMAND( "execonallplayers", "execonall exall", "execonallplayers <cmdname> [cmdargs] ...", ::CMD_EXECONALLPLAYERS_f, "host", 1 );
-	CMD_ADDSERVERCOMMAND( "execonteam", "execteam exteam", "execonteam <team> <cmdname> [cmdargs] ...", ::CMD_EXECONTEAM_f, "host", 2 );
+	CMD_ADDSERVERCOMMAND( "execonallplayers", "execonall exall", "execonallplayers <cmdname> [cmdargs] ...", ::CMD_EXECONALLPLAYERS_f, "host", 1, false );
+	CMD_ADDSERVERCOMMAND( "execonteam", "execteam exteam", "execonteam <team> <cmdname> [cmdargs] ...", ::CMD_EXECONTEAM_f, "host", 2, false );
 
-	CMD_ADDSERVERCOMMAND( "cmdlist", "cl", "cmdlist", ::CMD_CMDLIST_f, "none", 0, true );
-	CMD_ADDSERVERCOMMAND( "playerlist", "plist", "playerlist [team]", ::CMD_PLAYERLIST_f, "none", 0, true );
+	CMD_ADDSERVERCOMMAND( "cmdlist", "cl", "cmdlist", ::CMD_CMDLIST_f, "none", 0, false, true );
+	CMD_ADDSERVERCOMMAND( "playerlist", "plist", "playerlist [team]", ::CMD_PLAYERLIST_f, "none", 0, false, true );
 
-	cmd_addservercommand( "help", undefined, "help [cmdalias]", ::cmd_help_f, "none", 0 );
+	cmd_addservercommand( "help", undefined, "help [cmdalias]", ::cmd_help_f, "none", 0, false );
 
-	cmd_addservercommand( "unittest", undefined, "unittest [botcount]", ::cmd_unittest_f, "host", 0 );
+	cmd_addservercommand( "unittest", undefined, "unittest [botcount]", ::cmd_unittest_f, "host", 0, false );
 
 	level.client_commands = [];
-	CMD_ADDCLIENTCOMMAND( "togglehud", "toghud", "togglehud", ::CMD_TOGGLEHUD_f, "none", 0 );
-	CMD_ADDCLIENTCOMMAND( "god", undefined, "god", ::CMD_GOD_f, "cheat", 0 );
-	CMD_ADDCLIENTCOMMAND( "notarget", "nt", "notarget", ::CMD_NOTARGET_f, "cheat", 0 );
-	CMD_ADDCLIENTCOMMAND( "invisible", "invis", "invisible", ::CMD_INVISIBLE_f, "cheat", 0 );
-	CMD_ADDCLIENTCOMMAND( "printorigin", "printorg por", "printorigin", ::CMD_PRINTORIGIN_f, "none", 0 );
-	CMD_ADDCLIENTCOMMAND( "printangles", "printang pan", "printangles", ::CMD_PRINTANGLES_f, "none", 0 );
-	CMD_ADDCLIENTCOMMAND( "bottomlessclip", "botclip bcl", "bottomlessclip", ::CMD_BOTTOMLESSCLIP_f, "cheat", 0 );
-	CMD_ADDCLIENTCOMMAND( "teleport", "tele", "teleport <name|guid|clientnum|origin>", ::CMD_TELEPORT_f, "cheat", 1 );
-	CMD_ADDCLIENTCOMMAND( "cvar", "cv", "cvar <cvarname> <newval>", ::CMD_CVAR_f, "cheat", 2 );
+	CMD_ADDCLIENTCOMMAND( "togglehud", "toghud", "togglehud", ::CMD_TOGGLEHUD_f, "none", 0, false );
+	CMD_ADDCLIENTCOMMAND( "god", undefined, "god", ::CMD_GOD_f, "cheat", 0, true );
+	CMD_ADDCLIENTCOMMAND( "notarget", "nt", "notarget", ::CMD_NOTARGET_f, "cheat", 0, true );
+	CMD_ADDCLIENTCOMMAND( "invisible", "invis", "invisible", ::CMD_INVISIBLE_f, "cheat", 0, true );
+	CMD_ADDCLIENTCOMMAND( "printorigin", "printorg por", "printorigin", ::CMD_PRINTORIGIN_f, "none", 0, false );
+	CMD_ADDCLIENTCOMMAND( "printangles", "printang pan", "printangles", ::CMD_PRINTANGLES_f, "none", 0, false );
+	CMD_ADDCLIENTCOMMAND( "bottomlessclip", "botclip bcl", "bottomlessclip", ::CMD_BOTTOMLESSCLIP_f, "cheat", 0, true );
+	CMD_ADDCLIENTCOMMAND( "teleport", "tele", "teleport <name|guid|clientnum>", ::CMD_TELEPORT_f, "cheat", 1, false );
+	CMD_ADDCLIENTCOMMAND( "cvar", "cv", "cvar <cvarname> <newval>", ::CMD_CVAR_f, "cheat", 2, false );
 
 	level thread COMMAND_BUFFER();
 	level thread end_commands_on_end_game();
@@ -141,6 +145,7 @@ scr_dvar_command_watcher()
 {
 	level endon( "end_commands" );
 	wait 1;
+	setDvar( "tcscmd", "" );
 	while ( true )
 	{
 		dvar_value = getDvar( "tcscmd" );
@@ -165,7 +170,14 @@ COMMAND_BUFFER()
 		}
 		if ( !isDefined( player ) )
 		{
-			player = level.host;
+			if ( isDedicated() )
+			{
+				player = level.server;
+			}
+			else 
+			{
+				player = level.host;
+			}
 		}
 		channel = player COM_GET_CMD_FEEDBACK_CHANNEL();
 		if ( isDefined( player.cmd_cooldown ) && player.cmd_cooldown > 0 )
@@ -198,8 +210,15 @@ COMMAND_BUFFER()
 			}
 			else
 			{
-				player CMD_EXECUTE( cmdname, args, is_clientcmd, level.tcs_use_silent_commands, level.tcs_logprint_cmd_usage );
-				player thread CMD_COOLDOWN();
+				if ( is_clientcmd && is_true( player.is_server ) )
+				{
+					level com_printf( channel, "cmderror", "You cannot use " + cmdname + " client command as the server", player );
+				}
+				else 
+				{
+					player cmd_execute( cmdname, args, is_clientcmd, false, level.tcs_logprint_cmd_usage );
+					player thread cmd_cooldown();
+				}
 			}
 		}
 	}
