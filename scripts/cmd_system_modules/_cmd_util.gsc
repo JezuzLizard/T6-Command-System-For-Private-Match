@@ -101,29 +101,37 @@ get_powerup_from_alias_zm( alias )
 			return "nuke";
 		case "insta":
 		case "instakill":
+		case "insta_kill":
 			return "insta_kill";
 		case "double":
 		case "doublepoints":
+		case "double_points":
 			return "double_points";
 		case "max":
 		case "ammo":
 		case "maxammo":
+		case "full_ammo":
 			return "full_ammo";
 		case "carp":
 		case "carpenter":
 			return "carpenter";
 		case "sale":
 		case "firesale":
+		case "fire_sale":
 			return "fire_sale";
 		case "perk":
 		case "freeperk":
+		case "free_perk":
 			return "free_perk";
 		case "blood":
 		case "zombieblood":
+		case "zombie_blood":
 			return "zombie_blood";
 		case "points":
+		case "bonus_points":
 			return "bonus_points";
 		case "teampoints":
+		case "bonus_points_team":
 			return "bonus_points_team";
 		default:
 			return alias;
@@ -269,10 +277,29 @@ server_safe_notify_thread( notify_name, index )
 	level notify( notify_name );
 }
 
-find_player_in_server( clientnum_guid_or_name )
+find_player_in_server( clientnum_guid_or_name, noprint )
 {
+	if ( !isDefined( noprint ) )
+	{
+		noprint = false;
+	}
+	if ( self.cmdpower >= level.CMD_POWER_MODERATOR )
+	{
+		partial_message = "clientnums and guids";
+	}
+	else 
+	{
+		partial_message = "clientnums";	
+	}
+	channel = self scripts\sp\csm\_com::com_get_cmd_feedback_channel();
 	if ( !isDefined( clientnum_guid_or_name ) )
 	{
+		if ( !noprint )
+		{
+			level com_printf( channel, "cmderror", "Could not find player", self );
+			level com_printf( channel, "cmderror", "Try using /playerlist to view " + partial_message + " to use a cmd on instead of the name", self );
+		}
+
 		return undefined;
 	}
 	if ( clientnum_guid_or_name == "self" )
@@ -280,6 +307,9 @@ find_player_in_server( clientnum_guid_or_name )
 		return self;
 	}
 	is_int = is_str_int( clientnum_guid_or_name );
+	client_num = undefined;
+	guid = undefined;
+	name = undefined;
 	if ( is_int && ( int( clientnum_guid_or_name ) < getDvarInt( "sv_maxclients" ) ) )
 	{
 		client_num = int( clientnum_guid_or_name );
@@ -287,7 +317,7 @@ find_player_in_server( clientnum_guid_or_name )
 	}
 	else if ( is_int )
 	{
-		GUID = int( clientnum_guid_or_name );
+		guid = int( clientnum_guid_or_name );
 		enum = 1;
 	}
 	else 
@@ -296,11 +326,13 @@ find_player_in_server( clientnum_guid_or_name )
 		enum = 2;
 	}
 	player_data = [];
+	players = getPlayers();
 	switch ( enum )
 	{
 		case 0:
-			foreach ( player in level.players )
+			for ( i = 0; i < players.size; i++ )
 			{
+				player = players[ i ];
 				if ( player getEntityNumber() == client_num )
 				{
 					return player;
@@ -308,23 +340,30 @@ find_player_in_server( clientnum_guid_or_name )
 			}
 			break;
 		case 1:
-			foreach ( player in level.players )
+			for ( i = 0; i < players.size; i++ )
 			{
-				if ( player getGUID() == GUID )
+				player = players[ i ];
+				if ( player getGUID() == guid )
 				{
 					return player;
 				}
 			}
 			break;
 		case 2:
-			foreach ( player in level.players )
+			for ( i = 0; i < players.size; i++ )
 			{
+				player = players[ i ];
 				if ( clean_player_name_of_clantag( toLower( player.name ) ) == clean_player_name_of_clantag( name ) || isSubStr( toLower( player.name ), name ) )
 				{
 					return player;
 				}
 			}
 			break;
+	}
+	if ( !noprint )
+	{
+		level com_printf( channel, "cmderror", "Could not find player", self );
+		level com_printf( channel, "cmderror", "Try using /playerlist to view " + partial_message + " to use a cmd on instead of the name", self );
 	}
 	return undefined;
 }
@@ -344,59 +383,67 @@ getDvarStringDefault( dvarname, default_value )
 
 is_command_token( char )
 {
-	if ( isDefined( level.custom_commands_tokens ) )
+	if ( isDefined( level.custom_commands_tokens ) && isDefined( level.custom_commands_tokens[ char ] ) )
 	{
-		foreach ( token in level.custom_commands_tokens )
-		{
-			if ( char == token )
-			{
-				return true;
-			}
-		}
+		return true;
 	}
 	return false;
 }
 
-is_str_int( str )
+is_str_int(value)
 {
-	val = 0;
-	list_num = [];
-	list_num[ "0" ] = val;
-	val++;
-	list_num[ "1" ] = val;
-	val++;
-	list_num[ "2" ] = val;
-	val++;
-	list_num[ "3" ] = val;
-	val++;
-	list_num[ "4" ] = val;
-	val++;
-	list_num[ "5" ] = val;
-	val++;
-	list_num[ "6" ] = val;
-	val++;
-	list_num[ "7" ] = val;
-	val++;
-	list_num[ "8" ] = val;
-	val++;
-	list_num[ "9" ] = val;
-	for ( i = 0; i < str.size; i++ )
-	{
-		if ( !isDefined( list_num[ str[ i ] ] ) )
-		{
-			return false;
-		}
-	}
-	return true;
+	zero = [];
+	zero[ "0" ] = true;
+	if ( is_true( zero[ value ] ) )
+		return true;
+	return int( value ) != 0;
+}
+
+is_natural_num(value)
+{
+	return int(value) > 0;
 }
 
 clean_player_name_of_clantag( name )
 {
-	if ( isSubStr( name, "]" ) )
+	//count how many square brackets are in the name
+	//because Plutonium allows users to create names with square brackets in them criiiiiinge
+	cancer_chars_left = [];
+	cancer_chars_left[ "[" ] = true;
+	cancer_chars_right = [];
+	cancer_chars_right[ "]" ] = true;
+	count_left = 0;
+	count_right = 0;
+	name_is_cancer = false;
+	for ( i = 0; i < name.size; i++ )
 	{
-		keys = strTok( name, "]" );
-		return keys[ 1 ];
+		if ( is_true( cancer_chars_left[ name[ i ] ] ) )
+		{
+			count_left++;
+		}
+		else if ( is_true( cancer_chars_right[ name[ i ] ] ) )
+		{
+			count_right++;
+		}
+		if ( count_left > 1 || count_right > 1 )
+		{
+			name_is_cancer = true;
+			break;
+		}
 	}
+	if ( name_is_cancer )
+	{
+		return name;
+	}
+	else 
+	{
+		if ( isSubStr( name, "]" ) )
+		{
+			keys = strTok( name, "]" );
+			return keys[ 1 ];
+		}
+	}
+
 	return name;
 }
 
@@ -427,31 +474,53 @@ repackage_args( arg_list )
 	return args_string;
 }
 
-CMD_ADDSERVERCOMMAND( cmdname, cmdaliases, cmdusage, cmdfunc, cmdpower, is_threaded_cmd )
+cmd_addservercommand( cmdname, cmdaliases, cmdusage, cmdfunc, rankgroup, minargs, is_threaded_cmd )
 {
-	aliases = strTok( cmdaliases, " " );
+	if ( !isDefined( level.tcs_ranks[ rankgroup ] ) )
+	{
+		level com_printf( "con|g_log", "cmderror", "Failed to register server cmd " + cmdname + ", attempted to use an unregistered rankgroup " + rankgroup );
+		return;
+	}
+	aliases = [];
+	aliases[ 0 ] = cmdname;
+	if ( isDefined( cmdaliases ) )
+	{
+		cmd_aliases_tokens = strTok( cmdaliases, " " );
+		for ( i = 1; i < cmd_aliases_tokens.size; i++ )
+		{
+			aliases[ i ] = cmd_aliases_tokens[ i - 1 ];
+		}
+	}
+
 	level.server_commands[ cmdname ] = spawnStruct();
 	level.server_commands[ cmdname ].usage = cmdusage;
 	level.server_commands[ cmdname ].func = cmdfunc;
 	level.server_commands[ cmdname ].aliases = aliases;
-	level.server_commands[ cmdname ].power = cmdpower;
+	level.server_commands[ cmdname ].power = level.tcs_ranks[ rankgroup ].cmdpower;
+	level.server_commands[ cmdname ].minargs = minargs;
 	level.commands_total++;
-	if ( ceil( level.commands_total / level.commands_page_max ) >= level.commands_page_count )
-	{
-		level.commands_page_count++;
-	}
 	if ( is_true( is_threaded_cmd ) )
 	{
 		level.threaded_commands[ cmdname ] = true;
 	}
+	if ( !isDefined( level.server_command_groups ) )
+	{
+		level.server_command_groups = [];
+	}
+	if ( !isDefined( level.server_command_groups[ rankgroup ] ) )
+	{
+		level.server_command_groups[ rankgroup ] = [];
+	}
+	level.server_command_groups[ rankgroup ][ cmdname ] = true;
 }
 
-CMD_REMOVESERVERCOMMAND( cmdname )
+cmd_removeservercommand( cmdname )
 {
 	new_command_array = [];
 	cmd_keys = getArrayKeys( level.server_commands );
-	foreach ( cmd in cmd_keys )
+	for ( i = 0; i < cmd_keys.size; i++ )
 	{
+		cmd = cmd_keys[ i ];
 		if ( cmdname != cmd )
 		{
 			new_command_array[ cmd ] = spawnStruct();
@@ -459,41 +528,79 @@ CMD_REMOVESERVERCOMMAND( cmdname )
 			new_command_array[ cmd ].func = level.server_commands[ cmd ].func;
 			new_command_array[ cmd ].aliases = level.server_commands[ cmd ].aliases;
 			new_command_array[ cmd ].power = level.server_commands[ cmd ].power;
+			new_command_array[ cmd ].minargs = level.server_commands[ cmd ].minargs;
 		}
 		else 
 		{
-			level.threaded_commands[ cmd ] = false;
+			level.threaded_commands[ cmd ] = undefined;
+			rankgroups = getArrayKeys( level.server_command_groups );
+			for ( j = 0; j < rankgroups.size; j++ )
+			{
+				if ( isDefined( level.server_command_groups[ rankgroups[ i ] ][ cmd ] ) )
+				{
+					level.server_command_groups[ rankgroups[ i ] ][ cmd ] = undefined;
+					break;
+				}
+			}
 		}
 	}
 	level.server_commands = new_command_array;
-	recalculate_command_page_counts();
-} 
+}
 
-CMD_ADDCLIENTCOMMAND( cmdname, cmdaliases, cmdusage, cmdfunc, cmdpower, is_threaded_cmd )
+cmd_setservercommandcmdpower( cmdname, power )
 {
-	aliases = strTok( cmdaliases, " " );
+	if ( isDefined( level.server_commands[ cmdname ] ) )
+	{
+		level.server_commands[ cmdname ].power = power;
+	}
+}
+
+cmd_addclientcommand( cmdname, cmdaliases, cmdusage, cmdfunc, rankgroup, minargs, is_threaded_cmd )
+{
+	if ( !isDefined( level.tcs_ranks[ rankgroup ] ) )
+	{
+		level com_printf( "con|g_log", "cmderror", "Failed to register client cmd " + cmdname + ", attempted to use an unregistered rankgroup " + rankgroup );
+		return;
+	}
+	aliases = [];
+	aliases[ 0 ] = cmdname;
+	if ( isDefined( cmdaliases ) )
+	{
+		cmd_aliases_tokens = strTok( cmdaliases, " " );
+		for ( i = 1; i < cmd_aliases_tokens.size; i++ )
+		{
+			aliases[ i ] = cmd_aliases_tokens[ i - 1 ];
+		}
+	}
 	level.client_commands[ cmdname ] = spawnStruct();
 	level.client_commands[ cmdname ].usage = cmdusage;
 	level.client_commands[ cmdname ].func = cmdfunc;
 	level.client_commands[ cmdname ].aliases = aliases;
-	level.client_commands[ cmdname ].power = cmdpower;
+	level.client_commands[ cmdname ].power = level.tcs_ranks[ rankgroup ].cmdpower;
+	level.client_commands[ cmdname ].minargs = minargs;
 	level.commands_total++;
-	if ( ceil( level.commands_total / level.commands_page_max ) >= level.commands_page_count )
-	{
-		level.commands_page_count++;
-	}
 	if ( is_true( is_threaded_cmd ) )
 	{
 		level.threaded_commands[ cmdname ] = true;
 	}
+	if ( !isDefined( level.client_command_groups ) )
+	{
+		level.client_command_groups = [];
+	}
+	if ( !isDefined( level.client_command_groups[ rankgroup ] ) )
+	{
+		level.client_command_groups[ rankgroup ] = [];
+	}
+	level.client_command_groups[ rankgroup ][ cmdname ] = true;
 }
 
-CMD_REMOVECLIENTCOMMAND( cmdname )
+cmd_removeclientcommand( cmdname )
 {
 	new_command_array = [];
 	cmd_keys = getArrayKeys( level.client_commands );
-	foreach ( cmd in cmd_keys )
+	for ( i = 0; i < cmd_keys.size; i++ )
 	{
+		cmd = cmd_keys[ i ];
 		if ( cmdname != cmd )
 		{
 			new_command_array[ cmd ] = spawnStruct();
@@ -501,106 +608,60 @@ CMD_REMOVECLIENTCOMMAND( cmdname )
 			new_command_array[ cmd ].func = level.client_commands[ cmd ].func;
 			new_command_array[ cmd ].aliases = level.client_commands[ cmd ].aliases;
 			new_command_array[ cmd ].power = level.client_commands[ cmd ].power;
+			new_command_array[ cmd ].minargs = level.client_commands[ cmd ].minargs;
 		}
 		else 
 		{
-			level.threaded_commands[ cmd ] = false;
+			level.threaded_commands[ cmd ] = undefined;
+			rankgroups = getArrayKeys( level.client_command_groups );
+			for ( j = 0; j < rankgroups.size; j++ )
+			{
+				if ( isDefined( level.client_command_groups[ rankgroups[ i ] ][ cmd ] ) )
+				{
+					level.client_command_groups[ rankgroups[ i ] ][ cmd ] = undefined;
+					break;
+				}
+			}
 		}
 	}
 	level.client_commands = new_command_array;
-	recalculate_command_page_counts();
-} 
-
-recalculate_command_page_counts()
-{
-	total_commands = arrayCombine( level.server_commands, level.client_commands, 1, 0 );
-	level.commands_page_count = 0;
-	for ( level.commands_total = 0; level.commands_total < total_commands.size; level.commands_total++ )
-	{
-		if ( ceil( level.commands_total / level.commands_page_max ) >= level.commands_page_count )
-		{
-			level.commands_page_count++;
-		}
-	}
-
 }
 
-// CMD_CONFIG_UPDATE()
-// {
-// 	buffer = FS_read( "tcs_config.json" );
-// 	if ( buffer != "" )
-// 	{
-// 		parsed_config_array = jsonParse( buffer );
-// 		foreach (  )
-// 	}
-// }
-
-// VOTE_ADDVOTEABLE( vote_type, vote_type_aliases, usage, pre_vote_execute_func, post_vote_execute_func )
-// {
-// 	if ( !isDefined( level.custom_votes ) )
-// 	{
-// 		level.custom_votes = [];
-// 	}
-// 	if ( !isDefined( level.custom_votes[ vote_type ] ) )
-// 	{
-// 		level.custom_votes_total++;
-// 		if ( ceil( level.custom_votes_total / level.commands_page_max ) >= level.custom_votes_page_count )
-// 		{
-// 			level.custom_votes_page_count++;
-// 		}
-// 		level.custom_votes[ vote_type ] = spawnStruct();
-// 		level.custom_votes[ vote_type ].pre_func = pre_vote_execute_func;
-// 		level.custom_votes[ vote_type ].post_func = post_vote_execute_func;
-// 		level.custom_votes[ vote_type ].usage = usage;
-// 		level.custom_votes[ vote_type ].aliases = vote_type_aliases;
-// 	}
-// }
-
-// VOTE_REMOVEVOTEABLE( vote_type )
-// {
-// 	new_command_array = [];
-// 	vote_keys = getArrayKeys( level.custom_votes );
-// 	level.custom_votes_total = 0;
-// 	level.custom_votes_page_count = 0;
-// 	foreach ( vote in vote_keys )
-// 	{
-// 		if ( vote_type != vote )
-// 		{
-// 			new_command_array[ vote ] = spawnStruct();
-// 			new_command_array[ vote ].pre_func = level.custom_votes[ vote ].pre_func;
-// 			new_command_array[ vote ].post_func = level.custom_votes[ vote ].post_func;
-// 			new_command_array[ vote ].usage = level.custom_votes[ vote ].usage;
-// 			new_command_array[ vote ].aliases = level.custom_votes[ vote ].aliases;
-// 			level.custom_votes_total++;
-// 			if ( ceil( level.custom_votes_total / level.commands_page_max ) >= level.custom_votes_page_count )
-// 			{
-// 				level.custom_votes_page_count++;
-// 			}
-// 		}
-// 	}
-// 	level.custom_votes = new_command_array;
-// } 
-
-CMD_EXECUTE( cmdname, arg_list, is_clientcmd, silent, nologprint )
+cmd_setclientcommandcmdpower( cmdname, power )
 {
-	if ( is_true( level.threaded_commands[ cmdname ] ) )
+	if ( isDefined( level.client_commands[ cmdname ] ) )
 	{
-		if ( is_clientcmd )
+		level.client_commands[ cmdname ].power = power;
+	}
+}
+
+cmd_execute( cmdname, arg_list, is_clientcmd, silent, nologprint )
+{
+	// An attempt at printing the usage if the min args isn't met
+	channel = self com_get_cmd_feedback_channel();
+	result = [];
+	if ( !test_cmd_is_valid( cmdname, arg_list, is_clientcmd ) )
+	{
+		return;
+	}
+	if ( is_clientcmd )
+	{
+		if ( is_true( level.threaded_commands[ cmdname ] ) )
 		{
 			self thread [[ level.client_commands[ cmdname ].func ]]( arg_list );
+			return;
 		}
 		else 
 		{
-			self thread [[ level.server_commands[ cmdname ].func ]]( arg_list );
+			result = self [[ level.client_commands[ cmdname].func ]]( arg_list );
 		}
-		return;
 	}
 	else 
 	{
-		result = [];
-		if ( is_clientcmd )
+		if ( is_true( level.threaded_commands[ cmdname ] ) )
 		{
-			result = self [[ level.client_commands[ cmdname].func ]]( arg_list );
+			self thread [[ level.server_commands[ cmdname ].func ]]( arg_list );
+			return;
 		}
 		else 
 		{
@@ -611,70 +672,162 @@ CMD_EXECUTE( cmdname, arg_list, is_clientcmd, silent, nologprint )
 	{
 		return;
 	}
-	channel = self COM_GET_CMD_FEEDBACK_CHANNEL();
+	channel = self com_get_cmd_feedback_channel();
 	if ( result[ "filter" ] != "cmderror" )
 	{
 		cmd_log = self.name + " executed " + result[ "message" ];
 		if ( !is_true( nologprint ) )
 		{
-			level COM_PRINTF( "g_log", result[ "filter" ], cmd_log, self );
+			level com_printf( "g_log", result[ "filter" ], cmd_log, self );
 		}
 		if ( isDefined( result[ "channels" ] ) )
 		{
-			level COM_PRINTF( result[ "channels" ], result[ "filter" ], result[ "message" ], self );
+			level com_printf( result[ "channels" ], result[ "filter" ], result[ "message" ], self );
 		}
 		else 
 		{
-			level COM_PRINTF( channel, result[ "filter" ], result[ "message" ], self );
+			level com_printf( channel, result[ "filter" ], result[ "message" ], self );
 		}
 	}
 	else
 	{
-		level COM_PRINTF( channel, result[ "filter" ], result[ "message" ], self );
+		level com_printf( channel, result[ "filter" ], result[ "message" ], self );
 	}
 }
 
-tcs_on_connect()
-{
-	level endon( "end_commands" );
-	while ( true )
-	{
-		level waittill( "connected", player );
-		foreach ( index, dvar in level.clientdvars )
-		{
-			player thread setClientDvarThread( dvar[ "name" ], dvar[ "value" ], index );
-		}
-		if ( player isHost() )
-		{
-			player.cmdpower_server = level.CMD_POWER_HOST;
-			player.cmdpower_client = level.CMD_POWER_HOST;
-			player.tcs_rank = level.TCS_RANK_HOST;
-			level.host = player;
-		}
-		else if ( array_validate( level.tcs_player_entries ) )
-		{
-			foreach ( entry in level.tcs_player_entries )
-			{
-				if ( find_player_in_server( entry.player_entry ) == player )
-				{
-					player.cmdpower_server = entry.cmdpower_server;
-					player.cmdpower_client = entry.cmdpower_client;
-					player.tcs_rank = entry.rank;
-				}
-			}
-		}
-		else 
-		{
-			player.cmdpower_server = getDvarIntDefault( "tcs_cmdpower_server_default", level.CMD_POWER_USER );
-			player.cmdpower_client = getDvarIntDefault( "tcs_cmdpower_client_default", level.CMD_POWER_USER );
-			player.tcs_rank = getDvarStringDefault( "tcs_default_rank", level.TCS_RANK_USER );
-		}
-	}
-}
 
 //If we have a lot of clientdvars in the pool delay setting them to prevent client command overflow error.
 setClientDvarThread( dvar, value, index )
 {
 	wait( index * 0.25 );
 	self setClientDvar( dvar, value );
+}
+
+check_for_command_alias_collisions()
+{
+	wait 5;
+	server_command_keys = getArrayKeys( level.server_commands );
+	client_command_keys = getArrayKeys( level.client_commands );
+	aliases = [];
+	for ( i = 0; i < client_command_keys.size; i++ )
+	{
+		for ( j = 0; j < level.client_commands[ client_command_keys[ i ] ].aliases.size; j++ )
+		{
+			aliases[ aliases.size ] = level.client_commands[ client_command_keys[ i ] ].aliases[ j ];
+		}
+	}
+	for ( i = 0; i < server_command_keys.size; i++ )
+	{
+		for ( j = 0; j < level.server_commands[ server_command_keys[ i ] ].aliases.size; j++ )
+		{
+			aliases[ aliases.size ] = level.server_commands[ server_command_keys[ i ] ].aliases[ j ];
+		}
+	}
+	for ( i = 0; i < aliases.size; i++ )
+	{
+		for ( j = i + 1; j < aliases.size; j++ )
+		{
+			if ( aliases[ i ] == aliases[ j ] )
+			{
+				level com_printf( "con", "cmderror", "Command alias collision detected alias " + aliases[ i ] + " is duplicated", level );
+				break;
+			}
+		}
+	}
+}
+
+parse_cmd_message( message )
+{
+	if ( message == "" )
+	{
+		return [];
+	}
+	//Strip command tokens.
+	stripped_message = message;
+	if ( is_command_token( message[ 0 ] ) )
+	{
+		stripped_message = "";
+		for ( i = 1; i < message.size; i++ )
+		{
+			stripped_message += message[ i ];
+		}
+	}
+	multi_cmds = [];
+	command_keys = [];
+	multiple_cmds_keys = strTok( stripped_message, "," );
+	for ( i = 0; i < multiple_cmds_keys.size; i++ )
+	{
+		cmd_args = strTok( multiple_cmds_keys[ i ], " " );
+		cmdname = get_client_cmd_from_alias( cmd_args[ 0 ] );
+		cmd_is_clientcmd = true;
+		if ( cmdname == "" )
+		{
+			cmdname = get_server_cmd_from_alias( cmd_args[ 0 ] );
+			cmd_is_clientcmd = false;
+		}
+		if ( cmdname != "" )
+		{
+			command_keys[ "cmdname" ] = cmdname;
+			arrayRemoveIndex( cmd_args, 0 );
+			command_keys[ "args" ] = [];
+			command_keys[ "args" ] = cmd_args;
+			command_keys[ "is_clientcmd" ] = cmd_is_clientcmd;
+			multi_cmds[ multi_cmds.size ] = command_keys;
+		}
+	}
+	return multi_cmds;
+}
+
+get_server_cmd_from_alias( alias )
+{
+	command_keys = getArrayKeys( level.server_commands );
+	for ( i = 0; i < command_keys.size; i++ )
+	{
+		for ( j = 0; j < level.server_commands[ command_keys[ i ] ].aliases.size; j++ )
+		{
+			if ( alias == level.server_commands[ command_keys[ i ] ].aliases[ j ] )
+			{
+				return command_keys[ i ];
+			}
+		}
+	}
+	return "";
+}
+
+get_client_cmd_from_alias( alias )
+{
+	command_keys = getArrayKeys( level.client_commands );
+	for ( i = 0; i < command_keys.size; i++ )
+	{
+		for ( j = 0; j < level.client_commands[ command_keys[ i ] ].aliases.size; j++ )
+		{
+			if ( alias == level.client_commands[ command_keys[ i ] ].aliases[ j ] )
+			{
+				return command_keys[ i ];
+			}
+		}
+	}
+	return "";
+}
+
+test_cmd_is_valid( cmdname, arg_list, is_clientcmd )
+{
+	channel = self com_get_cmd_feedback_channel();
+	if ( is_clientcmd )
+	{
+		if ( arg_list.size < level.client_commands[ cmdname ].minargs )
+		{
+			level com_printf( channel, "cmderror", "Usage: " + level.client_commands[ cmdname ].usage, self );
+			return false;
+		}
+	}
+	else
+	{
+		if ( arg_list.size < level.server_commands[ cmdname ].min_args )
+		{
+			level com_printf( channel, "cmderror", "Usage: " + level.server_commands[ cmdname ].usage, self );
+			return false;
+		}
+	}
+	return true;
 }

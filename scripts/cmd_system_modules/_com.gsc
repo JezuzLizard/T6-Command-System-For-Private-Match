@@ -1,33 +1,33 @@
 #include common_scripts\utility;
-#include maps\mp\_utility;
+#include maps\_utility;
 #include scripts\cmd_system_modules\_cmd_util;
 
-COM_INIT()
+com_init()
 {
-	COM_ADDFILTER( "cominfo", 1 );
-	COM_ADDFILTER( "comwarning", 1 );
-	COM_ADDFILTER( "comerror", 1 );
-	COM_ADDFILTER( "cmdinfo", 1 );
-	COM_ADDFILTER( "cmdwarning", 1 );
-	COM_ADDFILTER( "cmderror", 1 );
-	COM_ADDFILTER( "scrinfo", 1 );
-	COM_ADDFILTER( "scrwarning", 1 );
-	COM_ADDFILTER( "screrror", 1 );
-	COM_ADDFILTER( "permsinfo", 1 );
-	COM_ADDFILTER( "permswarning", 1 );
-	COM_ADDFILTER( "permserror", 1 ); 
-	COM_ADDFILTER( "debug", 0 );
-	COM_ADDFILTER( "obituary", 1 );
-	COM_ADDFILTER( "notitle", 1 );
+	com_addfilter( "cominfo", 1 );
+	com_addfilter( "comwarning", 1 );
+	com_addfilter( "comerror", 1 );
+	com_addfilter( "cmdinfo", 1 );
+	com_addfilter( "cmdwarning", 1 );
+	com_addfilter( "cmderror", 1 );
+	com_addfilter( "scrinfo", 1 );
+	com_addfilter( "scrwarning", 1 );
+	com_addfilter( "screrror", 1 );
+	com_addfilter( "permsinfo", 1 );
+	com_addfilter( "permswarning", 1 );
+	com_addfilter( "permserror", 1 ); 
+	com_addfilter( "debug", 0 );
+	com_addfilter( "notitle", 1 );
 
-	COM_ADDCHANNEL( "con", ::COM_PRINT );
-	COM_ADDCHANNEL( "g_log", ::COM_LOGPRINT );
-	COM_ADDCHANNEL( "iprint", ::COM_IPRINTLN );
-	COM_ADDCHANNEL( "iprintbold", ::COM_IPRINTLNBOLD );
-	COM_ADDCHANNEL( "obituary", ::COM_OBITUARY );
+	com_addchannel( "con", ::com_print );
+	com_addchannel( "g_log", ::com_logprint );
+	com_addchannel( "iprint", ::com_iprintln );
+	com_addchannel( "iprintbold", ::com_iprintlnbold );
+
+	com_addchannel( "iprint_array", ::com_iprintln_array );
 }
 
-COM_ADDFILTER( filter, default_value )
+com_addfilter( filter, default_value )
 {
 	if ( !isDefined( level.com_filters ) )
 	{
@@ -39,7 +39,7 @@ COM_ADDFILTER( filter, default_value )
 	}
 }
 
-COM_ADDCHANNEL( channel, func )
+com_addchannel( channel, func )
 {
 	if ( !isDefined( level.com_channels ) )
 	{
@@ -51,17 +51,17 @@ COM_ADDCHANNEL( channel, func )
 	}
 }
 
-COM_IS_FILTER_ACTIVE( filter )
+com_is_filter_active( filter )
 {
 	return is_true( level.com_filters[ filter ] );
 }
 
-COM_IS_CHANNEL_ACTIVE( channel )
+com_is_channel_active( channel )
 {
 	return isDefined( level.com_channels[ channel ] );
 }
 
-COM_CAPS_MSG_TITLE( channel, filter, players )
+com_caps_msg_title( channel, filter )
 {
 	if ( filter == "notitle" || channel == "con" )
 	{
@@ -69,7 +69,7 @@ COM_CAPS_MSG_TITLE( channel, filter, players )
 	}
 	if ( channel == "g_log" )
 	{
-		return toUpper( filter ) + ":";
+		return to_upper( filter ) + ":";
 	}
 	if ( isSubStr( filter, "error" ) )
 	{
@@ -87,39 +87,36 @@ COM_CAPS_MSG_TITLE( channel, filter, players )
 	{
 		color_code = "";
 	}
-	return color_code + toUpper( filter ) + ":";
+	return color_code + to_upper( filter ) + ":";
 }
 
-COM_PRINT( channel, message, players, arg_list )
+com_print( message, players, arg_list )
 {
-	print( message );
+	printConsole( message );
 }
 
-COM_LOGPRINT( channel, message, players, arg_list )
+com_logprint( message, players, arg_list )
 {
 	logPrint( message + "\n" );
 }
 
-COM_IPRINTLN( channel, message, players, arg_list )
+com_iprintln( message, player, arg_list )
 {
-	if ( array_validate( players ) )
+	if ( isDefined( player ) && !is_true( player.is_server ) )
 	{
-		for ( i = 0; i < players.size; i++ )
-		{
-			players[ i ] iPrintLn( message );
-		}
-	}
-	else if ( isDefined( players ) )
+		player iPrintLn( message );
+	}	
+}
+
+com_iprintln_array( message, players, arg_list )
+{
+	for ( i = 0; i < players.size; i++ )
 	{
-		players iPrintLn( message );
-	}
-	else 
-	{
-		COM_PRINT( "con", "COM_PRINTF() msg " + message + " sent for channel " + channel + " has bad players arg" );
+		players[ i ] iPrintLn( message );
 	}
 }
 
-COM_IPRINTLNBOLD( channel, message, players, arg_list )
+com_iprintlnbold( message, players, arg_list )
 {
 	for ( i = 0; i < level.players.size; i++ )
 	{
@@ -127,27 +124,7 @@ COM_IPRINTLNBOLD( channel, message, players, arg_list )
 	}
 }
 
-COM_OBITUARY( channel, message, players, arg_list )
-{
-	if ( array_validate( players ) && players.size == 2 )
-	{
-		if ( !isDefined( arg_list[ 0 ] ) || !isDefined( arg_list[ 1 ] ) )
-		{
-			COM_PRINT( "con", "COM_PRINTF() channel " + channel + " arg_list requires <weapon> <mod>" );
-		}
-		victim = players[ 0 ];
-		attacker = players[ 1 ];
-		weapon = arg_list[ 0 ];
-		MOD = arg_list[ 1 ];
-		obituary( victim, attacker, weapon, MOD );
-	}
-	else 
-	{
-		COM_PRINT( "con", "COM_PRINTF() channel " + channel + " requires an array of two players" );
-	}
-}
-
-COM_PRINTF( channels, filter, message, players, arg_list )
+com_printf( channels, filter, message, players, arg_list )
 {
 	if ( !isDefined( channels ) )
 	{
@@ -162,9 +139,10 @@ COM_PRINTF( channels, filter, message, players, arg_list )
 		return;
 	}
 	channel_keys = strTok( channels, "|" );
-	foreach ( channel in channel_keys )
+	for ( i = 0; i < channel_keys.size; i++ )
 	{
-		if ( COM_IS_CHANNEL_ACTIVE( channel ) && COM_IS_FILTER_ACTIVE( filter ) )
+		channel = channel_keys[ i ];
+		if ( com_is_channel_active( channel ) && com_is_filter_active( filter ) )
 		{
 			if ( channel == "g_log" )
 			{
@@ -174,13 +152,24 @@ COM_PRINTF( channels, filter, message, players, arg_list )
 			{
 				message_color_code = "^8";
 			}
-			message = COM_CAPS_MSG_TITLE( channel, filter, players ) + message_color_code + message;
-			[[ level.com_channels[ channel ] ]]( channel, message, players, arg_list );
+			message = com_caps_msg_title( channel, filter ) + message_color_code + message;
+			if ( array_validate( players ) )
+			{
+				channel = channel + "_array";
+			}
+			[[ level.com_channels[ channel ] ]]( message, players, arg_list );
 		}
 	}
 }
 
-COM_GET_CMD_FEEDBACK_CHANNEL()
+com_get_cmd_feedback_channel()
 {
-	return "iprint";
+	if ( is_true( self.is_server ) )
+	{
+		return "con";
+	}
+	else 
+	{
+		return "iprint";
+	}
 }

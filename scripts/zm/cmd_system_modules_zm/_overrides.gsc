@@ -6,7 +6,6 @@
 
 #include scripts\cmd_system_modules\_cmd_util;
 #include scripts\cmd_system_modules\_com;
-#include scripts\cmd_system_modules\_text_parser;
 
 pers_upgrades_monitor_override()
 {

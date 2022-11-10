@@ -3,7 +3,7 @@
 #include scripts\cmd_system_modules\_cmd_util;
 #include scripts\cmd_system_modules\_com;
 
-CMD_INIT_PERMS()
+cmd_init_perms()
 {
 	level.tcs_player_entries = [];
 	player_perm_list = getDvar( "tcs_player_cmd_perms" );
@@ -11,21 +11,21 @@ CMD_INIT_PERMS()
 	{
 		player_entries = strTok( player_perm_list, "," );
 		index = 0;
-		foreach ( player_entry in player_entries )
+		for ( i = 0; i < player_entries.size; i++ )
 		{
+			player_entry = player_entries[ i ];
 			player_entry_array = strTok( player_entry, " " );
-			if ( isDefined( player_entry_array[ 0 ] ) && isDefined( player_entry_array[ 1 ] ) && isDefined( player_entry_array[ 2 ] ) && isDefined( player_entry_array[ 3 ] ) )
+			if ( isDefined( player_entry_array[ 0 ] ) && isDefined( player_entry_array[ 1 ] ) && isDefined( player_entry_array[ 2 ] ) )
 			{
 				level.tcs_player_entries[ level.tcs_player_entries.size ] = spawnStruct(); 
 				level.tcs_player_entries[ level.tcs_player_entries.size -1 ].player_entry = player_entry_array[ 0 ];
 				level.tcs_player_entries[ level.tcs_player_entries.size -1 ].rank = player_entry_array[ 1 ];
-				level.tcs_player_entries[ level.tcs_player_entries.size -1 ].cmdpower_server = int( player_entry_array[ 2 ] );
-				level.tcs_player_entries[ level.tcs_player_entries.size -1 ].cmdpower_client = int( player_entry_array[ 3 ] );
+				level.tcs_player_entries[ level.tcs_player_entries.size -1 ].cmdpower = int( player_entry_array[ 2 ] );
 			}
 			else 
 			{
-				level COM_PRINTF( "con|g_log", "permserror", "tcs_player_cmd_perms index " + index + " has (player_entry " + isDefined( player_entry_array[ 0 ] ) + "), (rank " + isDefined( player_entry_array[ 1 ] ) + "), (cmdpower_server " + isDefined( player_entry_array[ 2 ] ) + "), (cmdpower_client " + isDefined( player_entry_array[ 3 ] ) + ")" );
-				level COM_PRINTF( "con|g_log", "permserror", "Please check your tcs_player_cmd_perms dvar" );
+				level com_printf( "con|g_log", "permserror", "tcs_player_cmd_perms index " + index + " has (player_entry " + isDefined( player_entry_array[ 0 ] ) + "), (rank " + isDefined( player_entry_array[ 1 ] ) + "), (cmdpower " + isDefined( player_entry_array[ 2 ] ) + ")" );
+				level com_printf( "con|g_log", "permserror", "Please check your tcs_player_cmd_perms dvar" );
 			}
 			index++;
 		}
@@ -42,7 +42,7 @@ add_player_perms_entry( player )
 	player_perm_list = getDvar( "tcs_player_cmd_perms" );
 	if ( player_perm_list != "" )
 	{
-		player_entry = player.name + " " + player.tcs_rank + " " + player.cmdpower_server + " " + player.cmdpower_client;
+		player_entry = player.name + " " + player.tcs_rank + " " + player.cmdpower;
 		if ( player_perm_list[ player_perm_list.size - 1 ] == "," )
 		{
 			player_perm_list = player_perm_list + player_entry;
@@ -56,7 +56,7 @@ add_player_perms_entry( player )
 			return;
 		}
 		setDvar( "tcs_player_cmd_perms", player_perm_list );
-		CMD_INIT_PERMS();
+		cmd_init_perms();
 	}
 }
 
@@ -65,36 +65,41 @@ set_player_perms_entry( player )
 	player_perm_list = getDvar( "tcs_player_cmd_perms" );
 	if ( player_perm_list != "" )
 	{
+		player_entry_array = undefined;
 		player_entries = strTok( player_perm_list, "," );
 		index = 0;
 		found_player = false;
-		foreach ( player_entry in player_entries )
+		for ( i = 0; i < player_entries.size; i++ )
 		{
+			player_entry = player_entries[ i ];
 			player_entry_array = strTok( player_entry, " " );
-			if ( find_player_in_server( player_entry_array[ 0 ] ) == player )
+			player_in_server = find_player_in_server( player_entry_array[ 0 ], true );
+			if ( isDefined( player_in_server ) && player_in_server == player )
 			{
 				player_entry_array[ 1 ] = player.tcs_rank;
-				player_entry_array[ 2 ] = player.cmdpower_server + "";
-				player_entry_array[ 3 ] = player.cmdpower_client + "";
+				player_entry_array[ 2 ] = player.cmdpower + "";
 				found_player = true;
 				break;
 			}
-			index++;
+			if ( !found_player )
+			{
+				index++;
+			}
 		}
 		if ( found_player )
 		{
-			player_entries[ index ] = player_entry_array[ 0 ] + " " + player_entry_array[ 1 ] + " " + player_entry_array[ 2 ] + " " + player_entry_array[ 3 ];
+			player_entries[ index ] = player_entry_array[ 0 ] + " " + player_entry_array[ 1 ] + " " + player_entry_array[ 2 ];
 			new_perms_list = "";
-			foreach ( player_entry in player_entries )
+			for ( i = 0; i < player_entries.size; i++ )
 			{
-				new_perms_list += player_entry + ",";
+				new_perms_list += player_entries[ i ] + ",";
 			}
 			if ( new_perms_list.size > 1024 )
 			{
 				return;
 			}
 			setDvar( "tcs_player_cmd_perms", new_perms_list );
-			CMD_INIT_PERMS();
+			cmd_init_perms();
 		}
 	}
 }
@@ -103,7 +108,8 @@ player_exists_in_perms_system( player )
 {
 	for ( i = 0; i < level.tcs_player_entries.size; i++ )
 	{
-		if ( find_player_in_server( level.tcs_player_entries[ i ].player_entry ) == player )
+		player_in_server = find_player_in_server( level.tcs_player_entries[ i ].player_entry, true );
+		if ( isDefined( player_in_server ) && player_in_server == player )
 		{
 			return true;
 		}
@@ -111,13 +117,17 @@ player_exists_in_perms_system( player )
 	return false;
 }
 
-CMD_COOLDOWN()
+cmd_cooldown()
 {
-	if ( self == level.host )
+	if ( is_true( self.is_server ) )
 	{
 		return;
 	}
-	if ( self.cmdpower_server >= level.TCS_RANK_TRUSTED_USER || self.cmdpower_client >= level.TCS_RANK_TRUSTED_USER )
+	if ( isDefined( level.host ) && self == level.host )
+	{
+		return;
+	}
+	if ( self.cmdpower >= level.cmd_power_trusted_user )
 	{
 		return;
 	}
@@ -131,11 +141,15 @@ CMD_COOLDOWN()
 
 can_use_multi_cmds()
 {
-	if ( self == level.host )
+	if ( is_true( self.is_server ) )
 	{
 		return true;
 	}
-	if ( self.cmdpower_server >= level.CMD_POWER_CHEAT || self.cmdpower_client >= level.CMD_POWER_CHEAT )
+	if (isDefined( level.host ) && self == level.host )
+	{
+		return true;
+	}
+	if ( self.cmdpower >= level.cmd_power_cheat )
 	{
 		return true;
 	}
@@ -144,15 +158,97 @@ can_use_multi_cmds()
 
 has_permission_for_cmd( cmdname, is_clientcmd )
 {
-	if ( self == level.host )
+	if ( is_true( self.is_server ) )
 	{
 		return true;
 	}
-	if ( is_clientcmd && ( self.cmdpower_client >= level.client_commands[ cmdname ].power ) )
+	if ( isDefined( level.host ) && self == level.host )
 	{
 		return true;
 	}
-	if ( self.cmdpower_server >= level.server_commands[ cmdname ].power )
+	if ( isDefined( level.tcs_ranks[ self.tcs_rank ] ) && isDefined( level.tcs_ranks[ self.tcs_rank ].disallowed_cmds ) )
+	{
+		for ( i = 0; i < level.tcs_ranks[ self.tcs_rank ].disallowed_cmds.size; i++ )
+		{
+			disallowed_cmd = level.tcs_ranks[ self.tcs_rank ].disallowed_cmds[ i ];
+			if ( disallowed_cmd == "all_cmds" )
+			{
+				return false;
+			}
+			else if ( cmdname == disallowed_cmd )
+			{
+				return false;
+			}
+			else if ( is_clientcmd )
+			{
+				if ( disallowed_cmd == "all_client_cmds" )
+				{
+					return false;
+				}
+				// In this case the token must be a rank name
+				else if ( isDefined( level.client_command_groups[ disallowed_cmd ] ) && isDefined( level.client_command_groups[ disallowed_cmd ][ cmdname ] ) )
+				{
+					return false;
+				}
+			}
+			else if ( !is_clientcmd )
+			{
+				if ( disallowed_cmd == "all_server_cmds" )
+				{
+					return false;
+				}
+				// In this case the token must be a rank name
+				else if ( isDefined( level.server_command_groups[ disallowed_cmd ] ) && isDefined( level.server_command_groups[ disallowed_cmd ][ cmdname ] ) )
+				{
+					return false;
+				}
+			}
+		}
+	}
+	if ( isDefined( level.tcs_ranks[ self.tcs_rank ] ) && isDefined( level.tcs_ranks[ self.tcs_rank ].allowed_cmds ) )
+	{
+		for ( i = 0; i < level.tcs_ranks[ self.tcs_rank ].allowed_cmds.size; i++ )
+		{
+			allowed_cmd = level.tcs_ranks[ self.tcs_rank ].allowed_cmds[ i ];
+			if ( allowed_cmd == "all_cmds" )
+			{
+				return true;
+			}
+			else if ( cmdname == allowed_cmd )
+			{
+				return true;
+			}
+			else if ( is_clientcmd )
+			{
+				if ( allowed_cmd == "all_client_cmds" )
+				{
+					return true;
+				}
+				// In this case the token must be a rank name
+				else if ( isDefined( level.client_command_groups[ allowed_cmd ] ) && isDefined( level.client_command_groups[ allowed_cmd ][ cmdname ] ) )
+				{
+					return true;
+				}
+			}
+			else if ( !is_clientcmd )
+			{
+				if ( allowed_cmd == "all_server_cmds" )
+				{
+					return true;
+				}
+				// In this case the token must be a rank name
+				else if ( isDefined( level.server_command_groups[ allowed_cmd ] ) && isDefined( level.server_command_groups[ allowed_cmd ][ cmdname ] ) )
+				{
+					return true;
+				}
+			}
+		}
+	}
+	if ( is_clientcmd && self.cmdpower >= level.client_commands[ cmdname ].power )
+	{
+		return true;
+	}
+	if ( !is_clientcmd && self.cmdpower >= level.server_commands[ cmdname ].power )
 	{
 		return true;
 	}

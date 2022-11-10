@@ -1,6 +1,5 @@
 #include common_scripts\utility;
 #include maps\mp\_utility;
-
 #include scripts\cmd_system_modules\_cmd_util;
 
 CMD_TOGGLEHUD_f( arg_list )
@@ -133,35 +132,27 @@ bottomless_clip()
 CMD_TELEPORT_f( arg_list )
 {
 	result = [];
-	if ( array_validate( arg_list ) )
+	target = self find_player_in_server( arg_list[ 0 ] );
+	if ( !isDefined( target ) )
 	{
-		target = self find_player_in_server( arg_list[ 0 ] );
-		if ( !isDefined( target ) )
+		origin = cast_to_vector( arg_list[ 0 ] );
+		if ( isVec( origin ) )
 		{
-			origin = cast_to_vector( arg_list[ 0 ] );
-			if ( isVec( origin ) )
-			{
-				self setOrigin( origin );
-				result[ "filter" ] = "cmdinfo";
-				result[ "message" ] = "You have successfully teleported";
-			}
-			else 
-			{
-				result[ "filter" ] = "cmderror";
-				result[ "message" ] = "Usage teleport <name|guid|clientnum|origin>";
-			}
+			self setOrigin( origin );
+			result[ "filter" ] = "cmdinfo";
+			result[ "message" ] = "You have successfully teleported";
 		}
 		else 
 		{
-			self setOrigin( self.origin + anglesToForward( self.angles ) * 64 + anglesToRight( self.angles ) * 64 );
-			result[ "filter" ] = "cmdinfo";
-			result[ "message" ] = "Successfully teleported to " + target.name + "'s position";
+			result[ "filter" ] = "cmderror";
+			result[ "message" ] = "Invalid origin, format is (x,y,z)";
 		}
 	}
 	else 
 	{
-		result[ "filter" ] = "cmderror";
-		result[ "message" ] = "Usage teleport <name|guid|clientnum|origin>";		
+		self setOrigin( target.origin + anglesToForward( target.angles ) * 64 + anglesToRight( target.angles ) * 64 );
+		result[ "filter" ] = "cmdinfo";
+		result[ "message" ] = "Successfully teleported to " + target.name + "'s position";
 	}
 	return result;
 }
@@ -169,44 +160,8 @@ CMD_TELEPORT_f( arg_list )
 CMD_CVAR_f( arg_list )
 {
 	result = [];
-	if ( array_validate( arg_list ) && arg_list.size == 2 )
-	{
-		self setClientDvar( arg_list[ 0 ], arg_list[ 1 ] );
-		result[ "filter" ] = "cmdinfo";
-		result[ "message" ] = "Successfully set " + arg_list[ 0 ] + " to " + arg_list[ 1 ];
-	}
-	else 
-	{
-		result[ "filter" ] = "cmderror";
-		result[ "message" ] = "Usage cvar <cvarname> <newval>";
-	}
-	return result;
-}
-
-CMD_SHOWMORE_f( arg_list )
-{
-	result = [];
-	cmd_and_args = [];
-	cmd_and_args[ 0 ] = "showmore";
-	for ( i = 1; i < arg_list.size; i++ )
-	{
-		cmd_and_args[ i ] = arg_list[ i - 1 ]; 
-	}
-	args_string = repackage_args( cmd_and_args );
-	self notify( "listener", args_string );
-	return result;
-}
-
-CMD_PAGE_f( arg_list )
-{
-	result = [];
-	cmd_and_args = [];
-	cmd_and_args[ 0 ] = "page";
-	for ( i = 1; i < arg_list.size; i++ )
-	{
-		cmd_and_args[ i ] = arg_list[ i - 1 ]; 
-	}
-	args_string = repackage_args( cmd_and_args );
-	self notify( "listener", args_string );
+	self setClientDvar( arg_list[ 0 ], arg_list[ 1 ] );
+	result[ "filter" ] = "cmdinfo";
+	result[ "message" ] = "Successfully set " + arg_list[ 0 ] + " to " + arg_list[ 1 ];
 	return result;
 }
