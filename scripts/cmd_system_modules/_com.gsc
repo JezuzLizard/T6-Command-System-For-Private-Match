@@ -35,7 +35,7 @@ com_addfilter( filter, default_value )
 	}
 	if ( !isDefined( level.com_filters[ filter ] ) )
 	{
-		level.com_filters[ filter ] = getDvarIntDefault( "com_script_channel_" + filter, default_value );
+		level.com_filters[ filter ] = getDvarIntDefault( "com_script_filter_" + filter, default_value );
 	}
 }
 
@@ -97,7 +97,19 @@ com_print( message, players, arg_list )
 
 com_logprint( message, players, arg_list )
 {
-	logPrint( message + "\n" );
+	level thread logprint_safe( message + "\n" );
+}
+
+logprint_safe( message )
+{
+	if ( !isDefined( level.tcs_log_queue_current ) )
+	{
+		level.tcs_log_queue_current = 0;
+	}
+	level.tcs_log_queue_current++;
+	wait level.tcs_log_queue_current * 0.1;
+	logPrint( message );
+	level.tcs_log_queue_current--;
 }
 
 com_iprintln( message, player, arg_list )
@@ -179,6 +191,10 @@ com_get_cmd_feedback_channel()
 	if ( is_true( self.is_server ) )
 	{
 		return "con";
+	}
+	else if ( is_true( level.doing_command_system_unittest ) )
+	{
+		return "g_log";
 	}
 	else 
 	{

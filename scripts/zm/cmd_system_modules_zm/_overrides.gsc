@@ -132,3 +132,19 @@ player_fake_death_override()
 {
 	return;
 }
+
+no_player_damage_during_unittest( einflictor, eattacker, idamage, idflags, smeansofdeath, sweapon, vpoint, vdir, shitloc, psoffsettime )
+{
+	if ( is_true( level.doing_command_system_unittest ) )
+	{
+		return 0;
+	}
+	if ( level.player_damage_callbacks[ 0 ] != ::no_player_damage_during_unittest )
+	{
+		return [[ level.player_damage_callbacks[ 0 ] ]]();
+	}
+	else 
+	{
+		return -1;
+	}
+}

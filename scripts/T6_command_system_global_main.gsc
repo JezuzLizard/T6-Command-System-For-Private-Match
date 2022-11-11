@@ -1,6 +1,7 @@
 
 #include scripts\cmd_system_modules\_cmd_util;
 #include scripts\cmd_system_modules\_com;
+#include scripts\cmd_system_modules\_debug;
 #include scripts\cmd_system_modules\_perms;
 #include scripts\cmd_system_modules\global_client_commands;
 #include scripts\cmd_system_modules\global_commands;
@@ -84,9 +85,9 @@ main()
 	// "\" is always useable by default
 	CMD_INIT_PERMS();
 	level.tcs_add_server_command_func = ::cmd_addservercommand;
-	level.tcs_set_server_command_power_func = ::cmd_setservercommandcmdpower;
+	level.tcs_set_server_command_power_func = ::cmd_setservercommandpower;
 	level.tcs_add_client_command_func = ::cmd_addclientcommand;
-	level.tcs_set_client_command_power_func = ::cmd_setclientcommandcmdpower;
+	level.tcs_set_client_command_power_func = ::cmd_setclientcommandpower;
 	level.tcs_remove_server_command = ::cmd_removeservercommand;
 	level.tcs_remove_client_command = ::cmd_removeclientcommand;
 	level.tcs_com_printf = ::com_printf;
@@ -113,6 +114,16 @@ main()
 
 	cmd_addservercommand( "unittest", undefined, "unittest [botcount]", ::cmd_unittest_f, "host", 0, false );
 
+	cmd_register_arg_types_for_server_cmd( "givegod", "player" );
+	cmd_register_arg_types_for_server_cmd( "givenotarget", "player" );
+	cmd_register_arg_types_for_server_cmd( "giveinvisible", "player" );
+	cmd_register_arg_types_for_server_cmd( "setrank", "player rank" );
+	cmd_register_arg_types_for_server_cmd( "execonallplayers", "cmdalias" );
+	cmd_register_arg_types_for_server_cmd( "execonteam", "team cmdalias" );
+	cmd_register_arg_types_for_server_cmd( "playerlist", "team" );
+	cmd_register_arg_types_for_server_cmd( "help", "cmdalias" );
+	cmd_register_arg_types_for_server_cmd( "unittest", "int" );
+
 	level.client_commands = [];
 	CMD_ADDCLIENTCOMMAND( "togglehud", "toghud", "togglehud", ::CMD_TOGGLEHUD_f, "none", 0, false );
 	CMD_ADDCLIENTCOMMAND( "god", undefined, "god", ::CMD_GOD_f, "cheat", 0, true );
@@ -124,6 +135,14 @@ main()
 	CMD_ADDCLIENTCOMMAND( "teleport", "tele", "teleport <name|guid|clientnum>", ::CMD_TELEPORT_f, "cheat", 1, false );
 	CMD_ADDCLIENTCOMMAND( "cvar", "cv", "cvar <cvarname> <newval>", ::CMD_CVAR_f, "cheat", 2, false );
 
+	cmd_register_arg_types_for_client_cmd( "teleport", "player" );
+
+	cmd_register_arg_type_handlers( "player", ::arg_player_handler, ::arg_generate_rand_player, "not a player" );
+	cmd_register_arg_type_handlers( "wholenum", ::arg_wholenum_handler, ::arg_generate_rand_wholenum, "not a whole number" );
+	cmd_register_arg_type_handlers( "int", ::arg_int_handler, ::arg_generate_rand_int, "not an int" );
+	cmd_register_arg_type_handlers( "team", ::arg_team_handler, ::arg_generate_rand_team, "not a team" );
+	cmd_register_arg_type_handlers( "cmdalias", ::arg_cmdalias_handler, ::arg_generate_rand_cmdalias, "not a valid cmdalias" );
+	cmd_register_arg_type_handlers( "rank", ::arg_rank_handler, ::arg_generate_rand_rank, "not a valid rank" );
 	level thread COMMAND_BUFFER();
 	level thread end_commands_on_end_game();
 	level thread scr_dvar_command_watcher();
@@ -137,7 +156,7 @@ init()
 	do_unit_test = getDvarIntDefault( "tcs_unittest", 0 ) > 0;
 	if ( do_unit_test )
 	{
-		scripts\cmd_system_modules\global_commands::do_unit_test();
+		scripts\cmd_system_modules\_debug::do_unit_test();
 	}
 }
 

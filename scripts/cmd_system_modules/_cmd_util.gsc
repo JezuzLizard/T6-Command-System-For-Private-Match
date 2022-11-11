@@ -101,37 +101,28 @@ get_powerup_from_alias_zm( alias )
 			return "nuke";
 		case "insta":
 		case "instakill":
-		case "insta_kill":
 			return "insta_kill";
 		case "double":
 		case "doublepoints":
-		case "double_points":
 			return "double_points";
 		case "max":
 		case "ammo":
 		case "maxammo":
-		case "full_ammo":
 			return "full_ammo";
 		case "carp":
-		case "carpenter":
 			return "carpenter";
 		case "sale":
 		case "firesale":
-		case "fire_sale":
 			return "fire_sale";
 		case "perk":
 		case "freeperk":
-		case "free_perk":
 			return "free_perk";
 		case "blood":
 		case "zombieblood":
-		case "zombie_blood":
 			return "zombie_blood";
 		case "points":
-		case "bonus_points":
 			return "bonus_points";
 		case "teampoints":
-		case "bonus_points_team":
 			return "bonus_points_team";
 		default:
 			return alias;
@@ -140,43 +131,7 @@ get_powerup_from_alias_zm( alias )
 
 powerup_list_zm()
 {
-	gametype = getDvar( "g_gametype" );
-	switch ( level.script )
-	{
-		case "zm_transit":
-			if ( gametype == "zgrief" )
-			{
-				return array( "nuke", "insta_kill", "double_points", "full_ammo", "meat_stink", "teller_withdrawl" );
-			}
-			else 
-			{
-				return array( "nuke", "insta_kill", "double_points", "full_ammo", "carpenter", "teller_withdrawl" );
-			}
-		case "zm_nuked":
-			return array( "nuke", "insta_kill", "double_points", "full_ammo", "fire_sale" );
-		case "zm_highrise":
-			return array( "nuke", "insta_kill", "double_points", "full_ammo", "carpenter", "free_perk" );
-		case "zm_prison":
-			if ( gametype == "zgrief" )
-			{
-				return array( "nuke", "insta_kill", "double_points", "full_ammo", "fire_sale", "meat_stink" );
-			}
-			else 
-			{
-				return array( "nuke", "insta_kill", "double_points", "full_ammo", "fire_sale" );
-			}
-		case "zm_buried":
-			if ( gametype == "zgrief" )
-			{
-				return array( "nuke", "insta_kill", "double_points", "full_ammo", "carpenter", "free_perk", "fire_sale", "teller_withdrawl", "random_weapon", "meat_stink" );
-			}
-			else 
-			{
-				return array( "nuke", "insta_kill", "double_points", "full_ammo", "carpenter", "free_perk", "fire_sale", "teller_withdrawl", "random_weapon" );
-			}
-		case "zm_tomb":
-			return array( "nuke", "insta_kill", "double_points", "full_ammo", "free_perk", "fire_sale", "zombie_blood", "bonus_points", "bonus_points_team" );
-	}
+	return getArrayKeys( level.zombie_include_powerups );
 }
 
 get_perma_perk_from_alias( alias )
@@ -596,12 +551,27 @@ cmd_removeservercommand( cmdname )
 	level.server_commands = new_command_array;
 }
 
-cmd_setservercommandcmdpower( cmdname, power )
+cmd_setservercommandpower( cmdname, power )
 {
 	if ( isDefined( level.server_commands[ cmdname ] ) )
 	{
 		level.server_commands[ cmdname ].power = power;
 	}
+}
+
+cmd_register_arg_types_for_server_cmd( cmdname, argtypes )
+{
+	if ( !isDefined( level.server_commands[ cmdname ] ) )
+	{
+		level com_printf( "con|g_log", "cmderror", "cmd_register_arg_types_for_server_cmd() " + cmdname + " is not a server cmd" );
+		return;
+	}
+	if ( !isDefined( argtypes ) || argtypes == "" )
+	{
+		return;
+	}
+	argtypes_array = strTok( argtypes, " " );
+	level.server_commands[ cmdname ].argtypes = argtypes_array;
 }
 
 cmd_addclientcommand( cmdname, cmdaliases, cmdusage, cmdfunc, rankgroup, minargs, uses_player_validity_check, is_threaded_cmd )
@@ -678,12 +648,43 @@ cmd_removeclientcommand( cmdname )
 	level.client_commands = new_command_array;
 }
 
-cmd_setclientcommandcmdpower( cmdname, power )
+cmd_setclientcommandpower( cmdname, power )
 {
 	if ( isDefined( level.client_commands[ cmdname ] ) )
 	{
 		level.client_commands[ cmdname ].power = power;
 	}
+}
+
+cmd_register_arg_types_for_client_cmd( cmdname, argtypes )
+{
+	if ( !isDefined( level.client_commands[ cmdname ] ) )
+	{
+		level com_printf( "con|g_log", "cmderror", "cmd_register_arg_types_for_client_cmd() " + cmdname + " is not a client cmd" );
+		return;
+	}
+	if ( !isDefined( argtypes ) || argtypes == "" )
+	{
+		return;
+	}
+	argtypes_array = strTok( argtypes, " " );
+	level.client_commands[ cmdname ].argtypes = argtypes_array;
+}
+
+cmd_register_arg_type_handlers( argtype, checker_func, rand_gen_func, error_message )
+{
+	if ( !isDefined( level.tcs_arg_type_handlers ) )
+	{
+		level.tcs_arg_type_handlers = [];
+	}
+	if ( !isDefined( argtype ) || argtype == "" )
+	{
+		return;
+	}
+	level.tcs_arg_type_handlers[ argtype ] = spawnStruct();
+	level.tcs_arg_type_handlers[ argtype ].checker_func = checker_func;
+	level.tcs_arg_type_handlers[ argtype ].rand_gen_func = rand_gen_func;
+	level.tcs_arg_type_handlers[ argtype ].error_message = error_message;
 }
 
 cmd_execute( cmdname, arg_list, is_clientcmd, silent, logprint )
@@ -749,13 +750,8 @@ cmd_execute( cmdname, arg_list, is_clientcmd, silent, logprint )
 	channel = self com_get_cmd_feedback_channel();
 	if ( result[ "filter" ] != "cmderror" )
 	{
-		count = "";
-		if ( is_true( level.doing_command_system_unittest ) )
-		{
-			count = " count " + level.unittest_total_commands_used;
-		}
-		cmd_log = self.name + " executed " + cmdname + " " + repackage_args( arg_list ) + count;
-		if ( is_true( logprint ) )
+		cmd_log = self.name + " executed " + cmdname + " " + repackage_args( arg_list );
+		if ( is_true( logprint ) && !is_true( level.doing_command_system_unittest ) )
 		{
 			level com_printf( "g_log", result[ "filter" ], cmd_log, self );
 		}
@@ -899,6 +895,22 @@ test_cmd_is_valid( cmdname, arg_list, is_clientcmd )
 			level com_printf( channel, "cmderror", "Usage: " + level.client_commands[ cmdname ].usage, self );
 			return false;
 		}
+		if ( isDefined( level.client_commands[ cmdname ].argtypes ) && arg_list.size > 0 )
+		{
+			argtypes = level.client_commands[ cmdname ].argtypes;
+			for ( i = 0; i < argtypes.size; i++ )
+			{
+				if ( isDefined( level.tcs_arg_type_handlers[ argtypes[ i ] ].checker_func ) )
+				{
+					if ( ![[ level.tcs_arg_type_handlers[ argtypes[ i ] ].checker_func ]]( arg_list[ i ] ) )
+					{
+						arg_num = i;
+						level com_printf( channel, "cmderror", "Arg " +  arg_num + " " + arg_list[ i ] + " is " + level.tcs_arg_type_handlers[ argtypes[ i ] ].error_message, self );
+						return false;
+					}
+				}
+			}
+		}
 	}
 	else
 	{
@@ -907,6 +919,88 @@ test_cmd_is_valid( cmdname, arg_list, is_clientcmd )
 			level com_printf( channel, "cmderror", "Usage: " + level.server_commands[ cmdname ].usage, self );
 			return false;
 		}
+		if ( isDefined( level.server_commands[ cmdname ].argtypes ) && arg_list.size > 0 )
+		{
+			argtypes = level.server_commands[ cmdname ].argtypes;
+			for ( i = 0; i < argtypes.size; i++ )
+			{
+				if ( isDefined( level.tcs_arg_type_handlers[ argtypes[ i ] ].checker_func ) )
+				{
+					if ( ![[ level.tcs_arg_type_handlers[ argtypes[ i ] ].checker_func ]]( arg_list[ i ] ) )
+					{
+						arg_num = i;
+						level com_printf( channel, "cmderror", "Arg " +  arg_num + " " + arg_list[ i ] + " is " + level.tcs_arg_type_handlers[ argtypes[ i ] ].error_message, self );
+						return false;
+					}
+				}
+			}
+		}
 	}
 	return true;
+}
+
+arg_player_handler( arg )
+{
+	return isDefined( find_player_in_server( arg ) ); 
+}
+
+arg_generate_rand_player()
+{
+	return scripts\cmd_system_modules\_debug::get_random_player_data();
+}
+
+arg_wholenum_handler( arg )
+{
+	return is_str_int( arg ) && is_natural_num( arg );
+}
+
+arg_generate_rand_wholenum()
+{
+	return randomint( 1000000 );
+}
+
+arg_int_handler( arg )
+{
+	return is_str_int( arg );
+}
+
+arg_generate_rand_int()
+{
+	return cointoss() ? randomint( 1000000 ) : randomint( 1000000 ) * -1;
+}
+
+arg_team_handler( arg )
+{
+	return isDefined( level.teams[ arg ] );
+}
+
+arg_generate_rand_team()
+{
+	return random( level.teams );
+}
+
+arg_cmdalias_handler( arg )
+{
+	cmd_to_execute = get_client_cmd_from_alias( arg );
+	if ( cmd_to_execute == "" )
+	{
+		cmd_to_execute = get_server_cmd_from_alias( arg );
+	}
+	return cmd_to_execute != "";
+}
+
+arg_generate_rand_cmdalias()
+{
+	return scripts\cmd_system_modules\_debug::get_random_cmdalias();
+}
+
+arg_rank_handler( arg )
+{
+	return isDefined( level.tcs_ranks[ arg ] );
+}
+
+arg_generate_rand_rank()
+{
+	ranks = getArrayKeys( level.tcs_ranks );
+	return ranks[ randomInt( ranks.size ) ]; 
 }

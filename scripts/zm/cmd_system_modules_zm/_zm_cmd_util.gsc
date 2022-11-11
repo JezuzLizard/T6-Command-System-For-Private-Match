@@ -3,6 +3,8 @@
 #include maps\mp\zombies\_zm_utility;
 #include maps\mp\zombies\_zm_weapons;
 #include maps\mp\zombies\_zm_magicbox;
+#include scripts\cmd_system_modules\_cmd_util;
+#include scripts\cmd_system_modules\_com;
 
 weapon_give_custom( weapon, is_upgrade, should_switch_weapon )
 {
@@ -140,4 +142,40 @@ weapon_give_custom( weapon, is_upgrade, should_switch_weapon )
 		else
 			self switchtoweapon( current_weapon );
 	}
+}
+
+arg_perk_handler( arg )
+{
+	perk_arg = get_perk_from_alias_zm( arg );
+	perks = perk_list_zm();
+	return isInArray( perks, perk_arg ) || arg == "all";
+}
+
+arg_generate_rand_perk()
+{
+	perks = perk_list_zm();
+	return randomInt( 20 ) < 1 ? "all" : perks[ randomInt( perks.size ) ];	
+}
+
+arg_weapon_handler( arg )
+{
+	return isDefined( level.zombie_include_weapons[ arg ] );
+}
+
+arg_generate_rand_weapon()
+{
+	weapon_keys = getArrayKeys( level.zombie_include_weapons );
+	return weapon_keys[ randomInt( weapon_keys.size ) ];	
+}
+
+arg_powerup_handler( arg )
+{
+	powerup = get_powerup_from_alias_zm( arg );
+	return isDefined( level.zombie_include_powerups[ powerup ] );
+}
+
+arg_generate_rand_powerup()
+{
+	powerup_keys = getArrayKeys( level.zombie_include_powerups );
+	return powerup_keys[ randomInt( powerup_keys.size ) ];	
 }
