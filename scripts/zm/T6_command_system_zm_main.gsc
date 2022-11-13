@@ -76,6 +76,17 @@ on_unittest()
 		level waittill( "unittest_start" );
 		level.no_end_game_check = true;
 		level._game_module_game_end_check = ::never_end_game;
+		level.player_out_of_playable_area_monitor = false;
+		if ( isDefined( level.player_damage_callbacks ) && isDefined( level.player_damage_callbacks[ 0 ] ) )
+		{
+			old_player_damage_callback = level.player_damage_callbacks[ 0 ];
+			level.player_damage_callbacks[ 0 ] = ::no_player_damage_during_unittest;
+		}
+		else 
+		{
+			level.player_damage_callbacks = [];
+			level.player_damage_callbacks[ 0 ] = ::no_player_damage_during_unittest;
+		}
 		replaceFunc( maps\mp\zombies\_zm::checkforalldead, ::checkforalldead_override );
 		replaceFunc( maps\mp\zombies\_zm::check_end_game_intermission_delay, ::check_end_game_intermission_delay_override );
 		replaceFunc( maps\mp\zombies\_zm::player_fake_death, ::player_fake_death_override );
@@ -332,10 +343,8 @@ CMD_GIVEWEAPON_f( arg_list )
 {
 	result = [];
 	target = arg_list[ 0 ];
-	//target notify( "stop_player_too_many_weapons_monitor" );
-	//level.get_player_weapon_limit = ::unlimited_weapons;
 	weapon = arg_list[ 1 ];
-	target thread weapon_give_custom_thread( weapon, weapon_is_upgrade( weapon ), false, 1 );
+	target thread weapon_give_custom( weapon, weapon_is_upgrade( weapon ), true );
 	result[ "filter" ] = "cmdinfo";
 	result[ "message" ] = "Gave " + weapon + " to " + target.name;
 	return result;
@@ -429,20 +438,13 @@ CMD_PERMAPERK_f( arg_list )
 CMD_WEAPON_f( arg_list )
 {
 	result = [];
-	//self notify( "stop_player_too_many_weapons_monitor" );
-	//level.get_player_weapon_limit = ::unlimited_weapons;
 	weapon = arg_list[ 0 ];
-	self thread weapon_give_custom_thread( weapon, weapon_is_upgrade( weapon ), true, 1 );
+	self thread weapon_give_custom( weapon, weapon_is_upgrade( weapon ), true );
 	result[ "filter" ] = "cmdinfo";
 	result[ "message" ] = "Gave you " + weapon;
 	return result;
 }
 
-weapon_give_custom_thread( weapon, is_upgraded, should_switch_weapon, index )
-{
-	wait( 0.05 * index );
-	self weapon_give_custom( weapon, is_upgraded, should_switch_weapon );
-}
 
 CMD_TOGGLEPERSSYSTEMFORPLAYER_f( arg_list )
 {

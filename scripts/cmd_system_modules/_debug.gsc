@@ -75,16 +75,17 @@ construct_chat_message()
 {
 	cmdalias = get_random_cmdalias();
 	cmdname = get_client_cmd_from_alias( cmdalias );
+	is_clientcmd = true;
 	if ( cmdname == "" )
 	{
 		cmdname = get_server_cmd_from_alias( cmdalias );
+		is_clientcmd = false;
 	}
 	if ( cmdname == "" )
 	{
 		return;
 	}
-	cmdargs = create_random_valid_args( cmdname );
-	
+	cmdargs = create_random_valid_args( cmdname, is_clientcmd );
 	if ( cmdargs.size == 0 )
 	{
 		message = cmdname;
@@ -119,140 +120,50 @@ get_random_player_data()
 	}
 }
 
-get_cmdargs_types( cmdname )
+get_cmdargs_types( cmdname, is_clientcmd )
 {
-	switch ( cmdname )
+	if ( is_clientcmd )
 	{
-		case "cmdlist":
-		case "togglehud":
-		case "god":
-		case "notarget":
-		case "invisible":
-		case "printorigin":
-		case "printangles":
-		case "bottomlessclip":
-		case "killactors":
-		case "respawnspectators":
-		case "unpause":
-		case "toggleoutofplayableareamonitor":
-		case "toggleperssystem":
-			return "none";
-		case "givegod":
-		case "givenotarget":
-		case "giveinvisible":
-		case "teleport":
-		case "spectator":
-		case "togglerespawn":
-		case "toggleperssystemforplayer":
-			return "player";
-		case "playerlist":
-			return "none|team";
-		case "help":
-			return "none|cmdalias";
-		case "pause":
-			return "none|wholenum";
-		case "points":
-			return "int";
-		case "giveweapon":
-			return "player weapon";
-		case "givepowerup":
-			return "player powerup";
-		case "givepoints":
-			return "player int";
-		case "giveperk":
-			return "player perk";
-		case "powerup":
-			return "powerup";
-		case "weapon":
-			return "weapon";
-		case "perk":
-			return "perk";
-		case "execonallplayers":
-			return "cmdalias";
-		case "execonteam":	
-			return "team cmdalias";
-		default:
-			return "";
+		return level.client_commands[ cmdname ].argtypes;
+	}
+	else 
+	{
+		return level.server_commands[ cmdname ].argtypes;
 	}
 }
 
-create_random_valid_args( cmdname )
+create_random_valid_args( cmdname, is_clientcmd )
 {
 	args = [];
-	types_str = get_cmdargs_types( cmdname );
-	if ( types_str == "none" )
+	types = get_cmdargs_types( cmdname, is_clientcmd );
+	
+	if ( !isDefined( types ) )
 	{
 		return args;
 	}
-	optional_types = strTok( types_str, "|" );
-	if ( optional_types.size > 1 )
-	{
-		args[ args.size ] = generate_args_from_type( optional_types[ randomInt( optional_types.size ) ] );
-		return args;
-	}
-	types = strTok( types_str, " " );
 	for ( i = 0; i < types.size; i++ )
 	{
-		if ( types[ i ] == "cmdalias" )
-		{
-			subcmdname = get_client_cmd_from_alias( types[ i ] );
-			if ( subcmdname == "" )
-			{
-				return args;
-			}
-			subcmdargs = [];
-			subcmdargs = create_random_valid_args( subcmdname );
-			subtypes = get_cmdargs_types( subcmdname );
-			finalargs = args;
-			for ( j = 0; j < subtypes.size; j++ )
-			{
-				finalargs[ finalargs.size ] = generate_args_from_type( subtypes[ j ], "execonallplayers execonteam" );
-			}
-			return finalargs;
-		}
 		args[ i ] = generate_args_from_type( types[ i ] );
 	}
 	
 	return args;
 }
 
-generate_args_from_type( type, exclusions = "none" )
+generate_args_from_type( type )
 {
-	switch ( type )
+	if ( isDefined( level.tcs_arg_type_handlers[ type ] ) )
 	{
-		case "player":
-			return get_random_player_data();
-		case "wholenum":
-			return randomint( 1000000 );
-		case "int":
-			return cointoss() ? randomint( 1000000 ) : randomint( 1000000 ) * -1;
-		case "team":
-			return random( level.teams );
-		case "cmdalias":
-			return get_random_cmdalias( exclusions );
-		case "perk":
-			perks = perk_list_zm();
-			return perks[ randomInt( perks.size ) ];
-		case "weapon":
-			weapon_keys = getArrayKeys( level.zombie_include_weapons );
-			return weapon_keys[ randomInt( weapon_keys.size ) ];
-		case "powerup":
-			powerup_keys = getArrayKeys( level.zombie_include_powerups );
-			return powerup_keys[ randomInt( powerup_keys.size ) ];
-		case "none":
-			return "";
-		default:	
-			return "";
+		return [[ level.tcs_arg_type_handlers[ type ].rand_gen_func ]]() + "";
 	}
+	return "";
 }
 
-get_random_cmdalias( exclusions )
+get_random_cmdalias()
 {
 	server_command_keys = getArrayKeys( level.server_commands );
 	client_command_keys = getArrayKeys( level.client_commands );
 	aliases = [];
 	blacklisted_cmds_client = array( "cvar", "permaperk" );
-	exclusions_array = strTok( exclusions, " " );
 	for ( i = 0; i < client_command_keys.size; i++ )
 	{
 		cmd_is_blacklisted = false;
@@ -264,16 +175,6 @@ get_random_cmdalias( exclusions )
 				break;
 			}
 		}
-		/*
-		for ( j = 0; j < exclusions_array.size; j++ )
-		{
-			if ( client_command_keys[ i ] == exclusions_array[ j ] )
-			{
-				cmd_is_blacklisted = true;
-				break;
-			}
-		}
-		*/
 		if ( cmd_is_blacklisted )
 		{
 			continue;
@@ -283,7 +184,7 @@ get_random_cmdalias( exclusions )
 			aliases[ aliases.size ] = level.client_commands[ client_command_keys[ i ] ].aliases[ j ];
 		}
 	}
-	blacklisted_cmds_server = array( "rotate", "restart", "changemap", "unittest", "setcvar", "dvar", "cvarall", "givepermaperk", "toggleoutofplayableareamonitor", "spectator" );
+	blacklisted_cmds_server = array( "rotate", "restart", "changemap", "unittest", "setcvar", "dvar", "cvarall", "givepermaperk", "toggleoutofplayableareamonitor", "spectator", "execonteam", "execonallplayers" );
 	for ( i = 0; i < server_command_keys.size; i++ )
 	{
 		cmd_is_blacklisted = false;
@@ -295,16 +196,6 @@ get_random_cmdalias( exclusions )
 				break;
 			}
 		}
-		/*
-		for ( j = 0; j < exclusions_array.size; j++ )
-		{
-			if ( client_command_keys[ i ] == exclusions_array[ j ] )
-			{
-				cmd_is_blacklisted = true;
-				break;
-			}
-		}
-		*/
 		if ( cmd_is_blacklisted )
 		{
 			continue;
