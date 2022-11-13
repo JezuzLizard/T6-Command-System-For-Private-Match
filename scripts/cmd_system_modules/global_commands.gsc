@@ -358,13 +358,59 @@ cmd_help_f( arg_list )
 	return result;
 }
 
+cmd_dodamage_f( arg_list )
+{
+	result = [];
+	target = find_entity_in_server( arg_list[ 0 ], true );
+	damage = float( arg_list[ 1 ] );
+	pos = cast_str_to_vector( arg_list[ 2 ] );
+	attacker = find_entity_in_server( arg_list[ 3 ], true );
+	inflictor = find_entity_in_server( arg_list[ 4 ], true );
+	hitloc = arg_list[ 5 ];
+	mod = arg_list[ 6 ];
+	idflags = int( arg_list[ 7 ] );
+	weapon = arg_list[ 8 ];
+	switch ( arg_list.size )
+	{
+		case 3:
+			target dodamage( damage, pos );
+			break;
+		case 4:
+			target dodamage( damage, pos, attacker );
+			break;
+		case 5:
+			target dodamage( damage, pos, attacker, inflictor );
+			break;
+		case 6:
+			target dodamage( damage, pos, attacker, inflictor, hitloc );
+			break;
+		case 7:
+			target dodamage( damage, pos, attacker, inflictor, hitloc, mod );
+			break;
+		case 8:
+			target dodamage( damage, pos, attacker, inflictor, hitloc, mod, idflags );
+			break;
+		case 9:
+			target dodamage( damage, pos, attacker, inflictor, hitloc, mod, idflags, weapon );
+			break;
+		default:
+			result[ "filter" ] = "cmderror";
+			result[ "message" ] = "Too many parameters sent to cmd dodamage max is 9";
+			return result;
+	}
+
+	result[ "filter" ] = "cmdinfo";
+	result[ "message" ] = self.name + " executes executes dodamage " + isPlayer( target ) ? target.name : target.targetname + " for " + damage + " damage";
+	return result;
+}
+
 cmd_entitylist_f( arg_list )
 {
 	result = [];
 	channel = self com_get_cmd_feedback_channel();
 	if ( channel != "con" )
 	{
-		channel = "iprint";
+		channel = "con|g_log";
 	}
 	entities = getEntArray();
 	if ( isDefined( arg_list[ 0 ] ) )
@@ -376,9 +422,23 @@ cmd_entitylist_f( arg_list )
 			{
 				continue;
 			}
-			if ( ent.targetname == arg_list[ 0 ] )
+			if ( isDefined( ent.targetname ) && ent.targetname == arg_list[ 0 ] )
 			{
-				level com_printf( channel, "notitle", "Ent classname " + ent.classname + " targetname " + ent.targetname + " script_noteworthy " + ent.script_noteworthy + " origin " + ent.origin, self );
+				if ( isDefined( ent.classname ) )
+				{
+					if ( isDefined( ent.script_notetworthy ) )
+					{
+						level com_printf( channel, "notitle", "Ent classname " + ent.classname + " targetname " + ent.targetname + " script_noteworthy " + ent.script_noteworthy + " origin " + ent.origin, self );
+					}
+					else 
+					{
+						level com_printf( channel, "notitle", "Ent classname " + ent.classname + " targetname " + ent.targetname + " origin " + ent.origin, self );
+					}
+				}
+				else 
+				{
+					level com_printf( channel, "notitle", "Ent targetname " + ent.targetname + " origin " + ent.origin, self );
+				}
 			}
 		}
 	}
@@ -391,7 +451,29 @@ cmd_entitylist_f( arg_list )
 			{
 				continue;
 			}
-			level com_printf( channel, "notitle", "Ent classname " + ent.classname + " targetname " + ent.targetname + " script_noteworthy " + ent.script_noteworthy + " origin " + ent.origin, self );
+			if ( isDefined( ent.classname ) )
+			{
+				if ( isDefined( ent.targetname ) )
+				{
+					if ( isDefined( ent.script_noteworthy ) )
+					{
+						level com_printf( channel, "notitle", "Ent classname " + ent.classname + " targetname " + ent.targetname + " script_noteworthy " + ent.script_noteworthy + " origin " + ent.origin, self );
+					}
+					else 
+					{
+						level com_printf( channel, "notitle", "Ent classname " + ent.classname + " targetname " + ent.targetname + " origin " + ent.origin, self );
+					}
+				}
+				else 
+				{
+					level com_printf( channel, "notitle", "Ent classname " + ent.classname + " origin " + ent.origin, self );
+				}
+			}
+			else 
+			{
+				level com_printf( channel, "notitle", "Ent origin " + ent.origin, self );
+			}
+			
 		}
 	}
 	return result;	

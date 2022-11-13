@@ -36,23 +36,29 @@ do_unit_test()
 		bot_count = 0;
 		for ( i = 0; i < level.players.size; i++ )
 		{
-			if ( level.players[ i ] isTestClient() || is_true( level.players[ i ].is_bot ) )
+			if ( is_true( level.players[ i ].pers["isBot"] ) )
 			{
 				bot_count++;
 			}
 		}
 		if ( bot_count < required_bots )
 		{
-			bot = addTestClient();
-			bot.is_bot = true;
-			bot thread activate_random_cmds();
+			// the first test client spawned might be 
+			bot = undefined;
+    		while (!isdefined(bot))
+    		{
+	    		bot = addtestclient();
+    		}
+
+			bot.pers["isBot"] = true;
+    		bot maps\mp\zombies\_zm::reset_rampage_bookmark_kill_times();
 		}
 
 		wait 1;
 	}
 	for ( i = 0; i < level.players.size; i++ )
 	{
-		if ( level.players[ i ] isTestClient() || is_true( level.players[ i ].is_bot ) )
+		if ( is_true( level.players[ i ].pers["isBot"] ) )
 		{
 			kick( level.players[ i ] getEntityNumber() );
 		}
@@ -132,11 +138,32 @@ create_random_valid_args( cmdname, is_clientcmd )
 	{
 		return args;
 	}
-	for ( i = 0; i < types.size; i++ )
+	if ( is_clientcmd )
+	{
+		minargs = level.client_commands[ cmdname ].minargs;
+	}
+	else 
+	{
+		minargs = level.server_commands[ cmdname ].minargs;
+	}
+	for ( i = 0; i < minargs; i++ )
 	{
 		args[ i ] = generate_args_from_type( types[ i ] );
 	}
-	
+
+	if ( cointoss() ) // 50% chance we don't add optional args
+	{
+		return args;
+	}
+
+	max_optional_args = randomInt( types.size );
+
+	/*
+	for ( i = minargs; i < max_optional_args; i++ )
+	{
+		args[ i ] = generate_args_from_type( types[ i ] );
+	}
+	*/
 	return args;
 }
 

@@ -291,7 +291,7 @@ find_player_in_server( clientnum_guid_or_name, noprint = false )
 		for ( i = 0; i < level.players.size; i++ )
 		{
 			player = level.players[ i ];
-			if ( ( !player isTestClient() || !is_true( player.is_bot ) ) && player getGUID() == guid )
+			if ( !is_true(player.pers["isBot"]) && player getGUID() == guid )
 			{
 				return player;
 			}
@@ -363,6 +363,15 @@ is_player_valid( player, checkignoremeflag, ignore_laststand_players )
 
 find_entity_in_server( entnum_targetname_or_self, noprint = false )
 {
+	channel = self com_get_cmd_feedback_channel();
+	if ( !isDefined( entnum_targetname_or_self ) )
+	{
+		if ( !noprint )
+		{
+			level com_printf( channel, "cmderror", "Try using /entitylist to view entity entnum, and targetname", self );
+		}
+		return undefined;
+	}
 	if ( entnum_targetname_or_self == "self" )
 	{
 		return self;
@@ -405,8 +414,10 @@ find_entity_in_server( entnum_targetname_or_self, noprint = false )
 			return ent;
 		}
 	}
-	channel = self com_get_cmd_feedback_channel();
-	level com_printf( channel, "cmderror", "Try using /entitylist to view entity entnum, and targetname", self );
+	if ( !noprint )
+	{
+		level com_printf( channel, "cmderror", "Try using /entitylist to view entity entnum, and targetname", self );
+	}
 	channel = undefined;
 	return undefined;
 }
@@ -479,11 +490,7 @@ is_str_int( str )
 
 is_natural_num(str)
 {
-	if ( !is_str_int( str ) )
-	{
-		return false;
-	}
-	return int( str ) > 0;
+	return is_str_int( str ) && int( str ) > 0;
 }
 
 is_str_float( str )
@@ -513,20 +520,16 @@ is_str_float( str )
 		if ( isDefined( period[ str[ i ] ] ) )
 		{
 			periods_found++;
+			if ( periods_found > 1 )
+			{
+				return false;
+			}
 			continue;
-		}
-		if ( periods_found > 1 )
-		{
-			return false;
 		}
 		next_index = i + 1;
 		if ( next_index == str.size )
 		{
 			if ( isDefined( period[ str[ next_index ] ] ) )
-			{
-				return false;
-			}
-			else if ( periods_found == 0 )
 			{
 				return false;
 			}
@@ -536,6 +539,28 @@ is_str_float( str )
 			return false;
 		}
 	}
+	if ( periods_found == 0 )
+	{
+		return false;
+	}
+	return true;
+}
+
+cast_str_to_vector( str )
+{
+	floats = strTok( str, "," );
+	if ( floats.size != 3 )
+	{
+		return ( 0, 0, 0 );
+	}
+	for ( i = 0; i < floats.size; i++ )
+	{
+		if ( !is_str_float( floats[ i ] ) || !is_str_int( floats[ i ] ) )
+		{
+			return ( 0, 0, 0 );
+		}
+	}
+	return ( float( floats[ 0 ] ), float( floats[ 1 ] ), float( floats[ 2 ]) );
 }
 
 cast_bool_to_str( bool, binary_string_options )
@@ -1100,6 +1125,22 @@ build_mods_array()
 	level.tcs_mods[ "MOD_GAS" ] = true;
 }
 
+build_idflags_array()
+{
+	level.tcs_idflags = [];
+	level.tcs_idflags[ level.tcs_idflags.size ] = 1;
+	level.tcs_idflags[ level.tcs_idflags.size ] = 2;
+	level.tcs_idflags[ level.tcs_idflags.size ] = 4;
+	level.tcs_idflags[ level.tcs_idflags.size ] = 8;
+	level.tcs_idflags[ level.tcs_idflags.size ] = 16;
+	level.tcs_idflags[ level.tcs_idflags.size ] = 32;
+	level.tcs_idflags[ level.tcs_idflags.size ] = 64;
+	level.tcs_idflags[ level.tcs_idflags.size ] = 128;
+	level.tcs_idflags[ level.tcs_idflags.size ] = 256;
+	level.tcs_idflags[ level.tcs_idflags.size ] = 512;
+	level.tcs_idflags[ level.tcs_idflags.size ] = 1024;
+}
+
 arg_player_handler( arg )
 {
 	return isDefined( self find_player_in_server( arg ) ); 
@@ -1153,15 +1194,19 @@ arg_generate_rand_float()
 	return cointoss() ? randomFloat( 1000000 ) : randomFloat( 1000000 ) * -1;
 }
 
-arg_vector_handler( arg_list )
+arg_vector_handler( arg )
 {
-	if ( arg_list.size != 3 )
+	comma[ "," ] = true;
+	for ( i = 0; i < arg.size; i++ )
 	{
-		return false;
-	}
-	for ( i = 0; i < arg_list.size; i++ )
-	{
-		if ( !is_str_float( arg_list[ i ] ) || !is_str_int( arg_list[ i ] ) )
+		if ( ( i % 2 ) == 0 )
+		{
+			if ( !is_str_float( arg[ i ] ) || !is_str_int( arg[ i ] ) )
+			{
+				return false;
+			}
+		}
+		else if ( ( i % 2 ) == 1 && !isDefined( comma[ arg[ i ] ] ) )
 		{
 			return false;
 		}
@@ -1174,7 +1219,7 @@ arg_generate_rand_vector()
 	x = cointoss() ? randomFloat( 1000000 ) : randomFloat( 1000000 ) * -1;
 	y = cointoss() ? randomFloat( 1000000 ) : randomFloat( 1000000 ) * -1;
 	z = cointoss() ? randomFloat( 1000000 ) : randomFloat( 1000000 ) * -1;
-	return ( x, y, z );
+	return x + "," + y + "," + z;
 }
 
 arg_team_handler( arg )
@@ -1307,10 +1352,19 @@ arg_generate_rand_mod()
 
 arg_idflags_handler( arg )
 {
-	return is_natural_num( arg ) && int( arg ) <= level.idflags_passthru;
+	return is_natural_num( arg ) && int( arg ) < 2048;
 } 
 
 arg_generate_rand_idflags()
 {
-	return 0; // Could return modified flags but should it be done
+	flags = 0;
+	idflags_array = level.tcs_idflags;
+	max_flags_to_add = randomInt( level.tcs_idflags.size );
+	for ( i = 0; i < max_flags_to_add; i++ )
+	{
+		random_flag_index = randomInt( idflags_array );
+		flags |= idflags_array[ random_flag_index ];
+		arrayRemoveIndex( idflags_array, random_flag_index );
+	}
+	return flags;
 }

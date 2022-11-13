@@ -25,7 +25,7 @@ on_player_connect()
 	while ( true )
 	{
 		level waittill( "connected", player );
-		if ( player isTestClient() && is_true( level.doing_command_system_unittest ) )
+		if ( is_true( level.doing_command_system_unittest ) && is_true( player.pers[ "isBot" ] ) )
 		{
 			player thread wait_spawn_bot_think();
 		}

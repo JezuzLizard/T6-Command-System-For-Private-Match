@@ -14,9 +14,10 @@
 
 main()
 {
-	replaceFunc( maps\mp\zombies\_zm_pers_upgrades_system::pers_upgrades_monitor, ::pers_upgrades_monitor_override );
+	//replaceFunc( maps\mp\zombies\_zm_pers_upgrades_system::pers_upgrades_monitor, ::pers_upgrades_monitor_override );
 	replaceFunc( maps\mp\zombies\_zm_utility::wait_network_frame, ::wait_network_frame_override );
-	replaceFunc( maps\mp\zombies\_zm::check_end_game_intermission_delay(), ::check_end_game_intermission_delay_override );
+	replaceFunc( maps\mp\zombies\_zm::check_end_game_intermission_delay, ::check_end_game_intermission_delay_override );
+	replaceFunc( maps\mp\_visionset_mgr::monitor, ::monitor_stub );
 	while ( !is_true( level.command_init_done ) )
 	{
 		wait 0.05;
@@ -68,11 +69,6 @@ main()
 	level.zm_command_init_done = true;
 }
 
-init()
-{
-	level.reset_clientdvars = ::onplayerconnect_clientdvars_override;
-}
-
 on_unittest()
 {
 	level endon( "end_game" );
@@ -93,14 +89,10 @@ on_unittest()
 			level.player_damage_callbacks = [];
 			level.player_damage_callbacks[ 0 ] = ::no_player_damage_during_unittest;
 		}
-		replaceFunc( maps\mp\zombies\_zm::checkforalldead, ::checkforalldead_override );
-		replaceFunc( maps\mp\zombies\_zm::check_end_game_intermission_delay, ::check_end_game_intermission_delay_override );
-		replaceFunc( maps\mp\zombies\_zm::player_fake_death, ::player_fake_death_override );
-		replaceFunc( maps\mp\_utility::setclientfield, ::setclientfield_override );
-		replaceFunc( maps\mp\_utility::setclientfieldtoplayer, ::setclientfieldtoplayer_override );
-		replaceFunc( maps\mp\_utility::is_bot, ::is_bot_override );
-		replaceFunc( maps\mp\_visionset_mgr::monitor, ::vsmgr_monitor_override );
-		replaceFunc( maps\mp\zombies\_zm::watch_rampage_bookmark, ::watch_rampage_bookmark_override );
+		replacefunc( maps\mp\zombies\_zm::checkforalldead, maps\mp\gametypes_zm\_callbacksetup::callbackvoid );
+		replacefunc( maps\mp\zombies\_zm::player_fake_death, maps\mp\gametypes_zm\_callbacksetup::callbackvoid );
+		//replaceFunc( maps\mp\_utility::setclientfield, ::setclientfield_override );
+		//replaceFunc( maps\mp\_utility::setclientfieldtoplayer, ::setclientfieldtoplayer_override );
 		register_player_damage_callback( ::no_player_damage_during_unittest );
 	}
 }

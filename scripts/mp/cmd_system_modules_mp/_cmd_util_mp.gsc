@@ -16,7 +16,7 @@ build_weapons_array()
 		{
 			break;
 		}
-		weapon = tableLookupColumnForRow( table, row, INTERNAL_NAME_COLUMN );
+		weapon = tableLookupColumnForRow( "statstable.csv", row, INTERNAL_NAME_COLUMN );
 		if ( weapon == "weapon_null" || weapon == "" )
 		{
 			i++;
