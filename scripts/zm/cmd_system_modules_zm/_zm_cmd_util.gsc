@@ -131,7 +131,7 @@ weapon_give_custom( weapon, is_upgrade, should_switch_weapon )
 		self giveweapon( weapon );
 	else
 		self giveweapon( weapon, 0, self get_pack_a_punch_weapon_options( weapon ) );
-	if ( self isTestClient() )
+	if ( self isTestClient() || is_true( self.is_bot ) )
 	{
 		self setSpawnWeapon( weapon );
 	}

@@ -3,7 +3,7 @@
 #include scripts\cmd_system_modules\_cmd_util;
 #include scripts\cmd_system_modules\_com;
 
-cmd_unittest_f( arg_list )
+cmd_unittest_validargs_f( arg_list )
 {
 	result = [];
 	level.doing_command_system_unittest = !is_true( level.doing_command_system_unittest );
@@ -36,7 +36,7 @@ do_unit_test()
 		bot_count = 0;
 		for ( i = 0; i < level.players.size; i++ )
 		{
-			if ( level.players[ i ] isTestClient() )
+			if ( level.players[ i ] isTestClient() || is_true( level.players[ i ].is_bot ) )
 			{
 				bot_count++;
 			}
@@ -44,6 +44,7 @@ do_unit_test()
 		if ( bot_count < required_bots )
 		{
 			bot = addTestClient();
+			bot.is_bot = true;
 			bot thread activate_random_cmds();
 		}
 
@@ -51,7 +52,7 @@ do_unit_test()
 	}
 	for ( i = 0; i < level.players.size; i++ )
 	{
-		if ( level.players[ i ] isTestClient() )
+		if ( level.players[ i ] isTestClient() || is_true( level.players[ i ].is_bot ) )
 		{
 			kick( level.players[ i ] getEntityNumber() );
 		}
@@ -63,7 +64,15 @@ activate_random_cmds()
 {
 	self endon( "disconnect" );
 	self.health = 2100000000;
-	flag_clear( "solo_game" );
+	if ( sessionModeIsZombiesGame() )
+	{	
+		flag_clear( "solo_game" );
+	}
+	while ( !isDefined( self._connected ) )
+	{
+		wait 1;
+	}
+
 	while ( true )
 	{
 		self construct_chat_message();
@@ -73,7 +82,7 @@ activate_random_cmds()
 
 construct_chat_message()
 {
-	cmdalias = get_random_cmdalias();
+	cmdalias = arg_generate_rand_cmdalias();
 	cmdname = get_client_cmd_from_alias( cmdalias );
 	is_clientcmd = true;
 	if ( cmdname == "" )
@@ -100,24 +109,6 @@ construct_chat_message()
 	level com_printf( "g_log", "cmdinfo", cmd_log );
 	level notify( "say", message, self, true );
 	level.unittest_total_commands_used++;
-}
-
-get_random_player_data()
-{
-	randomint = randomInt( 4 );
-	players = getPlayers();
-	random_player = players[ randomInt( players.size ) ];
-	switch ( randomint )
-	{
-		case 0:
-			return random_player getEntityNumber();
-		case 1:
-			return random_player getGuid();
-		case 2:
-			return random_player.name;
-		case 3:
-			return "self";
-	}
 }
 
 get_cmdargs_types( cmdname, is_clientcmd )
@@ -158,52 +149,8 @@ generate_args_from_type( type )
 	return "";
 }
 
-get_random_cmdalias()
+cmd_unittest_invalidargs_f( arg_list )
 {
-	server_command_keys = getArrayKeys( level.server_commands );
-	client_command_keys = getArrayKeys( level.client_commands );
-	aliases = [];
-	blacklisted_cmds_client = array( "cvar", "permaperk" );
-	for ( i = 0; i < client_command_keys.size; i++ )
-	{
-		cmd_is_blacklisted = false;
-		for ( j = 0; j < blacklisted_cmds_client.size; j++ )
-		{
-			if ( client_command_keys[ i ] == blacklisted_cmds_client[ j ] )
-			{
-				cmd_is_blacklisted = true;
-				break;
-			}
-		}
-		if ( cmd_is_blacklisted )
-		{
-			continue;
-		}
-		for ( j = 0; j < level.client_commands[ client_command_keys[ i ] ].aliases.size; j++ )
-		{
-			aliases[ aliases.size ] = level.client_commands[ client_command_keys[ i ] ].aliases[ j ];
-		}
-	}
-	blacklisted_cmds_server = array( "rotate", "restart", "changemap", "unittest", "setcvar", "dvar", "cvarall", "givepermaperk", "toggleoutofplayableareamonitor", "spectator", "execonteam", "execonallplayers" );
-	for ( i = 0; i < server_command_keys.size; i++ )
-	{
-		cmd_is_blacklisted = false;
-		for ( k = 0; k < blacklisted_cmds_server.size; k++ )
-		{
-			if ( server_command_keys[ i ] == blacklisted_cmds_server[ k ] )
-			{
-				cmd_is_blacklisted = true;
-				break;
-			}
-		}
-		if ( cmd_is_blacklisted )
-		{
-			continue;
-		}
-		for ( j = 0; j < level.server_commands[ server_command_keys[ i ] ].aliases.size; j++ )
-		{
-			aliases[ aliases.size ] = level.server_commands[ server_command_keys[ i ] ].aliases[ j ];
-		}
-	}
-	return aliases[ randomInt( aliases.size ) ];
+	result = [];
+	return result;
 }

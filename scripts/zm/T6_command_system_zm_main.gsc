@@ -68,6 +68,11 @@ main()
 	level.zm_command_init_done = true;
 }
 
+init()
+{
+	level.reset_clientdvars = ::onplayerconnect_clientdvars_override;
+}
+
 on_unittest()
 {
 	level endon( "end_game" );
@@ -77,6 +82,7 @@ on_unittest()
 		level.no_end_game_check = true;
 		level._game_module_game_end_check = ::never_end_game;
 		level.player_out_of_playable_area_monitor = false;
+		level.zm_disable_recording_stats = true;
 		if ( isDefined( level.player_damage_callbacks ) && isDefined( level.player_damage_callbacks[ 0 ] ) )
 		{
 			old_player_damage_callback = level.player_damage_callbacks[ 0 ];
@@ -90,6 +96,11 @@ on_unittest()
 		replaceFunc( maps\mp\zombies\_zm::checkforalldead, ::checkforalldead_override );
 		replaceFunc( maps\mp\zombies\_zm::check_end_game_intermission_delay, ::check_end_game_intermission_delay_override );
 		replaceFunc( maps\mp\zombies\_zm::player_fake_death, ::player_fake_death_override );
+		replaceFunc( maps\mp\_utility::setclientfield, ::setclientfield_override );
+		replaceFunc( maps\mp\_utility::setclientfieldtoplayer, ::setclientfieldtoplayer_override );
+		replaceFunc( maps\mp\_utility::is_bot, ::is_bot_override );
+		replaceFunc( maps\mp\_visionset_mgr::monitor, ::vsmgr_monitor_override );
+		replaceFunc( maps\mp\zombies\_zm::watch_rampage_bookmark, ::watch_rampage_bookmark_override );
 		register_player_damage_callback( ::no_player_damage_during_unittest );
 	}
 }
@@ -119,7 +130,15 @@ give_powerup_zm( powerup_name )
 CMD_KILLACTORS_f( arg_list )
 {
 	result = [];
-	maps\mp\zombies\_zm_game_module::kill_all_zombies();
+	ai = getaiarray( level.zombie_team );
+	for ( i = 0; i < ai.size; i++ )
+	{
+		zombie = ai[ i ];
+		if ( isdefined( zombie ) )
+		{
+			zombie dodamage( zombie.health + 666, zombie.origin );
+		}
+	}
 	result[ "filter" ] = "cmdinfo";
 	result[ "message" ] = "Killed all zombies";
 	return result;
@@ -184,7 +203,7 @@ game_pause( duration )
 	foreach ( player in level.players )
 	{
 		player enableInvulnerability();
-		player.target.tcs_is_invulnerable = true;
+		player.tcs_is_invulnerable = true;
 	}
 	level thread unpause_after_time( duration );
 }
@@ -223,7 +242,7 @@ game_unpause()
 	foreach ( player in level.players )
 	{
 		player disableInvulnerability();
-		player.target.tcs_is_invulnerable = false;
+		player.tcs_is_invulnerable = false;
 	}
 }
 

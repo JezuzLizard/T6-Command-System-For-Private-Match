@@ -232,13 +232,9 @@ server_safe_notify_thread( notify_name, index )
 	level notify( notify_name );
 }
 
-find_player_in_server( clientnum_guid_or_name, noprint )
+find_player_in_server( clientnum_guid_or_name, noprint = false )
 {
-	if ( !isDefined( noprint ) )
-	{
-		noprint = false;
-	}
-	if ( self.cmdpower >= level.CMD_POWER_MODERATOR )
+	if ( is_true( self.is_server ) || self.cmdpower >= level.CMD_POWER_MODERATOR )
 	{
 		partial_message = "clientnums and guids";
 	}
@@ -251,75 +247,80 @@ find_player_in_server( clientnum_guid_or_name, noprint )
 	{
 		if ( !noprint )
 		{
-			level com_printf( channel, "cmderror", "Could not find player", self );
 			level com_printf( channel, "cmderror", "Try using /playerlist to view " + partial_message + " to use a cmd on instead of the name", self );
 		}
-
+		partial_message = undefined;
 		return undefined;
 	}
 	if ( clientnum_guid_or_name == "self" )
 	{
+		if ( is_true( self.is_server ) )
+		{
+			if ( isDedicated() )
+			{
+				level com_printf( channel, "cmderror", "You cannot use self as an arg for type player as the dedicated server" );
+				partial_message = undefined;
+				return undefined;
+			}
+			else
+			{
+				for ( i = 0; i < level.players.size; i++ )
+				{
+					if ( level.players[ i ] == level.host )
+					{
+						return level.players[ i ];
+					}
+				}
+			}
+		}
 		return self;
 	}
 	is_int = is_str_int( clientnum_guid_or_name );
+	is_whole_number = is_natural_num( clientnum_guid_or_name );
+	client_num = int( clientnum_guid_or_name );
+	guid = int( clientnum_guid_or_name );
+	if ( is_int && is_whole_number )
+	{
+		for ( i = 0; i < level.players.size; i++ )
+		{
+			player = level.players[ i ];
+			if ( player getEntityNumber() == client_num )
+			{
+				return player;
+			}
+		}
+		for ( i = 0; i < level.players.size; i++ )
+		{
+			player = level.players[ i ];
+			if ( ( !player isTestClient() || !is_true( player.is_bot ) ) && player getGUID() == guid )
+			{
+				return player;
+			}
+		}
+		player = undefined;
+	}
+	is_int = undefined;
+	is_whole_number = undefined;
 	client_num = undefined;
 	guid = undefined;
-	name = undefined;
-	if ( is_int && ( int( clientnum_guid_or_name ) < getDvarInt( "sv_maxclients" ) ) )
+	name = toLower( clientnum_guid_or_name );
+	for ( i = 0; i < level.players.size; i++ )
 	{
-		client_num = int( clientnum_guid_or_name );
-		enum = 0;
+		player = level.players[ i ];
+		target_playername = toLower( player.name );
+		if ( isSubStr( target_playername, name ) )
+		{
+			return player;
+		}
 	}
-	else if ( is_int )
-	{
-		guid = int( clientnum_guid_or_name );
-		enum = 1;
-	}
-	else 
-	{
-		name = clientnum_guid_or_name;
-		enum = 2;
-	}
-	player_data = [];
-	players = getPlayers();
-	switch ( enum )
-	{
-		case 0:
-			for ( i = 0; i < players.size; i++ )
-			{
-				player = players[ i ];
-				if ( player getEntityNumber() == client_num )
-				{
-					return player;
-				}
-			}
-			break;
-		case 1:
-			for ( i = 0; i < players.size; i++ )
-			{
-				player = players[ i ];
-				if ( player getGUID() == guid )
-				{
-					return player;
-				}
-			}
-			break;
-		case 2:
-			for ( i = 0; i < players.size; i++ )
-			{
-				player = players[ i ];
-				if ( clean_player_name_of_clantag( toLower( player.name ) ) == clean_player_name_of_clantag( name ) || isSubStr( toLower( player.name ), name ) )
-				{
-					return player;
-				}
-			}
-			break;
-	}
+	player = undefined;
+	target_playername = undefined;
 	if ( !noprint )
 	{
-		level com_printf( channel, "cmderror", "Could not find player", self );
 		level com_printf( channel, "cmderror", "Try using /playerlist to view " + partial_message + " to use a cmd on instead of the name", self );
 	}
+	name = undefined;
+	partial_message = undefined;
 	return undefined;
 }
 
@@ -384,61 +385,39 @@ is_command_token( char )
 	return false;
 }
 
-is_str_int(value)
+is_str_int(str)
 {
-	zero = [];
-	zero[ "0" ] = true;
-	if ( is_true( zero[ value ] ) )
-		return true;
-	return int( value ) != 0;
-}
-
-is_natural_num(value)
-{
-	return int(value) > 0;
-}
-
-clean_player_name_of_clantag( name )
-{
-	//count how many square brackets are in the name
-	//because Plutonium allows users to create names with square brackets in them criiiiiinge
-	cancer_chars_left = [];
-	cancer_chars_left[ "[" ] = true;
-	cancer_chars_right = [];
-	cancer_chars_right[ "]" ] = true;
-	count_left = 0;
-	count_right = 0;
-	name_is_cancer = false;
-	for ( i = 0; i < name.size; i++ )
+	numbers = [];
+	for ( i = 0; i < 10; i++ )
 	{
-		if ( is_true( cancer_chars_left[ name[ i ] ] ) )
-		{
-			count_left++;
-		}
-		else if ( is_true( cancer_chars_right[ name[ i ] ] ) )
-		{
-			count_right++;
-		}
-		if ( count_left > 1 || count_right > 1 )
-		{
-			name_is_cancer = true;
-			break;
-		}
+		numbers[ i + "" ] = i;
 	}
-	if ( name_is_cancer )
+	negative_sign[ "-" ] = true;
+	if ( isDefined( negative_sign[ str[ 0 ] ] ) )
 	{
-		return name;
+		start_index = 1;
 	}
 	else 
 	{
-		if ( isSubStr( name, "]" ) )
+		start_index = 0;
+	}
+	for ( i = start_index; i < str.size; i++ )
+	{
+		if ( !isDefined( numbers[ str[ i ] ] ) )
 		{
-			keys = strTok( name, "]" );
-			return keys[ 1 ];
+			return false;
 		}
 	}
+	return true;
+}
 
-	return name;
+is_natural_num(str)
+{
+	if ( !is_str_int( str ) )
+	{
+		return false;
+	}
+	return int( str ) > 0;
 }
 
 cast_bool_to_str( bool, binary_string_options )
@@ -461,9 +440,13 @@ cast_bool_to_str( bool, binary_string_options )
 repackage_args( arg_list )
 {
 	args_string = "";
-	foreach ( arg in arg_list )
+	if ( !isDefined( arg_list ) )
 	{
-		args_string = args_string + arg + " ";
+		return args_string;
+	}
+	for ( i = 0; i < arg_list.size; i++ )
+	{
+		args_string = args_string + arg_list[ i ] + " ";
 	}
 	return args_string;
 }
@@ -689,6 +672,7 @@ cmd_register_arg_type_handlers( argtype, checker_func, rand_gen_func, error_mess
 
 cmd_execute( cmdname, arg_list, is_clientcmd, silent, logprint )
 {
+	original_arg_list = arg_list;
 	channel = self com_get_cmd_feedback_channel();
 	result = [];
 	if ( !test_cmd_is_valid( cmdname, arg_list, is_clientcmd ) )
@@ -728,7 +712,7 @@ cmd_execute( cmdname, arg_list, is_clientcmd, silent, logprint )
 			{
 				if ( isDefined( level.tcs_player_is_valid_check ) && ![[ level.tcs_player_is_valid_check ]]( arg_list[ 0 ] ) )
 				{
-					level com_printf( channel, "cmderror", "Target " + arg_list[ 1 ].name + " is not in a valid state for " + cmdname + " to work", self );
+					level com_printf( channel, "cmderror", "Target " + arg_list[ 0 ].name + " is not in a valid state for " + cmdname + " to work", self );
 					return;
 				}
 			}
@@ -750,7 +734,7 @@ cmd_execute( cmdname, arg_list, is_clientcmd, silent, logprint )
 	channel = self com_get_cmd_feedback_channel();
 	if ( result[ "filter" ] != "cmderror" )
 	{
-		cmd_log = self.name + " executed " + cmdname + " " + repackage_args( arg_list );
+		cmd_log = self.name + " executed " + cmdname + " " + repackage_args( original_arg_list );
 		if ( is_true( logprint ) && !is_true( level.doing_command_system_unittest ) )
 		{
 			level com_printf( "g_log", result[ "filter" ], cmd_log, self );
@@ -855,6 +839,10 @@ parse_cmd_message( message )
 
 get_server_cmd_from_alias( alias )
 {
+	if ( alias == "" )
+	{
+		return "";
+	}
 	command_keys = getArrayKeys( level.server_commands );
 	for ( i = 0; i < command_keys.size; i++ )
 	{
@@ -871,6 +859,10 @@ get_server_cmd_from_alias( alias )
 
 get_client_cmd_from_alias( alias )
 {
+	if ( alias == "" )
+	{
+		return "";
+	}
 	command_keys = getArrayKeys( level.client_commands );
 	for ( i = 0; i < command_keys.size; i++ )
 	{
@@ -941,17 +933,30 @@ test_cmd_is_valid( cmdname, arg_list, is_clientcmd )
 
 arg_player_handler( arg )
 {
-	return isDefined( find_player_in_server( arg ) ); 
+	return isDefined( self find_player_in_server( arg ) ); 
 }
 
 arg_generate_rand_player()
 {
-	return scripts\cmd_system_modules\_debug::get_random_player_data();
+	randomint = randomInt( 4 );
+	players = getPlayers();
+	random_player = players[ randomInt( players.size ) ];
+	switch ( randomint )
+	{
+		case 0:
+			return random_player getEntityNumber();
+		case 1:
+			return random_player getGuid();
+		case 2:
+			return random_player.name;
+		case 3:
+			return "self";
+	}
 }
 
 arg_wholenum_handler( arg )
 {
-	return is_str_int( arg ) && is_natural_num( arg );
+	return is_natural_num( arg );
 }
 
 arg_generate_rand_wholenum()
@@ -991,7 +996,52 @@ arg_cmdalias_handler( arg )
 
 arg_generate_rand_cmdalias()
 {
-	return scripts\cmd_system_modules\_debug::get_random_cmdalias();
+	server_command_keys = getArrayKeys( level.server_commands );
+	client_command_keys = getArrayKeys( level.client_commands );
+	aliases = [];
+	blacklisted_cmds_client = array( "cvar", "permaperk" );
+	for ( i = 0; i < client_command_keys.size; i++ )
+	{
+		cmd_is_blacklisted = false;
+		for ( j = 0; j < blacklisted_cmds_client.size; j++ )
+		{
+			if ( client_command_keys[ i ] == blacklisted_cmds_client[ j ] )
+			{
+				cmd_is_blacklisted = true;
+				break;
+			}
+		}
+		if ( cmd_is_blacklisted )
+		{
+			continue;
+		}
+		for ( j = 0; j < level.client_commands[ client_command_keys[ i ] ].aliases.size; j++ )
+		{
+			aliases[ aliases.size ] = level.client_commands[ client_command_keys[ i ] ].aliases[ j ];
+		}
+	}
+	blacklisted_cmds_server = array( "rotate", "restart", "changemap", "unittest", "setcvar", "dvar", "cvarall", "givepermaperk", "toggleoutofplayableareamonitor", "spectator", "execonteam", "execonallplayers" );
+	for ( i = 0; i < server_command_keys.size; i++ )
+	{
+		cmd_is_blacklisted = false;
+		for ( k = 0; k < blacklisted_cmds_server.size; k++ )
+		{
+			if ( server_command_keys[ i ] == blacklisted_cmds_server[ k ] )
+			{
+				cmd_is_blacklisted = true;
+				break;
+			}
+		}
+		if ( cmd_is_blacklisted )
+		{
+			continue;
+		}
+		for ( j = 0; j < level.server_commands[ server_command_keys[ i ] ].aliases.size; j++ )
+		{
+			aliases[ aliases.size ] = level.server_commands[ server_command_keys[ i ] ].aliases[ j ];
+		}
+	}
+	return aliases[ randomInt( aliases.size ) ];
 }
 
 arg_rank_handler( arg )

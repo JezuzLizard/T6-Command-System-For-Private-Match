@@ -148,3 +148,128 @@ no_player_damage_during_unittest( einflictor, eattacker, idamage, idflags, smean
 		return -1;
 	}
 }
+
+setclientfield_override( field_name, value )
+{
+	if ( !isDefined( self ) || self != level && ( !isPlayer( self ) || self isTestClient() || is_true( self.is_bot ) ) )
+	{
+		return;
+	}
+	if ( self == level )
+		codesetworldclientfield( field_name, value );
+	else
+		codesetclientfield( self, field_name, value );
+}
+
+setclientfieldtoplayer_override( field_name, value )
+{
+	if ( !isDefined( self ) || !isPlayer( self ) || self isTestClient() || is_true( self.is_bot ) )
+	{
+		return;
+	}
+	codesetplayerstateclientfield( self, field_name, value );
+}
+
+vsmgr_monitor_override()
+{
+	while ( level.vsmgr_initializing )
+		wait 0.05;
+
+	typekeys = getarraykeys( level.vsmgr );
+
+	while ( true )
+	{
+		wait 0.05;
+		waittillframeend;
+		players = getPlayers();
+
+		for ( type_index = 0; type_index < typekeys.size; type_index++ )
+		{
+			type = typekeys[type_index];
+
+			if ( !level.vsmgr[type].in_use )
+				continue;
+
+			for ( player_index = 0; player_index < players.size; player_index++ )
+			{
+				if ( players[player_index] isTestClient() || is_true( players[player_index].is_bot ) )
+				{
+					continue;
+				}
+					
+				update_clientfields_override( players[player_index], level.vsmgr[type] );
+			}
+		}
+	}
+}
+
+update_clientfields_override( player, type_struct )
+{
+    name = player maps\mp\_visionset_mgr::get_first_active_name( type_struct );
+    player setclientfieldtoplayer( type_struct.cf_slot_name, type_struct.info[name].slot_index );
+
+    if ( 1 < type_struct.cf_lerp_bit_count )
+        player setclientfieldtoplayer( type_struct.cf_lerp_name, type_struct.info[name].state.players[player._player_entnum].lerp );
+}
+
+watch_rampage_bookmark_override()
+{
+	while ( true )
+	{
+		wait 0.05;
+		waittillframeend;
+		now = gettime();
+		oldest_allowed = now - level.rampage_bookmark_kill_times_msec;
+		players = get_players();
+
+		for ( player_index = 0; player_index < players.size; player_index++ )
+		{
+			player = players[player_index];
+			if ( player isTestClient() )
+				continue;
+
+			for ( time_index = 0; time_index < level.rampage_bookmark_kill_times_count; time_index++ )
+			{
+				if ( !player.rampage_bookmark_kill_times[time_index] )
+					break;
+				else if ( oldest_allowed > player.rampage_bookmark_kill_times[time_index] )
+				{
+					player.rampage_bookmark_kill_times[time_index] = 0;
+					break;
+				}
+			}
+
+			if ( time_index >= level.rampage_bookmark_kill_times_count )
+			{
+				maps\mp\_demo::bookmark( "zm_player_rampage", gettime(), player );
+				player maps\mp\zombies\_zm::reset_rampage_bookmark_kill_times();
+				player.ignore_rampage_kill_times = now + level.rampage_bookmark_kill_times_delay;
+			}
+		}
+	}
+}
+
+is_bot_override()
+{
+	return self isTestClient() || is_true( self.is_bot );
+}
+
+onplayerconnect_clientdvars_override()
+{
+	if ( self isTestClient() || is_true( self.is_bot ) )
+	{
+		self maps\mp\zombies\_zm_laststand::player_getup_setup();
+		return;
+	}
+	self setclientcompass( 0 );
+	self setclientthirdperson( 0 );
+	self resetfov();
+	self setclientthirdpersonangle( 0 );
+	self setclientammocounterhide( 1 );
+	self setclientminiscoreboardhide( 1 );
+	self setclienthudhardcore( 0 );
+	self setclientplayerpushamount( 1 );
+	self setdepthoffield( 0, 0, 512, 4000, 4, 0 );
+	self setclientaimlockonpitchstrength( 0.0 );
+	self maps\mp\zombies\_zm_laststand::player_getup_setup();
+}

@@ -98,14 +98,14 @@ CMD_SETRANK_f( arg_list )
 {
 	result = [];
 	target = arg_list[ 0 ];
-	if ( self.cmdpower < target.cmdpower )
+	if ( !is_true( self.is_server ) && self.cmdpower < target.cmdpower )
 	{
 		result[ "filter" ] = "cmderror";
 		result[ "message" ] = "Insufficient cmdpower to set " + target.name + "'s rank";
 		return result;
 	}
 	new_rank = arg_list[ 1 ];
-	if ( ( level.tcs_ranks[ new_rank ].cmdpower >= self.cmdpower ) && self.cmdpower < level.CMD_POWER_HOST )
+	if ( !is_true( self.is_server ) && ( level.tcs_ranks[ new_rank ].cmdpower >= self.cmdpower ) && self.cmdpower < level.CMD_POWER_HOST )
 	{
 		result[ "filter" ] = "cmderror";
 		result[ "message" ] = "You cannot set " + target.name + " to a rank higher than or equal to your own";
@@ -193,9 +193,9 @@ CMD_EXECONTEAM_f( arg_list )
 		result[ "message" ] = "Team has no players";
 		return result;
 	}
-	foreach ( player in players )
+	for ( i = 0; i < players.size; i++ )
 	{
-		player thread CMD_EXECUTE( cmd_to_execute, var_args, true, false, false );
+		players[ i ] thread cmd_execute( cmd_to_execute, var_args, true, false, false );
 	}
 	result[ "filter" ] = "cmdinfo";
 	result[ "message" ] = "Executed " + cmd_to_execute + " on team " + team;
@@ -217,7 +217,7 @@ CMD_PLAYERLIST_f( arg_list )
 	}
 	for ( i = 0; i < players.size; i++ )
 	{
-		if ( self.cmdpower >= level.CMD_POWER_MODERATOR )
+		if ( is_true( self.is_server ) || self.cmdpower >= level.CMD_POWER_MODERATOR )
 		{
 			message = "^3" + players[ i ].name + " " + players[ i ] getGUID() + " " + players[ i ] getEntityNumber();
 		}

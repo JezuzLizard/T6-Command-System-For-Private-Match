@@ -90,29 +90,17 @@ com_caps_msg_title( channel, filter )
 	return color_code + toUpper( filter ) + ":";
 }
 
-com_print( message, players, arg_list )
+com_print( message, players )
 {
-	print( message );
+	printf( message );
 }
 
-com_logprint( message, players, arg_list )
+com_logprint( message, players )
 {
-	level thread logprint_safe( message + "\n" );
+	logPrint( message + "\n" );
 }
 
-logprint_safe( message )
-{
-	if ( !isDefined( level.tcs_log_queue_current ) )
-	{
-		level.tcs_log_queue_current = 0;
-	}
-	level.tcs_log_queue_current++;
-	wait level.tcs_log_queue_current * 0.1;
-	logPrint( message );
-	level.tcs_log_queue_current--;
-}
-
-com_iprintln( message, player, arg_list )
+com_iprintln( message, player )
 {
 	if ( is_true( level.doing_command_system_unittest ) )
 	{
@@ -124,7 +112,7 @@ com_iprintln( message, player, arg_list )
 	}	
 }
 
-com_iprintln_array( message, players, arg_list )
+com_iprintln_array( message, players )
 {
 	if ( is_true( level.doing_command_system_unittest ) )
 	{
@@ -136,7 +124,7 @@ com_iprintln_array( message, players, arg_list )
 	}
 }
 
-com_iprintlnbold( message, players, arg_list )
+com_iprintlnbold( message, players )
 {
 	if ( is_true( level.doing_command_system_unittest ) )
 	{
@@ -148,7 +136,7 @@ com_iprintlnbold( message, players, arg_list )
 	}
 }
 
-com_printf( channels, filter, message, players, arg_list )
+com_printf( channels, filter, message, players )
 {
 	if ( !isDefined( channels ) )
 	{
@@ -181,7 +169,7 @@ com_printf( channels, filter, message, players, arg_list )
 			{
 				channel = channel + "_array";
 			}
-			[[ level.com_channels[ channel ] ]]( message, players, arg_list );
+			[[ level.com_channels[ channel ] ]]( message, players );
 		}
 	}
 }

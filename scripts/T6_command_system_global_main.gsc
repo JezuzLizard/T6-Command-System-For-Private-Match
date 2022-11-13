@@ -16,6 +16,7 @@ main()
 	level.server = spawnStruct();
 	level.server.playername = "Server";
 	level.server.is_server = true;
+	level.server.name = "Server";
 	level.custom_commands_restart_countdown = 5;
 	level.commands_total = 0;
 	level.commands_page_count = 0;
@@ -112,7 +113,8 @@ main()
 
 	cmd_addservercommand( "help", undefined, "help [cmdalias]", ::cmd_help_f, "none", 0, false );
 
-	cmd_addservercommand( "unittest", undefined, "unittest [botcount]", ::cmd_unittest_f, "host", 0, false );
+	cmd_addservercommand( "unittest", undefined, "unittest [botcount]", ::cmd_unittest_validargs_f, "host", 0, false );
+	cmd_addservercommand( "unittestinvalidargs", "uinvalid", "unittest [botcount]", ::cmd_unittest_invalidargs_f, "host", 0, false );
 
 	cmd_register_arg_types_for_server_cmd( "givegod", "player" );
 	cmd_register_arg_types_for_server_cmd( "givenotarget", "player" );
@@ -137,7 +139,7 @@ main()
 
 	cmd_register_arg_types_for_client_cmd( "teleport", "player" );
 
-	cmd_register_arg_type_handlers( "player", ::arg_player_handler, ::arg_generate_rand_player, "not a player" );
+	cmd_register_arg_type_handlers( "player", ::arg_player_handler, ::arg_generate_rand_player, "not a valid player" );
 	cmd_register_arg_type_handlers( "wholenum", ::arg_wholenum_handler, ::arg_generate_rand_wholenum, "not a whole number" );
 	cmd_register_arg_type_handlers( "int", ::arg_int_handler, ::arg_generate_rand_int, "not an int" );
 	cmd_register_arg_type_handlers( "team", ::arg_team_handler, ::arg_generate_rand_team, "not a team" );
@@ -260,27 +262,32 @@ tcs_on_connect()
 		{
 			player thread setClientDvarThread( dvar[ "name" ], dvar[ "value" ], index );
 		}
+		found_entry = false;
 		if ( player isHost() )
 		{
 			player.cmdpower = level.CMD_POWER_HOST;
 			player.tcs_rank = level.TCS_RANK_HOST;
 			level.host = player;
+			found_entry = true;
 		}
 		else if ( array_validate( level.tcs_player_entries ) )
 		{
 			foreach ( entry in level.tcs_player_entries )
 			{
-				if ( find_player_in_server( entry.player_entry ) == player )
+				player_in_server = level.server find_player_in_server( entry.player_entry, true );
+				if ( isDefined( player_in_server ) && player_in_server == player )
 				{
 					player.cmdpower = entry.cmdpower;
 					player.tcs_rank = entry.rank;
+					found_entry = true;
 				}
 			}
 		}
-		else 
+		if ( !is_true( found_entry ) )
 		{
 			player.cmdpower = getDvarIntDefault( "tcs_cmdpower_default", level.CMD_POWER_USER );
 			player.tcs_rank = getDvarStringDefault( "tcs_default_rank", level.TCS_RANK_USER );
 		}
+		player._connected = true;
 	}
 }
