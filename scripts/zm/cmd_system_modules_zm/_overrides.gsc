@@ -117,7 +117,7 @@ checkforalldead_override()
 
 check_end_game_intermission_delay_override()
 {
-	while ( is_true( level.doing_command_system_unittest ) )
+	while ( is_true( level.doing_command_system_unittest ) || isDefined( level.custom_unittest_end_game_delay_func ) && [[ level.custom_unittest_end_game_delay_func ]]() )
 	{
 		wait 1;
 	}
@@ -146,6 +146,289 @@ no_player_damage_during_unittest( einflictor, eattacker, idamage, idflags, smean
 	else 
 	{
 		return -1;
+	}
+}
+
+player_damage_override( einflictor, eattacker, idamage, idflags, smeansofdeath, sweapon, vpoint, vdir, shitloc, psoffsettime )
+{
+	if ( isdefined( level._game_module_player_damage_callback ) )
+		self [[ level._game_module_player_damage_callback ]]( einflictor, eattacker, idamage, idflags, smeansofdeath, sweapon, vpoint, vdir, shitloc, psoffsettime );
+
+	idamage = self check_player_damage_callbacks( einflictor, eattacker, idamage, idflags, smeansofdeath, sweapon, vpoint, vdir, shitloc, psoffsettime );
+
+	if ( isdefined( self.use_adjusted_grenade_damage ) && self.use_adjusted_grenade_damage )
+	{
+		self.use_adjusted_grenade_damage = undefined;
+
+		if ( self.health > idamage )
+			return idamage;
+	}
+
+	if ( !idamage )
+		return 0;
+
+	if ( self maps\mp\zombies\_zm_laststand::player_is_in_laststand() )
+		return 0;
+
+	if ( isdefined( einflictor ) )
+	{
+		if ( isdefined( einflictor.water_damage ) && einflictor.water_damage )
+			return 0;
+	}
+
+	if ( isdefined( eattacker ) && ( isdefined( eattacker.is_zombie ) && eattacker.is_zombie || isplayer( eattacker ) ) )
+	{
+		if ( isdefined( self.hasriotshield ) && self.hasriotshield && isdefined( vdir ) )
+		{
+			if ( isdefined( self.hasriotshieldequipped ) && self.hasriotshieldequipped )
+			{
+				if ( self player_shield_facing_attacker( vdir, 0.2 ) && isdefined( self.player_shield_apply_damage ) )
+				{
+					self [[ self.player_shield_apply_damage ]]( 100, 0 );
+					return 0;
+				}
+			}
+			else if ( !isdefined( self.riotshieldentity ) )
+			{
+				if ( !self player_shield_facing_attacker( vdir, -0.2 ) && isdefined( self.player_shield_apply_damage ) )
+				{
+					self [[ self.player_shield_apply_damage ]]( 100, 0 );
+					return 0;
+				}
+			}
+		}
+	}
+
+	if ( isdefined( eattacker ) )
+	{
+		if ( isdefined( self.ignoreattacker ) && self.ignoreattacker == eattacker )
+			return 0;
+
+		if ( isdefined( self.is_zombie ) && self.is_zombie && ( isdefined( eattacker.is_zombie ) && eattacker.is_zombie ) )
+			return 0;
+
+		if ( isdefined( eattacker.is_zombie ) && eattacker.is_zombie )
+		{
+			self.ignoreattacker = eattacker;
+			self thread remove_ignore_attacker();
+
+			if ( isdefined( eattacker.custom_damage_func ) )
+				idamage = eattacker [[ eattacker.custom_damage_func ]]( self );
+			else if ( isdefined( eattacker.meleedamage ) )
+				idamage = eattacker.meleedamage;
+			else
+				idamage = 50;
+		}
+
+		eattacker notify( "hit_player" );
+
+		if ( smeansofdeath != "MOD_FALLING" )
+		{
+			self thread playswipesound( smeansofdeath, eattacker );
+
+			if ( isdefined( eattacker.is_zombie ) && eattacker.is_zombie || isplayer( eattacker ) )
+				self playrumbleonentity( "damage_heavy" );
+
+			canexert = 1;
+
+			if ( isdefined( level.pers_upgrade_flopper ) && level.pers_upgrade_flopper )
+			{
+				if ( isdefined( self.pers_upgrades_awarded["flopper"] ) && self.pers_upgrades_awarded["flopper"] )
+					canexert = smeansofdeath != "MOD_PROJECTILE_SPLASH" && smeansofdeath != "MOD_GRENADE" && smeansofdeath != "MOD_GRENADE_SPLASH";
+			}
+
+			if ( isdefined( canexert ) && canexert )
+			{
+				if ( randomintrange( 0, 1 ) == 0 )
+					self thread maps\mp\zombies\_zm_audio::playerexert( "hitmed" );
+				else
+					self thread maps\mp\zombies\_zm_audio::playerexert( "hitlrg" );
+			}
+		}
+	}
+
+	finaldamage = idamage;
+
+	if ( is_placeable_mine( sweapon ) || sweapon == "freezegun_zm" || sweapon == "freezegun_upgraded_zm" )
+		return 0;
+
+	if ( isdefined( self.player_damage_override ) )
+		self thread [[ self.player_damage_override ]]( einflictor, eattacker, idamage, idflags, smeansofdeath, sweapon, vpoint, vdir, shitloc, psoffsettime );
+
+	if ( smeansofdeath == "MOD_FALLING" )
+	{
+		if ( self hasperk( "specialty_flakjacket" ) && isdefined( self.divetoprone ) && self.divetoprone == 1 )
+		{
+			if ( isdefined( level.zombiemode_divetonuke_perk_func ) )
+				[[ level.zombiemode_divetonuke_perk_func ]]( self, self.origin );
+
+			return 0;
+		}
+
+		if ( isdefined( level.pers_upgrade_flopper ) && level.pers_upgrade_flopper )
+		{
+			if ( self maps\mp\zombies\_zm_pers_upgrades_functions::pers_upgrade_flopper_damage_check( smeansofdeath, idamage ) )
+				return 0;
+		}
+	}
+
+	if ( smeansofdeath == "MOD_PROJECTILE" || smeansofdeath == "MOD_PROJECTILE_SPLASH" || smeansofdeath == "MOD_GRENADE" || smeansofdeath == "MOD_GRENADE_SPLASH" )
+	{
+		if ( self hasperk( "specialty_flakjacket" ) )
+			return 0;
+
+		if ( isdefined( level.pers_upgrade_flopper ) && level.pers_upgrade_flopper )
+		{
+			if ( isdefined( self.pers_upgrades_awarded["flopper"] ) && self.pers_upgrades_awarded["flopper"] )
+				return 0;
+		}
+
+		if ( self.health > 75 && !( isdefined( self.is_zombie ) && self.is_zombie ) )
+			return 75;
+	}
+
+	if ( idamage < self.health )
+	{
+		if ( isdefined( eattacker ) )
+		{
+			if ( isdefined( level.custom_kill_damaged_vo ) )
+				eattacker thread [[ level.custom_kill_damaged_vo ]]( self );
+			else
+				eattacker.sound_damage_player = self;
+
+			if ( isdefined( eattacker.has_legs ) && !eattacker.has_legs )
+				self maps\mp\zombies\_zm_audio::create_and_play_dialog( "general", "crawl_hit" );
+			else if ( isdefined( eattacker.animname ) && eattacker.animname == "monkey_zombie" )
+				self maps\mp\zombies\_zm_audio::create_and_play_dialog( "general", "monkey_hit" );
+		}
+
+		return finaldamage;
+	}
+
+	if ( isdefined( eattacker ) )
+	{
+		if ( isdefined( eattacker.animname ) && eattacker.animname == "zombie_dog" )
+		{
+			self maps\mp\zombies\_zm_stats::increment_client_stat( "killed_by_zdog" );
+			self maps\mp\zombies\_zm_stats::increment_player_stat( "killed_by_zdog" );
+		}
+		else if ( isdefined( eattacker.is_avogadro ) && eattacker.is_avogadro )
+		{
+			self maps\mp\zombies\_zm_stats::increment_client_stat( "killed_by_avogadro", 0 );
+			self maps\mp\zombies\_zm_stats::increment_player_stat( "killed_by_avogadro" );
+		}
+	}
+
+	self thread clear_path_timers();
+
+	if ( level.intermission )
+		level waittill( "forever" );
+
+	if ( level.scr_zm_ui_gametype == "zcleansed" && idamage > 0 )
+	{
+		if ( isdefined( eattacker ) && isplayer( eattacker ) && eattacker.team != self.team && ( !( isdefined( self.laststand ) && self.laststand ) && !self maps\mp\zombies\_zm_laststand::player_is_in_laststand() || !isdefined( self.last_player_attacker ) ) )
+		{
+			if ( isdefined( eattacker.maxhealth ) && ( isdefined( eattacker.is_zombie ) && eattacker.is_zombie ) )
+				eattacker.health = eattacker.maxhealth;
+
+			if ( isdefined( level.player_kills_player ) )
+				self thread [[ level.player_kills_player ]]( einflictor, eattacker, idamage, idflags, smeansofdeath, sweapon, vpoint, vdir, shitloc, psoffsettime );
+		}
+	}
+
+	if ( self.lives > 0 && self hasperk( "specialty_finalstand" ) )
+	{
+		self.lives--;
+
+		if ( isdefined( level.chugabud_laststand_func ) )
+		{
+			self thread [[ level.chugabud_laststand_func ]]();
+			return 0;
+		}
+	}
+
+	if ( is_true( level.doing_command_system_unittest ) )
+	{
+		return finaldamage;
+	}
+
+	players = get_players();
+	count = 0;
+
+	for ( i = 0; i < players.size; i++ )
+	{
+		if ( players[i] == self || players[i].is_zombie || players[i] maps\mp\zombies\_zm_laststand::player_is_in_laststand() || players[i].sessionstate == "spectator" )
+			count++;
+	}
+
+	if ( count < players.size || isdefined( level._game_module_game_end_check ) && ![[ level._game_module_game_end_check ]]() )
+	{
+		if ( isdefined( self.lives ) && self.lives > 0 && ( isdefined( level.force_solo_quick_revive ) && level.force_solo_quick_revive ) && self hasperk( "specialty_quickrevive" ) )
+			self thread wait_and_revive();
+
+		return finaldamage;
+	}
+
+	if ( players.size == 1 && flag( "solo_game" ) )
+	{
+		if ( self.lives == 0 || !self hasperk( "specialty_quickrevive" ) )
+			self.intermission = 1;
+	}
+
+	solo_death = players.size == 1 && flag( "solo_game" ) && ( self.lives == 0 || !self hasperk( "specialty_quickrevive" ) );
+	non_solo_death = count > 1 || players.size == 1 && !flag( "solo_game" );
+
+	if ( ( solo_death || non_solo_death ) && !( isdefined( level.no_end_game_check ) && level.no_end_game_check ) )
+	{
+		level notify( "stop_suicide_trigger" );
+		self thread maps\mp\zombies\_zm_laststand::playerlaststand( einflictor, eattacker, idamage, smeansofdeath, sweapon, vdir, shitloc, psoffsettime );
+
+		if ( !isdefined( vdir ) )
+			vdir = ( 1, 0, 0 );
+
+		self fakedamagefrom( vdir );
+
+		if ( isdefined( level.custom_player_fake_death ) )
+			self thread [[ level.custom_player_fake_death ]]( vdir, smeansofdeath );
+		else
+			self thread player_fake_death();
+	}
+
+	if ( count == players.size && !( isdefined( level.no_end_game_check ) && level.no_end_game_check ) )
+	{
+		if ( players.size == 1 && flag( "solo_game" ) )
+		{
+			if ( self.lives == 0 || !self hasperk( "specialty_quickrevive" ) )
+			{
+				self.lives = 0;
+				level notify( "pre_end_game" );
+				wait_network_frame();
+
+				if ( flag( "dog_round" ) )
+					increment_dog_round_stat( "lost" );
+
+				level notify( "end_game" );
+			}
+			else
+				return finaldamage;
+		}
+		else
+		{
+			level notify( "pre_end_game" );
+			wait_network_frame();
+
+			if ( flag( "dog_round" ) )
+				increment_dog_round_stat( "lost" );
+
+			level notify( "end_game" );
+		}
+
+		return 0;
+	}
+	else
+	{
+		surface = "flesh";
+		return finaldamage;
 	}
 }
 

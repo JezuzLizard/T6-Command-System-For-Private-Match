@@ -97,6 +97,7 @@ com_print( message, players )
 
 com_logprint( message, players )
 {
+	players = undefined;
 	logPrint( message + "\n" );
 }
 

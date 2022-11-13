@@ -357,3 +357,42 @@ cmd_help_f( arg_list )
 	}
 	return result;
 }
+
+cmd_entitylist_f( arg_list )
+{
+	result = [];
+	channel = self com_get_cmd_feedback_channel();
+	if ( channel != "con" )
+	{
+		channel = "iprint";
+	}
+	entities = getEntArray();
+	if ( isDefined( arg_list[ 0 ] ) )
+	{
+		for ( i = 0; i < entities.size; i++ )
+		{
+			ent = entities[ i ];
+			if ( !is_entity_valid( ent ) )
+			{
+				continue;
+			}
+			if ( ent.targetname == arg_list[ 0 ] )
+			{
+				level com_printf( channel, "notitle", "Ent classname " + ent.classname + " targetname " + ent.targetname + " script_noteworthy " + ent.script_noteworthy + " origin " + ent.origin, self );
+			}
+		}
+	}
+	else
+	{
+		for ( i = 0; i < entities.size; i++ )
+		{
+			ent = entities[ i ];
+			if ( !is_entity_valid( ent ) )
+			{
+				continue;
+			}
+			level com_printf( channel, "notitle", "Ent classname " + ent.classname + " targetname " + ent.targetname + " script_noteworthy " + ent.script_noteworthy + " origin " + ent.origin, self );
+		}
+	}
+	return result;	
+}

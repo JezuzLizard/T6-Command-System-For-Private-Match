@@ -242,7 +242,7 @@ find_player_in_server( clientnum_guid_or_name, noprint = false )
 	{
 		partial_message = "clientnums";	
 	}
-	channel = com_get_cmd_feedback_channel();
+	channel = self com_get_cmd_feedback_channel();
 	if ( !isDefined( clientnum_guid_or_name ) )
 	{
 		if ( !noprint )
@@ -275,11 +275,10 @@ find_player_in_server( clientnum_guid_or_name, noprint = false )
 		}
 		return self;
 	}
-	is_int = is_str_int( clientnum_guid_or_name );
 	is_whole_number = is_natural_num( clientnum_guid_or_name );
 	client_num = int( clientnum_guid_or_name );
 	guid = int( clientnum_guid_or_name );
-	if ( is_int && is_whole_number )
+	if ( is_whole_number )
 	{
 		for ( i = 0; i < level.players.size; i++ )
 		{
@@ -299,7 +298,6 @@ find_player_in_server( clientnum_guid_or_name, noprint = false )
 		}
 		player = undefined;
 	}
-	is_int = undefined;
 	is_whole_number = undefined;
 	client_num = undefined;
 	guid = undefined;
@@ -321,6 +319,7 @@ find_player_in_server( clientnum_guid_or_name, noprint = false )
 	}
 	name = undefined;
 	partial_message = undefined;
+	channel = undefined;
 	return undefined;
 }
 
@@ -362,6 +361,73 @@ is_player_valid( player, checkignoremeflag, ignore_laststand_players )
 	return 1;
 }
 
+find_entity_in_server( entnum_targetname_or_self, noprint = false )
+{
+	if ( entnum_targetname_or_self == "self" )
+	{
+		return self;
+	}
+	entities = getEntArray();
+	ent = undefined;
+	is_whole_number = is_natural_num( entnum_targetname_or_self );
+	entnum = int( entnum_targetname_or_self );
+	if ( is_whole_number && entnum < 1023 )
+	{	
+		for ( i = 0; i < entities.size; i++ )
+		{
+			ent = entities[ i ];
+			if ( !is_entity_valid( ent ) )
+			{
+				continue;
+			}
+			if ( ent getEntityNumber() == entnum )
+			{	
+				is_whole_number = undefined;
+				entnum = undefined;
+				entities = undefined;
+				return ent;
+			}
+		}
+	}
+	for ( i = 0; i < entities.size; i++ )
+	{
+		ent = entities[ i ];
+		if ( !is_entity_valid( ent ) )
+		{
+			continue;
+		}
+		if ( !isDefined( ent.targetname ) )
+		{
+			continue;
+		}
+		if ( ent.targetname == entnum_targetname_or_self )
+		{
+			return ent;
+		}
+	}
+	channel = self com_get_cmd_feedback_channel();
+	level com_printf( channel, "cmderror", "Try using /entitylist to view entity entnum, and targetname", self );
+	channel = undefined;
+	return undefined;
+}
+
+is_entity_valid( entity )
+{
+	if ( !isDefined( entity ) )
+	{
+		return false;
+	}
+	if ( isPlayer( entity ) )
+	{
+		return is_player_valid( entity );
+	}
+	if ( !isAlive( entity ) )
+	{
+		return false;
+	}
+	return true;
+}
+
 getDvarStringDefault( dvarname, default_value )
 {
 	cur_dvar_value = getDvar( dvarname );
@@ -385,7 +451,7 @@ is_command_token( char )
 	return false;
 }
 
-is_str_int(str)
+is_str_int( str )
 {
 	numbers = [];
 	for ( i = 0; i < 10; i++ )
@@ -418,6 +484,58 @@ is_natural_num(str)
 		return false;
 	}
 	return int( str ) > 0;
+}
+
+is_str_float( str )
+{
+	if ( !is_str_int( str ) )
+	{
+		return false;
+	}
+	numbers = [];
+	for ( i = 0; i < 10; i++ )
+	{
+		numbers[ i + "" ] = i;
+	}
+	negative_sign[ "-" ] = true;
+	if ( isDefined( negative_sign[ str[ 0 ] ] ) )
+	{
+		start_index = 1;
+	}
+	else 
+	{
+		start_index = 0;
+	}
+	period[ "." ] = true;
+	periods_found = 0;
+	for ( i = start_index; i < str.size; i++ )
+	{
+		if ( isDefined( period[ str[ i ] ] ) )
+		{
+			periods_found++;
+			continue;
+		}
+		if ( periods_found > 1 )
+		{
+			return false;
+		}
+		next_index = i + 1;
+		if ( next_index == str.size )
+		{
+			if ( isDefined( period[ str[ next_index ] ] ) )
+			{
+				return false;
+			}
+			else if ( periods_found == 0 )
+			{
+				return false;
+			}
+		}
+		if ( !isDefined( numbers[ str[ i ] ] ) )
+		{
+			return false;
+		}
+	}
 }
 
 cast_bool_to_str( bool, binary_string_options )
@@ -737,7 +855,7 @@ cmd_execute( cmdname, arg_list, is_clientcmd, silent, logprint )
 		cmd_log = self.name + " executed " + cmdname + " " + repackage_args( original_arg_list );
 		if ( is_true( logprint ) && !is_true( level.doing_command_system_unittest ) )
 		{
-			level com_printf( "g_log", result[ "filter" ], cmd_log, self );
+			level com_printf( "g_log", result[ "filter" ], cmd_log );
 		}
 		if ( isDefined( result[ "channels" ] ) )
 		{
@@ -788,7 +906,7 @@ check_for_command_alias_collisions()
 		{
 			if ( aliases[ i ] == aliases[ j ] )
 			{
-				level com_printf( "con", "cmderror", "Command alias collision detected alias " + aliases[ i ] + " is duplicated", level );
+				level com_printf( "con", "cmderror", "Command alias collision detected alias " + aliases[ i ] + " is duplicated" );
 				break;
 			}
 		}
@@ -931,6 +1049,57 @@ test_cmd_is_valid( cmdname, arg_list, is_clientcmd )
 	return true;
 }
 
+build_hitlocs_array()
+{
+	level.tcs_hitlocs = [];
+	level.tcs_hitlocs[ "none" ] = true;
+	level.tcs_hitlocs[ "gun" ] = true;
+	level.tcs_hitlocs[ "head" ] = true;
+	level.tcs_hitlocs[ "helmet" ] = true;
+	level.tcs_hitlocs[ "neck" ] = true;
+	level.tcs_hitlocs[ "shield" ] = true;
+	level.tcs_hitlocs[ "torso_upper" ] = true;
+	level.tcs_hitlocs[ "torso_lower" ] = true;
+	level.tcs_hitlocs[ "left_arm_lower" ] = true;
+	level.tcs_hitlocs[ "left_arm_upper" ] = true;
+	level.tcs_hitlocs[ "right_arm_lower" ] = true;
+	level.tcs_hitlocs[ "right_arm_upper" ] = true;
+	level.tcs_hitlocs[ "left_hand" ] = true;
+	level.tcs_hitlocs[ "right_hand" ] = true;
+	level.tcs_hitlocs[ "left_leg_lower" ] = true;
+	level.tcs_hitlocs[ "left_leg_upper" ] = true;
+	level.tcs_hitlocs[ "right_leg_lower" ] = true;
+	level.tcs_hitlocs[ "right_leg_upper" ] = true;
+	level.tcs_hitlocs[ "left_foot" ] = true;
+	level.tcs_hitlocs[ "right_foot" ] = true;
+}
+
+build_mods_array()
+{
+	level.tcs_mods = [];
+	level.tcs_mods[ "MOD_UNKNOWN" ] = true;
+	level.tcs_mods[ "MOD_PISTOL_BULLET" ] = true;
+	level.tcs_mods[ "MOD_RIFLE_BULLET" ] = true;
+	level.tcs_mods[ "MOD_GRENADE" ] = true;
+	level.tcs_mods[ "MOD_GRENADE_SPLASH" ] = true;
+	level.tcs_mods[ "MOD_PROJECTILE" ] = true;
+	level.tcs_mods[ "MOD_PROJECTILE_SPLASH" ] = true;
+	level.tcs_mods[ "MOD_MELEE" ] = true;
+	level.tcs_mods[ "MOD_BAYONET" ] = true;
+	level.tcs_mods[ "MOD_HEAD_SHOT" ] = true;
+	level.tcs_mods[ "MOD_CRUSH" ] = true;
+	level.tcs_mods[ "MOD_TELEFRAG" ] = true;
+	level.tcs_mods[ "MOD_FALLING" ] = true;
+ 	level.tcs_mods[ "MOD_SUICIDE" ] = true;
+	level.tcs_mods[ "MOD_TRIGGER_HURT" ] = true;
+	level.tcs_mods[ "MOD_EXPLOSIVE" ] = true;
+	level.tcs_mods[ "MOD_IMPACT" ] = true;
+	level.tcs_mods[ "MOD_BURNED" ] = true;
+	level.tcs_mods[ "MOD_HIT_BY_OBJECT" ] = true;
+	level.tcs_mods[ "MOD_DROWN" ] = true;
+	level.tcs_mods[ "MOD_GAS" ] = true;
+}
+
 arg_player_handler( arg )
 {
 	return isDefined( self find_player_in_server( arg ) ); 
@@ -972,6 +1141,40 @@ arg_int_handler( arg )
 arg_generate_rand_int()
 {
 	return cointoss() ? randomint( 1000000 ) : randomint( 1000000 ) * -1;
+}
+
+arg_float_handler( arg )
+{
+	return is_str_float( arg ) || is_str_int( arg );
+}
+
+arg_generate_rand_float()
+{
+	return cointoss() ? randomFloat( 1000000 ) : randomFloat( 1000000 ) * -1;
+}
+
+arg_vector_handler( arg_list )
+{
+	if ( arg_list.size != 3 )
+	{
+		return false;
+	}
+	for ( i = 0; i < arg_list.size; i++ )
+	{
+		if ( !is_str_float( arg_list[ i ] ) || !is_str_int( arg_list[ i ] ) )
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
+arg_generate_rand_vector()
+{
+	x = cointoss() ? randomFloat( 1000000 ) : randomFloat( 1000000 ) * -1;
+	y = cointoss() ? randomFloat( 1000000 ) : randomFloat( 1000000 ) * -1;
+	z = cointoss() ? randomFloat( 1000000 ) : randomFloat( 1000000 ) * -1;
+	return ( x, y, z );
 }
 
 arg_team_handler( arg )
@@ -1053,4 +1256,61 @@ arg_generate_rand_rank()
 {
 	ranks = getArrayKeys( level.tcs_ranks );
 	return ranks[ randomInt( ranks.size ) ]; 
+}
+
+arg_entity_handler( arg )
+{
+	return isDefined( self find_entity_in_server( arg ) );
+}
+
+arg_generate_rand_entity()
+{
+	randomint = randomInt( 3 );
+	entities = getEntArray();
+	
+	while ( true )
+	{
+		random_entity = entities[ randomInt( entities.size ) ];
+	}
+	switch ( randomint )
+	{
+		case 0:
+			return random_entity getEntityNumber();
+		case 1:
+			return random_entity.targetname;
+		case 2:
+			return "self";
+	}
+}
+
+arg_hitloc_handler( arg )
+{
+	return isDefined( level.tcs_hitlocs[ arg ] );
+}
+
+arg_generate_rand_hitloc()
+{
+	hitlocs = getArrayKeys( level.tcs_hitlocs );
+	return hitlocs[ randomInt( hitlocs.size ) ];
+}
+
+arg_mod_handler( arg )
+{
+	return isDefined( level.tcs_mods[ arg ] );
+}
+
+arg_generate_rand_mod()
+{
+	mods = getArrayKeys( level.tcs_mods );
+	return mods[ randomInt( mods.size ) ];
+}
+
+arg_idflags_handler( arg )
+{
+	return is_natural_num( arg ) && int( arg ) <= level.idflags_passthru;
+} 
+
+arg_generate_rand_idflags()
+{
+	return 0; // Could return modified flags but should it be done
 }
