@@ -14,10 +14,11 @@
 
 main()
 {
-	//replaceFunc( maps\mp\zombies\_zm_pers_upgrades_system::pers_upgrades_monitor, ::pers_upgrades_monitor_override );
+	replaceFunc( maps\mp\zombies\_zm_pers_upgrades_system::pers_upgrades_monitor, ::pers_upgrades_monitor_override );
 	replaceFunc( maps\mp\zombies\_zm_utility::wait_network_frame, ::wait_network_frame_override );
 	replaceFunc( maps\mp\zombies\_zm::check_end_game_intermission_delay, ::check_end_game_intermission_delay_override );
 	replaceFunc( maps\mp\_visionset_mgr::monitor, ::monitor_stub );
+	level.bot_command_system_unittest_func = ::bot_unittest_func;
 	while ( !is_true( level.command_init_done ) )
 	{
 		wait 0.05;
@@ -36,6 +37,7 @@ main()
 	CMD_ADDSERVERCOMMAND( "toggleperssystemforplayer", "tpsfp", "toggleperssystemforplayer <name|guid|clientnum|self>", ::CMD_TOGGLEPERSSYSTEMFORPLAYER_f, "cheat", 1, false );
 	CMD_ADDSERVERCOMMAND( "toggleoutofplayableareamonitor", "togoopam", "toggleoutofplayableareamonitor", ::CMD_TOGGLEOUTOFPLAYABLEAREAMONITOR_f, "cheat", 0, false );
 	cmd_addservercommand( "weaponlist", "wlist", "weaponlist", ::cmd_weaponlist_f, "none", 0, false );
+	//cmd_addservercommand( "openalldoors", "openall", "openalldoors", ::cmd_openalldoors_f, "cheat", 0, false );
 
 	cmd_register_arg_types_for_server_cmd( "spectator", "player" );
 	cmd_register_arg_types_for_server_cmd( "togglerespawn", "player" );
@@ -79,6 +81,7 @@ on_unittest()
 		level._game_module_game_end_check = ::never_end_game;
 		level.player_out_of_playable_area_monitor = false;
 		level.zm_disable_recording_stats = true;
+		level.powerup_player_valid = ::unittest_check_player_is_valid_for_powerup;
 		if ( isDefined( level.player_damage_callbacks ) && isDefined( level.player_damage_callbacks[ 0 ] ) )
 		{
 			old_player_damage_callback = level.player_damage_callbacks[ 0 ];
@@ -103,20 +106,43 @@ CMD_GIVEPOWERUP_f( arg_list )
 	target = arg_list[ 0 ];
 	powerup_name = get_powerup_from_alias_zm( arg_list[ 1 ] );
 	valid_powerup_list = powerup_list_zm();
-	target give_powerup_zm( powerup_name );
-	result[ "filter" ] = "cmdinfo";
-	result[ "message" ] = "Spawned " + powerup_name + " for " + target.name;	
+	success = target give_powerup_zm( powerup_name );
+	if ( success )
+	{
+		result[ "filter" ] = "cmdinfo";
+		result[ "message" ] = "Spawned " + powerup_name + " for " + target.name;	
+	}
 	return result;
 }
 
 give_powerup_zm( powerup_name )
 {
+	channel = self com_get_cmd_feedback_channel();
+	can_spawn = true;
+	if ( self.origin[ 0 ] > 16384 || self.origin[ 0 ] < -16384 )
+	{
+		can_spawn = false;
+	}
+	else if ( self.origin[ 1 ] > 16384 || self.origin[ 1 ] < -16384 )
+	{
+		can_spawn = false;
+	}
+	else if ( self.origin[ 2 ] > 32768 || self.origin[ 2 ] < -32768 )
+	{
+		can_spawn = false;
+	}
+	if ( !can_spawn )
+	{
+		level com_printf( channel, "cmderror", "Cannot spawn powerup this far from the map center", self );
+		return false;
+	}
 	powerup_loc = self.origin + anglesToForward( self.angles ) * 64 + anglesToRight( self.angles ) * 64;
 	powerup = maps\mp\zombies\_zm_powerups::specific_powerup_drop( powerup_name, powerup_loc );
 	if ( powerup_name == "teller_withdrawl" )
 	{
 		powerup.value = 1000;
 	}
+	return true;
 }
 
 CMD_KILLACTORS_f( arg_list )
@@ -370,9 +396,12 @@ CMD_POWERUP_f( arg_list )
 {
 	result = [];
 	powerup_name = get_powerup_from_alias_zm( arg_list[ 0 ] );
-	self give_powerup_zm( powerup_name );
-	result[ "filter" ] = "cmdinfo";
-	result[ "message" ] = "Spawned " + powerup_name + " for you";	
+	success = self give_powerup_zm( powerup_name );
+	if ( success )
+	{
+		result[ "filter" ] = "cmdinfo";
+		result[ "message" ] = "Spawned " + powerup_name + " for you";
+	}	
 	return result;
 }
 
@@ -500,4 +529,49 @@ CMD_TOGGLEOUTOFPLAYABLEAREAMONITOR_f( arg_list )
 	result[ "filter" ] = "cmdinfo";
 	result[ "message" ] = "Out of playable area monitor " + on_off;
 	return result;
+}
+
+cmd_openalldoors_f( arg_list )
+{
+	result = [];
+	level thread open_seseme();
+	result[ "filter" ] = "cmdinfo";
+	result[ "message" ] = "All doors are now open";
+	return result;
+}
+
+open_seseme()
+{
+	if ( is_true( level.tcs_doors_all_opened ) )
+	{
+		return;
+	}
+	level.tcs_doors_all_opened = !is_true( level.tcs_doors_all_opened );
+	flag_wait( "initial_blackscreen_passed" );
+	setdvar("zombie_unlock_all", 1);
+	flag_set("power_on");
+	players = getPlayers();
+	zombie_doors = getentarray("zombie_door", "targetname");
+	for(i = 0; i < zombie_doors.size; i++)
+	{
+		zombie_doors[i] notify("trigger");
+		if(is_true(zombie_doors[i].power_door_ignore_flag_wait))
+		{
+			zombie_doors[i] notify("power_on");
+		}
+		wait(0.05);
+	}
+	zombie_airlock_doors = getentarray("zombie_airlock_buy", "targetname");
+	for(i = 0; i < zombie_airlock_doors.size; i++)
+	{
+		zombie_airlock_doors[i] notify("trigger");
+		wait(0.05);
+	}
+	zombie_debris = getentarray("zombie_debris", "targetname");
+	for(i = 0; i < zombie_debris.size; i++)
+	{
+		zombie_debris[i] notify("trigger", players[0]);
+		wait(0.05);
+	}
+	setdvar("zombie_unlock_all", 0);
 }

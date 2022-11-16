@@ -147,6 +147,11 @@ weapon_give_custom( weapon, is_upgrade, should_switch_weapon )
 	}
 }
 
+bot_unittest_func()
+{
+	self maps\mp\zombies\_zm::reset_rampage_bookmark_kill_times();
+}
+
 arg_perk_handler( arg )
 {
 	perk_arg = get_perk_from_alias_zm( arg );

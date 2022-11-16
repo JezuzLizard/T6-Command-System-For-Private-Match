@@ -490,7 +490,7 @@ is_str_int( str )
 
 is_natural_num(str)
 {
-	return is_str_int( str ) && int( str ) > 0;
+	return is_str_int( str ) && int( str ) >= 0;
 }
 
 is_str_float( str )
@@ -1268,7 +1268,7 @@ arg_generate_rand_cmdalias()
 			aliases[ aliases.size ] = level.client_commands[ client_command_keys[ i ] ].aliases[ j ];
 		}
 	}
-	blacklisted_cmds_server = array( "rotate", "restart", "changemap", "unittest", "setcvar", "dvar", "cvarall", "givepermaperk", "toggleoutofplayableareamonitor", "spectator", "execonteam", "execonallplayers" );
+	blacklisted_cmds_server = array( "rotate", "restart", "changemap", "unittest", "unittestinvalidargs", "setcvar", "dvar", "cvarall", "givepermaperk", "toggleoutofplayableareamonitor", "spectator", "execonteam", "execonallplayers" );
 	for ( i = 0; i < server_command_keys.size; i++ )
 	{
 		cmd_is_blacklisted = false;

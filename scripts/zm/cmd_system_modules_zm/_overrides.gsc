@@ -139,6 +139,7 @@ no_player_damage_during_unittest( einflictor, eattacker, idamage, idflags, smean
 	}
 }
 
+/*
 player_damage_override( einflictor, eattacker, idamage, idflags, smeansofdeath, sweapon, vpoint, vdir, shitloc, psoffsettime )
 {
 	if ( isdefined( level._game_module_player_damage_callback ) )
@@ -421,34 +422,54 @@ player_damage_override( einflictor, eattacker, idamage, idflags, smeansofdeath, 
 		return finaldamage;
 	}
 }
+*/
 
 monitor_stub()
 {
 	while ( level.vsmgr_initializing )
-        wait 0.05;
+		wait 0.05;
 
-    typekeys = getarraykeys( level.vsmgr );
+	typekeys = getarraykeys( level.vsmgr );
 
-    while ( true )
-    {
-        wait 0.05;
-        waittillframeend;
-        players = get_players();
+	while ( true )
+	{
+		wait 0.05;
+		waittillframeend;
+		players = get_players();
 
-        for ( type_index = 0; type_index < typekeys.size; type_index++ )
-        {
-            type = typekeys[type_index];
+		for ( type_index = 0; type_index < typekeys.size; type_index++ )
+		{
+			type = typekeys[type_index];
 
-            if ( !level.vsmgr[type].in_use )
-                continue;
+			if ( !level.vsmgr[type].in_use )
+				continue;
 
-            for ( player_index = 0; player_index < players.size; player_index++ )
-            {
-                if (is_true(players[player_index].pers["isBot"]))
-                    continue;
+			for ( player_index = 0; player_index < players.size; player_index++ )
+			{
+				if (is_true(players[player_index].pers["isBot"]))
+					continue;
 
-                maps\mp\_visionset_mgr::update_clientfields( players[player_index], level.vsmgr[type] );
-            }
-        }
-    }
+				maps\mp\_visionset_mgr::update_clientfields( players[player_index], level.vsmgr[type] );
+			}
+		}
+	}
+}
+
+unittest_check_player_is_valid_for_powerup( player )
+{
+	return is_true( player.pers[ "isBot" ] );
+}
+
+setclientfield_override( field_name, value )
+{
+	if ( !isDefined( self ) )
+	if ( self == level )
+		codesetworldclientfield( field_name, value );
+	else
+		codesetclientfield( self, field_name, value );
+}
+
+setclientfieldtoplayer_override( field_name, value )
+{
+	codesetplayerstateclientfield( self, field_name, value );
 }

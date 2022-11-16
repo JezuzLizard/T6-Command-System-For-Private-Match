@@ -12,6 +12,7 @@ cmd_unittest_validargs_f( arg_list )
 		required_bots = isDefined( arg_list[ 0 ] ) ? arg_list[ 0 ] : 1;
 		setDvar( "tcs_unittest", required_bots );
 		level.unittest_total_commands_used = 1;
+		level thread set_command_rate();
 		level thread do_unit_test();
 		level notify( "unittest_start" );
 	}
@@ -22,6 +23,23 @@ cmd_unittest_validargs_f( arg_list )
 	result[ "filter" ] = "cmdinfo";
 	result[ "message" ] = "Command system unit test activated";
 	return result;
+}
+
+set_command_rate()
+{
+	level.unittest_command_rate = 0.05;
+	while ( true )
+	{
+		if ( !sessionModeIsZombiesGame() && level.players.size > 12 )
+		{
+			level.unittest_command_rate = 0.1;
+		}
+		else 
+		{
+			level.unittest_command_rate = 0.05;
+		}
+		wait 1;
+	}
 }
 
 do_unit_test()
@@ -51,7 +69,10 @@ do_unit_test()
     		}
 
 			bot.pers["isBot"] = true;
-    		bot maps\mp\zombies\_zm::reset_rampage_bookmark_kill_times();
+			if ( isDefined( level.bot_command_system_unittest_func ) )
+			{
+				bot [[ level.bot_command_system_unittest_func ]]();
+			}
 		}
 
 		wait 1;
@@ -82,7 +103,7 @@ activate_random_cmds()
 	while ( true )
 	{
 		self construct_chat_message();
-		wait 0.05;
+		wait level.unittest_command_rate;
 	}
 }
 
@@ -100,7 +121,7 @@ construct_chat_message()
 	{
 		return;
 	}
-	cmdargs = create_random_valid_args( cmdname, is_clientcmd );
+	cmdargs = create_random_valid_args2( cmdname, is_clientcmd );
 	if ( cmdargs.size == 0 )
 	{
 		message = cmdname;
@@ -129,11 +150,11 @@ get_cmdargs_types( cmdname, is_clientcmd )
 	}
 }
 
-create_random_valid_args( cmdname, is_clientcmd )
+create_random_valid_args2( cmdname, is_clientcmd )
 {
 	args = [];
 	types = get_cmdargs_types( cmdname, is_clientcmd );
-	
+
 	if ( !isDefined( types ) )
 	{
 		return args;
@@ -146,6 +167,7 @@ create_random_valid_args( cmdname, is_clientcmd )
 	{
 		minargs = level.server_commands[ cmdname ].minargs;
 	}
+
 	for ( i = 0; i < minargs; i++ )
 	{
 		args[ i ] = generate_args_from_type( types[ i ] );
@@ -158,12 +180,10 @@ create_random_valid_args( cmdname, is_clientcmd )
 
 	max_optional_args = randomInt( types.size );
 
-	/*
 	for ( i = minargs; i < max_optional_args; i++ )
 	{
 		args[ i ] = generate_args_from_type( types[ i ] );
 	}
-	*/
 	return args;
 }
 
