@@ -368,7 +368,10 @@ cmd_dodamage_f( arg_list )
 	inflictor = find_entity_in_server( arg_list[ 4 ], true );
 	hitloc = arg_list[ 5 ];
 	mod = arg_list[ 6 ];
-	idflags = int( arg_list[ 7 ] );
+	if ( isDefined( arg_list[ 7 ] ) )
+	{
+		idflags = int( arg_list[ 7 ] );
+	}
 	weapon = arg_list[ 8 ];
 	switch ( arg_list.size )
 	{

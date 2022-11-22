@@ -139,7 +139,6 @@ no_player_damage_during_unittest( einflictor, eattacker, idamage, idflags, smean
 	}
 }
 
-/*
 player_damage_override( einflictor, eattacker, idamage, idflags, smeansofdeath, sweapon, vpoint, vdir, shitloc, psoffsettime )
 {
 	if ( isdefined( level._game_module_player_damage_callback ) )
@@ -343,7 +342,7 @@ player_damage_override( einflictor, eattacker, idamage, idflags, smeansofdeath, 
 		return finaldamage;
 	}
 
-	players = get_players();
+	players = getPlayers();
 	count = 0;
 
 	for ( i = 0; i < players.size; i++ )
@@ -422,7 +421,6 @@ player_damage_override( einflictor, eattacker, idamage, idflags, smeansofdeath, 
 		return finaldamage;
 	}
 }
-*/
 
 monitor_stub()
 {
@@ -435,7 +433,7 @@ monitor_stub()
 	{
 		wait 0.05;
 		waittillframeend;
-		players = get_players();
+		players = getPlayers();
 
 		for ( type_index = 0; type_index < typekeys.size; type_index++ )
 		{

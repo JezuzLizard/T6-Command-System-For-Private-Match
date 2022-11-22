@@ -677,6 +677,19 @@ cmd_removeservercommand( cmdname )
 	level.server_commands = new_command_array;
 }
 
+cmd_removeservercommandbygroup( rankgroup )
+{
+	if ( !isDefined( level.server_command_groups[ rankgroup ] ) )
+	{
+		return;
+	}
+	commands = getArrayKeys( level.server_command_groups[ rankgroup ] );
+	for ( i = 0; i < commands.size; i++ )
+	{
+		cmd_removeservercommand( commands[ i ] );
+	}
+}
+
 cmd_setservercommandpower( cmdname, power )
 {
 	if ( isDefined( level.server_commands[ cmdname ] ) )
@@ -772,6 +785,19 @@ cmd_removeclientcommand( cmdname )
 		}
 	}
 	level.client_commands = new_command_array;
+}
+
+cmd_removeclientcommandbygroup( rankgroup )
+{
+	if ( !isDefined( level.client_command_groups[ rankgroup ] ) )
+	{
+		return;
+	}
+	commands = getArrayKeys( level.client_command_groups[ rankgroup ] );
+	for ( i = 0; i < commands.size; i++ )
+	{
+		cmd_removeclientcommand( commands[ i ] );
+	}
 }
 
 cmd_setclientcommandpower( cmdname, power )
@@ -1150,7 +1176,12 @@ arg_generate_rand_player()
 {
 	randomint = randomInt( 4 );
 	players = getPlayers();
-	random_player = players[ randomInt( players.size ) ];
+
+	if ( randomint < 3 )
+	{
+		random_player = players[ randomInt( players.size ) ];
+	}
+	
 	switch ( randomint )
 	{
 		case 0:
@@ -1313,10 +1344,11 @@ arg_generate_rand_entity()
 	randomint = randomInt( 3 );
 	entities = getEntArray();
 	
-	while ( true )
+	if ( randomint < 2 )
 	{
 		random_entity = entities[ randomInt( entities.size ) ];
 	}
+
 	switch ( randomint )
 	{
 		case 0:

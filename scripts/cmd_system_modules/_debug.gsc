@@ -63,12 +63,12 @@ do_unit_test()
 		{
 			// the first test client spawned might be 
 			bot = undefined;
-    		while (!isdefined(bot))
-    		{
-	    		bot = addtestclient();
-    		}
+			while ( !isdefined( bot ) )
+			{
+				bot = addtestclient();
+			}
 
-			bot.pers["isBot"] = true;
+			bot.pers[ "isBot" ] = true;
 			if ( isDefined( level.bot_command_system_unittest_func ) )
 			{
 				bot [[ level.bot_command_system_unittest_func ]]();
@@ -110,6 +110,7 @@ activate_random_cmds()
 construct_chat_message()
 {
 	cmdalias = arg_generate_rand_cmdalias();
+	//logprint( "random cmdalias: " + cmdalias + "\n" );
 	cmdname = get_client_cmd_from_alias( cmdalias );
 	is_clientcmd = true;
 	if ( cmdname == "" )
@@ -121,6 +122,7 @@ construct_chat_message()
 	{
 		return;
 	}
+	//logprint( "random cmdname: " + cmdname + "\n" );
 	cmdargs = create_random_valid_args2( cmdname, is_clientcmd );
 	if ( cmdargs.size == 0 )
 	{
@@ -152,6 +154,8 @@ get_cmdargs_types( cmdname, is_clientcmd )
 
 create_random_valid_args2( cmdname, is_clientcmd )
 {
+	//message = "cmdname: " + cmdname + " is_clientcmd: " + is_clientcmd;
+	//logprint( message + "\n" );
 	args = [];
 	types = get_cmdargs_types( cmdname, is_clientcmd );
 
@@ -167,22 +171,33 @@ create_random_valid_args2( cmdname, is_clientcmd )
 	{
 		minargs = level.server_commands[ cmdname ].minargs;
 	}
-
+	//message = "minargs: " + minargs;
+	//logprint( message + "\n" );
 	for ( i = 0; i < minargs; i++ )
 	{
 		args[ i ] = generate_args_from_type( types[ i ] );
+		//message1 = "types defined: " + isDefined( types[ i ] ) + " args defined: " + isDefined( args[ i ] );
+		//logprint( message1 + "\n" );
+		//message = "minargs: " + minargs +  " types[" + i + "]: " + types[ i ] + " args[" + i + "]: " + args[ i ];
+		//logprint( message + "\n" );
 	}
 
 	if ( cointoss() ) // 50% chance we don't add optional args
 	{
+		//message = "returning early (rng)";
+		//logprint( message + "\n" );
 		return args;
 	}
 
 	max_optional_args = randomInt( types.size );
 
+	//message = "max_optional_args: " + max_optional_args;
+	//logprint( message + "\n" );
 	for ( i = minargs; i < max_optional_args; i++ )
 	{
 		args[ i ] = generate_args_from_type( types[ i ] );
+		//message = "max_optional_args: " + max_optional_args + " types[" + i + "]: " + types[ i ] + " args[" + i + "]: " + args[ i ];
+		//logprint( message + "\n" );
 	}
 	return args;
 }

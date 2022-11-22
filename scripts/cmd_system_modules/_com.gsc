@@ -165,12 +165,12 @@ com_printf( channels, filter, message, players )
 			{
 				message_color_code = "^8";
 			}
-			message = com_caps_msg_title( channel, filter ) + message_color_code + message;
+			message_modified = com_caps_msg_title( channel, filter ) + message_color_code + message;
 			if ( array_validate( players ) )
 			{
 				channel = channel + "_array";
 			}
-			[[ level.com_channels[ channel ] ]]( message, players );
+			[[ level.com_channels[ channel ] ]]( message_modified, players );
 		}
 	}
 }

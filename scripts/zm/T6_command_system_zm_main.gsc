@@ -37,7 +37,7 @@ main()
 	CMD_ADDSERVERCOMMAND( "toggleperssystemforplayer", "tpsfp", "toggleperssystemforplayer <name|guid|clientnum|self>", ::CMD_TOGGLEPERSSYSTEMFORPLAYER_f, "cheat", 1, false );
 	CMD_ADDSERVERCOMMAND( "toggleoutofplayableareamonitor", "togoopam", "toggleoutofplayableareamonitor", ::CMD_TOGGLEOUTOFPLAYABLEAREAMONITOR_f, "cheat", 0, false );
 	cmd_addservercommand( "weaponlist", "wlist", "weaponlist", ::cmd_weaponlist_f, "none", 0, false );
-	//cmd_addservercommand( "openalldoors", "openall", "openalldoors", ::cmd_openalldoors_f, "cheat", 0, false );
+	cmd_addservercommand( "openalldoors", "openall", "openalldoors", ::cmd_openalldoors_f, "cheat", 0, false );
 
 	cmd_register_arg_types_for_server_cmd( "spectator", "player" );
 	cmd_register_arg_types_for_server_cmd( "togglerespawn", "player" );
@@ -82,6 +82,7 @@ on_unittest()
 		level.player_out_of_playable_area_monitor = false;
 		level.zm_disable_recording_stats = true;
 		level.powerup_player_valid = ::unittest_check_player_is_valid_for_powerup;
+		level.overrideplayerdamage = ::player_damage_override;
 		if ( isDefined( level.player_damage_callbacks ) && isDefined( level.player_damage_callbacks[ 0 ] ) )
 		{
 			old_player_damage_callback = level.player_damage_callbacks[ 0 ];
