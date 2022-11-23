@@ -19,8 +19,6 @@ main()
 	level.server.name = "Server";
 	level.custom_commands_restart_countdown = 5;
 	level.commands_total = 0;
-	level.commands_page_count = 0;
-	level.commands_page_max = 4;
 	level.custom_commands_cooldown_time = getDvarIntDefault( "tcs_cmd_cd", 5 );
 	level.tcs_use_silent_commands = getDvarIntDefault( "tcs_silent_cmds", 0 );
 	level.tcs_logprint_cmd_usage = getDvarIntDefault( "tcs_logprint_cmd_usage", 1 );
@@ -198,7 +196,7 @@ init()
 	{
 		arg_list = [];
 		arg_list[ 0 ] = getDvarInt( "tcs_unittest" );
-		cmd_unittest_validargs_f( arg_list[ 0 ] );
+		cmd_unittest_validargs_f( arg_list );
 	}
 }
 

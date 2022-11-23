@@ -184,21 +184,6 @@ get_perma_perk_from_alias( alias )
 	}
 }
 
-weapon_is_available( weapon )
-{
-	possible_weapons = getArrayKeys( level.zombie_include_weapons );
-	weapon_is_available = false;
-	for ( i = 0; i < possible_weapons.size; i++ )
-	{
-		if ( weapon == possible_weapons[ i ] )
-		{
-			weapon_is_available = true;
-			break;
-		}
-	}
-	return weapon_is_available;
-}
-
 get_all_weapons()
 {
 	return getArrayKeys( level.zombie_include_weapons );
@@ -264,13 +249,7 @@ find_player_in_server( clientnum_guid_or_name, noprint = false )
 			}
 			else
 			{
-				for ( i = 0; i < level.players.size; i++ )
-				{
-					if ( level.players[ i ] == level.host )
-					{
-						return level.players[ i ];
-					}
-				}
+				return level.host;
 			}
 		}
 		return self;
@@ -515,6 +494,10 @@ is_str_float( str )
 	}
 	period[ "." ] = true;
 	periods_found = 0;
+	if ( isDefined( period[ str[ str.size - 1 ] ] ) )
+	{
+		return false;
+	}
 	for ( i = start_index; i < str.size; i++ )
 	{
 		if ( isDefined( period[ str[ i ] ] ) )
@@ -525,14 +508,6 @@ is_str_float( str )
 				return false;
 			}
 			continue;
-		}
-		next_index = i + 1;
-		if ( next_index == str.size )
-		{
-			if ( isDefined( period[ str[ next_index ] ] ) )
-			{
-				return false;
-			}
 		}
 		if ( !isDefined( numbers[ str[ i ] ] ) )
 		{
