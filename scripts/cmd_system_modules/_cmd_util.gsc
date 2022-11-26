@@ -1316,10 +1316,11 @@ arg_entity_handler( arg )
 
 arg_generate_rand_entity()
 {
-	randomint = randomInt( 3 );
+	randomint = randomInt( 2 );
 	entities = getEntArray();
 	
-	if ( randomint < 2 )
+	random_entity = undefined;
+	if ( randomint < 1 )
 	{
 		random_entity = entities[ randomInt( entities.size ) ];
 	}
@@ -1329,8 +1330,6 @@ arg_generate_rand_entity()
 		case 0:
 			return random_entity getEntityNumber();
 		case 1:
-			return random_entity.targetname;
-		case 2:
 			return "self";
 	}
 }
