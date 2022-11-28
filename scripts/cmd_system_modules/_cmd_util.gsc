@@ -217,7 +217,7 @@ server_safe_notify_thread( notify_name, index )
 	level notify( notify_name );
 }
 
-find_player_in_server( clientnum_guid_or_name, noprint = false )
+cast_str_to_player( clientnum_guid_or_name, noprint = false )
 {
 	if ( is_true( self.is_server ) || self.cmdpower >= level.CMD_POWER_MODERATOR )
 	{
@@ -814,25 +814,17 @@ cmd_register_arg_type_handlers( argtype, checker_func, rand_gen_func, error_mess
 	level.tcs_arg_type_handlers[ argtype ].error_message = error_message;
 }
 
-cmd_execute( cmdname, arg_list, is_clientcmd, silent, logprint )
+cmd_execute_internal( cmdname, arg_list, is_clientcmd, silent, logprint )
 {
 	original_arg_list = arg_list;
 	channel = self com_get_cmd_feedback_channel();
 	result = [];
-	if ( !test_cmd_is_valid( cmdname, arg_list, is_clientcmd ) )
+	if ( !self test_cmd_is_valid( cmdname, arg_list, is_clientcmd ) )
 	{
 		return;
 	}
 	if ( is_clientcmd )
 	{
-		if ( is_true( level.client_commands[ cmdname ].uses_player_validity_check ) )
-		{
-			if ( isDefined( level.tcs_player_is_valid_check ) && ![[ level.tcs_player_is_valid_check ]]( self ) )
-			{
-				level com_printf( channel, "cmderror", "You are not in a valid state for " + cmdname + " to work", self );
-				return;
-			}
-		}
 		if ( is_true( level.threaded_commands[ cmdname ] ) )
 		{
 			self thread [[ level.client_commands[ cmdname ].func ]]( arg_list );
@@ -847,7 +839,7 @@ cmd_execute( cmdname, arg_list, is_clientcmd, silent, logprint )
 	{
 		if ( is_true ( level.cmds_using_find_player[ cmdname ] ) )
 		{
-			arg_list[ 0 ] = self find_player_in_server( arg_list[ 0 ] );
+			arg_list[ 0 ] = self cast_str_to_player( arg_list[ 0 ] );
 			if ( !isDefined( arg_list[ 0 ] ) )
 			{
 				return;
@@ -878,9 +870,9 @@ cmd_execute( cmdname, arg_list, is_clientcmd, silent, logprint )
 	channel = self com_get_cmd_feedback_channel();
 	if ( result[ "filter" ] != "cmderror" )
 	{
-		cmd_log = self.name + " executed " + cmdname + " " + repackage_args( original_arg_list );
 		if ( is_true( logprint ) && !is_true( level.doing_command_system_unittest ) )
 		{
+			cmd_log = self.name + " executed " + cmdname + " " + repackage_args( original_arg_list );
 			level com_printf( "g_log", result[ "filter" ], cmd_log );
 		}
 		if ( isDefined( result[ "channels" ] ) )
@@ -1038,13 +1030,21 @@ test_cmd_is_valid( cmdname, arg_list, is_clientcmd )
 			{
 				if ( isDefined( level.tcs_arg_type_handlers[ argtypes[ i ] ].checker_func ) )
 				{
-					if ( ![[ level.tcs_arg_type_handlers[ argtypes[ i ] ].checker_func ]]( arg_list[ i ] ) )
+					if ( !level [[ level.tcs_arg_type_handlers[ argtypes[ i ] ].checker_func ]]( arg_list[ i ] ) )
 					{
 						arg_num = i;
 						level com_printf( channel, "cmderror", "Arg " +  arg_num + " " + arg_list[ i ] + " is " + level.tcs_arg_type_handlers[ argtypes[ i ] ].error_message, self );
 						return false;
 					}
 				}
+			}
+		}
+		if ( is_true( level.client_commands[ cmdname ].uses_player_validity_check ) )
+		{
+			if ( isDefined( level.tcs_player_is_valid_check ) && !level [[ level.tcs_player_is_valid_check ]]( self ) )
+			{
+				level com_printf( channel, "cmderror", "You are not in a valid state for " + cmdname + " to work", self );
+				return false;
 			}
 		}
 	}
@@ -1062,7 +1062,7 @@ test_cmd_is_valid( cmdname, arg_list, is_clientcmd )
 			{
 				if ( isDefined( level.tcs_arg_type_handlers[ argtypes[ i ] ].checker_func ) )
 				{
-					if ( ![[ level.tcs_arg_type_handlers[ argtypes[ i ] ].checker_func ]]( arg_list[ i ] ) )
+					if ( !level [[ level.tcs_arg_type_handlers[ argtypes[ i ] ].checker_func ]]( arg_list[ i ] ) )
 					{
 						arg_num = i;
 						level com_printf( channel, "cmderror", "Arg " +  arg_num + " " + arg_list[ i ] + " is " + level.tcs_arg_type_handlers[ argtypes[ i ] ].error_message, self );
@@ -1144,7 +1144,7 @@ build_idflags_array()
 
 arg_player_handler( arg )
 {
-	return isDefined( self find_player_in_server( arg ) ); 
+	return isDefined( self cast_str_to_player( arg ) ); 
 }
 
 arg_generate_rand_player()
@@ -1152,6 +1152,7 @@ arg_generate_rand_player()
 	randomint = randomInt( 4 );
 	players = getPlayers();
 
+	random_player = undefined;
 	if ( randomint < 3 )
 	{
 		random_player = players[ randomInt( players.size ) ];
@@ -1198,6 +1199,16 @@ arg_float_handler( arg )
 arg_generate_rand_float()
 {
 	return cointoss() ? randomFloat( 1000000 ) : randomFloat( 1000000 ) * -1;
+}
+
+arg_wholefloat_handler( arg )
+{
+	return ( is_str_float( arg ) || is_str_int( arg ) ) && float( arg ) > 0.0;
+}
+
+arg_generate_rand_wholefloat()
+{
+	return randomFloat( 1000000 );
 }
 
 arg_vector_handler( arg )
@@ -1274,7 +1285,7 @@ arg_generate_rand_cmdalias()
 			aliases[ aliases.size ] = level.client_commands[ client_command_keys[ i ] ].aliases[ j ];
 		}
 	}
-	blacklisted_cmds_server = array( "rotate", "restart", "changemap", "unittest", "unittestinvalidargs", "setcvar", "dvar", "cvarall", "givepermaperk", "toggleoutofplayableareamonitor", "spectator", "execonteam", "execonallplayers" );
+	blacklisted_cmds_server = array( "rotate", "restart", "changemap", "unittest", "unittestinvalidargs", "setcvar", "dvar", "cvarall", "givepermaperk", "toggleoutofplayableareamonitor", "spectator", "execonteam", "execonallplayers", "testcmd" );
 	for ( i = 0; i < server_command_keys.size; i++ )
 	{
 		cmd_is_blacklisted = false;
@@ -1368,7 +1379,7 @@ arg_generate_rand_idflags()
 	max_flags_to_add = randomInt( level.tcs_idflags.size );
 	for ( i = 0; i < max_flags_to_add; i++ )
 	{
-		random_flag_index = randomInt( idflags_array );
+		random_flag_index = randomInt( idflags_array.size );
 		flags |= idflags_array[ random_flag_index ];
 		arrayRemoveIndex( idflags_array, random_flag_index );
 	}

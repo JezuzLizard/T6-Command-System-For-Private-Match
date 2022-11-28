@@ -132,7 +132,7 @@ bottomless_clip()
 CMD_TELEPORT_f( arg_list )
 {
 	result = [];
-	target = self find_player_in_server( arg_list[ 0 ] );
+	target = self cast_str_to_player( arg_list[ 0 ] );
 	if ( !isDefined( target ) )
 	{
 		return result;

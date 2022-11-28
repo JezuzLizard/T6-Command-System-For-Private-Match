@@ -10,8 +10,10 @@ cmd_unittest_validargs_f( arg_list )
 	if ( level.doing_command_system_unittest )
 	{
 		required_bots = isDefined( arg_list[ 0 ] ) ? arg_list[ 0 ] : 1;
+		if ( isDefined( arg_list[ 1 ] ) )
+			level thread end_unittest_after_time( arg_list[ 1 ] );
 		setDvar( "tcs_unittest", required_bots );
-		level.unittest_total_commands_used = 1;
+		level.unittest_total_commands_used = 0;
 		level thread set_command_rate();
 		level thread do_unit_test();
 		level notify( "unittest_start" );
@@ -44,6 +46,11 @@ set_command_rate()
 
 do_unit_test()
 {
+	if ( isDefined( level.custom_unittest_bot_manager_func ) )
+	{
+		level thread [[ level.custom_unittest_bot_manager_func ]]();
+		return;
+	}
 	while ( true )
 	{
 		required_bots = getDvarInt( "tcs_unittest" );
@@ -51,30 +58,7 @@ do_unit_test()
 		{
 			break;
 		}
-		bot_count = 0;
-		for ( i = 0; i < level.players.size; i++ )
-		{
-			if ( is_true( level.players[ i ].pers["isBot"] ) )
-			{
-				bot_count++;
-			}
-		}
-		if ( bot_count < required_bots )
-		{
-			// the first test client spawned might be 
-			bot = undefined;
-			while ( !isdefined( bot ) )
-			{
-				bot = addtestclient();
-			}
-
-			bot.pers[ "isBot" ] = true;
-			if ( isDefined( level.bot_command_system_unittest_func ) )
-			{
-				bot [[ level.bot_command_system_unittest_func ]]();
-			}
-		}
-
+		manage_unittest_bots( required_bots );
 		wait 1;
 	}
 	for ( i = 0; i < level.players.size; i++ )
@@ -85,6 +69,40 @@ do_unit_test()
 		}
 	}
 	level.doing_command_system_unittest = false;
+}
+
+manage_unittest_bots( required_bots, cmdname )
+{
+	bot_count = 0;
+	for ( i = 0; i < level.players.size; i++ )
+	{
+		if ( is_true( level.players[ i ].pers["isBot"] ) )
+		{
+			bot_count++;
+		}
+	}
+	if ( bot_count < required_bots )
+	{
+		bot = undefined;
+		//Need to do this in T6 because the bots can fail to be added for no reason sometimes
+		while ( !isdefined( bot ) && ( required_bots <= getDvarInt( "sv_maxclients" ) ) )
+		{
+			bot = addtestclient();
+		}
+		if ( !isDefined( bot ) )
+		{
+			return;
+		}
+		bot.pers[ "isBot" ] = true;
+		if ( isDefined( level.bot_command_system_unittest_func ) )
+		{
+			bot [[ level.bot_command_system_unittest_func ]]();
+		}
+		if ( isDefined( cmdname ) )
+		{
+			bot.specific_cmd = cmdname;
+		}
+	}
 }
 
 activate_random_cmds()
@@ -102,12 +120,12 @@ activate_random_cmds()
 
 	while ( true )
 	{
-		self construct_chat_message();
+		self construct_chat_message_for_unittest();
 		wait level.unittest_command_rate;
 	}
 }
 
-construct_chat_message()
+construct_chat_message_for_unittest()
 {
 	cmdalias = arg_generate_rand_cmdalias();
 	//logprint( "random cmdalias: " + cmdalias + "\n" );
@@ -215,4 +233,113 @@ cmd_unittest_invalidargs_f( arg_list )
 {
 	result = [];
 	return result;
+}
+
+end_unittest_after_time( time_in_minutes )
+{
+	time_passed_in_seconds = 0;
+	time_required_in_seconds = time_in_minutes * 60;
+	while ( time_passed_in_seconds < time_required_in_seconds )
+	{
+		wait 1;
+		time_passed_in_seconds++;
+	}
+	setDvar( "tcs_unittest", 0 );
+}
+
+cmd_testcmd_f( arg_list )
+{
+	result = [];
+	level.doing_command_system_unittest = !is_true( level.doing_command_system_unittest );
+	level.doing_command_system_testcmd = !is_true( level.doing_command_system_testcmd );
+	if ( level.doing_command_system_testcmd )
+	{
+		cmdname = get_client_cmd_from_alias( arg_list[ 0 ] );
+		is_clientcmd = true;
+		if ( cmdname == "" )
+		{
+			cmdname = get_server_cmd_from_alias( arg_list[ 0 ] );
+			is_clientcmd = false;
+		}
+		level thread test_cmd_for_time( arg_list[ 0 ], is_clientcmd, arg_list[ 1 ], arg_list[ 2 ] );
+	}
+	else 
+	{
+		level notify( "stop_testcmd" );
+	}
+	result[ "filter" ] = "cmdinfo";
+	result[ "message" ] = "Testcmd " + cast_bool_to_str( level.doing_command_system_testcmd, "activated deactivated" ) + " for cmd " + arg_list[ 0 ];
+}
+
+test_cmd_for_time( cmdname, is_clientcmd, threadcount = 1, duration )
+{
+	if ( isDefined( duration ) )
+	{
+		level thread end_testcmd_after_time( duration );
+	}
+	manage_unittest_bots( 1 );
+	for ( i = 0; i < threadcount; i++ )
+	{
+		if ( is_clientcmd )
+		{
+			manage_unittest_bots( 1, cmdname );
+		}
+		else 
+		{
+			level thread testcmd_thread_server( cmdname, is_clientcmd );
+		}
+	}
+}
+
+end_testcmd_after_time( time_in_minutes )
+{
+	level endon( "stop_testcmd" );
+	time_passed_in_seconds = 0;
+	time_required_in_seconds = time_in_minutes * 60;
+	while ( time_passed_in_seconds < time_required_in_seconds )
+	{
+		wait 1;
+		time_passed_in_seconds++;
+	}
+	level notify( "stop_testcmd" );
+}
+
+testcmd_thread_server( cmdname, is_clientcmd )
+{
+	level endon( "stop_testcmd" );
+	while ( true )
+	{
+		level.server construct_chat_message_for_testcmd( cmdname, is_clientcmd );
+		wait 0.05;
+	}
+}
+
+construct_chat_message_for_testcmd( cmdname, is_clientcmd )
+{
+	cmdargs = create_random_valid_args2( cmdname, is_clientcmd );
+	if ( cmdargs.size == 0 )
+	{
+		message = cmdname;
+	}
+	else 
+	{
+		arg_str = repackage_args( cmdargs );
+		message = cmdname + " " + arg_str;
+	}
+	cmd_log = self.name + " executed " + message + " count " + level.unittest_total_commands_used;
+	level com_printf( "con", "notitle", cmd_log );
+	level com_printf( "g_log", "cmdinfo", cmd_log );
+	level notify( "say", message, self, true );
+	level.unittest_total_commands_used++;
+}
+
+activate_specific_cmd()
+{
+	level endon( "stop_testcmd" );
+	self endon( "disconnect" );
+	while ( true )
+	{
+		self construct_chat_message_for_testcmd( self.specific_cmd, true );
+		wait 0.05;
+	}
 }

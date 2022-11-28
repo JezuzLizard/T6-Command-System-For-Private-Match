@@ -147,7 +147,7 @@ com_printf( channels, filter, message, players )
 	{
 		return;
 	}
-	if ( !isDefined( message ) )
+	if ( !isDefined( message ) || message == "" )
 	{
 		return;
 	}

@@ -155,7 +155,7 @@ CMD_EXECONALLPLAYERS_f( arg_list )
 	}
 	for ( i = 0; i < players.size; i++ )
 	{
-		players[ i ] thread cmd_execute( cmd_to_execute, var_args, true, false, false );
+		players[ i ] thread cmd_execute_internal( cmd_to_execute, var_args, true, false, false );
 	}
 	result[ "filter" ] = "cmdinfo";
 	result[ "message" ] = "Executed " + cmd_to_execute + " on all players";			
@@ -195,7 +195,7 @@ CMD_EXECONTEAM_f( arg_list )
 	}
 	for ( i = 0; i < players.size; i++ )
 	{
-		players[ i ] thread cmd_execute( cmd_to_execute, var_args, true, false, false );
+		players[ i ] thread cmd_execute_internal( cmd_to_execute, var_args, true, false, false );
 	}
 	result[ "filter" ] = "cmdinfo";
 	result[ "message" ] = "Executed " + cmd_to_execute + " on team " + team;
