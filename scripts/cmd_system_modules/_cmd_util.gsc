@@ -61,35 +61,22 @@ get_perk_from_alias_zm( alias )
 
 perk_list_zm()
 {
-	gametype = getDvar( "ui_zm_mapstartlocation" );
 	switch ( level.script )
 	{
-		case "zm_transit":
-			return array( "specialty_armorvest", "specialty_rof", "specialty_quickrevive", "specialty_fastreload", "specialty_longersprint", "specialty_scavenger" );
-		case "zm_nuked":
-			return array( "specialty_armorvest", "specialty_rof", "specialty_quickrevive", "specialty_fastreload" );
-		case "zm_highrise":
-			return array( "specialty_armorvest", "specialty_rof", "specialty_quickrevive", "specialty_fastreload", "specialty_additionalprimaryweapon", "specialty_finalstand" );
-		case "zm_prison":
-			if ( gametype == "zgrief" )
-			{
-				return array( "specialty_armorvest", "specialty_rof", "specialty_fastreload", "specialty_deadshot", "specialty_grenadepulldeath" );
-			}
-			else 
-			{
-				return array( "specialty_armorvest", "specialty_rof", "specialty_fastreload", "specialty_deadshot", "specialty_additionalprimaryweapon", "specialty_flakjacket" );
-			}
-		case "zm_buried":
-			if ( gametype == "zgrief" )
-			{
-				return array( "specialty_armorvest", "specialty_rof", "specialty_quickrevive", "specialty_fastreload", "specialty_longersprint", "specialty_additionalprimaryweapon" );
-			}
-			else 
-			{
-				return array( "specialty_armorvest", "specialty_rof", "specialty_quickrevive", "specialty_fastreload", "specialty_longersprint", "specialty_additionalprimaryweapon", "specialty_nomotionsensor" );
-			}
 		case "zm_tomb":
 			return level._random_perk_machine_perk_list;
+		default:
+			machines = getentarray( "zombie_vending", "targetname" );
+			perks = [];
+
+			for ( i = 0; i < machines.size; i++ )
+			{
+				if ( machines[i].script_noteworthy == "specialty_weapupgrade" )
+					continue;
+
+				perks[perks.size] = machines[i].script_noteworthy;
+			}
+			return perks;
 	}
 }
 
@@ -184,6 +171,11 @@ get_perma_perk_from_alias( alias )
 	}
 }
 
+permaperk_list_zm()
+{
+	return getArrayKeys( level.pers_upgrades );
+}
+
 get_all_weapons()
 {
 	return getArrayKeys( level.zombie_include_weapons );
@@ -270,7 +262,7 @@ cast_str_to_player( clientnum_guid_or_name, noprint = false )
 		for ( i = 0; i < level.players.size; i++ )
 		{
 			player = level.players[ i ];
-			if ( !is_true(player.pers["isBot"]) && player getGUID() == guid )
+			if ( !is_true( player.pers["isBot"] ) && player getGUID() == guid )
 			{
 				return player;
 			}
@@ -340,7 +332,7 @@ is_player_valid( player, checkignoremeflag, ignore_laststand_players )
 	return 1;
 }
 
-find_entity_in_server( entnum_targetname_or_self, noprint = false )
+cast_str_to_entity( entnum_targetname_or_self, noprint = false )
 {
 	channel = self com_get_cmd_feedback_channel();
 	if ( !isDefined( entnum_targetname_or_self ) )
@@ -353,6 +345,19 @@ find_entity_in_server( entnum_targetname_or_self, noprint = false )
 	}
 	if ( entnum_targetname_or_self == "self" )
 	{
+		if ( is_true( self.is_server ) )
+		{
+			if ( isDedicated() )
+			{
+				level com_printf( channel, "cmderror", "You cannot use self as an arg for type player as the dedicated server" );
+				partial_message = undefined;
+				return undefined;
+			}
+			else
+			{
+				return level.host;
+			}
+		}
 		return self;
 	}
 	entities = getEntArray();
@@ -410,10 +415,6 @@ is_entity_valid( entity )
 	if ( isPlayer( entity ) )
 	{
 		return is_player_valid( entity );
-	}
-	if ( !isAlive( entity ) )
-	{
-		return false;
 	}
 	return true;
 }
@@ -474,10 +475,6 @@ is_natural_num(str)
 
 is_str_float( str )
 {
-	if ( !is_str_int( str ) )
-	{
-		return false;
-	}
 	numbers = [];
 	for ( i = 0; i < 10; i++ )
 	{
@@ -608,14 +605,6 @@ cmd_addservercommand( cmdname, cmdaliases, cmdusage, cmdfunc, rankgroup, minargs
 		level.server_command_groups[ rankgroup ] = [];
 	}
 	level.server_command_groups[ rankgroup ][ cmdname ] = true;
-	if ( isSubStr( cmdusage, "name|guid|clientnum" ) )
-	{
-		if ( !isDefined( level.cmds_using_find_player ) )
-		{
-			level.cmds_using_find_player = [];
-		}
-		level.cmds_using_find_player[ cmdname ] = true;
-	}
 }
 
 cmd_removeservercommand( cmdname )
@@ -798,7 +787,7 @@ cmd_register_arg_types_for_client_cmd( cmdname, argtypes )
 	level.client_commands[ cmdname ].argtypes = argtypes_array;
 }
 
-cmd_register_arg_type_handlers( argtype, checker_func, rand_gen_func, error_message )
+cmd_register_arg_type_handlers( argtype, checker_func, rand_gen_func, cast_func, error_message )
 {
 	if ( !isDefined( level.tcs_arg_type_handlers ) )
 	{
@@ -811,6 +800,7 @@ cmd_register_arg_type_handlers( argtype, checker_func, rand_gen_func, error_mess
 	level.tcs_arg_type_handlers[ argtype ] = spawnStruct();
 	level.tcs_arg_type_handlers[ argtype ].checker_func = checker_func;
 	level.tcs_arg_type_handlers[ argtype ].rand_gen_func = rand_gen_func;
+	level.tcs_arg_type_handlers[ argtype ].cast_func = cast_func;
 	level.tcs_arg_type_handlers[ argtype ].error_message = error_message;
 }
 
@@ -825,6 +815,14 @@ cmd_execute_internal( cmdname, arg_list, is_clientcmd, silent, logprint )
 	}
 	if ( is_clientcmd )
 	{
+		argtypes = level.client_commands[ cmdname ].argtypes;
+		for ( i = 0; i < arg_list.size; i++ )
+		{
+			if ( isDefined( level.tcs_arg_type_handlers[ argtypes[ i ] ] ) && isDefined( level.tcs_arg_type_handlers[ argtypes[ i ] ].cast_func ) )
+			{
+				arg_list[ i ] = self [[ level.tcs_arg_type_handlers[ cmdname ].cast_func ]]( arg_list[ i ] );
+			}
+		}
 		if ( is_true( level.threaded_commands[ cmdname ] ) )
 		{
 			self thread [[ level.client_commands[ cmdname ].func ]]( arg_list );
@@ -837,20 +835,20 @@ cmd_execute_internal( cmdname, arg_list, is_clientcmd, silent, logprint )
 	}
 	else 
 	{
-		if ( is_true ( level.cmds_using_find_player[ cmdname ] ) )
+		argtypes = level.server_commands[ cmdname ].argtypes;
+		for ( i = 0; i < arg_list.size; i++ )
 		{
-			arg_list[ 0 ] = self cast_str_to_player( arg_list[ 0 ] );
-			if ( !isDefined( arg_list[ 0 ] ) )
+			if ( isDefined( level.tcs_arg_type_handlers[ argtypes[ i ] ] ) && isDefined( level.tcs_arg_type_handlers[ argtypes[ i ] ].cast_func ) )
 			{
-				return;
+				arg_list[ i ] = self [[ level.tcs_arg_type_handlers[ argtypes[ i ] ].cast_func ]]( arg_list[ i ] );
 			}
-			if ( is_true( level.server_commands[ cmdname ].uses_player_validity_check ) )
+		}
+		if ( is_true( level.server_commands[ cmdname ].uses_player_validity_check ) )
+		{
+			if ( isDefined( level.tcs_player_is_valid_check ) && ![[ level.tcs_player_is_valid_check ]]( arg_list[ 0 ] ) )
 			{
-				if ( isDefined( level.tcs_player_is_valid_check ) && ![[ level.tcs_player_is_valid_check ]]( arg_list[ 0 ] ) )
-				{
-					level com_printf( channel, "cmderror", "Target " + arg_list[ 0 ].name + " is not in a valid state for " + cmdname + " to work", self );
-					return;
-				}
+				level com_printf( channel, "cmderror", "Target " + arg_list[ 0 ].name + " is not in a valid state for " + cmdname + " to work", self );
+				return;
 			}
 		}
 		if ( is_true( level.threaded_commands[ cmdname ] ) )
@@ -949,7 +947,7 @@ parse_cmd_message( message )
 	}
 	multi_cmds = [];
 	command_keys = [];
-	multiple_cmds_keys = strTok( stripped_message, "," );
+	multiple_cmds_keys = strTok( stripped_message, "|" );
 	for ( i = 0; i < multiple_cmds_keys.size; i++ )
 	{
 		cmd_args = strTok( multiple_cmds_keys[ i ], " " );
@@ -1026,11 +1024,11 @@ test_cmd_is_valid( cmdname, arg_list, is_clientcmd )
 		if ( isDefined( level.client_commands[ cmdname ].argtypes ) && arg_list.size > 0 )
 		{
 			argtypes = level.client_commands[ cmdname ].argtypes;
-			for ( i = 0; i < argtypes.size; i++ )
+			for ( i = 0; i < arg_list.size; i++ )
 			{
-				if ( isDefined( level.tcs_arg_type_handlers[ argtypes[ i ] ].checker_func ) )
+				if ( isDefined( level.tcs_arg_type_handlers[ argtypes[ i ] ] ) && isDefined( level.tcs_arg_type_handlers[ argtypes[ i ] ].checker_func ) )
 				{
-					if ( !level [[ level.tcs_arg_type_handlers[ argtypes[ i ] ].checker_func ]]( arg_list[ i ] ) )
+					if ( !self [[ level.tcs_arg_type_handlers[ argtypes[ i ] ].checker_func ]]( arg_list[ i ] ) )
 					{
 						arg_num = i;
 						level com_printf( channel, "cmderror", "Arg " +  arg_num + " " + arg_list[ i ] + " is " + level.tcs_arg_type_handlers[ argtypes[ i ] ].error_message, self );
@@ -1058,11 +1056,11 @@ test_cmd_is_valid( cmdname, arg_list, is_clientcmd )
 		if ( isDefined( level.server_commands[ cmdname ].argtypes ) && arg_list.size > 0 )
 		{
 			argtypes = level.server_commands[ cmdname ].argtypes;
-			for ( i = 0; i < argtypes.size; i++ )
+			for ( i = 0; i < arg_list.size; i++ )
 			{
-				if ( isDefined( level.tcs_arg_type_handlers[ argtypes[ i ] ].checker_func ) )
+				if ( isDefined( level.tcs_arg_type_handlers[ argtypes[ i ] ] ) && isDefined( level.tcs_arg_type_handlers[ argtypes[ i ] ].checker_func ) )
 				{
-					if ( !level [[ level.tcs_arg_type_handlers[ argtypes[ i ] ].checker_func ]]( arg_list[ i ] ) )
+					if ( !self [[ level.tcs_arg_type_handlers[ argtypes[ i ] ].checker_func ]]( arg_list[ i ] ) )
 					{
 						arg_num = i;
 						level com_printf( channel, "cmderror", "Arg " +  arg_num + " " + arg_list[ i ] + " is " + level.tcs_arg_type_handlers[ argtypes[ i ] ].error_message, self );
@@ -1149,15 +1147,17 @@ arg_player_handler( arg )
 
 arg_generate_rand_player()
 {
-	randomint = randomInt( 4 );
+	if ( is_true( self.is_server ) )
+	{
+		randomint = randomInt( 3 );
+	}
+	else 
+	{
+		randomint = randomInt( 4 );
+	}
 	players = getPlayers();
 
-	random_player = undefined;
-	if ( randomint < 3 )
-	{
-		random_player = players[ randomInt( players.size ) ];
-	}
-	
+	random_player = players[ randomInt( players.size ) ];
 	switch ( randomint )
 	{
 		case 0:
@@ -1169,6 +1169,11 @@ arg_generate_rand_player()
 		case 3:
 			return "self";
 	}
+}
+
+arg_cast_to_player( arg )
+{
+	return self cast_str_to_player( arg, true );
 }
 
 arg_wholenum_handler( arg )
@@ -1191,6 +1196,11 @@ arg_generate_rand_int()
 	return cointoss() ? randomint( 1000000 ) : randomint( 1000000 ) * -1;
 }
 
+arg_cast_to_int( arg )
+{
+	return int( arg );
+}
+
 arg_float_handler( arg )
 {
 	return is_str_float( arg ) || is_str_int( arg );
@@ -1199,6 +1209,11 @@ arg_float_handler( arg )
 arg_generate_rand_float()
 {
 	return cointoss() ? randomFloat( 1000000 ) : randomFloat( 1000000 ) * -1;
+}
+
+arg_cast_to_float( arg )
+{
+	return float( arg );
 }
 
 arg_wholefloat_handler( arg )
@@ -1213,17 +1228,14 @@ arg_generate_rand_wholefloat()
 
 arg_vector_handler( arg )
 {
-	comma[ "," ] = true;
-	for ( i = 0; i < arg.size; i++ )
+	numbers_array = strTok( arg, "," );
+	if ( numbers_array.size != 3 )
 	{
-		if ( ( i % 2 ) == 0 )
-		{
-			if ( !is_str_float( arg[ i ] ) || !is_str_int( arg[ i ] ) )
-			{
-				return false;
-			}
-		}
-		else if ( ( i % 2 ) == 1 && !isDefined( comma[ arg[ i ] ] ) )
+		return false;
+	}
+	for ( i = 0; i < numbers_array.size; i++ )
+	{
+		if ( !is_str_float( numbers_array[ i ] ) && !is_str_int( numbers_array[ i ] ) )
 		{
 			return false;
 		}
@@ -1237,6 +1249,11 @@ arg_generate_rand_vector()
 	y = cointoss() ? randomFloat( 1000000 ) : randomFloat( 1000000 ) * -1;
 	z = cointoss() ? randomFloat( 1000000 ) : randomFloat( 1000000 ) * -1;
 	return x + "," + y + "," + z;
+}
+
+arg_cast_to_vector( arg )
+{
+	return cast_str_to_vector( arg );
 }
 
 arg_team_handler( arg )
@@ -1285,7 +1302,7 @@ arg_generate_rand_cmdalias()
 			aliases[ aliases.size ] = level.client_commands[ client_command_keys[ i ] ].aliases[ j ];
 		}
 	}
-	blacklisted_cmds_server = array( "rotate", "restart", "changemap", "unittest", "unittestinvalidargs", "setcvar", "dvar", "cvarall", "givepermaperk", "toggleoutofplayableareamonitor", "spectator", "execonteam", "execonallplayers", "testcmd" );
+	blacklisted_cmds_server = array( "rotate", "restart", "changemap", "unittest", "unittestinvalidargs", "setcvar", "dvar", "cvarall", "givepermaperk", "toggleoutofplayableareamonitor", "spectator", "execonteam", "execonallplayers", "testcmd", "entitylist" );
 	for ( i = 0; i < server_command_keys.size; i++ )
 	{
 		cmd_is_blacklisted = false;
@@ -1309,6 +1326,16 @@ arg_generate_rand_cmdalias()
 	return aliases[ randomInt( aliases.size ) ];
 }
 
+arg_cast_to_cmd( arg )
+{
+	cmd_to_execute = get_client_cmd_from_alias( arg );
+	if ( cmd_to_execute == "" )
+	{
+		cmd_to_execute = get_server_cmd_from_alias( arg );
+	}
+	return cmd_to_execute;	
+}
+
 arg_rank_handler( arg )
 {
 	return isDefined( level.tcs_ranks[ arg ] );
@@ -1322,7 +1349,7 @@ arg_generate_rand_rank()
 
 arg_entity_handler( arg )
 {
-	return isDefined( self find_entity_in_server( arg ) );
+	return isDefined( self cast_str_to_entity( arg ) );
 }
 
 arg_generate_rand_entity()
@@ -1330,12 +1357,11 @@ arg_generate_rand_entity()
 	randomint = randomInt( 2 );
 	entities = getEntArray();
 	
-	random_entity = undefined;
-	if ( randomint < 1 )
+	random_entity = entities[ randomInt( entities.size ) ];
+	if ( is_true( self.is_server ) )
 	{
-		random_entity = entities[ randomInt( entities.size ) ];
+		return random_entity getEntityNumber();
 	}
-
 	switch ( randomint )
 	{
 		case 0:
@@ -1343,6 +1369,11 @@ arg_generate_rand_entity()
 		case 1:
 			return "self";
 	}
+}
+
+arg_cast_to_entity( arg )
+{
+	return self cast_str_to_entity( arg, true );
 }
 
 arg_hitloc_handler( arg )
@@ -1358,13 +1389,18 @@ arg_generate_rand_hitloc()
 
 arg_mod_handler( arg )
 {
-	return isDefined( level.tcs_mods[ arg ] );
+	return isDefined( level.tcs_mods[ toUpper( arg ) ] );
 }
 
 arg_generate_rand_mod()
 {
 	mods = getArrayKeys( level.tcs_mods );
 	return mods[ randomInt( mods.size ) ];
+}
+
+arg_cast_to_mod( arg )
+{
+	return toUpper( arg );
 }
 
 arg_idflags_handler( arg )

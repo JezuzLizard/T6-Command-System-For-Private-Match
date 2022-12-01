@@ -154,9 +154,8 @@ bot_unittest_func()
 
 arg_perk_handler( arg )
 {
-	perk_arg = get_perk_from_alias_zm( arg );
 	perks = perk_list_zm();
-	return isInArray( perks, perk_arg ) || arg == "all";
+	return isInArray( perks, arg ) || arg == "all";
 }
 
 arg_generate_rand_perk()
@@ -178,8 +177,7 @@ arg_generate_rand_weapon()
 
 arg_powerup_handler( arg )
 {
-	powerup = get_powerup_from_alias_zm( arg );
-	return isDefined( level.zombie_include_powerups[ powerup ] );
+	return isDefined( level.zombie_include_powerups[ arg ] );
 }
 
 arg_generate_rand_powerup()

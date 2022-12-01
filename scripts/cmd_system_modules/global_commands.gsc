@@ -215,6 +215,11 @@ CMD_PLAYERLIST_f( arg_list )
 		level com_printf( channel, "notitle", "There are no players in the server", self );
 		return;
 	}
+	self thread list_players_throttled( channel, players );
+}
+
+list_players_throttled( channel, players )
+{
 	for ( i = 0; i < players.size; i++ )
 	{
 		if ( is_true( self.is_server ) || self.cmdpower >= level.CMD_POWER_MODERATOR )
@@ -226,6 +231,7 @@ CMD_PLAYERLIST_f( arg_list )
 			message = "^3" + players[ i ].name + " " + players[ i ] getEntityNumber();
 		}
 		level com_printf( channel, "notitle", message, self );
+		wait 0.1;
 	}
 	if ( !is_true( self.is_server ) )
 	{
@@ -240,18 +246,21 @@ CMD_CMDLIST_f( arg_list )
 	{
 		channel = "iprint";
 	}
+	self thread list_cmds_throttled( channel );
+}
+
+list_cmds_throttled( channel )
+{
 	cmdnames = getArrayKeys( level.server_commands );
 	for ( i = 0; i < cmdnames.size; i++ )
 	{
 		if ( self has_permission_for_cmd( cmdnames[ i ], false ) )
 		{
 			message = "^3" + level.server_commands[ cmdnames[ i ] ].usage;
+			
 			level com_printf( channel, "notitle", message, self );
+			wait 0.1;
 		}
-	}
-	if ( is_true( self.is_server ) )
-	{
-		return;
 	}
 	cmdnames = getArrayKeys( level.client_commands );
 	for ( i = 0; i < cmdnames.size; i++ )
@@ -260,10 +269,13 @@ CMD_CMDLIST_f( arg_list )
 		{
 			message = "^3" + level.client_commands[ cmdnames[ i ] ].usage;
 			level com_printf( channel, "notitle", message, self );
+			wait 0.1;
 		}
 	}
-
-	level com_printf( channel, "cmdinfo", "Use shift + ` and scroll to the bottom to view the full list", self );
+	if ( !is_true( self.is_server ) )
+	{
+		level com_printf( channel, "cmdinfo", "Use shift + ` and scroll to the bottom to view the full list", self );
+	}
 }
 
 cmd_help_f( arg_list )
@@ -305,6 +317,10 @@ cmd_help_f( arg_list )
 			level com_printf( channel, "notitle", "^3To view cmds you can use do tcscmd cmdlist in the console", self );
 			level com_printf( channel, "notitle", "^3To view players in the server do tcscmd playerlist in the console", self );
 			level com_printf( channel, "notitle", "^3To view the usage of a specific cmd do tcscmd help <cmdalias>", self );
+			if ( isDefined( level.tcs_additional_help_prints_func ) )
+			{
+				self [[ level.tcs_additional_help_prints_func ]]( channel );
+			}
 		}
 	}
 	else 
@@ -352,6 +368,10 @@ cmd_help_f( arg_list )
 			level com_printf( channel, "notitle", "^3To view cmds you can use do /cmdlist in the chat", self );
 			level com_printf( channel, "notitle", "^3To view players in the server do /playerlist in the chat", self );
 			level com_printf( channel, "notitle", "^3To view the usage of a specific cmd do /help <cmdalias>", self );
+			if ( isDefined( level.tcs_additional_help_prints_func ) )
+			{
+				self [[ level.tcs_additional_help_prints_func ]]( channel );
+			}
 			level com_printf( channel, "cmdinfo", "^3Use shift + ` and scroll to the bottom to view the full list", self );
 		}
 	}
@@ -361,17 +381,14 @@ cmd_help_f( arg_list )
 cmd_dodamage_f( arg_list )
 {
 	result = [];
-	target = find_entity_in_server( arg_list[ 0 ], true );
-	damage = float( arg_list[ 1 ] );
-	pos = cast_str_to_vector( arg_list[ 2 ] );
-	attacker = find_entity_in_server( arg_list[ 3 ], true );
-	inflictor = find_entity_in_server( arg_list[ 4 ], true );
+	target = arg_list[ 0 ];
+	damage = arg_list[ 1 ];
+	pos = arg_list[ 2 ];
+	attacker = arg_list[ 3 ];
+	inflictor = arg_list[ 4 ];
 	hitloc = arg_list[ 5 ];
 	mod = arg_list[ 6 ];
-	if ( isDefined( arg_list[ 7 ] ) )
-	{
-		idflags = int( arg_list[ 7 ] );
-	}
+	idflags = arg_list[ 7 ];
 	weapon = arg_list[ 8 ];
 	switch ( arg_list.size )
 	{
@@ -401,9 +418,8 @@ cmd_dodamage_f( arg_list )
 			result[ "message" ] = "Too many parameters sent to cmd dodamage max is 9";
 			return result;
 	}
-
 	result[ "filter" ] = "cmdinfo";
-	result[ "message" ] = self.name + " executes executes dodamage " + isPlayer( target ) ? target.name : target.targetname + " for " + damage + " damage";
+	result[ "message" ] = "Executed dodamage on target";
 	return result;
 }
 
@@ -413,10 +429,18 @@ cmd_entitylist_f( arg_list )
 	channel = self com_get_cmd_feedback_channel();
 	if ( channel != "con" )
 	{
-		channel = "con|g_log";
+		channel = "iprint";
 	}
 	entities = getEntArray();
-	if ( isDefined( arg_list[ 0 ] ) )
+	self thread list_entities_throttled( channel, arg_list[ 0 ], entities );
+	return result;	
+}
+
+list_entities_throttled( channel, str, entities )
+{
+	self notify( "listing_entities" );
+	self endon( "listing_entities" );
+	if ( isDefined( str ) )
 	{
 		for ( i = 0; i < entities.size; i++ )
 		{
@@ -425,23 +449,24 @@ cmd_entitylist_f( arg_list )
 			{
 				continue;
 			}
-			if ( isDefined( ent.targetname ) && ent.targetname == arg_list[ 0 ] )
+			if ( isDefined( ent.targetname ) && ent.targetname == str )
 			{
 				if ( isDefined( ent.classname ) )
 				{
 					if ( isDefined( ent.script_notetworthy ) )
 					{
-						level com_printf( channel, "notitle", "Ent classname " + ent.classname + " targetname " + ent.targetname + " script_noteworthy " + ent.script_noteworthy + " origin " + ent.origin, self );
+						level com_printf( channel, "notitle", "Ent " + ent getEntityNumber() + " classname " + ent.classname + " targetname " + ent.targetname + " script_noteworthy " + ent.script_noteworthy + " origin " + ent.origin, self );
 					}
 					else 
 					{
-						level com_printf( channel, "notitle", "Ent classname " + ent.classname + " targetname " + ent.targetname + " origin " + ent.origin, self );
+						level com_printf( channel, "notitle", "Ent " + ent getEntityNumber() + " classname " + ent.classname + " targetname " + ent.targetname + " origin " + ent.origin, self );
 					}
 				}
 				else 
 				{
-					level com_printf( channel, "notitle", "Ent targetname " + ent.targetname + " origin " + ent.origin, self );
+					level com_printf( channel, "notitle", "Ent " + ent getEntityNumber() + " targetname " + ent.targetname + " origin " + ent.origin, self );
 				}
+				wait 0.1;
 			}
 		}
 	}
@@ -460,24 +485,23 @@ cmd_entitylist_f( arg_list )
 				{
 					if ( isDefined( ent.script_noteworthy ) )
 					{
-						level com_printf( channel, "notitle", "Ent classname " + ent.classname + " targetname " + ent.targetname + " script_noteworthy " + ent.script_noteworthy + " origin " + ent.origin, self );
+						level com_printf( channel, "notitle", "Ent " + ent getEntityNumber() + " classname " + ent.classname + " targetname " + ent.targetname + " script_noteworthy " + ent.script_noteworthy + " origin " + ent.origin, self );
 					}
 					else 
 					{
-						level com_printf( channel, "notitle", "Ent classname " + ent.classname + " targetname " + ent.targetname + " origin " + ent.origin, self );
+						level com_printf( channel, "notitle", "Ent " + ent getEntityNumber() + " classname " + ent.classname + " targetname " + ent.targetname + " origin " + ent.origin, self );
 					}
 				}
 				else 
 				{
-					level com_printf( channel, "notitle", "Ent classname " + ent.classname + " origin " + ent.origin, self );
+					level com_printf( channel, "notitle", "Ent " + ent getEntityNumber() + " classname " + ent.classname + " origin " + ent.origin, self );
 				}
 			}
 			else 
 			{
-				level com_printf( channel, "notitle", "Ent origin " + ent.origin, self );
+				level com_printf( channel, "notitle", "Ent " + ent getEntityNumber() + " origin " + ent.origin, self );
 			}
-			
+			wait 0.1;
 		}
 	}
-	return result;	
 }

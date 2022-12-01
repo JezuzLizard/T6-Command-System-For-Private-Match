@@ -96,7 +96,7 @@ manage_unittest_bots( required_bots, cmdname )
 		bot.pers[ "isBot" ] = true;
 		if ( isDefined( level.bot_command_system_unittest_func ) )
 		{
-			bot [[ level.bot_command_system_unittest_func ]]();
+			bot thread [[ level.bot_command_system_unittest_func ]]();
 		}
 		if ( isDefined( cmdname ) )
 		{
@@ -141,7 +141,7 @@ construct_chat_message_for_unittest()
 		return;
 	}
 	//logprint( "random cmdname: " + cmdname + "\n" );
-	cmdargs = create_random_valid_args2( cmdname, is_clientcmd );
+	cmdargs = self create_random_valid_args2( cmdname, is_clientcmd );
 	if ( cmdargs.size == 0 )
 	{
 		message = cmdname;
@@ -193,18 +193,11 @@ create_random_valid_args2( cmdname, is_clientcmd )
 	//logprint( message + "\n" );
 	for ( i = 0; i < minargs; i++ )
 	{
-		args[ i ] = generate_args_from_type( types[ i ] );
+		args[ i ] = self generate_args_from_type( types[ i ] );
 		//message1 = "types defined: " + isDefined( types[ i ] ) + " args defined: " + isDefined( args[ i ] );
 		//logprint( message1 + "\n" );
 		//message = "minargs: " + minargs +  " types[" + i + "]: " + types[ i ] + " args[" + i + "]: " + args[ i ];
 		//logprint( message + "\n" );
-	}
-
-	if ( cointoss() ) // 50% chance we don't add optional args
-	{
-		//message = "returning early (rng)";
-		//logprint( message + "\n" );
-		return args;
 	}
 
 	max_optional_args = randomInt( types.size );
@@ -213,7 +206,7 @@ create_random_valid_args2( cmdname, is_clientcmd )
 	//logprint( message + "\n" );
 	for ( i = minargs; i < max_optional_args; i++ )
 	{
-		args[ i ] = generate_args_from_type( types[ i ] );
+		args[ i ] = self generate_args_from_type( types[ i ] );
 		//message = "max_optional_args: " + max_optional_args + " types[" + i + "]: " + types[ i ] + " args[" + i + "]: " + args[ i ];
 		//logprint( message + "\n" );
 	}
@@ -224,7 +217,7 @@ generate_args_from_type( type )
 {
 	if ( isDefined( level.tcs_arg_type_handlers[ type ] ) )
 	{
-		return [[ level.tcs_arg_type_handlers[ type ].rand_gen_func ]]() + "";
+		return self [[ level.tcs_arg_type_handlers[ type ].rand_gen_func ]]() + "";
 	}
 	return "";
 }
@@ -254,6 +247,7 @@ cmd_testcmd_f( arg_list )
 	level.doing_command_system_testcmd = !is_true( level.doing_command_system_testcmd );
 	if ( level.doing_command_system_testcmd )
 	{
+		level.unittest_total_commands_used = 0;
 		cmdname = get_client_cmd_from_alias( arg_list[ 0 ] );
 		is_clientcmd = true;
 		if ( cmdname == "" )
@@ -262,6 +256,7 @@ cmd_testcmd_f( arg_list )
 			is_clientcmd = false;
 		}
 		level thread test_cmd_for_time( arg_list[ 0 ], is_clientcmd, arg_list[ 1 ], arg_list[ 2 ] );
+		level thread test_cmd_kick_bots_at_end();
 	}
 	else 
 	{
@@ -277,7 +272,14 @@ test_cmd_for_time( cmdname, is_clientcmd, threadcount = 1, duration )
 	{
 		level thread end_testcmd_after_time( duration );
 	}
-	manage_unittest_bots( 1 );
+	if ( !isDefined( level.players ) || level.players.size <= 0 )
+	{
+		manage_unittest_bots( 1 );
+	}
+	if ( is_clientcmd && level.players.size >= getDvarInt( "sv_maxclients" ) )
+	{
+		return;
+	}
 	for ( i = 0; i < threadcount; i++ )
 	{
 		if ( is_clientcmd )
@@ -294,12 +296,9 @@ test_cmd_for_time( cmdname, is_clientcmd, threadcount = 1, duration )
 end_testcmd_after_time( time_in_minutes )
 {
 	level endon( "stop_testcmd" );
-	time_passed_in_seconds = 0;
-	time_required_in_seconds = time_in_minutes * 60;
-	while ( time_passed_in_seconds < time_required_in_seconds )
+	for ( i = 0; i < ( time_in_minutes * 60 ); i++ )
 	{
 		wait 1;
-		time_passed_in_seconds++;
 	}
 	level notify( "stop_testcmd" );
 }
@@ -316,7 +315,7 @@ testcmd_thread_server( cmdname, is_clientcmd )
 
 construct_chat_message_for_testcmd( cmdname, is_clientcmd )
 {
-	cmdargs = create_random_valid_args2( cmdname, is_clientcmd );
+	cmdargs = self create_random_valid_args2( cmdname, is_clientcmd );
 	if ( cmdargs.size == 0 )
 	{
 		message = cmdname;
@@ -341,5 +340,17 @@ activate_specific_cmd()
 	{
 		self construct_chat_message_for_testcmd( self.specific_cmd, true );
 		wait 0.05;
+	}
+}
+
+test_cmd_kick_bots_at_end()
+{
+	level waittill( "stop_testcmd" );
+	for ( i = 0; i < level.players.size; i++ )
+	{
+		if ( is_true( level.players[ i ].pers["isBot"] ) )
+		{
+			kick( level.players[ i ] getEntityNumber() );
+		}
 	}
 }

@@ -10,7 +10,7 @@ main()
 		wait 0.05;
 	}
 
-	cmd_register_arg_type_handlers( "weapon", ::arg_weapon_handler, ::arg_generate_rand_weapon, "not a valid weapon" );
+	cmd_register_arg_type_handlers( "weapon", ::arg_weapon_handler, ::arg_generate_rand_weapon, undefined, "not a valid weapon" );
 
 	level thread on_unittest();
 

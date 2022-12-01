@@ -93,7 +93,7 @@ main()
 	level.tcs_remove_client_command_by_group = ::cmd_removeclientcommandbygroup;
 	level.tcs_com_printf = ::com_printf;
 	level.tcs_com_get_feedback_channel = ::com_get_cmd_feedback_channel;
-	level.tcs_find_player_in_server = ::find_player_in_server;
+	level.tcs_find_player_in_server = ::cast_str_to_player;
 	level.tcs_check_cmd_collisions = ::check_for_command_alias_collisions;
 	level.tcs_player_is_valid_check = scripts\cmd_system_modules\_cmd_util::is_player_valid;
 	level.tcs_debug_create_random_valid_args = ::create_random_valid_args2;
@@ -112,7 +112,7 @@ main()
 
 	CMD_ADDSERVERCOMMAND( "cmdlist", "cl", "cmdlist", ::CMD_CMDLIST_f, "none", 0, false, true );
 	CMD_ADDSERVERCOMMAND( "playerlist", "plist", "playerlist [team]", ::CMD_PLAYERLIST_f, "none", 0, false, true );
-	//cmd_addservercommand( "entitylist", "elist", "entitylist [targetname]", ::cmd_entitylist_f, "cheat", 0, false );
+	cmd_addservercommand( "entitylist", "elist", "entitylist [targetname]", ::cmd_entitylist_f, "cheat", 0, false );
 
 	cmd_addservercommand( "help", undefined, "help [cmdalias]", ::cmd_help_f, "none", 0, false );
 
@@ -120,7 +120,7 @@ main()
 	cmd_addservercommand( "testcmd", undefined, "testcmd <cmdalias> [threadcount] [duration]", ::cmd_testcmd_f, "host", 1, false );
 	//cmd_addservercommand( "unittestinvalidargs", "uinvalid", "unittest [botcount]", ::cmd_unittest_invalidargs_f, "host", 0, false );
 
-	//cmd_addservercommand( "dodamage", "dd", "dodamage <entitynum|targetname|self> <damage> <origin> [entitynum|targetname|self] [entitynum|targetname|self] [hitloc] [MOD] [idflags] [weapon]", ::cmd_dodamage_f, "cheat", 3, false );
+	cmd_addservercommand( "dodamage", "dd", "dodamage <entitynum|targetname|self> <damage> <origin> [entitynum|targetname|self] [entitynum|targetname|self] [hitloc] [MOD] [idflags] [weapon]", ::cmd_dodamage_f, "cheat", 3, false );
 
 	cmd_register_arg_types_for_server_cmd( "givegod", "player" );
 	cmd_register_arg_types_for_server_cmd( "givenotarget", "player" );
@@ -147,19 +147,19 @@ main()
 
 	cmd_register_arg_types_for_client_cmd( "teleport", "player" );
 
-	cmd_register_arg_type_handlers( "player", ::arg_player_handler, ::arg_generate_rand_player, "not a valid player" );
-	cmd_register_arg_type_handlers( "wholenum", ::arg_wholenum_handler, ::arg_generate_rand_wholenum, "not a whole number" );
-	cmd_register_arg_type_handlers( "int", ::arg_int_handler, ::arg_generate_rand_int, "not an int" );
-	cmd_register_arg_type_handlers( "float", ::arg_float_handler, ::arg_generate_rand_float, "not a float" );
-	cmd_register_arg_type_handlers( "wholefloat", ::arg_wholefloat_handler, ::arg_generate_rand_wholefloat, "not a positive float" );
-	cmd_register_arg_type_handlers( "vector", ::arg_vector_handler, ::arg_generate_rand_vector, "not a valid vector, format is float,float,float" );
-	cmd_register_arg_type_handlers( "team", ::arg_team_handler, ::arg_generate_rand_team, "not a valid team" );
-	cmd_register_arg_type_handlers( "cmdalias", ::arg_cmdalias_handler, ::arg_generate_rand_cmdalias, "not a valid cmdalias" );
-	cmd_register_arg_type_handlers( "rank", ::arg_rank_handler, ::arg_generate_rand_rank, "not a valid rank" );
-	cmd_register_arg_type_handlers( "entity", ::arg_entity_handler, ::arg_generate_rand_entity, "not a valid entity" );
-	cmd_register_arg_type_handlers( "hitloc", ::arg_hitloc_handler, ::arg_generate_rand_hitloc, "not a valid hitloc" );
-	cmd_register_arg_type_handlers( "MOD", ::arg_mod_handler, ::arg_generate_rand_mod, "not a valid mod" );
-	cmd_register_arg_type_handlers( "idflags", ::arg_idflags_handler, ::arg_generate_rand_idflags, "not a valid idflag" );
+	cmd_register_arg_type_handlers( "player", ::arg_player_handler, ::arg_generate_rand_player, ::arg_cast_to_player, "not a valid player" );
+	cmd_register_arg_type_handlers( "wholenum", ::arg_wholenum_handler, ::arg_generate_rand_wholenum, ::arg_cast_to_int, "not a whole number" );
+	cmd_register_arg_type_handlers( "int", ::arg_int_handler, ::arg_generate_rand_int, ::arg_cast_to_int, "not an int" );
+	cmd_register_arg_type_handlers( "float", ::arg_float_handler, ::arg_generate_rand_float, ::arg_cast_to_float, "not a float" );
+	cmd_register_arg_type_handlers( "wholefloat", ::arg_wholefloat_handler, ::arg_generate_rand_wholefloat, ::arg_cast_to_float, "not a float greater than 0" );
+	cmd_register_arg_type_handlers( "vector", ::arg_vector_handler, ::arg_generate_rand_vector, ::arg_cast_to_vector, "not a valid vector, format is float,float,float" );
+	cmd_register_arg_type_handlers( "team", ::arg_team_handler, ::arg_generate_rand_team, undefined, "not a valid team" );
+	cmd_register_arg_type_handlers( "cmdalias", ::arg_cmdalias_handler, ::arg_generate_rand_cmdalias, ::arg_cast_to_cmd, "not a valid cmdalias" );
+	cmd_register_arg_type_handlers( "rank", ::arg_rank_handler, ::arg_generate_rand_rank, undefined, "not a valid rank" );
+	cmd_register_arg_type_handlers( "entity", ::arg_entity_handler, ::arg_generate_rand_entity, ::arg_cast_to_entity, "not a valid entity" );
+	cmd_register_arg_type_handlers( "hitloc", ::arg_hitloc_handler, ::arg_generate_rand_hitloc, undefined, "not a valid hitloc" );
+	cmd_register_arg_type_handlers( "MOD", ::arg_mod_handler, ::arg_generate_rand_mod, ::arg_cast_to_mod, "not a valid mod" );
+	cmd_register_arg_type_handlers( "idflags", ::arg_idflags_handler, ::arg_generate_rand_idflags, ::arg_cast_to_int, "not a valid idflag" );
 
 	build_hitlocs_array();
 	build_mods_array();
@@ -232,6 +232,7 @@ COMMAND_BUFFER()
 	while ( true )
 	{
 		level waittill( "say", message, player, isHidden );
+		cmd_execute( message, player, isHidden );
 	}
 }
 
@@ -320,7 +321,10 @@ on_connect_internal()
 	{
 		if ( is_true( level.doing_command_system_testcmd ) )
 		{
-			self thread activate_specific_cmd();
+			if ( isDefined( self.specific_cmd ) )
+			{
+				self thread activate_specific_cmd();
+			}
 		}
 		else if ( is_true( level.doing_command_system_unittest ) )
 		{

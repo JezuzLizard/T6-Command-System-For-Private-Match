@@ -19,6 +19,7 @@ main()
 	replaceFunc( maps\mp\zombies\_zm::check_end_game_intermission_delay, ::check_end_game_intermission_delay_override );
 	replaceFunc( maps\mp\_visionset_mgr::monitor, ::monitor_stub );
 	level.bot_command_system_unittest_func = ::bot_unittest_func;
+	level.tcs_additional_help_prints_func = ::zm_help_prints;
 	while ( !is_true( level.command_init_done ) )
 	{
 		wait 0.05;
@@ -29,15 +30,17 @@ main()
 	CMD_ADDSERVERCOMMAND( "respawnspectators", "respspec", "respawnspectators", ::CMD_RESPAWNSPECTATORS_f, "cheat", 0, false );
 	CMD_ADDSERVERCOMMAND( "pause", "pa", "pause [minutes]", ::CMD_PAUSE_f, "cheat", 0, false );
 	CMD_ADDSERVERCOMMAND( "unpause", "up", "unpause", ::CMD_UNPAUSE_f, "cheat", 0, false );
-	CMD_ADDSERVERCOMMAND( "giveperk", "gp", "giveperk <name|guid|clientnum|self> <perkname|all>", ::CMD_GIVEPERK_f, "cheat", 2, true );
+	CMD_ADDSERVERCOMMAND( "giveperk", "gp", "giveperk <name|guid|clientnum|self> <perk|all>", ::CMD_GIVEPERK_f, "cheat", 2, true );
 	CMD_ADDSERVERCOMMAND( "givepermaperk", "gpp", "givepermaperk <name|guid|clientnum|self> <perkname|all>", ::CMD_GIVEPERMAPERK_f, "cheat", 2, true );
 	CMD_ADDSERVERCOMMAND( "givepoints", "gpts", "givepoints <name|guid|clientnum|self> <amount>", ::CMD_GIVEPOINTS_f, "cheat", 2, false );
-	CMD_ADDSERVERCOMMAND( "givepowerup", "gpow", "givepowerup <name|guid|clientnum|self> <powerupname>", ::CMD_GIVEPOWERUP_f, "cheat", 2, false );
+	CMD_ADDSERVERCOMMAND( "givepowerup", "gpow", "givepowerup <name|guid|clientnum|self> <powerup>", ::CMD_GIVEPOWERUP_f, "cheat", 2, false );
 	CMD_ADDSERVERCOMMAND( "giveweapon", "gwep", "giveweapon <name|guid|clientnum|self> <weapon>", ::CMD_GIVEWEAPON_f, "cheat", 2, true );
 	CMD_ADDSERVERCOMMAND( "toggleperssystemforplayer", "tpsfp", "toggleperssystemforplayer <name|guid|clientnum|self>", ::CMD_TOGGLEPERSSYSTEMFORPLAYER_f, "cheat", 1, false );
 	CMD_ADDSERVERCOMMAND( "toggleoutofplayableareamonitor", "togoopam", "toggleoutofplayableareamonitor", ::CMD_TOGGLEOUTOFPLAYABLEAREAMONITOR_f, "cheat", 0, false );
 	cmd_addservercommand( "weaponlist", "wlist", "weaponlist", ::cmd_weaponlist_f, "none", 0, false );
 	cmd_addservercommand( "openalldoors", "openall", "openalldoors", ::cmd_openalldoors_f, "cheat", 0, false );
+	cmd_addservercommand( "poweruplist", "powlist", "poweruplist", ::cmd_poweruplist_f, "none", 0, false );
+	cmd_addservercommand( "perklist", "plist", "perklist", ::cmd_perklist_f, "none", 0, false );
 
 	cmd_register_arg_types_for_server_cmd( "spectator", "player" );
 	cmd_register_arg_types_for_server_cmd( "togglerespawn", "player" );
@@ -49,10 +52,10 @@ main()
 	cmd_register_arg_types_for_server_cmd( "giveweapon", "player weapon" );
 	cmd_register_arg_types_for_server_cmd( "toggleperssystemforplayer", "player" );
 
-	CMD_ADDCLIENTCOMMAND( "perk", undefined, "perk <perkname|all>", ::CMD_PERK_f, "cheat", 1, true );
+	CMD_ADDCLIENTCOMMAND( "perk", undefined, "perk <perk|all>", ::CMD_PERK_f, "cheat", 1, true );
 	CMD_ADDCLIENTCOMMAND( "permaperk", "pp", "permaperk <perkname|all>", ::CMD_PERMAPERK_f, "cheat", 1, true );
 	CMD_ADDCLIENTCOMMAND( "points", "pts", "points <amount>", ::CMD_POINTS_f, "cheat", 1, false );
-	CMD_ADDCLIENTCOMMAND( "powerup", "pow", "powerup <powerupname>", ::CMD_POWERUP_f, "cheat", 1, false );
+	CMD_ADDCLIENTCOMMAND( "powerup", "pow", "powerup <powerup>", ::CMD_POWERUP_f, "cheat", 1, false );
 	CMD_ADDCLIENTCOMMAND( "weapon", "wep", "weapon <weaponname>", ::CMD_WEAPON_f, "cheat", 1, true );
 	CMD_ADDCLIENTCOMMAND( "toggleperssystem", "tps", "toggleperssystem", ::CMD_TOGGLEPERSSYSTEM_f, "cheat", 0, false );
 
@@ -62,13 +65,29 @@ main()
 	cmd_register_arg_types_for_client_cmd( "powerup", "powerup" );
 	cmd_register_arg_types_for_client_cmd( "weapon", "weapon" );
 
-	cmd_register_arg_type_handlers( "perk", ::arg_perk_handler, ::arg_generate_rand_perk, "not a valid perk" );
-	cmd_register_arg_type_handlers( "weapon", ::arg_weapon_handler, ::arg_generate_rand_weapon, "not a valid weapon" );
-	cmd_register_arg_type_handlers( "powerup", ::arg_powerup_handler, ::arg_generate_rand_powerup, "not a valid powerup" );
+	cmd_register_arg_type_handlers( "weapon", ::arg_weapon_handler, ::arg_generate_rand_weapon, undefined, "not a valid weapon" );
+	cmd_register_arg_type_handlers( "perk", ::arg_perk_handler, ::arg_generate_rand_perk, undefined, "not a valid perk" );
+	cmd_register_arg_type_handlers( "powerup", ::arg_powerup_handler, ::arg_generate_rand_powerup, undefined, "not a valid powerup" );	
 
 	level thread on_unittest();
 	level thread check_for_command_alias_collisions();
 	level.zm_command_init_done = true;
+}
+
+zm_help_prints( channel )
+{
+	if ( is_true( self.is_server ) )
+	{
+		level com_printf( channel, "notitle", "^3To view available powerups use tcscmd poweruplist", self );
+		level com_printf( channel, "notitle", "^3To view available perks use tcscmd perklist", self );
+		level com_printf( channel, "notitle", "^3To view available weapons use tcscmd weaponlist", self );
+	}
+	else 
+	{
+		level com_printf( channel, "notitle", "^3To view available powerups do /poweruplist in the chat", self );
+		level com_printf( channel, "notitle", "^3To view available perks do /perklist in the chat", self );
+		level com_printf( channel, "notitle", "^3To view available weapons do /weaponlist in the chat", self );		
+	}
 }
 
 on_unittest()
@@ -105,8 +124,7 @@ CMD_GIVEPOWERUP_f( arg_list )
 {
 	result = [];
 	target = arg_list[ 0 ];
-	powerup_name = get_powerup_from_alias_zm( arg_list[ 1 ] );
-	valid_powerup_list = powerup_list_zm();
+	powerup_name = arg_list[ 1 ];
 	success = target give_powerup_zm( powerup_name );
 	if ( success )
 	{
@@ -134,7 +152,7 @@ give_powerup_zm( powerup_name )
 	}
 	if ( !can_spawn )
 	{
-		level com_printf( channel, "cmderror", "Cannot spawn powerup this far from the map center", self );
+		level com_printf( channel, "cmderror", "Cannot spawn a powerup this far from the map center", self );
 		return false;
 	}
 	powerup_loc = self.origin + anglesToForward( self.angles ) * 64 + anglesToRight( self.angles ) * 64;
@@ -167,10 +185,9 @@ CMD_GIVEPERK_f( arg_list )
 {
 	result = [];
 	target = arg_list[ 0 ];
-	perk_name = get_perk_from_alias_zm( arg_list[ 1 ] );
+	perk_name = arg_list[ 1 ];
 	if ( perk_name != "all" )
 	{
-		valid_perk_list = perk_list_zm();
 		target give_perk_zm( perk_name );
 		result[ "filter" ] = "cmdinfo";
 		result[ "message" ] = "Gave perk " + perk_name + " to " + target.name;	
@@ -201,7 +218,7 @@ CMD_PAUSE_f( arg_list )
 	result = [];
 	if ( isDefined( arg_list[ 0 ] ) )
 	{
-		duration = int( arg_list[ 0 ] );
+		duration = arg_list[ 0 ];
 		level thread game_pause( duration );
 		result[ "filter" ] = "cmdinfo";
 		result[ "message" ] = "Game paused for " + duration + " minutes";
@@ -269,21 +286,18 @@ CMD_GIVEPERMAPERK_f( arg_list )
 {
 	result = [];
 	target = arg_list[ 0 ];
-	perma_perk_name = get_perma_perk_from_alias( arg_list[ 1 ] );
-	if ( perma_perk_name != arg_list[ 1 ] && perma_perk_name != "all" )
+	perma_perk_name = arg_list[ 1 ];
+	if ( perma_perk_name != "all" )
 	{
 		target give_perma_perk( perma_perk_name );
+		result[ "filter" ] = "cmdinfo";
+		result[ "message" ] = "Gave " + target.name + " " + perma_perk_name;
 	}
-	else if ( perma_perk_name == "all" )
+	else
 	{
 		target give_all_perma_perks();
 		result[ "filter" ] = "cmdinfo";
 		result[ "message" ] = "Gave all perma perks to " + target.name;
-	}
-	else 
-	{
-		result[ "filter" ] = "cmderror";
-		result[ "message" ] = "Invalid " + perma_perk_name + " perma perk alias";
 	}
 	return result;
 }
@@ -305,7 +319,7 @@ CMD_GIVEPOINTS_f( arg_list )
 {
 	result = [];
 	target = arg_list[ 0 ];
-	points = int( arg_list[ 1 ] );
+	points = arg_list[ 1 ];
 	target add_to_player_score( points );
 	result[ "filter" ] = "cmdinfo";
 	result[ "message" ] = "Gave " + target.name + " " + points + " points";
@@ -396,7 +410,7 @@ unlimited_weapons( player )
 CMD_POWERUP_f( arg_list )
 {
 	result = [];
-	powerup_name = get_powerup_from_alias_zm( arg_list[ 0 ] );
+	powerup_name = arg_list[ 0 ];
 	success = self give_powerup_zm( powerup_name );
 	if ( success )
 	{
@@ -427,7 +441,7 @@ cmd_weaponlist_f( arg_list )
 CMD_PERK_f( arg_list )
 {
 	result = [];
-	perk_name = get_perk_from_alias_zm( arg_list[ 0 ] );
+	perk_name = arg_list[ 0 ];
 	if ( perk_name != "all" )
 	{
 		self give_perk_zm( perk_name );
@@ -450,7 +464,7 @@ CMD_PERK_f( arg_list )
 CMD_POINTS_f( arg_list )
 {
 	result = [];
-	points = int( arg_list[ 0 ] );
+	points = arg_list[ 0 ];
 	self add_to_player_score( points );
 	result[ "filter" ] = "cmdinfo";
 	result[ "message" ] = "Gave you " + points + " points";
@@ -460,14 +474,14 @@ CMD_POINTS_f( arg_list )
 CMD_PERMAPERK_f( arg_list )
 {
 	result = [];
-	perma_perk_name = get_perma_perk_from_alias( arg_list[ 0 ] );
-	if ( perma_perk_name != arg_list[ 0 ] && perma_perk_name != "all" )
+	perma_perk_name = arg_list[ 0 ];
+	if ( perma_perk_name != "all" )
 	{
 		self give_perma_perk( perma_perk_name );
 		result[ "filter" ] = "cmdinfo";
 		result[ "message" ] = "Gave you " + perma_perk_name;
 	}
-	else if ( perma_perk_name == "all" )
+	else
 	{
 		self give_all_perma_perks();
 		result[ "filter" ] = "cmdinfo";
@@ -549,30 +563,76 @@ open_seseme()
 	}
 	level.tcs_doors_all_opened = !is_true( level.tcs_doors_all_opened );
 	flag_wait( "initial_blackscreen_passed" );
-	setdvar("zombie_unlock_all", 1);
-	flag_set("power_on");
+	setdvar( "zombie_unlock_all", 1 );
+	flag_set( "power_on" );
 	players = getPlayers();
-	zombie_doors = getentarray("zombie_door", "targetname");
-	for(i = 0; i < zombie_doors.size; i++)
+	zombie_doors = getentarray( "zombie_door", "targetname" );
+	for ( i = 0; i < zombie_doors.size; i++ )
 	{
-		zombie_doors[i] notify("trigger");
-		if(is_true(zombie_doors[i].power_door_ignore_flag_wait))
+		zombie_doors[ i ] notify( "trigger" );
+		if ( is_true( zombie_doors[ i ].power_door_ignore_flag_wait ) )
 		{
-			zombie_doors[i] notify("power_on");
+			zombie_doors[ i ] notify( "power_on" );
 		}
-		wait(0.05);
+		wait 0.05;
 	}
-	zombie_airlock_doors = getentarray("zombie_airlock_buy", "targetname");
-	for(i = 0; i < zombie_airlock_doors.size; i++)
+	zombie_airlock_doors = getentarray( "zombie_airlock_buy", "targetname" );
+	for ( i = 0; i < zombie_airlock_doors.size; i++ )
 	{
-		zombie_airlock_doors[i] notify("trigger");
-		wait(0.05);
+		zombie_airlock_doors[ i ] notify( "trigger" );
+		wait 0.05;
 	}
-	zombie_debris = getentarray("zombie_debris", "targetname");
-	for(i = 0; i < zombie_debris.size; i++)
+	zombie_debris = getentarray( "zombie_debris", "targetname" );
+	for ( i = 0; i < zombie_debris.size; i++ )
 	{
-		zombie_debris[i] notify("trigger", players[0]);
-		wait(0.05);
+		zombie_debris[ i ] notify( "trigger", players[ 0 ] );
+		wait 0.05;
 	}
-	setdvar("zombie_unlock_all", 0);
+	setdvar( "zombie_unlock_all", 0 );
+}
+
+cmd_poweruplist_f( arg_list )
+{
+	result = [];
+	channel = self com_get_cmd_feedback_channel();
+	perks = perk_list_zm();
+	if ( perks.size <= 0 )
+	{
+		level com_printf( channel, "notitle", "There are no perks on the map", self );
+		return result;
+	}
+	self thread list_perks_throttled( channel, perks );
+	return result;
+}
+
+list_perks_throttled( channel, perks )
+{
+	for ( i = 0; i < perks.size; i++ )
+	{
+		level com_printf( channel, "notitle", perks[ i ], self );
+		wait 0.1;
+	}
+}
+
+cmd_perklist_f( arg_list )
+{
+	result = [];
+	channel = self com_get_cmd_feedback_channel();
+	powerup_keys = getArrayKeys( level.zombie_include_powerups );
+	if ( powerup_keys.size <= 0 )
+	{
+		level com_printf( channel, "notitle", "There are no powerups on the map", self );
+		return result;
+	}
+	self thread list_powerups_throttled( channel, powerup_keys );
+	return result;
+}
+
+list_powerups_throttled( channel, powerups )
+{
+	for ( i = 0; i < powerups.size; i++ )
+	{
+		level com_printf( channel, "notitle", powerups[ i ], self );
+		wait 0.1;
+	}
 }

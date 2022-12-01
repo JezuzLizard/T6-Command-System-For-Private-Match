@@ -132,17 +132,16 @@ bottomless_clip()
 CMD_TELEPORT_f( arg_list )
 {
 	result = [];
-	target = self cast_str_to_player( arg_list[ 0 ] );
-	if ( !isDefined( target ) )
+	target = arg_list[ 0 ];
+	if ( target == self )
 	{
+		result[ "filter" ] = "cmderror";
+		result[ "message" ] = "You cannot teleport to yourself";
 		return result;
 	}
-	else 
-	{
-		self setOrigin( target.origin + anglesToForward( target.angles ) * 64 + anglesToRight( target.angles ) * 64 );
-		result[ "filter" ] = "cmdinfo";
-		result[ "message" ] = "Successfully teleported to " + target.name + "'s position";
-	}
+	self setOrigin( target.origin + anglesToForward( target.angles ) * 64 + anglesToRight( target.angles ) * 64 );
+	result[ "filter" ] = "cmdinfo";
+	result[ "message" ] = "Successfully teleported to " + target.name + "'s position";
 	return result;
 }
 
