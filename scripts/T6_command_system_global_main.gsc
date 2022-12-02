@@ -18,7 +18,7 @@ main()
 	level.server.is_server = true;
 	level.server.name = "Server";
 	level.custom_commands_restart_countdown = 5;
-	level.commands_total = 0;
+	level.tcs_commands_total = 0;
 	level.custom_commands_cooldown_time = getDvarIntDefault( "tcs_cmd_cd", 5 );
 	level.tcs_use_silent_commands = getDvarIntDefault( "tcs_silent_cmds", 0 );
 	level.tcs_logprint_cmd_usage = getDvarIntDefault( "tcs_logprint_cmd_usage", 1 );
@@ -83,14 +83,10 @@ main()
 	}
 	// "\" is always useable by default
 	CMD_INIT_PERMS();
-	level.tcs_add_server_command_func = ::cmd_addservercommand;
-	level.tcs_set_server_command_power_func = ::cmd_setservercommandpower;
-	level.tcs_add_client_command_func = ::cmd_addclientcommand;
-	level.tcs_set_client_command_power_func = ::cmd_setclientcommandpower;
-	level.tcs_remove_server_command = ::cmd_removeservercommand;
-	level.tcs_remove_client_command = ::cmd_removeclientcommand;
-	level.tcs_remove_server_command_by_group = ::cmd_removeservercommandbygroup;
-	level.tcs_remove_client_command_by_group = ::cmd_removeclientcommandbygroup;
+	level.tcs_add_command_func = ::cmd_addcommand;
+	level.tcs_set_command_power_func = ::cmd_setcommandpower;
+	level.tcs_remove_command = ::cmd_removecommand;
+	level.tcs_remove_command_by_group = ::cmd_removecommandbygroup;
 	level.tcs_com_printf = ::com_printf;
 	level.tcs_com_get_feedback_channel = ::com_get_cmd_feedback_channel;
 	level.tcs_find_player_in_server = ::cast_str_to_player;
@@ -98,54 +94,52 @@ main()
 	level.tcs_player_is_valid_check = scripts\cmd_system_modules\_cmd_util::is_player_valid;
 	level.tcs_debug_create_random_valid_args = ::create_random_valid_args2;
 	level.tcs_repackage_args = ::repackage_args;
-	level.server_commands = [];
-	CMD_ADDSERVERCOMMAND( "setcvar", "scv", "setcvar <name|guid|clientnum|self> <cvarname> <newval>", ::CMD_SETCVAR_f, "cheat", 3, false );
-	CMD_ADDSERVERCOMMAND( "dvar", "dv", "dvar <dvarname> <newval>", ::CMD_SERVER_DVAR_f, "cheat", 2, false );
-	CMD_ADDSERVERCOMMAND( "cvarall", "cva", "cvarall <cvarname> <newval>", ::CMD_CVARALL_f, "cheat", 2, false );
-	CMD_ADDSERVERCOMMAND( "givegod", "ggd", "givegod <name|guid|clientnum|self>", ::CMD_GIVEGOD_f, "cheat", 1, true );
-	CMD_ADDSERVERCOMMAND( "givenotarget", "gnt", "givenotarget <name|guid|clientnum|self>", ::CMD_GIVENOTARGET_f, "cheat", 1, true );
-	CMD_ADDSERVERCOMMAND( "giveinvisible", "ginv", "giveinvisible <name|guid|clientnum|self>", ::CMD_GIVEINVISIBLE_f, "cheat", 1, true );
-	CMD_ADDSERVERCOMMAND( "setrank", "sr", "setrank <name|guid|clientnum|self> <rank>", ::CMD_SETRANK_f, "cheat", 2, false );
+	cmd_addcommand( "setcvar", false, "scv", "setcvar <name|guid|clientnum|self> <cvarname> <newval>", ::CMD_SETCVAR_f, "cheat", 3, false );
+	cmd_addcommand( "dvar", false, "dv", "dvar <dvarname> <newval>", ::CMD_SERVER_DVAR_f, "cheat", 2, false );
+	cmd_addcommand( "cvarall", false, "cva", "cvarall <cvarname> <newval>", ::CMD_CVARALL_f, "cheat", 2, false );
+	cmd_addcommand( "givegod", false, "ggd", "givegod <name|guid|clientnum|self>", ::CMD_GIVEGOD_f, "cheat", 1, true );
+	cmd_addcommand( "givenotarget", false, "gnt", "givenotarget <name|guid|clientnum|self>", ::CMD_GIVENOTARGET_f, "cheat", 1, true );
+	cmd_addcommand( "giveinvisible", false, "ginv", "giveinvisible <name|guid|clientnum|self>", ::CMD_GIVEINVISIBLE_f, "cheat", 1, true );
+	cmd_addcommand( "setrank", false, "sr", "setrank <name|guid|clientnum|self> <rank>", ::CMD_SETRANK_f, "cheat", 2, false );
 
-	CMD_ADDSERVERCOMMAND( "execonallplayers", "execonall exall", "execonallplayers <cmdname> [cmdargs] ...", ::CMD_EXECONALLPLAYERS_f, "host", 1, false );
-	CMD_ADDSERVERCOMMAND( "execonteam", "execteam exteam", "execonteam <team> <cmdname> [cmdargs] ...", ::CMD_EXECONTEAM_f, "host", 2, false );
+	cmd_addcommand( "execonallplayers", false, "execonall exall", "execonallplayers <cmdname> [cmdargs] ...", ::CMD_EXECONALLPLAYERS_f, "host", 1, false );
+	cmd_addcommand( "execonteam", false, "execteam exteam", "execonteam <team> <cmdname> [cmdargs] ...", ::CMD_EXECONTEAM_f, "host", 2, false );
 
-	CMD_ADDSERVERCOMMAND( "cmdlist", "cl", "cmdlist", ::CMD_CMDLIST_f, "none", 0, false, true );
-	CMD_ADDSERVERCOMMAND( "playerlist", "plist", "playerlist [team]", ::CMD_PLAYERLIST_f, "none", 0, false, true );
-	cmd_addservercommand( "entitylist", "elist", "entitylist [targetname]", ::cmd_entitylist_f, "cheat", 0, false );
+	cmd_addcommand( "cmdlist", false, "cl", "cmdlist", ::CMD_CMDLIST_f, "none", 0, false );
+	cmd_addcommand( "playerlist", false, "plist", "playerlist [team]", ::CMD_PLAYERLIST_f, "none", 0, false );
+	cmd_addcommand( "entitylist", false, "elist", "entitylist [targetname]", ::cmd_entitylist_f, "cheat", 0, false );
 
-	cmd_addservercommand( "help", undefined, "help [cmdalias]", ::cmd_help_f, "none", 0, false );
+	cmd_addcommand( "help", false, undefined, "help [cmdalias]", ::cmd_help_f, "none", 0, false );
 
-	cmd_addservercommand( "unittest", undefined, "unittest [botcount] [duration]", ::cmd_unittest_validargs_f, "host", 0, false );
-	cmd_addservercommand( "testcmd", undefined, "testcmd <cmdalias> [threadcount] [duration]", ::cmd_testcmd_f, "host", 1, false );
-	//cmd_addservercommand( "unittestinvalidargs", "uinvalid", "unittest [botcount]", ::cmd_unittest_invalidargs_f, "host", 0, false );
+	cmd_addcommand( "unittest", false, undefined, "unittest [botcount] [duration]", ::cmd_unittest_validargs_f, "host", 0, false );
+	cmd_addcommand( "testcmd", false, undefined, "testcmd <cmdalias> [threadcount] [duration]", ::cmd_testcmd_f, "host", 1, false );
+	//cmd_addcommand( "unittestinvalidargs", "uinvalid", "unittest [botcount] [duration]", ::cmd_unittest_invalidargs_f, "host", 0, false );
 
-	cmd_addservercommand( "dodamage", "dd", "dodamage <entitynum|targetname|self> <damage> <origin> [entitynum|targetname|self] [entitynum|targetname|self] [hitloc] [MOD] [idflags] [weapon]", ::cmd_dodamage_f, "cheat", 3, false );
+	cmd_addcommand( "dodamage", false, "dd", "dodamage <entitynum|targetname|self> <damage> <origin> [entitynum|targetname|self] [entitynum|targetname|self] [hitloc] [MOD] [idflags] [weapon]", ::cmd_dodamage_f, "cheat", 3, false );
 
-	cmd_register_arg_types_for_server_cmd( "givegod", "player" );
-	cmd_register_arg_types_for_server_cmd( "givenotarget", "player" );
-	cmd_register_arg_types_for_server_cmd( "giveinvisible", "player" );
-	cmd_register_arg_types_for_server_cmd( "setrank", "player rank" );
-	cmd_register_arg_types_for_server_cmd( "execonallplayers", "cmdalias" );
-	cmd_register_arg_types_for_server_cmd( "execonteam", "team cmdalias" );
-	cmd_register_arg_types_for_server_cmd( "playerlist", "team" );
-	cmd_register_arg_types_for_server_cmd( "help", "cmdalias" );
-	cmd_register_arg_types_for_server_cmd( "unittest", "int" );
-	cmd_register_arg_types_for_server_cmd( "testcmd", "cmdalias wholenum wholenum" );
-	cmd_register_arg_types_for_server_cmd( "dodamage", "entity float vector entity entity hitloc MOD idflags weapon" );
+	cmd_register_arg_types_for_cmd( "givegod", "player" );
+	cmd_register_arg_types_for_cmd( "givenotarget", "player" );
+	cmd_register_arg_types_for_cmd( "giveinvisible", "player" );
+	cmd_register_arg_types_for_cmd( "setrank", "player rank" );
+	cmd_register_arg_types_for_cmd( "execonallplayers", "cmdalias" );
+	cmd_register_arg_types_for_cmd( "execonteam", "team cmdalias" );
+	cmd_register_arg_types_for_cmd( "playerlist", "team" );
+	cmd_register_arg_types_for_cmd( "help", "cmdalias" );
+	cmd_register_arg_types_for_cmd( "unittest", "int wholenum" );
+	cmd_register_arg_types_for_cmd( "testcmd", "cmdalias wholenum wholenum" );
+	cmd_register_arg_types_for_cmd( "dodamage", "entity float vector entity entity hitloc MOD idflags weapon" );
 
-	level.client_commands = [];
-	CMD_ADDCLIENTCOMMAND( "togglehud", "toghud", "togglehud", ::CMD_TOGGLEHUD_f, "none", 0, false );
-	CMD_ADDCLIENTCOMMAND( "god", undefined, "god", ::CMD_GOD_f, "cheat", 0, true );
-	CMD_ADDCLIENTCOMMAND( "notarget", "nt", "notarget", ::CMD_NOTARGET_f, "cheat", 0, true );
-	CMD_ADDCLIENTCOMMAND( "invisible", "invis", "invisible", ::CMD_INVISIBLE_f, "cheat", 0, true );
-	CMD_ADDCLIENTCOMMAND( "printorigin", "printorg por", "printorigin", ::CMD_PRINTORIGIN_f, "none", 0, false );
-	CMD_ADDCLIENTCOMMAND( "printangles", "printang pan", "printangles", ::CMD_PRINTANGLES_f, "none", 0, false );
-	CMD_ADDCLIENTCOMMAND( "bottomlessclip", "botclip bcl", "bottomlessclip", ::CMD_BOTTOMLESSCLIP_f, "cheat", 0, true );
-	CMD_ADDCLIENTCOMMAND( "teleport", "tele", "teleport <name|guid|clientnum>", ::CMD_TELEPORT_f, "cheat", 1, false );
-	CMD_ADDCLIENTCOMMAND( "cvar", "cv", "cvar <cvarname> <newval>", ::CMD_CVAR_f, "cheat", 2, false );
+	cmd_addcommand( "togglehud", true, "toghud", "togglehud", ::CMD_TOGGLEHUD_f, "none", 0, false );
+	cmd_addcommand( "god", true, undefined, "god", ::CMD_GOD_f, "cheat", 0, true );
+	cmd_addcommand( "notarget", true, "nt", "notarget", ::CMD_NOTARGET_f, "cheat", 0, true );
+	cmd_addcommand( "invisible", true, "invis", "invisible", ::CMD_INVISIBLE_f, "cheat", 0, true );
+	cmd_addcommand( "printorigin", true, "printorg por", "printorigin", ::CMD_PRINTORIGIN_f, "none", 0, false );
+	cmd_addcommand( "printangles", true, "printang pan", "printangles", ::CMD_PRINTANGLES_f, "none", 0, false );
+	cmd_addcommand( "bottomlessclip", true, "botclip bcl", "bottomlessclip", ::CMD_BOTTOMLESSCLIP_f, "cheat", 0, true );
+	cmd_addcommand( "teleport", true, "tele", "teleport <name|guid|clientnum>", ::CMD_TELEPORT_f, "cheat", 1, false );
+	cmd_addcommand( "cvar", true, "cv", "cvar <cvarname> <newval>", ::CMD_CVAR_f, "cheat", 2, false );
 
-	cmd_register_arg_types_for_client_cmd( "teleport", "player" );
+	cmd_register_arg_types_for_cmd( "teleport", "player" );
 
 	cmd_register_arg_type_handlers( "player", ::arg_player_handler, ::arg_generate_rand_player, ::arg_cast_to_player, "not a valid player" );
 	cmd_register_arg_type_handlers( "wholenum", ::arg_wholenum_handler, ::arg_generate_rand_wholenum, ::arg_cast_to_int, "not a whole number" );
@@ -187,7 +181,7 @@ main()
 		}
 	}
 	
-	level thread COMMAND_BUFFER();
+	level thread command_buffer();
 	level thread end_commands_on_end_game();
 	level thread scr_dvar_command_watcher();
 	level thread tcs_on_connect();
@@ -229,7 +223,7 @@ parse_command_dvar()
 	dvar_value = undefined;
 }
 	
-COMMAND_BUFFER()
+command_buffer()
 {
 	level endon( "end_commands" );
 	while ( true )
@@ -280,20 +274,19 @@ cmd_execute( message, player, is_hidden )
 	{
 		cmdname = multi_cmds[ cmd_index ][ "cmdname" ];
 		args = multi_cmds[ cmd_index ][ "args" ];
-		is_clientcmd = multi_cmds[ cmd_index ][ "is_clientcmd" ];
-		if ( !player has_permission_for_cmd( cmdname, is_clientcmd ) )
+		if ( !player has_permission_for_cmd( cmdname ) )
 		{
 			level COM_PRINTF( channel, "cmderror", "You do not have permission to use " + cmdname + " command", player );
 		}
 		else
 		{
-			if ( is_clientcmd && is_true( player.is_server ) )
+			if ( level.tcs_commands[ cmdname ].is_clientcmd && is_true( player.is_server ) )
 			{
 				level com_printf( channel, "cmderror", "You cannot use " + cmdname + " client command as the server", player );
 			}
 			else 
 			{
-				player cmd_execute_internal( cmdname, args, is_clientcmd, false, level.tcs_logprint_cmd_usage );
+				player cmd_execute_internal( cmdname, args, false, level.tcs_logprint_cmd_usage );
 				player thread cmd_cooldown();
 			}
 		}

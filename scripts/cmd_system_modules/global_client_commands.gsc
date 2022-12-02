@@ -43,16 +43,14 @@ CMD_GOD_f( arg_list )
 CMD_NOTARGET_f( arg_list )
 {
 	result = [];
-	on_off = cast_bool_to_str( !is_true( self.tcs_is_notarget ), "on off" );
+	on_off = cast_bool_to_str( !is_true( self.ignoreme ), "on off" );
 	if ( on_off == "on" )
 	{
 		self.ignoreme = true;
-		self.tcs_is_notarget = true;
 	}
 	else 
 	{
 		self.ignoreme = false;
-		self.tcs_is_notarget = false;
 	}
 	result[ "filter" ] = "cmdinfo";
 	result[ "message" ] = "Notarget " + on_off;

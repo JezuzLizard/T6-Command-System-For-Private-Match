@@ -127,8 +127,8 @@ CMD_EXECONALLPLAYERS_f( arg_list )
 {
 	result = [];
 	cmd = arg_list[ 0 ];
-	cmd_to_execute = get_server_cmd_from_alias( cmd );
-	if ( cmd_to_execute != "" )
+	cmd_to_execute = get_cmd_from_alias( cmd );
+	if ( level.tcs_commands[ cmd_to_execute ].is_clientcmd )
 	{
 		result[ "filter" ] = "cmderror";
 		result[ "message" ] = "You cannot call a server cmd with execonallplayers";
@@ -139,11 +139,8 @@ CMD_EXECONALLPLAYERS_f( arg_list )
 	{
 		var_args[ i - 1 ] = arg_list[ i ];
 	}
-	is_valid = self test_cmd_is_valid( cmd_to_execute, var_args, true );
-	if ( !is_valid )
+	if ( !self test_cmd_is_valid( cmd_to_execute, var_args, true ) )
 	{
-		result[ "filter" ] = "cmderror";
-		result[ "message" ] = "Insufficient num args sent to " + cmd_to_execute + " from execonallplayers";
 		return result;
 	}
 	players = getPlayers();
@@ -155,7 +152,7 @@ CMD_EXECONALLPLAYERS_f( arg_list )
 	}
 	for ( i = 0; i < players.size; i++ )
 	{
-		players[ i ] thread cmd_execute_internal( cmd_to_execute, var_args, true, false, false );
+		players[ i ] thread cmd_execute_internal( cmd_to_execute, var_args, false, false );
 	}
 	result[ "filter" ] = "cmdinfo";
 	result[ "message" ] = "Executed " + cmd_to_execute + " on all players";			
@@ -167,8 +164,8 @@ CMD_EXECONTEAM_f( arg_list )
 	result = [];
 	team = arg_list[ 0 ];
 	cmd = arg_list[ 1 ];
-	cmd_to_execute = get_server_cmd_from_alias( cmd );
-	if ( cmd_to_execute != "" )
+	cmd_to_execute = get_cmd_from_alias( cmd );
+	if ( level.tcs_commands[ cmd_to_execute ].is_clientcmd )
 	{
 		result[ "filter" ] = "cmderror";
 		result[ "message" ] = "You cannot call a server cmd with execonteam";
@@ -179,11 +176,8 @@ CMD_EXECONTEAM_f( arg_list )
 	{
 		var_args[ i - 2 ] = arg_list[ i ];
 	}
-	is_valid = self test_cmd_is_valid( cmd_to_execute, var_args, true );
-	if ( !is_valid )
+	if ( !self test_cmd_is_valid( cmd_to_execute, var_args, true ) )
 	{
-		result[ "filter" ] = "cmderror";
-		result[ "message" ] = "Insufficient num args sent to " + cmd_to_execute + " from execonallplayers";
 		return result;
 	}
 	players = getPlayers( team );
@@ -195,7 +189,7 @@ CMD_EXECONTEAM_f( arg_list )
 	}
 	for ( i = 0; i < players.size; i++ )
 	{
-		players[ i ] thread cmd_execute_internal( cmd_to_execute, var_args, true, false, false );
+		players[ i ] thread cmd_execute_internal( cmd_to_execute, var_args, false, false );
 	}
 	result[ "filter" ] = "cmdinfo";
 	result[ "message" ] = "Executed " + cmd_to_execute + " on team " + team;
@@ -204,6 +198,7 @@ CMD_EXECONTEAM_f( arg_list )
 
 CMD_PLAYERLIST_f( arg_list )
 {
+	result = [];
 	channel = self com_get_cmd_feedback_channel();
 	if ( channel != "con" )
 	{
@@ -216,6 +211,7 @@ CMD_PLAYERLIST_f( arg_list )
 		return;
 	}
 	self thread list_players_throttled( channel, players );
+	return result;
 }
 
 list_players_throttled( channel, players )
@@ -243,12 +239,14 @@ list_players_throttled( channel, players )
 
 CMD_CMDLIST_f( arg_list )
 {
+	result = [];
 	channel = self com_get_cmd_feedback_channel();
 	if ( channel != "con" )
 	{
 		channel = "iprint";
 	}
 	self thread list_cmds_throttled( channel );
+	return result;
 }
 
 list_cmds_throttled( channel )

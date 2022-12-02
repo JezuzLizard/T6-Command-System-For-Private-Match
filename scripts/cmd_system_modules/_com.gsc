@@ -93,12 +93,14 @@ com_caps_msg_title( channel, filter )
 com_print( message, players )
 {
 	printf( message );
+	message = undefined;
 }
 
 com_logprint( message, players )
 {
 	players = undefined;
 	logPrint( message + "\n" );
+	message = undefined;
 }
 
 com_iprintln( message, player )
