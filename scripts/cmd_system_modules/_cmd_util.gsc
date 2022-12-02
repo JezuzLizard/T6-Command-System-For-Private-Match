@@ -61,22 +61,35 @@ get_perk_from_alias_zm( alias )
 
 perk_list_zm()
 {
+	if ( !isDefined( level._zm_perks ) )
+	{
+		level._zm_perks = [];
+	}
+	else 
+	{
+		return level._zm_perks; //Fix so even if quickrevive machine is removed it can still be given.
+	}
 	switch ( level.script )
 	{
 		case "zm_tomb":
-			return level._random_perk_machine_perk_list;
+			level._zm_perks = level._random_perk_machine_perk_list
+			return level._zm_perks;
+		case "zm_transit": //Fix so you can give perks with cmds on maps without perk machines.
+			level._zm_perks = array( "specialty_quickrevive", "specialty_rof", "specialty_fastreload", "specialty_armorvest", "specialty_longersprint", "specialty_scavenger" );
+			return level._zm_perks;
 		default:
 			machines = getentarray( "zombie_vending", "targetname" );
 			perks = [];
 
 			for ( i = 0; i < machines.size; i++ )
 			{
-				if ( machines[i].script_noteworthy == "specialty_weapupgrade" )
+				if ( machines[ i ].script_noteworthy == "specialty_weapupgrade" )
 					continue;
 
-				perks[perks.size] = machines[i].script_noteworthy;
+				perks[ perks.size ] = machines[ i ].script_noteworthy;
 			}
-			return perks;
+			level._zm_perks = perks;
+			return level._zm_perks;
 	}
 }
 
@@ -220,6 +233,11 @@ cast_str_to_player( clientnum_guid_or_name, noprint = false )
 		partial_message = "clientnums";	
 	}
 	channel = self com_get_cmd_feedback_channel();
+	if ( level.players.size <= 0 )
+	{
+		level com_printf( channel, "cmderror", "No players currently in the server", self );
+		return undefined;
+	}
 	if ( !isDefined( clientnum_guid_or_name ) )
 	{
 		if ( !noprint )
@@ -361,6 +379,11 @@ cast_str_to_entity( entnum_targetname_or_self, noprint = false )
 		return self;
 	}
 	entities = getEntArray();
+	if ( entities.size <= 0 )
+	{
+		level com_printf( channel, "cmderror", "No entities currently in the server", self );
+		return undefined;
+	}
 	ent = undefined;
 	is_whole_number = is_natural_num( entnum_targetname_or_self );
 	entnum = int( entnum_targetname_or_self );
@@ -1157,6 +1180,11 @@ arg_generate_rand_player()
 	}
 	players = getPlayers();
 
+	if ( players.size <= 0 )
+	{
+		return -1;
+	}
+
 	random_player = players[ randomInt( players.size ) ];
 	switch ( randomint )
 	{
@@ -1302,7 +1330,7 @@ arg_generate_rand_cmdalias()
 			aliases[ aliases.size ] = level.client_commands[ client_command_keys[ i ] ].aliases[ j ];
 		}
 	}
-	blacklisted_cmds_server = array( "rotate", "restart", "changemap", "unittest", "unittestinvalidargs", "setcvar", "dvar", "cvarall", "givepermaperk", "toggleoutofplayableareamonitor", "spectator", "execonteam", "execonallplayers", "testcmd", "entitylist" );
+	blacklisted_cmds_server = array( "rotate", "restart", "changemap", "unittest", "unittestinvalidargs", "setcvar", "dvar", "cvarall", "givepermaperk", "toggleoutofplayableareamonitor", "spectator", "execonteam", "execonallplayers", "testcmd", "entitylist", "weaponlist", "poweruplist", "perklist" );
 	for ( i = 0; i < server_command_keys.size; i++ )
 	{
 		cmd_is_blacklisted = false;
@@ -1356,7 +1384,10 @@ arg_generate_rand_entity()
 {
 	randomint = randomInt( 2 );
 	entities = getEntArray();
-	
+	if ( entities.size <= 0 )
+	{
+		return -1;
+	}
 	random_entity = entities[ randomInt( entities.size ) ];
 	if ( is_true( self.is_server ) )
 	{
@@ -1413,7 +1444,7 @@ arg_generate_rand_idflags()
 	flags = 0;
 	idflags_array = level.tcs_idflags;
 	max_flags_to_add = randomInt( level.tcs_idflags.size );
-	for ( i = 0; i < max_flags_to_add; i++ )
+	for ( i = 0; i < max_flags_to_add && ( idflags_array.size > 0 ); i++ )
 	{
 		random_flag_index = randomInt( idflags_array.size );
 		flags |= idflags_array[ random_flag_index ];

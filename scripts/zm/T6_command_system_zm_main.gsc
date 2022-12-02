@@ -422,15 +422,25 @@ CMD_POWERUP_f( arg_list )
 
 cmd_weaponlist_f( arg_list )
 {
+	result = [];
 	channel = self com_get_cmd_feedback_channel();
 	if ( channel != "con" )
 	{
 		channel = "iprint";
 	}
 	weapons = getArrayKeys( level.zombie_include_weapons );
+	self thread list_weapons_throttled( channel, weapons );
+	return result;
+}
+
+list_weapons_throttled( channel, weapons )
+{
+	self notify( "listing_weapons" );
+	self endon( "listing_weapons" );
 	for ( i = 0; i < weapons.size; i++ )
 	{
 		level com_printf( channel, "notitle", weapons[ i ], self );
+		wait 0.1;
 	}
 	if ( !is_true( self.is_server ) )
 	{
@@ -595,21 +605,21 @@ cmd_poweruplist_f( arg_list )
 {
 	result = [];
 	channel = self com_get_cmd_feedback_channel();
-	perks = perk_list_zm();
-	if ( perks.size <= 0 )
+	if ( channle != "con" )
 	{
-		level com_printf( channel, "notitle", "There are no perks on the map", self );
-		return result;
+		channel = "iprint";
 	}
-	self thread list_perks_throttled( channel, perks );
+	self thread list_powerups_throttled( channel, perks );
 	return result;
 }
 
-list_perks_throttled( channel, perks )
+list_powerups_throttled( channel, powerups )
 {
-	for ( i = 0; i < perks.size; i++ )
+	self notify( "listing_powerups" );
+	self endon( "listing_powerups" );
+	for ( i = 0; i < powerups.size; i++ )
 	{
-		level com_printf( channel, "notitle", perks[ i ], self );
+		level com_printf( channel, "notitle", powerups[ i ], self );
 		wait 0.1;
 	}
 }
@@ -618,21 +628,22 @@ cmd_perklist_f( arg_list )
 {
 	result = [];
 	channel = self com_get_cmd_feedback_channel();
-	powerup_keys = getArrayKeys( level.zombie_include_powerups );
-	if ( powerup_keys.size <= 0 )
+	if ( channle != "con" )
 	{
-		level com_printf( channel, "notitle", "There are no powerups on the map", self );
-		return result;
+		channel = "iprint";
 	}
-	self thread list_powerups_throttled( channel, powerup_keys );
+	perks = perk_list_zm();
+	self thread list_perks_throttled( channel, perks );
 	return result;
 }
 
-list_powerups_throttled( channel, powerups )
+list_perks_throttled( channel, perks )
 {
-	for ( i = 0; i < powerups.size; i++ )
+	self notify( "listing_perks" );
+	self endon( "listing_perks" );
+	for ( i = 0; i < perks.size; i++ )
 	{
-		level com_printf( channel, "notitle", powerups[ i ], self );
+		level com_printf( channel, "notitle", perks[ i ], self );
 		wait 0.1;
 	}
 }

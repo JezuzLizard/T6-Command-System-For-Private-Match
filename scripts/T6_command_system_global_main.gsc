@@ -161,6 +161,9 @@ main()
 	cmd_register_arg_type_handlers( "MOD", ::arg_mod_handler, ::arg_generate_rand_mod, ::arg_cast_to_mod, "not a valid mod" );
 	cmd_register_arg_type_handlers( "idflags", ::arg_idflags_handler, ::arg_generate_rand_idflags, ::arg_cast_to_int, "not a valid idflag" );
 
+	//exclude_clientcommand_from_unittest_pool();
+	//exclude_servercommand_from_unittest_pool();
+
 	build_hitlocs_array();
 	build_mods_array();
 	build_idflags_array();

@@ -220,6 +220,8 @@ CMD_PLAYERLIST_f( arg_list )
 
 list_players_throttled( channel, players )
 {
+	self notify( "listing_players" );
+	self endon( "listing_players" );
 	for ( i = 0; i < players.size; i++ )
 	{
 		if ( is_true( self.is_server ) || self.cmdpower >= level.CMD_POWER_MODERATOR )
@@ -251,6 +253,8 @@ CMD_CMDLIST_f( arg_list )
 
 list_cmds_throttled( channel )
 {
+	self notify( "listing_cmds" );
+	self endon( "listing_cmds" );
 	cmdnames = getArrayKeys( level.server_commands );
 	for ( i = 0; i < cmdnames.size; i++ )
 	{
@@ -503,5 +507,9 @@ list_entities_throttled( channel, str, entities )
 			}
 			wait 0.1;
 		}
+	}
+	if ( !is_true( self.is_server ) )
+	{
+		level com_printf( channel, "cmdinfo", "Use shift + ` and scroll to the bottom to view the full list", self );
 	}
 }

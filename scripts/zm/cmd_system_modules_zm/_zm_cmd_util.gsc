@@ -155,33 +155,60 @@ bot_unittest_func()
 arg_perk_handler( arg )
 {
 	perks = perk_list_zm();
+	if ( perks.size <= 0 )
+	{
+		level com_printf( channel, "notitle", "There are no perks on the map", self );
+		return false;
+	}
 	return isInArray( perks, arg ) || arg == "all";
 }
 
 arg_generate_rand_perk()
 {
 	perks = perk_list_zm();
+	if ( perks.size <= 0 )
+	{
+		return "invalid_perk";
+	}
 	return randomInt( 20 ) < 1 ? "all" : perks[ randomInt( perks.size ) ];	
 }
 
 arg_weapon_handler( arg )
 {
+	if ( !isDefined( level.zombie_include_weapons ) || level.zombie_include_weapons.size <= 0 )
+	{
+		level com_printf( channel, "notitle", "There are no perks on the map", self );
+		return false;
+	}
 	return isDefined( level.zombie_include_weapons[ arg ] );
 }
 
 arg_generate_rand_weapon()
 {
+	if ( !isDefined( level.zombie_include_weapons ) || level.zombie_include_weapons.size <= 0 )
+	{
+		return "invalid_weapon";
+	}
 	weapon_keys = getArrayKeys( level.zombie_include_weapons );
 	return weapon_keys[ randomInt( weapon_keys.size ) ];	
 }
 
 arg_powerup_handler( arg )
 {
+	if ( !isDefined( level.zombie_include_powerups ) || level.zombie_include_powerups.size <= 0 )
+	{
+		level com_printf( channel, "notitle", "There are no powerups on the map", self );
+		return false;
+	}
 	return isDefined( level.zombie_include_powerups[ arg ] );
 }
 
 arg_generate_rand_powerup()
 {
+	if ( !isDefined( level.zombie_include_powerups ) || level.zombie_include_powerups.size <= 0 )
+	{
+		return "invalid_powerup";
+	}
 	powerup_keys = getArrayKeys( level.zombie_include_powerups );
 	return powerup_keys[ randomInt( powerup_keys.size ) ];	
 }
