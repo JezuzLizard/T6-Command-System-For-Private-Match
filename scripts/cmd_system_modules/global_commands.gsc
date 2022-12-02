@@ -436,6 +436,11 @@ cmd_entitylist_f( arg_list )
 		channel = "iprint";
 	}
 	entities = getEntArray();
+	if ( entities.size <= 0 )
+	{
+		level com_printf( channel, "notitle", "There are no entities in the server", self );
+		return result;
+	}
 	self thread list_entities_throttled( channel, arg_list[ 0 ], entities );
 	return result;	
 }
