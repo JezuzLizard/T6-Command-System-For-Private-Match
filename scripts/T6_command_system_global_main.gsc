@@ -13,6 +13,7 @@
 main()
 {
 	COM_INIT();
+	level.waittill_ent_id = 0;
 	level.server = spawnStruct();
 	level.server.playername = "Server";
 	level.server.is_server = true;

@@ -273,3 +273,284 @@ onplayerconnect_clientdvars_override()
 	self setclientaimlockonpitchstrength( 0.0 );
 	self maps\mp\zombies\_zm_laststand::player_getup_setup();
 }
+
+full_ammo_move_hud_override( player_team )
+{
+    players = getPlayers( player_team );
+    players[0] playsoundtoteam( "zmb_full_ammo", player_team );
+    wait 0.5;
+    move_fade_time = 1.5;
+    self fadeovertime( move_fade_time );
+    self moveovertime( move_fade_time );
+    self.y = 270;
+    self.alpha = 0;
+    wait( move_fade_time );
+    self maps\mp\gametypes_zm\_hud_util::destroyelem();
+}
+
+waittill_string_override( msg, ent )
+{
+	if ( msg != "death" )
+		self endon( "death" );
+
+	ent endon( "die" );
+
+	self waittill( msg );
+
+	ent notify( "returned", msg );
+}
+
+waittill_multiple( string1, string2, string3, string4, string5 )
+{
+	self endon( "death" );
+	ent = spawnstruct();
+	ent.threads = 0;
+	ent.id = level.waittill_ent_id;
+	level.waittill_ent_id++;
+	if ( isdefined( string1 ) )
+	{
+		self thread waittill_string( string1, ent );
+		ent.threads++;
+	}
+
+	if ( isdefined( string2 ) )
+	{
+		self thread waittill_string( string2, ent );
+		ent.threads++;
+	}
+
+	if ( isdefined( string3 ) )
+	{
+		self thread waittill_string( string3, ent );
+		ent.threads++;
+	}
+
+	if ( isdefined( string4 ) )
+	{
+		self thread waittill_string( string4, ent );
+		ent.threads++;
+	}
+
+	if ( isdefined( string5 ) )
+	{
+		self thread waittill_string( string5, ent );
+		ent.threads++;
+	}
+
+	message = "";
+	if ( self == level )
+	{
+		object = "level";
+	}
+	else 
+	{
+		object = "unknown";
+	}
+	if ( isDefined( string5 ) )
+	{
+		message = object + " ent.id: " + ent.id + " starts waittill_multiple: " + string1 + " " + string2 + " " + string3 + " " + string4 + " " + string5 + " threads: " + ent.threads;
+		logprint( message + "\n" );
+	}
+	else if ( isDefined( string4 ) )
+	{
+		message = object + " ent.id: " + ent.id + " starts waittill_multiple: " + string1 + " " + string2 + " " + string3 + " " + string4 + " threads: " + ent.threads;
+		logprint( message + "\n" );
+	}
+	else if ( isDefined( string5 ) )
+	{
+		message = object + " ent.id: " + ent.id + " starts waittill_multiple: " + string1 + " " + string2 + " " + string3 + " threads: " + ent.threads;
+		logprint( message + "\n" );
+	}
+	else if ( isDefined( string5 ) )
+	{
+		message = object + " ent.id: " + ent.id + " starts waittill_multiple: " + string1 + " " + string2 + " threads: " + ent.threads;
+		logprint( message + "\n" );
+	}
+	else if ( isDefined( string5 ) )
+	{
+		message = object + " ent.id: " + ent.id + " starts waittill_multiple: " + string1 + " threads: " + ent.threads;
+		logprint( message + "\n" );
+	}
+	else 
+	{
+		message = object + " ent.id: " + ent.id + " starts waittill_multiple: ERROR_NO_WAITTILL_STRING" + " threads: " + ent.threads;
+		logprint( message + "\n" );		
+	}
+	while ( ent.threads )
+	{
+		ent waittill( "returned" );
+
+		ent.threads--;
+	}
+	message = object + " ent.id " + ent.id + " ends waittill_multiple";
+	logprint( message + "\n" );
+	ent notify( "die" );
+}
+
+waittill_any_return( string1, string2, string3, string4, string5, string6, string7 )
+{
+	if ( ( !isdefined( string1 ) || string1 != "death" ) && ( !isdefined( string2 ) || string2 != "death" ) && ( !isdefined( string3 ) || string3 != "death" ) && ( !isdefined( string4 ) || string4 != "death" ) && ( !isdefined( string5 ) || string5 != "death" ) && ( !isdefined( string6 ) || string6 != "death" ) && ( !isdefined( string7 ) || string7 != "death" ) )
+		self endon( "death" );
+
+	ent = spawnstruct();
+	ent.id = level.waittill_ent_id;
+	level.waittill_ent_id++;
+	if ( isdefined( string1 ) )
+		self thread waittill_string( string1, ent );
+
+	if ( isdefined( string2 ) )
+		self thread waittill_string( string2, ent );
+
+	if ( isdefined( string3 ) )
+		self thread waittill_string( string3, ent );
+
+	if ( isdefined( string4 ) )
+		self thread waittill_string( string4, ent );
+
+	if ( isdefined( string5 ) )
+		self thread waittill_string( string5, ent );
+
+	if ( isdefined( string6 ) )
+		self thread waittill_string( string6, ent );
+
+	if ( isdefined( string7 ) )
+		self thread waittill_string( string7, ent );
+
+	message = "";
+	if ( self == level )
+	{
+		object = "level";
+	}
+	else 
+	{
+		object = "unknown";
+	}
+	if ( isDefined( string7 ) )
+	{
+		message = object + " ent.id: " + ent.id + " starts waittill_any_return: " + string1 + " " + string2 + " " + string3 + " " + string4 + " " + string5 + " " + string7 + " " + string6;
+		logprint( message + "\n" );
+	}
+	else if ( isDefined( string6 ) )
+	{
+		message = object + " ent.id: " + ent.id + " starts waittill_any_return: " + string1 + " " + string2 + " " + string3 + " " + string4 + " " + string5 + " " + string6;
+		logprint( message + "\n" );
+	}	
+	else if ( isDefined( string5 ) )
+	{
+		message = object + " ent.id: " + ent.id + " starts waittill_any_return: " + string1 + " " + string2 + " " + string3 + " " + string4 + " " + string5;
+		logprint( message + "\n" );
+	}
+	else if ( isDefined( string4 ) )
+	{
+		message = object + " ent.id: " + ent.id + " starts waittill_any_return: " + string1 + " " + string2 + " " + string3 + " " + string4;
+		logprint( message + "\n" );
+	}
+	else if ( isDefined( string5 ) )
+	{
+		message = object + " ent.id: " + ent.id + " starts waittill_any_return: " + string1 + " " + string2 + " " + string3;
+		logprint( message + "\n" );
+	}
+	else if ( isDefined( string5 ) )
+	{
+		message = object + " ent.id: " + ent.id + " starts waittill_any_return: " + string1 + " " + string2;
+		logprint( message + "\n" );
+	}
+	else if ( isDefined( string5 ) )
+	{
+		message = object + " ent.id: " + ent.id + " starts waittill_any_return: " + string1;
+		logprint( message + "\n" );
+	}
+	else 
+	{
+		message = object + " ent.id: " + ent.id + " starts waittill_any_return: ERROR_NO_WAITTILL_STRING";
+		logprint( message + "\n" );		
+	}	
+
+	ent waittill( "returned", msg );
+
+	message = object + " ent.id: " + ent.id + " ends waittill_any_return";
+	logprint( )
+
+	ent notify( "die" );
+	return msg;
+}
+
+waittill_any_array_return( a_notifies )
+{
+	if ( !isDefined( a_notifies ) )
+	{
+		message = "ERROR: waittill_any_array_return input array is undefined";
+		logprint( message + "\n" );
+		return "ERROR";
+	}
+	if ( a_notifies.size <= 0 )
+	{
+		message = "ERROR: waittill_any_array_return input array is empty";
+		logprint( message + "\n" );
+		return "ERROR";
+	}
+	if ( isinarray( a_notifies, "death" ) )
+		self endon( "death" );
+
+	s_tracker = spawnstruct();
+	s_tracker.id = level.waittill_ent_id;
+	level.waittill_ent_id++;
+	strings = "";
+	foreach ( index, str_notify in a_notifies )
+	{
+		if ( isdefined( str_notify ) )
+		{
+			strings = strings + " " + str_notify + " ";
+			self thread waittill_string( str_notify, s_tracker );
+		}
+		else 
+		{
+			message = "ERROR: waittill_any_array_return index " + index + " is undefined";
+			logprint( message + "\n" );
+		}
+	}
+	if ( self == level )
+	{
+		object = "level";
+	}
+	else 
+	{
+		object = "unknown";
+	}
+	message = object + " s_tracker.id: " + s_tracker.id + " starts waittill_any_array_return: " + strings;
+	logprint( message + "\n" );
+	s_tracker waittill( "returned", msg );
+
+	s_tracker notify( "die" );
+	return msg;
+}
+
+waittill_any_timeout( n_timeout, string1, string2, string3, string4, string5 )
+{
+    if ( ( !isdefined( string1 ) || string1 != "death" ) && ( !isdefined( string2 ) || string2 != "death" ) && ( !isdefined( string3 ) || string3 != "death" ) && ( !isdefined( string4 ) || string4 != "death" ) && ( !isdefined( string5 ) || string5 != "death" ) )
+        self endon( "death" );
+
+    ent = spawnstruct();
+
+    if ( isdefined( string1 ) )
+        self thread waittill_string( string1, ent );
+
+    if ( isdefined( string2 ) )
+        self thread waittill_string( string2, ent );
+
+    if ( isdefined( string3 ) )
+        self thread waittill_string( string3, ent );
+
+    if ( isdefined( string4 ) )
+        self thread waittill_string( string4, ent );
+
+    if ( isdefined( string5 ) )
+        self thread waittill_string( string5, ent );
+
+    ent thread _timeout( n_timeout );
+
+    ent waittill( "returned", msg );
+
+    ent notify( "die" );
+    return msg;
+}
