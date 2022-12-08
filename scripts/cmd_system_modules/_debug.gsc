@@ -106,7 +106,7 @@ construct_chat_message()
 	}
 	cmd_log = self.name + " executed " + message + " count " + level.unittest_total_commands_used;
 	level com_printf( "con", "notitle", cmd_log );
-	level com_printf( "g_log", "cmdinfo", cmd_log );
+	//level com_printf( "g_log", "cmdinfo", cmd_log );
 	level notify( "say", message, self, true );
 	level.unittest_total_commands_used++;
 }

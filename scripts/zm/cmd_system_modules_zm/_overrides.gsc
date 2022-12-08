@@ -301,27 +301,46 @@ waittill_string_override( msg, ent )
 }
 
 /*
-******* script runtime error *******
-while processing instruction EVAL_ARRAY: undefined is not an array index
-        at function "update_clientfields" in file "maps/mp/_visionset_mgr.gsc"
-        at function "monitor" in file "maps/mp/_visionset_mgr.gsc"
+        at function "function_3" in file "scripts/callstack_test.gsc"
+        at function "function_2" in file "scripts/callstack_test.gsc"
+        at function "function_1" in file "scripts/callstack_test.gsc"
+        at function "init" in file "scripts/callstack_test.gsc"
 */
-get_caller()
+get_caller( callstack, caller_index_wanted )
 {
-	caller = "";
-	callstack = getcallstack();
-	at_string = "at function";
-	for ( i = 0; i < callstack.size; i++ )
+	caller_depth = 0;
+	//strings = strTok( callstack, "\"" );
+	strings = strTok( callstack, " " );
+	function_name = "";
+	filename = "";
+	for ( i = 0; i < strings.size; i++ )
 	{
-		if ( ( callstack[ i ] + callstack[ i + 1 ] ) == at_string )
+		if ( strings[ i ] == "function" )
 		{
-
+			function_name = strings[ i + 1 ];
+		}
+		else if ( strings[ i ] == "file" )
+		{
+			filename = strings[ i + 1 ];
+		}
+		if ( function_name != "" && filename != "" )
+		{
+			if ( caller_depth == caller_index_wanted )
+			{
+				return function_name + " " + filename;
+			}
+			else 
+			{
+				caller_depth++;
+				function_name = "";
+				filename = "";
+			}
 		}
 	}
-	return caller;
+	return "ERROR_NO_CALLER";
 }
 
-waittill_multiple( string1, string2, string3, string4, string5 )
+waittill_multiple_override( string1, string2, string3, string4, string5 )
 {
 	if ( !isDefined( level.hash_tables ) )
 	{
@@ -371,49 +390,61 @@ waittill_multiple( string1, string2, string3, string4, string5 )
 	{
 		object = "level";
 	}
+	else if ( isAi( self ) )
+	{
+		object = "ai";
+	}
+	else if ( isPlayer( self ) )
+	{
+		object = "player";
+	}
 	else 
 	{
 		object = "unknown";
 	}
-	hash = 0;
+	
+	caller = get_caller( getCallStack(), 1 );
+
+	args_hash = 0;
+	caller_hash = 0;
 	if ( isDefined( string5 ) )
 	{
 		strings_grouped = string1 + " " + string2 + " " + string3 + " " + string4 + " " + string5;
-		hash = hashString( strings_grouped );
-		message = object + " ent.id: " + ent.id + " starts waittill_multiple: " + strings_grouped + " threads: " + ent.threads + " hash: " + hash;
+		args_hash = hashString( strings_grouped );
+		message = object + " ent.id: " + ent.id + " starts waittill_multiple: " + strings_grouped + " threads: " + ent.threads + " args_hash: " + args_hash + " caller: " + caller;
 		logprint( message + "\n" );
 	}
 	else if ( isDefined( string4 ) )
 	{
 		strings_grouped = string1 + " " + string2 + " " + string3 + " " + string4;
-		hash = hashString( strings_grouped );
-		message = object + " ent.id: " + ent.id + " starts waittill_multiple: " + strings_grouped + " threads: " + ent.threads + " hash: " + hash;
+		args_hash = hashString( strings_grouped );
+		message = object + " ent.id: " + ent.id + " starts waittill_multiple: " + strings_grouped + " threads: " + ent.threads + " args_hash: " + args_hash + " caller: " + caller;
 		logprint( message + "\n" );
 	}
 	else if ( isDefined( string3 ) )
 	{
 		strings_grouped = string1 + " " + string2 + " " + string3;
-		hash = hashString( strings_grouped );
-		message = object + " ent.id: " + ent.id + " starts waittill_multiple: " + strings_grouped + " threads: " + ent.threads + " hash: " + hash;
+		args_hash = hashString( strings_grouped );
+		message = object + " ent.id: " + ent.id + " starts waittill_multiple: " + strings_grouped + " threads: " + ent.threads + " args_hash: " + args_hash + " caller: " + caller;
 		logprint( message + "\n" );
 	}
 	else if ( isDefined( string2 ) )
 	{
 		strings_grouped = string1 + " " + string2;
-		hash = hashString( strings_grouped );
-		message = object + " ent.id: " + ent.id + " starts waittill_multiple: " + strings_grouped + " threads: " + ent.threads + " hash: " + hash;
+		args_hash = hashString( strings_grouped );
+		message = object + " ent.id: " + ent.id + " starts waittill_multiple: " + strings_grouped + " threads: " + ent.threads + " args_hash: " + args_hash + " caller: " + caller;
 		logprint( message + "\n" );
 	}
 	else if ( isDefined( string1 ) )
 	{
 		strings_grouped = string1;
-		hash = hashString( strings_grouped );
-		message = object + " ent.id: " + ent.id + " starts waittill_multiple: " + strings_grouped + " threads: " + ent.threads + " hash: " + hash;
+		args_hash = hashString( strings_grouped );
+		message = object + " ent.id: " + ent.id + " starts waittill_multiple: " + strings_grouped + " threads: " + ent.threads + " args_hash: " + args_hash + " caller: " + caller;
 		logprint( message + "\n" );
 	}
 	else 
 	{
-		message = object + " ent.id: " + ent.id + " starts waittill_multiple: ERROR_NO_WAITTILL_STRING" + " threads: " + ent.threads + " hash: " + hash;
+		message = object + " ent.id: " + ent.id + " starts waittill_multiple: ERROR_NO_WAITTILL_STRING" + " threads: " + ent.threads + " args_hash: " + args_hash + " caller: " + caller;
 		logprint( message + "\n" );		
 	}
 
@@ -422,22 +453,24 @@ waittill_multiple( string1, string2, string3, string4, string5 )
 		for ( i = 0; i < level.hash_tables[ "waittill_multiple" ].size; i++ )
 		{
 			table_obj = level.hash_tables[ "waittill_multiple" ][ i ];
-			if ( table_obj.id != ent.id && table_obj.hash == hash && table_obj.object == self )
+			if ( table_obj.id != ent.id && table_obj.args_hash == args_hash && table_obj.object == self && table_obj.caller_hash == caller_hash )
 			{
-				message = "WARNING: waittill_multiple called again with same parameters before returning; object: " + object + " hash: " + hash;
+				message = "WARNING: waittill_multiple called again with same parameters before returning, object: " + object + " args_hash: " + args_hash + " caller: " + caller;
 				logprint( message + "\n" );
 				break;
 			}
 		}
 	}
 
-	if ( hash != 0 )
+	if ( args_hash != 0 )
 	{
+		caller_hash = hashString( caller );
 		size = level.hash_tables[ "waittill_multiple" ].size;
 		level.hash_tables[ "waittill_multiple" ][ size ] = spawnStruct();
-		level.hash_tables[ "waittill_multiple" ][ size ].hash = hash;
+		level.hash_tables[ "waittill_multiple" ][ size ].args_hash = args_hash;
 		level.hash_tables[ "waittill_multiple" ][ size ].object = self;
 		level.hash_tables[ "waittill_multiple" ][ size ].id = ent.id;
+		level.hash_tables[ "waittill_multiple" ][ size ].caller_hash = caller_hash;
 	}
 	while ( ent.threads )
 	{
@@ -462,8 +495,16 @@ waittill_multiple( string1, string2, string3, string4, string5 )
 	ent notify( "die" );
 }
 
-waittill_any_return( string1, string2, string3, string4, string5, string6, string7 )
+waittill_any_return_override( string1, string2, string3, string4, string5, string6, string7 )
 {
+	if ( !isDefined( level.hash_tables ) )
+	{
+		level.hash_tables = [];
+	}
+	if ( !isDefined( level.hash_tables[ "waittill_any_return" ] ) )
+	{
+		level.hash_tables[ "waittill_any_return" ] = [];
+	}
 	if ( ( !isdefined( string1 ) || string1 != "death" ) && ( !isdefined( string2 ) || string2 != "death" ) && ( !isdefined( string3 ) || string3 != "death" ) && ( !isdefined( string4 ) || string4 != "death" ) && ( !isdefined( string5 ) || string5 != "death" ) && ( !isdefined( string6 ) || string6 != "death" ) && ( !isdefined( string7 ) || string7 != "death" ) )
 		self endon( "death" );
 
@@ -496,11 +537,23 @@ waittill_any_return( string1, string2, string3, string4, string5, string6, strin
 	{
 		object = "level";
 	}
+	else if ( isAi( self ) )
+	{
+		object = "ai";
+	}
+	else if ( isPlayer( self ) )
+	{
+		object = "player";
+	}
 	else 
 	{
 		object = "unknown";
 	}
-	hash = 0;
+	
+	caller = get_caller( getCallStack(), 1 );
+
+	args_hash = 0;
+	caller_hash = 0;
 	if ( isDefined( string7 ) )
 	{
 		strings_grouped = string1 + " " + string2 + " " + string3 + " " + string4 + " " + string5 + " " + string6 + " " + string7;
@@ -520,7 +573,6 @@ waittill_any_return( string1, string2, string3, string4, string5, string6, strin
 	else if ( isDefined( string3 ) )
 	{
 		strings_grouped = string1 + " " + string2 + " " + string3;
-
 	}
 	else if ( isDefined( string2 ) )
 	{
@@ -532,26 +584,51 @@ waittill_any_return( string1, string2, string3, string4, string5, string6, strin
 	}
 	else 
 	{
-		message = object + " ent.id: " + ent.id + " starts waittill_any_return: ERROR_NO_WAITTILL_STRING";
+		message = object + " ent.id: " + ent.id + " starts waittill_any_return: ERROR_NO_WAITTILL_STRING caller: " + caller;
 		logprint( message + "\n" );		
 	}	
 	if ( isDefined( strings_grouped ) && strings_grouped != "" )
 	{
-		hash = hashString( strings_grouped );
-		message = object + " ent.id: " + ent.id + " starts waittill_any_return: " + strings_grouped + " hash: " + hash;
+		args_hash = hashString( strings_grouped );
+		message = object + " ent.id: " + ent.id + " starts waittill_any_return: " + strings_grouped + " args_hash: " + args_hash + " caller: " + caller;
 		logprint( message + "\n" );
+	}
+
+	if ( level.hash_tables[ "waittill_any_return" ].size > 0 )
+	{
+		for ( i = 0; i < level.hash_tables[ "waittill_any_return" ].size; i++ )
+		{
+			table_obj = level.hash_tables[ "waittill_any_return" ][ i ];
+			if ( table_obj.id != ent.id && table_obj.args_hash == args_hash && table_obj.object == self && table_obj.caller_hash == caller_hash )
+			{
+				message = "WARNING: waittill_any_return called again with same parameters before returning, object: " + object + " args_hash: " + args_hash + " caller: " + caller;
+				logprint( message + "\n" );
+				break;
+			}
+		}
+	}
+
+	if ( args_hash != 0 )
+	{
+		caller_hash = hashString( caller );
+		size = level.hash_tables[ "waittill_any_return" ].size;
+		level.hash_tables[ "waittill_any_return" ][ size ] = spawnStruct();
+		level.hash_tables[ "waittill_any_return" ][ size ].args_hash = args_hash;
+		level.hash_tables[ "waittill_any_return" ][ size ].object = self;
+		level.hash_tables[ "waittill_any_return" ][ size ].id = ent.id;
+		level.hash_tables[ "waittill_any_return" ][ size ].caller_hash = caller_hash;
 	}
 
 	ent waittill( "returned", msg );
 
 	message = object + " ent.id: " + ent.id + " ends waittill_any_return";
-	logprint( )
+	logprint( message + "\n" );
 
 	ent notify( "die" );
 	return msg;
 }
 
-waittill_any_array_return( a_notifies )
+waittill_any_array_return_override( a_notifies )
 {
 	if ( !isDefined( a_notifies ) )
 	{
@@ -585,23 +662,74 @@ waittill_any_array_return( a_notifies )
 			logprint( message + "\n" );
 		}
 	}
+	message = "";
 	if ( self == level )
 	{
 		object = "level";
+	}
+	else if ( isAi( self ) )
+	{
+		object = "ai";
+	}
+	else if ( isPlayer( self ) )
+	{
+		object = "player";
 	}
 	else 
 	{
 		object = "unknown";
 	}
+	
+	caller = get_caller( getCallStack(), 1 );
+
+	args_hash = 0;
+	caller_hash = 0;
+
+	if ( strings != "" )
+	{
+		args_hash = hashString( strings );
+	}
+
 	message = object + " s_tracker.id: " + s_tracker.id + " starts waittill_any_array_return: " + strings;
 	logprint( message + "\n" );
+
+	if ( level.hash_tables[ "waittill_any_array_return" ].size > 0 )
+	{
+		for ( i = 0; i < level.hash_tables[ "waittill_any_array_return" ].size; i++ )
+		{
+			table_obj = level.hash_tables[ "waittill_any_array_return" ][ i ];
+			if ( table_obj.id != ent.id && table_obj.args_hash == args_hash && table_obj.object == self && table_obj.caller_hash == caller_hash )
+			{
+				message = "WARNING: waittill_any_array_return called again with same parameters before returning, object: " + object + " args_hash: " + args_hash + " caller: " + caller;
+				logprint( message + "\n" );
+				break;
+			}
+		}
+	}
+
+	if ( args_hash != 0 )
+	{
+		caller_hash = hashString( caller );
+		size = level.hash_tables[ "waittill_any_array_return" ].size;
+		level.hash_tables[ "waittill_any_array_return" ][ size ] = spawnStruct();
+		level.hash_tables[ "waittill_any_array_return" ][ size ].args_hash = args_hash;
+		level.hash_tables[ "waittill_any_array_return" ][ size ].object = self;
+		level.hash_tables[ "waittill_any_array_return" ][ size ].id = ent.id;
+		level.hash_tables[ "waittill_any_array_return" ][ size ].caller_hash = caller_hash;
+	}
+
+	strings = undefined;
+	message = undefined;
 	s_tracker waittill( "returned", msg );
+
+	message = object + " s_tracker.id: " + s_tracker.id + " ends waittill_any_array_return";
+	logprint( message + "\n" );
 
 	s_tracker notify( "die" );
 	return msg;
 }
 
-waittill_any_timeout( n_timeout, string1, string2, string3, string4, string5 )
+waittill_any_timeout_override( n_timeout, string1, string2, string3, string4, string5 )
 {
     if ( ( !isdefined( string1 ) || string1 != "death" ) && ( !isdefined( string2 ) || string2 != "death" ) && ( !isdefined( string3 ) || string3 != "death" ) && ( !isdefined( string4 ) || string4 != "death" ) && ( !isdefined( string5 ) || string5 != "death" ) )
         self endon( "death" );
@@ -629,10 +757,23 @@ waittill_any_timeout( n_timeout, string1, string2, string3, string4, string5 )
 	{
 		object = "level";
 	}
+	else if ( isAi( self ) )
+	{
+		object = "ai";
+	}
+	else if ( isPlayer( self ) )
+	{
+		object = "player";
+	}
 	else 
 	{
 		object = "unknown";
 	}
+	
+	caller = get_caller( getCallStack(), 1 );
+
+	args_hash = 0;
+	caller_hash = 0;
 
     ent waittill( "returned", msg );
 

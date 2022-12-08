@@ -18,7 +18,10 @@ main()
 	replaceFunc( maps\mp\zombies\_zm_utility::wait_network_frame, ::wait_network_frame_override );
 	replaceFunc( maps\mp\zombies\_zm::check_end_game_intermission_delay(), ::check_end_game_intermission_delay_override );
 	replaceFunc( common_scripts\utility::waittill_string, ::waittill_string_override );
-	replaceFunc( maps\mp\zombies\_zm_powerups::full_ammo_move_on_hud, ::full_ammo_move_on_hud_override );
+	replaceFunc( common_scripts\utility::waittill_multiple, ::waittill_multiple_override );
+	replaceFunc( common_scripts\utility::waittill_any_return, ::waittill_any_return_override );
+	replaceFunc( common_scripts\utility::waittill_any_timeout, ::waittill_any_timeout_override );
+	replaceFunc( maps\mp\zombies\_zm_powerups::full_ammo_move_hud, ::full_ammo_move_hud_override );
 	while ( !is_true( level.command_init_done ) )
 	{
 		wait 0.05;
@@ -70,9 +73,20 @@ main()
 	level.zm_command_init_done = true;
 }
 
+dump_allocations_periodicly()
+{
+	wait 5;
+	while ( true )
+	{
+		dumpAllocations( va( "minidumps/child-var-allocations-%s-%s.txt", getDvar( "net_port" ), getTimeStamp() ), 200 );
+		wait 240;
+	}
+}
+
 init()
 {
 	level.reset_clientdvars = ::onplayerconnect_clientdvars_override;
+	level thread dump_allocations_periodicly();
 }
 
 on_unittest()
