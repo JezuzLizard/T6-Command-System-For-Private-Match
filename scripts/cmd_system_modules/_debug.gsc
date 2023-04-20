@@ -90,7 +90,7 @@ manage_unittest_bots( required_bots, cmdname )
 	{
 		bot = undefined;
 		//Need to do this in T6 because the bots can fail to be added for no reason sometimes
-		while ( !isdefined( bot ) && ( required_bots <= getDvarInt( "sv_maxclients" ) ) )
+		while ( !isdefined( bot ) && ( getNumConnectedPlayers() < getDvarInt( "sv_maxclients" ) ) )
 		{
 			bot = addtestclient();
 		}

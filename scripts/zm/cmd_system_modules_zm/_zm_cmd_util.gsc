@@ -155,6 +155,7 @@ bot_unittest_func()
 arg_perk_handler( arg )
 {
 	perks = perk_list_zm();
+	channel = self com_get_cmd_feedback_channel();
 	if ( perks.size <= 0 )
 	{
 		level com_printf( channel, "notitle", "There are no perks on the map", self );
@@ -175,9 +176,10 @@ arg_generate_rand_perk()
 
 arg_weapon_handler( arg )
 {
+	channel = self com_get_cmd_feedback_channel();
 	if ( !isDefined( level.zombie_include_weapons ) || level.zombie_include_weapons.size <= 0 )
 	{
-		level com_printf( channel, "notitle", "There are no perks on the map", self );
+		level com_printf( channel, "notitle", "There are no weapons on the map", self );
 		return false;
 	}
 	return isDefined( level.zombie_include_weapons[ arg ] );
@@ -195,6 +197,7 @@ arg_generate_rand_weapon()
 
 arg_powerup_handler( arg )
 {
+	channel = self com_get_cmd_feedback_channel();
 	if ( !isDefined( level.zombie_include_powerups ) || level.zombie_include_powerups.size <= 0 )
 	{
 		level com_printf( channel, "notitle", "There are no powerups on the map", self );
@@ -210,5 +213,10 @@ arg_generate_rand_powerup()
 		return "invalid_powerup";
 	}
 	powerup_keys = getArrayKeys( level.zombie_include_powerups );
-	return powerup_keys[ randomInt( powerup_keys.size ) ];	
+	powerup = "";
+	while ( powerup == "" || powerup == "teller_withdrawl" )
+	{
+		powerup = powerup_keys[ randomInt( powerup_keys.size ) ];
+	}
+	return powerup;	
 }

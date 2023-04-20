@@ -22,6 +22,7 @@ main()
 	level.custom_commands_cooldown_time = getDvarIntDefault( "tcs_cmd_cd", 5 );
 	level.tcs_use_silent_commands = getDvarIntDefault( "tcs_silent_cmds", 0 );
 	level.tcs_logprint_cmd_usage = getDvarIntDefault( "tcs_logprint_cmd_usage", 1 );
+	level.tcs_allow_hidden_commands = getDvarIntDefault( "tcs_allow_hidden_commands", 1 );
 	level.CMD_POWER_NONE = 0;
 	level.CMD_POWER_USER = 1;
 	level.CMD_POWER_TRUSTED_USER = 20;
@@ -115,7 +116,7 @@ main()
 	cmd_addcommand( "testcmd", false, undefined, "testcmd <cmdalias> [threadcount] [duration]", ::cmd_testcmd_f, "host", 1, false );
 	//cmd_addcommand( "unittestinvalidargs", "uinvalid", "unittest [botcount] [duration]", ::cmd_unittest_invalidargs_f, "host", 0, false );
 
-	cmd_addcommand( "dodamage", false, "dd", "dodamage <entitynum|targetname|self> <damage> <origin> [entitynum|targetname|self] [entitynum|targetname|self] [hitloc] [MOD] [idflags] [weapon]", ::cmd_dodamage_f, "cheat", 3, false );
+	cmd_addcommand( "dodamage", false, "dd", "dodamage <entitynum|classname|targetname|self> <damage> <origin> [entitynum|classname|targetname|self] [entitynum|classname|targetname|self] [hitloc] [MOD] [idflags] [weapon]", ::cmd_dodamage_f, "cheat", 3, false );
 
 	cmd_register_arg_types_for_cmd( "givegod", "player" );
 	cmd_register_arg_types_for_cmd( "givenotarget", "player" );
@@ -142,6 +143,7 @@ main()
 	cmd_register_arg_types_for_cmd( "teleport", "player" );
 
 	cmd_register_arg_type_handlers( "player", ::arg_player_handler, ::arg_generate_rand_player, ::arg_cast_to_player, "not a valid player" );
+	//cmd_register_arg_type_handlers( "playernotself", ::arg_playernotself_handler, ::arg_generate_rand_playernotself, ::arg_cast_to_player, "not a valid player(cannot be self)" );
 	cmd_register_arg_type_handlers( "wholenum", ::arg_wholenum_handler, ::arg_generate_rand_wholenum, ::arg_cast_to_int, "not a whole number" );
 	cmd_register_arg_type_handlers( "int", ::arg_int_handler, ::arg_generate_rand_int, ::arg_cast_to_int, "not an int" );
 	cmd_register_arg_type_handlers( "float", ::arg_float_handler, ::arg_generate_rand_float, ::arg_cast_to_float, "not a float" );
@@ -235,11 +237,19 @@ command_buffer()
 
 cmd_execute( message, player, is_hidden )
 {
-	if ( isDefined( player ) && !is_hidden && !is_command_token( message[ 0 ] ) )
+	if ( isDefined( player ) )
 	{
-		return;
+		if ( !level.tcs_allow_hidden_commands && is_hidden )
+		{
+			level COM_PRINTF( channel, "cmderror", "Hidden commands are not allowed", player );
+			return;
+		}
+		else if ( !is_hidden && !is_command_token( message[ 0 ] ) )
+		{
+			return;
+		}
 	}
-	if ( !isDefined( player ) )
+	else
 	{
 		if ( isDedicated() )
 		{
@@ -286,7 +296,7 @@ cmd_execute( message, player, is_hidden )
 			}
 			else 
 			{
-				player cmd_execute_internal( cmdname, args, false, level.tcs_logprint_cmd_usage );
+				player cmd_execute_internal( cmdname, args, getDvarIntDefault( "tcs_silent_cmds", 0 ), getDvarIntDefault( "tcs_logprint_cmd_usage", 1 ) );
 				player thread cmd_cooldown();
 			}
 		}

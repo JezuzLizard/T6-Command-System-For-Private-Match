@@ -84,9 +84,9 @@ zm_help_prints( channel )
 	}
 	else 
 	{
-		level com_printf( channel, "notitle", "^3To view available powerups do /poweruplist in the chat", self );
-		level com_printf( channel, "notitle", "^3To view available perks do /perklist in the chat", self );
-		level com_printf( channel, "notitle", "^3To view available weapons do /weaponlist in the chat", self );		
+		level com_printf( channel, "notitle", "^3To view available powerups do poweruplist prefixed with a cmd token", self );
+		level com_printf( channel, "notitle", "^3To view available perks do perklist prefixed with a cmd token", self );
+		level com_printf( channel, "notitle", "^3To view available weapons do weaponlist prefixed with a cmd token", self );		
 	}
 }
 
@@ -424,10 +424,6 @@ cmd_weaponlist_f( arg_list )
 {
 	result = [];
 	channel = self com_get_cmd_feedback_channel();
-	if ( channel != "con" )
-	{
-		channel = "iprint";
-	}
 	weapons = getArrayKeys( level.zombie_include_weapons );
 	self thread list_weapons_throttled( channel, weapons );
 	return result;
@@ -559,6 +555,13 @@ CMD_TOGGLEOUTOFPLAYABLEAREAMONITOR_f( arg_list )
 cmd_openalldoors_f( arg_list )
 {
 	result = [];
+	
+	if ( is_true( level.tcs_doors_all_opened ) )
+	{
+		result[ "filter" ] = "cmdinfo";
+		result[ "message" ] = "All doors are already open";
+		return result;
+	}
 	level thread open_seseme();
 	result[ "filter" ] = "cmdinfo";
 	result[ "message" ] = "All doors are now open";
@@ -567,10 +570,6 @@ cmd_openalldoors_f( arg_list )
 
 open_seseme()
 {
-	if ( is_true( level.tcs_doors_all_opened ) )
-	{
-		return;
-	}
 	level.tcs_doors_all_opened = !is_true( level.tcs_doors_all_opened );
 	flag_wait( "initial_blackscreen_passed" );
 	setdvar( "zombie_unlock_all", 1 );
@@ -605,11 +604,8 @@ cmd_poweruplist_f( arg_list )
 {
 	result = [];
 	channel = self com_get_cmd_feedback_channel();
-	if ( channle != "con" )
-	{
-		channel = "iprint";
-	}
-	self thread list_powerups_throttled( channel, perks );
+	powerups = powerup_list_zm();
+	self thread list_powerups_throttled( channel, powerups );
 	return result;
 }
 
@@ -628,10 +624,6 @@ cmd_perklist_f( arg_list )
 {
 	result = [];
 	channel = self com_get_cmd_feedback_channel();
-	if ( channle != "con" )
-	{
-		channel = "iprint";
-	}
 	perks = perk_list_zm();
 	self thread list_perks_throttled( channel, perks );
 	return result;

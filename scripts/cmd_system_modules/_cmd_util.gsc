@@ -72,7 +72,7 @@ perk_list_zm()
 	switch ( level.script )
 	{
 		case "zm_tomb":
-			level._zm_perks = level._random_perk_machine_perk_list
+			level._zm_perks = level._random_perk_machine_perk_list;
 			return level._zm_perks;
 		case "zm_transit": //Fix so you can give perks with cmds on maps without perk machines.
 			level._zm_perks = array( "specialty_quickrevive", "specialty_rof", "specialty_fastreload", "specialty_armorvest", "specialty_longersprint", "specialty_scavenger" );
@@ -202,18 +202,6 @@ weapon_is_upgrade( weapon )
 array_validate( array )
 {
 	return isDefined( array ) && isArray( array ) && array.size > 0;
-}
-
-cast_to_vector( vector_string )
-{
-	keys = strTok( vector_string, "," );
-	vector_array = [];
-	for ( i = 0; i < keys.size; i++ )
-	{
-		vector_array[ i ] = float( keys[ i ] ); 
-	}
-	vector = ( vector_array[ 0 ], vector_array[ 1 ], vector_array[ 2 ] );
-	return vector;
 }
 
 server_safe_notify_thread( notify_name, index )
@@ -445,7 +433,7 @@ is_entity_valid( entity )
 getDvarStringDefault( dvarname, default_value )
 {
 	cur_dvar_value = getDvar( dvarname );
-	if ( cur_dvar_value != "" )
+	if ( isDefined( cur_dvar_value ) && cur_dvar_value != "" )
 	{
 		return cur_dvar_value;
 	}
@@ -594,6 +582,7 @@ cmd_addcommand( cmdname, is_clientcmd, cmdaliases, cmdusage, cmdfunc, rankgroup,
 	if ( !isDefined( level.tcs_commands ) )
 	{
 		level.tcs_commands = [];
+		level.threaded_commands = [];
 	}
 	if ( !isDefined( level.tcs_ranks[ rankgroup ] ) )
 	{
@@ -701,14 +690,14 @@ cmd_register_arg_types_for_cmd( cmdname, argtypes )
 {
 	if ( !isDefined( level.tcs_commands[ cmdname ] ) )
 	{
-		level com_printf( "con|g_log", "cmderror", "cmd_register_arg_types_for_cmd() " + cmdname + " is not a server cmd" );
+		level com_printf( "con|g_log", "cmderror", "cmd_register_arg_types_for_cmd() " + cmdname + " is not registered" );
 		return;
 	}
 	if ( !isDefined( argtypes ) || argtypes == "" )
 	{
 		return;
 	}
-	level.tcs_commands[ cmdname ].argtypes = strTok( argtypes, " " );;
+	level.tcs_commands[ cmdname ].argtypes = strTok( argtypes, " " );
 }
 
 cmd_register_arg_type_handlers( argtype, checker_func, rand_gen_func, cast_func, error_message )
@@ -749,12 +738,15 @@ cmd_execute_internal( cmdname, arg_list, silent, logprint )
 	// Cast the args using the cast handlers
 	// Arg types without a cast handler don't get casted
 	// Leaving the casting up to the cmd itself
-	argtypes = level.tcs_commands[ cmdname ].argtypes;
-	for ( i = 0; i < arg_list.size; i++ )
+	if ( arg_list.size > 0 )
 	{
-		if ( isDefined( level.tcs_arg_type_handlers[ argtypes[ i ] ] ) && isDefined( level.tcs_arg_type_handlers[ argtypes[ i ] ].cast_func ) )
+		argtypes = level.tcs_commands[ cmdname ].argtypes;
+		for ( i = 0; i < arg_list.size; i++ )
 		{
-			arg_list[ i ] = self [[ level.tcs_arg_type_handlers[ cmdname ].cast_func ]]( arg_list[ i ] );
+			if ( isDefined( level.tcs_arg_type_handlers[ argtypes[ i ] ] ) && isDefined( level.tcs_arg_type_handlers[ argtypes[ i ] ].cast_func ) )
+			{
+				arg_list[ i ] = self [[ level.tcs_arg_type_handlers[ argtypes[ i ] ].cast_func ]]( arg_list[ i ] );
+			}
 		}
 	}
 	// Check if the cmd should execute if the target is in an invalid state
@@ -762,7 +754,7 @@ cmd_execute_internal( cmdname, arg_list, silent, logprint )
 	// For not only checks players
 	if ( is_true( level.tcs_commands[ cmdname ].uses_player_validity_check ) )
 	{
-		if ( isDefined( level.tcs_player_is_valid_check ) && ![[ level.tcs_player_is_valid_check ]]( arg_list[ 0 ] ) )
+		if ( isDefined( level.tcs_player_is_valid_check ) )
 		{
 			if ( level.tcs_commands[ cmdname ].is_clientcmd )
 			{
@@ -774,8 +766,11 @@ cmd_execute_internal( cmdname, arg_list, silent, logprint )
 				message = "Target " + arg_list[ 0 ].name + " is not in a valid state for " + cmdname + " to work";
 				target = arg_list[ 0 ];
 			}
-			level com_printf( channel, "cmderror", message, self );
-			return;
+			if ( ![[ level.tcs_player_is_valid_check ]]( target ) )
+			{
+				level com_printf( channel, "cmderror", message, self );
+				return;
+			}
 		}
 	}
 	if ( is_true( level.threaded_commands[ cmdname ] ) )
@@ -930,7 +925,7 @@ test_cmd_is_valid( cmdname, arg_list )
 				if ( !self [[ level.tcs_arg_type_handlers[ argtypes[ i ] ].checker_func ]]( arg_list[ i ] ) )
 				{
 					arg_num = i;
-					level com_printf( channel, "cmderror", "Arg " +  arg_num + " " + arg_list[ i ] + " is " + level.tcs_arg_type_handlers[ argtypes[ i ] ].error_message, self );
+					level com_printf( channel, "cmderror", "Arg " + arg_num + " " + arg_list[ i ] + " is " + level.tcs_arg_type_handlers[ argtypes[ i ] ].error_message, self );
 					return false;
 				}
 			}
@@ -1116,9 +1111,9 @@ arg_vector_handler( arg )
 
 arg_generate_rand_vector()
 {
-	x = cointoss() ? randomFloat( 1000000 ) : randomFloat( 1000000 ) * -1;
-	y = cointoss() ? randomFloat( 1000000 ) : randomFloat( 1000000 ) * -1;
-	z = cointoss() ? randomFloat( 1000000 ) : randomFloat( 1000000 ) * -1;
+	x = cointoss() ? randomFloat( 1000 ) : randomFloat( 1000 ) * -1;
+	y = cointoss() ? randomFloat( 1000 ) : randomFloat( 1000 ) * -1;
+	z = cointoss() ? randomFloat( 1000 ) : randomFloat( 1000 ) * -1;
 	return x + "," + y + "," + z;
 }
 
@@ -1139,11 +1134,7 @@ arg_generate_rand_team()
 
 arg_cmdalias_handler( arg )
 {
-	cmd_to_execute = get_client_cmd_from_alias( arg );
-	if ( cmd_to_execute == "" )
-	{
-		cmd_to_execute = get_server_cmd_from_alias( arg );
-	}
+	cmd_to_execute = get_cmd_from_alias( arg );
 	return cmd_to_execute != "";
 }
 
@@ -1159,7 +1150,7 @@ arg_generate_rand_cmdalias()
 		}
 		for ( j = 0; j < level.tcs_commands[ command_keys[ i ] ].aliases.size; j++ )
 		{
-			aliases[ aliases.size ] = level.tcs_commands[ server_command_keys[ i ] ].aliases[ j ];
+			aliases[ aliases.size ] = level.tcs_commands[ command_keys[ i ] ].aliases[ j ];
 		}
 	}
 	return aliases[ randomInt( aliases.size ) ];
@@ -1167,11 +1158,7 @@ arg_generate_rand_cmdalias()
 
 arg_cast_to_cmd( arg )
 {
-	cmd_to_execute = get_client_cmd_from_alias( arg );
-	if ( cmd_to_execute == "" )
-	{
-		cmd_to_execute = get_server_cmd_from_alias( arg );
-	}
+	cmd_to_execute = get_cmd_from_alias( arg );
 	return cmd_to_execute;	
 }
 

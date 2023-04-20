@@ -128,7 +128,7 @@ CMD_EXECONALLPLAYERS_f( arg_list )
 	result = [];
 	cmd = arg_list[ 0 ];
 	cmd_to_execute = get_cmd_from_alias( cmd );
-	if ( level.tcs_commands[ cmd_to_execute ].is_clientcmd )
+	if ( !level.tcs_commands[ cmd_to_execute ].is_clientcmd )
 	{
 		result[ "filter" ] = "cmderror";
 		result[ "message" ] = "You cannot call a server cmd with execonallplayers";
@@ -139,7 +139,7 @@ CMD_EXECONALLPLAYERS_f( arg_list )
 	{
 		var_args[ i - 1 ] = arg_list[ i ];
 	}
-	if ( !self test_cmd_is_valid( cmd_to_execute, var_args, true ) )
+	if ( !self test_cmd_is_valid( cmd_to_execute, var_args ) )
 	{
 		return result;
 	}
@@ -165,7 +165,7 @@ CMD_EXECONTEAM_f( arg_list )
 	team = arg_list[ 0 ];
 	cmd = arg_list[ 1 ];
 	cmd_to_execute = get_cmd_from_alias( cmd );
-	if ( level.tcs_commands[ cmd_to_execute ].is_clientcmd )
+	if ( !level.tcs_commands[ cmd_to_execute ].is_clientcmd )
 	{
 		result[ "filter" ] = "cmderror";
 		result[ "message" ] = "You cannot call a server cmd with execonteam";
@@ -176,7 +176,7 @@ CMD_EXECONTEAM_f( arg_list )
 	{
 		var_args[ i - 2 ] = arg_list[ i ];
 	}
-	if ( !self test_cmd_is_valid( cmd_to_execute, var_args, true ) )
+	if ( !self test_cmd_is_valid( cmd_to_execute, var_args ) )
 	{
 		return result;
 	}
@@ -200,10 +200,6 @@ CMD_PLAYERLIST_f( arg_list )
 {
 	result = [];
 	channel = self com_get_cmd_feedback_channel();
-	if ( channel != "con" )
-	{
-		channel = "iprint";
-	}
 	players = getPlayers();
 	if ( players.size == 0 )
 	{
@@ -241,10 +237,6 @@ CMD_CMDLIST_f( arg_list )
 {
 	result = [];
 	channel = self com_get_cmd_feedback_channel();
-	if ( channel != "con" )
-	{
-		channel = "iprint";
-	}
 	self thread list_cmds_throttled( channel );
 	return result;
 }
@@ -253,23 +245,13 @@ list_cmds_throttled( channel )
 {
 	self notify( "listing_cmds" );
 	self endon( "listing_cmds" );
-	cmdnames = getArrayKeys( level.server_commands );
+	cmdnames = getArrayKeys( level.tcs_commands );
 	for ( i = 0; i < cmdnames.size; i++ )
 	{
-		if ( self has_permission_for_cmd( cmdnames[ i ], false ) )
+		if ( self has_permission_for_cmd( cmdnames[ i ] ) )
 		{
-			message = "^3" + level.server_commands[ cmdnames[ i ] ].usage;
+			message = "^3" + level.tcs_commands[ cmdnames[ i ] ].usage;
 			
-			level com_printf( channel, "notitle", message, self );
-			wait 0.1;
-		}
-	}
-	cmdnames = getArrayKeys( level.client_commands );
-	for ( i = 0; i < cmdnames.size; i++ )
-	{
-		if ( self has_permission_for_cmd( cmdnames[ i ], true ) )
-		{
-			message = "^3" + level.client_commands[ cmdnames[ i ] ].usage;
 			level com_printf( channel, "notitle", message, self );
 			wait 0.1;
 		}
@@ -284,98 +266,35 @@ cmd_help_f( arg_list )
 {
 	result = [];
 	channel = self com_get_cmd_feedback_channel();
-	if ( channel != "con" )
-	{
-		channel = "iprint";
-	}
 	if ( is_true( self.is_server ) )
 	{
-		if ( isDefined( arg_list[ 0 ] ) )
+		level com_printf( channel, "notitle", "^3To view cmds you can use tcscmd cmdlist in the console", self );
+		level com_printf( channel, "notitle", "^3To view players in the server do tcscmd playerlist in the console", self );
+		level com_printf( channel, "notitle", "^3To view the usage of a specific cmd do tcscmd help <cmdalias>", self );
+		if ( isDefined( level.tcs_additional_help_prints_func ) )
 		{
-			cmdalias = arg_list[ 0 ];
-			cmd = get_client_cmd_from_alias( cmdalias );
-			if ( cmd == "" )
-			{
-				cmd = get_server_cmd_from_alias( cmdalias );
-				if ( cmd == "" )
-				{
-					level com_printf( channel, "cmderror", "Cmd alias " + cmdalias + " doesn't reference any cmd", self );
-					return result;
-				}
-			}
-			if ( isDefined( level.server_commands[ cmd ] ) )
-			{
-				message = "^3" + level.server_commands[ cmd ].usage;
-				level com_printf( channel, "notitle", message, self );
-			}
-			else if ( isDefined( level.client_commands[ cmd ] ) )
-			{
-				message = "^3" + level.client_commands[ cmd ].usage;
-				level com_printf( channel, "notitle", message, self );
-			}
-		}
-		else 
-		{
-			level com_printf( channel, "notitle", "^3To view cmds you can use do tcscmd cmdlist in the console", self );
-			level com_printf( channel, "notitle", "^3To view players in the server do tcscmd playerlist in the console", self );
-			level com_printf( channel, "notitle", "^3To view the usage of a specific cmd do tcscmd help <cmdalias>", self );
-			if ( isDefined( level.tcs_additional_help_prints_func ) )
-			{
-				self [[ level.tcs_additional_help_prints_func ]]( channel );
-			}
+			self [[ level.tcs_additional_help_prints_func ]]( channel );
 		}
 	}
 	else 
 	{
-		if ( isDefined( arg_list[ 0 ] ) )
+		valid_cmd_tokens = getDvar( "tcs_cmd_tokens" );
+		if ( level.tcs_allow_hidden_commands )
 		{
-			cmdalias = arg_list[ 0 ];
-			cmd = get_client_cmd_from_alias( cmdalias );
-			if ( cmd == "" )
-			{
-				cmd = get_server_cmd_from_alias( cmdalias );
-				if ( cmd == "" )
-				{
-					level com_printf( channel, "cmderror", "Cmd alias " + cmdalias + " doesn't reference any cmd", self );
-					return result;
-				}
-			}
-			if ( isDefined( level.server_commands[ cmd ] ) )
-			{
-				if ( self has_permission_for_cmd( cmd, false ) )
-				{
-					message = "^3" + level.server_commands[ cmd ].usage;
-					level com_printf( channel, "notitle", message, self );
-				}
-				else 
-				{
-					level com_printf( channel, "cmderror", "You do not have permission for cmd " + cmd, self );
-				}
-			}
-			else if ( isDefined( level.client_commands[ cmd ] ) )
-			{
-				if ( self has_permission_for_cmd( cmd, true ) )
-				{
-					message = "^3" + level.client_commands[ cmd ].usage;
-					level com_printf( channel, "notitle", message, self );
-				}
-				else 
-				{
-					level com_printf( channel, "cmderror", "You do not have permission for cmd " + cmd, self );
-				}
-			}
+			level com_printf( channel, "notitle", "^3Valid cmd tokens are / " + valid_cmd_tokens, self );
 		}
 		else 
-		{	
-			level com_printf( channel, "notitle", "^3To view cmds you can use do /cmdlist in the chat", self );
-			level com_printf( channel, "notitle", "^3To view players in the server do /playerlist in the chat", self );
-			level com_printf( channel, "notitle", "^3To view the usage of a specific cmd do /help <cmdalias>", self );
-			if ( isDefined( level.tcs_additional_help_prints_func ) )
-			{
-				self [[ level.tcs_additional_help_prints_func ]]( channel );
-			}
-			level com_printf( channel, "cmdinfo", "^3Use shift + ` and scroll to the bottom to view the full list", self );
+		{
+			level com_printf( channel, "notitle", "^3Valid cmd tokens are " + valid_cmd_tokens, self );
 		}
+		level com_printf( channel, "notitle", "^3To view cmds you can use cmdlist prefixed with the cmd token", self );
+		level com_printf( channel, "notitle", "^3To view players in the server do playerlist prefixed with the cmd token", self );
+		level com_printf( channel, "notitle", "^3To view the usage of a specific cmd do help <cmdalias> prefixed with the cmd token", self );
+		if ( isDefined( level.tcs_additional_help_prints_func ) )
+		{
+			self [[ level.tcs_additional_help_prints_func ]]( channel );
+		}
+		level com_printf( channel, "cmdinfo", "^3Use shift + ` and scroll to the bottom to view the full list", self );
 	}
 	return result;
 }
@@ -429,10 +348,6 @@ cmd_entitylist_f( arg_list )
 {
 	result = [];
 	channel = self com_get_cmd_feedback_channel();
-	if ( channel != "con" )
-	{
-		channel = "iprint";
-	}
 	entities = getEntArray();
 	if ( entities.size <= 0 )
 	{

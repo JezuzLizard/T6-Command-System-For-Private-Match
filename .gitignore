@@ -1,5 +1,7 @@
 \build
 \compiled
+\decompiled
+\decompiled_scripts
 *.exe
 *.bat
 \scripts-for-old-compiler
