@@ -250,7 +250,7 @@ list_cmds_throttled( channel )
 	{
 		if ( self has_permission_for_cmd( cmdnames[ i ] ) )
 		{
-			message = "^3" + level.tcs_commands[ cmdnames[ i ] ].usage;
+			message = level.tcs_commands[ cmdnames[ i ] ].usage;
 			
 			level com_printf( channel, "notitle", message, self );
 			wait 0.1;

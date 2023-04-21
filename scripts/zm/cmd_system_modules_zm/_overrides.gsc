@@ -460,7 +460,6 @@ unittest_check_player_is_valid_for_powerup( player )
 
 setclientfield_override( field_name, value )
 {
-	if ( !isDefined( self ) )
 	if ( self == level )
 		codesetworldclientfield( field_name, value );
 	else
@@ -470,4 +469,25 @@ setclientfield_override( field_name, value )
 setclientfieldtoplayer_override( field_name, value )
 {
 	codesetplayerstateclientfield( self, field_name, value );
+}
+
+solo_revive_buy_trigger_move_trigger_override( revive_perk_trigger )
+{
+	self endon( "disconnect" )
+	revive_perk_trigger setinvisibletoplayer( self );
+
+	if ( level.solo_lives_given >= 3 )
+	{
+		revive_perk_trigger trigger_off();
+
+		if ( isdefined( level._solo_revive_machine_expire_func ) )
+			revive_perk_trigger [[ level._solo_revive_machine_expire_func ]]();
+
+		return;
+	}
+
+	while ( self.lives > 0 )
+		wait 0.1;
+
+	revive_perk_trigger setvisibletoplayer( self );
 }

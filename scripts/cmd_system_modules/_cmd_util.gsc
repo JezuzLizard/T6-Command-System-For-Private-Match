@@ -572,6 +572,11 @@ repackage_args( arg_list )
 	}
 	for ( i = 0; i < arg_list.size; i++ )
 	{
+		if ( i == ( arg_list.size - 1 ) )
+		{
+			args_string = args_string + arg_list[ i ];
+			continue;
+		}
 		args_string = args_string + arg_list[ i ] + " ";
 	}
 	return args_string;

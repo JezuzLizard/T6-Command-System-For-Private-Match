@@ -31,6 +31,7 @@ main()
 	cmd_addcommand( "pause", false, "pa", "pause [minutes]", ::CMD_PAUSE_f, "cheat", 0, false );
 	cmd_addcommand( "unpause", false, "up", "unpause", ::CMD_UNPAUSE_f, "cheat", 0, false );
 	cmd_addcommand( "giveperk", false, "gp", "giveperk <name|guid|clientnum|self> <perk|all>", ::CMD_GIVEPERK_f, "cheat", 2, true );
+	cmd_addcommand( "takeperk", false, "tp", "takeperk <name|guid|clientnum|self> <perk|all>", ::cmd_takeperk_f, "cheat", 2, true );
 	cmd_addcommand( "givepermaperk", false, "gpp", "givepermaperk <name|guid|clientnum|self> <perk|all>", ::CMD_GIVEPERMAPERK_f, "cheat", 2, true );
 	cmd_addcommand( "givepoints", false, "gpts", "givepoints <name|guid|clientnum|self> <amount>", ::CMD_GIVEPOINTS_f, "cheat", 2, false );
 	cmd_addcommand( "givepowerup", false, "gpow", "givepowerup <name|guid|clientnum|self> <powerup>", ::CMD_GIVEPOWERUP_f, "cheat", 2, false );
@@ -41,18 +42,24 @@ main()
 	cmd_addcommand( "openalldoors", false, "openall", "openalldoors", ::cmd_openalldoors_f, "cheat", 0, false );
 	cmd_addcommand( "poweruplist", false, "powlist", "poweruplist", ::cmd_poweruplist_f, "none", 0, false );
 	cmd_addcommand( "perklist", false, "plist", "perklist", ::cmd_perklist_f, "none", 0, false );
+	cmd_addcommand( "setround", false, "sr", "setround <round_number>", ::cmd_setround_f, "cheat", 1, false );
+	cmd_addcommand( "nextround", false, "nr", "nextround", ::cmd_nextround_f, "cheat", 0, false );
+	cmd_addcommand( "prevround", false, undefined, "prevround", ::cmd_prevround_f, "cheat", 0, false );
 
 	cmd_register_arg_types_for_cmd( "spectator", "player" );
 	cmd_register_arg_types_for_cmd( "togglerespawn", "player" );
 	cmd_register_arg_types_for_cmd( "pause", "wholenum" );
 	cmd_register_arg_types_for_cmd( "giveperk", "player perk" );
+	cmd_register_arg_types_for_cmd( "takeperk", "player perk" );
 	//cmd_register_arg_types_for_cmd( "givepermaperk", "player permaperk" );
 	cmd_register_arg_types_for_cmd( "givepoints", "player int" );
 	cmd_register_arg_types_for_cmd( "givepowerup", "player powerup" );
 	cmd_register_arg_types_for_cmd( "giveweapon", "player weapon" );
 	cmd_register_arg_types_for_cmd( "toggleperssystemforplayer", "player" );
+	cmd_register_arg_types_for_cmd( "setround", "round" );
 
 	cmd_addcommand( "perk", true, undefined, "perk <perk|all>", ::CMD_PERK_f, "cheat", 1, true );
+	cmd_addcommand( "perkremove", true, "pr", "perk <perk|all>", ::cmd_perkremove_f, "cheat", 1, true );
 	cmd_addcommand( "permaperk", true, "pp", "permaperk <perk|all>", ::CMD_PERMAPERK_f, "cheat", 1, true );
 	cmd_addcommand( "points", true, "pts", "points <amount>", ::CMD_POINTS_f, "cheat", 1, false );
 	cmd_addcommand( "powerup", true, "pow", "powerup <powerup>", ::CMD_POWERUP_f, "cheat", 1, false );
@@ -60,6 +67,7 @@ main()
 	cmd_addcommand( "toggleperssystem", true, "tps", "toggleperssystem", ::CMD_TOGGLEPERSSYSTEM_f, "cheat", 0, false );
 
 	cmd_register_arg_types_for_cmd( "perk", "perk" );
+	cmd_register_arg_types_for_cmd( "perkremove", "perk" );
 	//cmd_register_arg_types_for_cmd( "permaperk", "permaperk" );
 	cmd_register_arg_types_for_cmd( "points", "int" );
 	cmd_register_arg_types_for_cmd( "powerup", "powerup" );
@@ -67,7 +75,8 @@ main()
 
 	cmd_register_arg_type_handlers( "weapon", ::arg_weapon_handler, ::arg_generate_rand_weapon, undefined, "not a valid weapon" );
 	cmd_register_arg_type_handlers( "perk", ::arg_perk_handler, ::arg_generate_rand_perk, undefined, "not a valid perk" );
-	cmd_register_arg_type_handlers( "powerup", ::arg_powerup_handler, ::arg_generate_rand_powerup, undefined, "not a valid powerup" );	
+	cmd_register_arg_type_handlers( "powerup", ::arg_powerup_handler, ::arg_generate_rand_powerup, undefined, "not a valid powerup" );
+	cmd_register_arg_type_handlers( "round", ::arg_round_handler, ::arg_generate_rand_round, ::arg_cast_to_int, "not a valid round" );
 
 	level thread on_unittest();
 	level thread check_for_command_alias_collisions();
@@ -114,6 +123,7 @@ on_unittest()
 		}
 		replacefunc( maps\mp\zombies\_zm::checkforalldead, maps\mp\gametypes_zm\_callbacksetup::callbackvoid );
 		replacefunc( maps\mp\zombies\_zm::player_fake_death, maps\mp\gametypes_zm\_callbacksetup::callbackvoid );
+		replaceFunc( maps\mp\zombies\_zm_perks::solo_revive_buy_trigger_move_trigger, ::solo_revive_buy_trigger_move_trigger_override );
 		//replaceFunc( maps\mp\_utility::setclientfield, ::setclientfield_override );
 		//replaceFunc( maps\mp\_utility::setclientfieldtoplayer, ::setclientfieldtoplayer_override );
 		register_player_damage_callback( ::no_player_damage_during_unittest );
@@ -200,9 +210,33 @@ CMD_GIVEPERK_f( arg_list )
 			target give_perk_zm( perk );
 		}
 		result[ "filter" ] = "cmdinfo";
-		result[ "message" ] = "Gave perk all perks to " + target.name;
+		result[ "message" ] = "Gave all perks to " + target.name;
 	}
 	return result;
+}
+
+cmd_takeperk_f( arg_list )
+{
+	result = [];
+	target = arg_list[ 0 ];
+	perk_name = arg_list[ 1 ];
+	if ( perk_name != "all" )
+	{
+		target notify( perk_name + "_stop" );
+		result[ "filter" ] = "cmdinfo";
+		result[ "message" ] = "Took perk " + perk_name + " from " + target.name;	
+	}
+	else 
+	{
+		valid_perk_list = perk_list_zm();
+		foreach ( perk in valid_perk_list )
+		{
+			target notify( perk + "_stop" );
+		}
+		result[ "filter" ] = "cmdinfo";
+		result[ "message" ] = "Took all perks from " + target.name;
+	}
+	return result;	
 }
 
 give_perk_zm( perkname, index )
@@ -227,7 +261,7 @@ CMD_PAUSE_f( arg_list )
 	{
 		level thread game_pause( -1 );
 		result[ "filter" ] = "cmdinfo";
-		result[ "message" ] = "Game paused indefinitely use /unpause to end the pause";
+		result[ "message" ] = "Game paused indefinitely use unpause to end the pause";
 	}
 	return result;
 }
@@ -452,7 +486,7 @@ CMD_PERK_f( arg_list )
 	{
 		self give_perk_zm( perk_name );
 		result[ "filter" ] = "cmdinfo";
-		result[ "message" ] = "Gave you " + perk_name ;	
+		result[ "message" ] = "Gave you " + perk_name ;
 	}
 	else 
 	{
@@ -463,6 +497,29 @@ CMD_PERK_f( arg_list )
 		}
 		result[ "filter" ] = "cmdinfo";
 		result[ "message" ] = "Gave you all perks";
+	}
+	return result;
+}
+
+cmd_perkremove_f( arg_list )
+{
+	result = [];
+	perk_name = arg_list[ 0 ];
+	if ( perk_name != "all" )
+	{
+		self notify( perk_name + "_stop" );
+		result[ "filter" ] = "cmdinfo";
+		result[ "message" ] = "Took perk " + perk_name + " from you";
+	}
+	else 
+	{
+		valid_perk_list = perk_list_zm();
+		foreach ( perk in valid_perk_list )
+		{
+			self notify( perk + "_stop" );
+		}
+		result[ "filter" ] = "cmdinfo";
+		result[ "message" ] = "Took all perks";
 	}
 	return result;
 }
@@ -638,4 +695,41 @@ list_perks_throttled( channel, perks )
 		level com_printf( channel, "notitle", perks[ i ], self );
 		wait 0.1;
 	}
+}
+
+cmd_setround_f( arg_list )
+{
+	result = [];
+	if ( arg_list[ 0 ] > 255 || arg_list[ 0 ] < 0 )
+	{
+		result[ "filter" ] = "cmderror";
+		result[ "message" ] = "Cannot set round to a number greater than 255 or less than 0";
+		return result;
+	}
+
+	level.round_number = arg_list[ 0 ];
+	change_round( arg_list[ 0 ] );
+	result[ "filter" ] = "cmdinfo";
+	result[ "message" ] = "Round set to " + arg_list[ 0 ];
+	return result;
+}
+
+cmd_nextround_f( arg_list )
+{
+	result = [];
+	level.round_number++;
+	change_round( level.round_number );
+	result[ "filter" ] = "cmdinfo";
+	result[ "message" ] = "Round set to " + level.round_number;	
+	return result;
+}
+
+cmd_prevround_f( arg_list )
+{
+	result = [];
+	level.round_number--;
+	change_round( level.round_number );
+	result[ "filter" ] = "cmdinfo";
+	result[ "message" ] = "Round set to " + level.round_number;	
+	return result;
 }

@@ -147,6 +147,40 @@ weapon_give_custom( weapon, is_upgrade, should_switch_weapon )
 	}
 }
 
+change_round( target_round )
+{
+	level notify( "end_round_think" );
+	level.zombie_vars["spectators_respawn"] = 1;
+	level.zombie_total = 0;
+	if ( level.gamedifficulty == 0 )
+		level.zombie_move_speed = level.round_number * level.zombie_vars["zombie_move_speed_multiplier_easy"];
+	else
+		level.zombie_move_speed = level.round_number * level.zombie_vars["zombie_move_speed_multiplier"];
+	level.zombie_vars["zombie_spawn_delay"] = 2;
+	for ( i = 1; i <= level.round_number; i++ )
+	{
+		timer = level.zombie_vars["zombie_spawn_delay"];
+
+		if ( timer > 0.08 )
+		{
+			level.zombie_vars["zombie_spawn_delay"] = timer * 0.95;
+			continue;
+		}
+
+		if ( timer < 0.08 )
+			level.zombie_vars["zombie_spawn_delay"] = 0.08;
+	}
+	maps\mp\zombies\_zm::ai_calculate_health( target_round );
+	zombies = get_round_enemy_array();
+
+	if ( isdefined( zombies ) )
+	{
+		for ( i = 0; i < zombies.size; i++ )
+			zombies[i] dodamage( zombies[i].health + 666, zombies[i].origin );
+	}
+	level thread maps\mp\zombies\_zm::round_think( 1 );
+}
+
 bot_unittest_func()
 {
 	self maps\mp\zombies\_zm::reset_rampage_bookmark_kill_times();
@@ -219,4 +253,14 @@ arg_generate_rand_powerup()
 		powerup = powerup_keys[ randomInt( powerup_keys.size ) ];
 	}
 	return powerup;	
+}
+
+arg_round_handler( arg )
+{
+	return is_natural_num( arg ) && int( arg ) <= 255;
+}
+
+arg_generate_rand_round()
+{
+	return randomint( 256 );
 }
