@@ -473,7 +473,7 @@ setclientfieldtoplayer_override( field_name, value )
 
 solo_revive_buy_trigger_move_trigger_override( revive_perk_trigger )
 {
-	self endon( "disconnect" )
+	self endon( "disconnect" );
 	revive_perk_trigger setinvisibletoplayer( self );
 
 	if ( level.solo_lives_given >= 3 )
