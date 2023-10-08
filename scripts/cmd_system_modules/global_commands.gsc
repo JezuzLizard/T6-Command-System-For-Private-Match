@@ -431,3 +431,38 @@ list_entities_throttled( channel, str, entities )
 		level com_printf( channel, "cmdinfo", "Use shift + ` and scroll to the bottom to view the full list", self );
 	}
 }
+
+cmd_teleportplayer_f( arg_list )
+{
+	result = [];
+	target1 = arg_list[ 0 ];
+	target2 = arg_list[ 1 ];
+	if ( target1 == self && target2 == self )
+	{
+		result[ "filter" ] = "cmderror";
+		result[ "message" ] = "You cannot teleport to yourself";
+		return result;
+	}
+	target1 setOrigin( target2.origin + anglesToForward( target2.angles ) * 64 + anglesToRight( target2.angles ) * 64 );
+	result[ "filter" ] = "cmdinfo";
+	result[ "message" ] = "Successfully teleported " + target1.name + " to " + target2.name + "'s position";
+	return result;	
+}
+
+//Unimplemented
+cmd_printentitiesinradius_f( arg_list )
+{
+	/*
+	result = [];
+	radius = 1000.0;
+	if ( isDefined( arg_list[ 0 ] ) )
+	{
+		radius = arg_list[ 0 ];
+	}
+	entity_search_name = "";
+	if ( isDefined( arg_list[ 1 ] ) )
+	{
+		entity_search_name = arg_list[ 1 ];
+	}
+	*/
+}

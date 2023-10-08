@@ -24,6 +24,17 @@ main()
 	{
 		wait 0.05;
 	}
+
+	register_modifiable_zombie_stat( "health_increase_flat", "wholenum", 100, ::zombie_recalculate_health );
+	register_modifiable_zombie_stat( "health_increase_multiplier", "wholefloat", 0.1, ::zombie_recalculate_health );
+	register_modifiable_zombie_stat( "health_start", "wholenum", 150, ::zombie_recalculate_health );
+	register_modifiable_zombie_stat( "spawn_delay", "wholefloat", 2.0, ::zombie_recalculate_spawn_delay );
+	register_modifiable_zombie_stat( "move_speed_multiplier", "wholenum", 8, ::zombie_recalculate_move_speed );
+	register_modifiable_zombie_stat( "move_speed_multiplier_easy", "wholenum", 2, ::zombie_recalculate_move_speed );
+	register_modifiable_zombie_stat( "max_ai", "wholenum", 24, ::zombie_recalculate_total );
+	register_modifiable_zombie_stat( "ai_per_player", "wholenum", 6, ::zombie_recalculate_total );
+	register_modifiable_zombie_stat( "ai_limit", "wholenum", 24 );
+
 	cmd_addcommand( "spectator", false, "spec", "spectator <name|guid|clientnum|self>", ::CMD_SPECTATOR_f, "cheat", 1, false );
 	cmd_addcommand( "togglerespawn", false, "togresp", "togglerespawn <name|guid|clientnum|self>", ::CMD_TOGGLERESPAWN_f, "cheat", 1, false );
 	cmd_addcommand( "killactors", false, "ka", "killactors", ::CMD_KILLACTORS_f, "cheat", 0, false );
@@ -45,6 +56,8 @@ main()
 	cmd_addcommand( "setround", false, "sr", "setround <round_number>", ::cmd_setround_f, "cheat", 1, false );
 	cmd_addcommand( "nextround", false, "nr", "nextround", ::cmd_nextround_f, "cheat", 0, false );
 	cmd_addcommand( "prevround", false, undefined, "prevround", ::cmd_prevround_f, "cheat", 0, false );
+	cmd_addcommand( "setglobalzombiestat", false, undefined, "setglobalzombiestat <statname> <value>", ::cmd_setglobalzombiestat_f, "cheat", 2, false );
+	cmd_addcommand( "listglobalzombiestats", false, undefined, "listglobalzombiestats", ::cmd_listglobalzombiestats_f, "cheat", 0, false );
 
 	cmd_register_arg_types_for_cmd( "spectator", "player" );
 	cmd_register_arg_types_for_cmd( "togglerespawn", "player" );
@@ -732,4 +745,116 @@ cmd_prevround_f( arg_list )
 	result[ "filter" ] = "cmdinfo";
 	result[ "message" ] = "Round set to " + level.round_number;	
 	return result;
+}
+
+cmd_setglobalzombiestat_f( arg_list )
+{
+	result = [];
+	stat_name = arg_list[ 0 ];
+	stat = level.tcs_modifiable_zombie_stats[ stat_name ];
+	if ( !isDefined( stat ) )
+	{
+		result[ "filter" ] = "cmderror";
+		result[ "message" ] = "1Invalid zombie stat " + stat_name + ", use listglobalzombiestats to see modifiable stats";
+		return result;
+	}
+
+	value = arg_list[ 1 ];
+	
+	if ( value == "reset" )
+	{
+		if ( !set_global_zombie_stat( stat, stat_name, stat.reset_value ) )
+		{
+			result[ "filter" ] = "cmderror";
+			result[ "message" ] = "2Invalid zombie stat " + stat_name + " , use listglobalzombiestats to see modifiable stats";
+			return result;
+		}
+		result[ "filter" ] = "cmdinfo";
+		result[ "message" ] = "Successfully reset " + stat_name + " to its original value";
+		return result;
+	}
+
+	if ( isDefined( level.tcs_arg_type_handlers[ stat.type ] ) && self [[ level.tcs_arg_type_handlers[ stat.type ].checker_func ]]( value ) )
+	{
+		casted_value = self [[ level.tcs_arg_type_handlers[ stat.type ].cast_func ]]( value );
+
+		if ( !set_global_zombie_stat( stat, stat_name, casted_value ) )
+		{
+			result[ "filter" ] = "cmderror";
+			result[ "message" ] = "3Invalid zombie stat " + stat_name + " , use listglobalzombiestats to see modifiable stats";
+			return result;
+		}
+
+		result[ "filter" ] = "cmdinfo";
+		result[ "message" ] = "Successfully set " + stat_name + " to " + value;
+		return result;
+	}
+
+	result[ "filter" ] = "cmderror";
+	result[ "message" ] = "Expected wholenum or wholefloat, got: " + value;
+	return result;
+}
+
+set_global_zombie_stat( stat, stat_name, stat_value )
+{
+	if ( isDefined( level.zombie_vars[ "zombie_" + stat_name ] ) )
+	{
+		level.tcs_modifiable_zombie_stats[ stat_name ].current_value = stat_value;
+		level.zombie_vars[ "zombie_" + stat_name ] = stat_value;
+		level [[ stat.recalculate_func ]]( stat_name, stat_value );
+		return true;
+	}
+	switch ( stat_name )
+	{
+		case "ai_limit":
+			level.tcs_modifiable_zombie_stats[ stat_name ].current_value = stat_value;
+			level.zombie_ai_limit = stat_value;
+			return true;
+		default:
+			return false;
+	}
+}
+
+	level.tcs_modifiable_zombie_stats[ statname ] = spawnStruct();
+	level.tcs_modifiable_zombie_stats[ statname ].type = value_type;
+	level.tcs_modifiable_zombie_stats[ statname ].current_value = current_value;
+	level.tcs_modifiable_zombie_stats[ statname ].reset_value = reset_value;
+	level.tcs_modifiable_zombie_stats[ statname ].recalculate_func = recalculate_func;
+	register_modifiable_zombie_stat( "health_increase_flat", "wholenum", 100 );
+	register_modifiable_zombie_stat( "health_increase_multiplier", "wholefloat", 0.1 );
+	register_modifiable_zombie_stat( "health_start", "wholenum", 150 );
+	register_modifiable_zombie_stat( "spawn_delay", "wholefloat", 2.0 );
+	register_modifiable_zombie_stat( "move_speed_multiplier", "wholenum", 8 );
+	register_modifiable_zombie_stat( "move_speed_multiplier_easy", "wholenum", 2 );
+	register_modifiable_zombie_stat( "max_ai", "wholenum", 24 );
+	register_modifiable_zombie_stat( "ai_per_player", "wholenum", 6 );
+	register_modifiable_zombie_stat( "ai_limit", "wholenum", 24 );
+
+cmd_listglobalzombiestats_f( arg_list )
+{
+	result = [];
+	channel = self com_get_cmd_feedback_channel();
+	self thread list_zombie_stats_throttled( channel );
+	return result;
+}
+
+list_zombie_stats_throttled( channel )
+{
+	self notify( "listing_zombie_stats" );
+	self endon( "listing_zombie_stats" );
+	stat_names = getArrayKeys( level.tcs_modifiable_zombie_stats );
+	for ( i = 0; i < stat_names.size; i++ )
+	{
+		cur_value = level.tcs_modifiable_zombie_stats[ stat_names[ i ] ].current_value;
+		reset_value = level.tcs_modifiable_zombie_stats[ stat_names[ i ] ].reset_value;
+
+		message = stat_names[ i ] + " current: " +  cur_value + " default: " + reset_value;
+
+		level com_printf( channel, "notitle", message, self );
+		wait 0.1;
+	}
+	if ( !is_true( self.is_server ) )
+	{
+		level com_printf( channel, "cmdinfo", "Use shift + ` and scroll to the bottom to view the full list", self );
+	}	
 }

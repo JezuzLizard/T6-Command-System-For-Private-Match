@@ -357,4 +357,5 @@ add_unittest_cmd_exclusions()
 	cmd_add_unittest_exclusion( "perklist" );
 	cmd_add_unittest_exclusion( "cvar" );
 	cmd_add_unittest_exclusion( "permaperk" );
+	cmd_add_unittest_exclusion( "setglobalzombiestat" );
 }

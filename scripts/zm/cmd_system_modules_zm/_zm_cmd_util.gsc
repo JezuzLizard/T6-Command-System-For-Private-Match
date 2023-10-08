@@ -186,6 +186,99 @@ bot_unittest_func()
 	self maps\mp\zombies\_zm::reset_rampage_bookmark_kill_times();
 }
 
+register_modifiable_zombie_stat( stat_name, value_type, current_value, reset_value, recalculate_func )
+{
+	if ( !isDefined( level.tcs_modifiable_zombie_stats ) )
+	{
+		level.tcs_modifiable_zombie_stats = [];
+	}
+
+	level.tcs_modifiable_zombie_stats[ stat_name ] = spawnStruct();
+	level.tcs_modifiable_zombie_stats[ stat_name ].type = value_type;
+	level.tcs_modifiable_zombie_stats[ stat_name ].current_value = reset_value;
+	level.tcs_modifiable_zombie_stats[ stat_name ].reset_value = reset_value;
+	level.tcs_modifiable_zombie_stats[ stat_name ].recalculate_func = recalculate_func;
+}
+
+zombie_recalculate_health( stat_name, new_value )
+{
+	level.zombie_health = level.zombie_vars["zombie_health_start"];
+
+	for ( i = 2; i <= round_number; i++ )
+	{
+		if ( i >= 10 )
+		{
+			old_health = level.zombie_health;
+			level.zombie_health += int( level.zombie_health * level.zombie_vars["zombie_health_increase_multiplier"] );
+
+			if ( level.zombie_health < old_health )
+			{
+				level.zombie_health = old_health;
+				return;
+			}
+		}
+		else
+			level.zombie_health = int( level.zombie_health + level.zombie_vars["zombie_health_increase"] );
+	}
+}
+
+zombie_recalculate_spawn_delay( stat_name, new_value )
+{
+	if ( new_value != 2 )
+	{
+		return;
+	}
+	for ( i = 1; i <= level.round_number; i++ )
+	{
+		timer = level.zombie_vars["zombie_spawn_delay"];
+
+		if ( timer > 0.08 )
+		{
+			level.zombie_vars["zombie_spawn_delay"] = timer * 0.95;
+			continue;
+		}
+
+		if ( timer < 0.08 )
+			level.zombie_vars["zombie_spawn_delay"] = 0.08;
+	}	
+}
+
+zombie_recalculate_move_speed( stat_name, new_value )
+{
+	if ( level.gamedifficulty == 0 )
+		level.zombie_move_speed = level.round_number * level.zombie_vars["zombie_move_speed_multiplier_easy"];
+	else
+		level.zombie_move_speed = level.round_number * level.zombie_vars["zombie_move_speed_multiplier"];
+}
+
+zombie_recalculate_total( stat_name, new_value )
+{
+	max = level.zombie_vars["zombie_max_ai"];
+	multiplier = level.round_number / 5;
+
+	if ( multiplier < 1 )
+		multiplier = 1;
+
+	if ( level.round_number >= 10 )
+		multiplier *= ( level.round_number * 0.15 );
+
+	player_num = getPlayers().size;
+
+	if ( player_num == 1 )
+		max += int( 0.5 * level.zombie_vars["zombie_ai_per_player"] * multiplier );
+	else
+		max += int( ( player_num - 1 ) * level.zombie_vars["zombie_ai_per_player"] * multiplier );
+
+	if ( !isdefined( level.max_zombie_func ) )
+		level.max_zombie_func = ::default_max_zombie_func;
+
+	if ( !( isdefined( level.kill_counter_hud ) && level.zombie_total > 0 ) )
+	{
+		level.zombie_total = [[ level.max_zombie_func ]]( max );
+		level notify( "zombie_total_set" );
+	}	
+}
+
 arg_perk_handler( arg )
 {
 	perks = perk_list_zm();

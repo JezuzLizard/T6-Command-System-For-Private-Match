@@ -118,6 +118,8 @@ main()
 
 	cmd_addcommand( "dodamage", false, "dd", "dodamage <entitynum|classname|targetname|self> <damage> <origin> [entitynum|classname|targetname|self] [entitynum|classname|targetname|self] [hitloc] [MOD] [idflags] [weapon]", ::cmd_dodamage_f, "cheat", 3, false );
 
+	cmd_addcommand( "teleportplayer", false, "tp", "teleportplayer <name|guid|clientnum|self> <name|guid|clientnum>", ::cmd_teleportplayer_f, "cheat", 2, false );
+
 	cmd_register_arg_types_for_cmd( "givegod", "player" );
 	cmd_register_arg_types_for_cmd( "givenotarget", "player" );
 	cmd_register_arg_types_for_cmd( "giveinvisible", "player" );
@@ -126,9 +128,10 @@ main()
 	cmd_register_arg_types_for_cmd( "execonteam", "team cmdalias" );
 	cmd_register_arg_types_for_cmd( "playerlist", "team" );
 	cmd_register_arg_types_for_cmd( "help", "cmdalias" );
-	cmd_register_arg_types_for_cmd( "unittest", "int wholenum" );
+	cmd_register_arg_types_for_cmd( "unittest", "wholenum wholenum" );
 	cmd_register_arg_types_for_cmd( "testcmd", "cmdalias wholenum wholenum" );
 	cmd_register_arg_types_for_cmd( "dodamage", "entity float vector entity entity hitloc MOD idflags weapon" );
+	cmd_register_arg_types_for_cmd( "teleportplayer", "player player" );
 
 	cmd_addcommand( "togglehud", true, "toghud", "togglehud", ::CMD_TOGGLEHUD_f, "none", 0, false );
 	cmd_addcommand( "god", true, undefined, "god", ::CMD_GOD_f, "cheat", 0, true );
@@ -139,8 +142,10 @@ main()
 	cmd_addcommand( "bottomlessclip", true, "botclip bcl", "bottomlessclip", ::CMD_BOTTOMLESSCLIP_f, "cheat", 0, true );
 	cmd_addcommand( "teleport", true, "tele", "teleport <name|guid|clientnum>", ::CMD_TELEPORT_f, "cheat", 1, false );
 	cmd_addcommand( "cvar", true, "cv", "cvar <cvarname> <newval>", ::CMD_CVAR_f, "cheat", 2, false );
+	cmd_addcommand( "printentitiesinradius", true, "peir", "printentitiesinradius [radius=1000] [classname|targetname|script_noteworthy]", ::cmd_printentitiesinradius_f, "cheat", 0, false );
 
 	cmd_register_arg_types_for_cmd( "teleport", "player" );
+	cmd_register_arg_types_for_cmd( "printentitiesinradius", "float" );
 
 	cmd_register_arg_type_handlers( "player", ::arg_player_handler, ::arg_generate_rand_player, ::arg_cast_to_player, "not a valid player" );
 	//cmd_register_arg_type_handlers( "playernotself", ::arg_playernotself_handler, ::arg_generate_rand_playernotself, ::arg_cast_to_player, "not a valid player(cannot be self)" );

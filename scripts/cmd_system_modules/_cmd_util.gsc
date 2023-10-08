@@ -529,6 +529,11 @@ is_str_float( str )
 	return true;
 }
 
+is_whole_float( str )
+{
+	return ( is_str_float( str ) || is_str_int( str ) ) && float( str ) >= 0.0;
+}
+
 cast_str_to_vector( str )
 {
 	floats = strTok( str, "," );
@@ -1089,7 +1094,7 @@ arg_cast_to_float( arg )
 
 arg_wholefloat_handler( arg )
 {
-	return ( is_str_float( arg ) || is_str_int( arg ) ) && float( arg ) > 0.0;
+	return is_whole_float( arg );
 }
 
 arg_generate_rand_wholefloat()
