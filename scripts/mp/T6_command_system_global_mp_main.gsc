@@ -69,24 +69,30 @@ cmd_sicdogsonplayer_f( arg_list )
 	invisible = arg_list[ 2 ];
 
 	other_team = getOtherTeam( target.team );
+	channel = self com_get_cmd_feedback_channel();
 
 	if ( !isDefined( count ) )
 	{
 		count = 1;
 	}
 
+	if ( ( getFreeActorCount() - count ) < 0 )
+	{
+		level com_printf( channel, "cmderror", "Cannot spawn more than 32 dogs at once", self );
+		return;
+	}
 	for ( i = 0; i < count; i++ )
 	{
 		dog_manager_spawn_dog( target, other_team, invisible );
-		channel = self com_get_cmd_feedback_channel();
-		level com_printf( channel, "cmdinfo", "Spawned in " + count + " dogs to hunt " + target.name, self );
-		level com_printf( channel, "cmdinfo", "Use cmd removedogs to remove the dogs spawned with this cmd", self );
 	}
+	level com_printf( channel, "cmdinfo", "Spawned in " + count + " dogs to hunt " + target.name, self );
+	level com_printf( channel, "cmdinfo", "Use cmd removedogs to remove the dogs spawned with this cmd", self );
 }
 
 cmd_removedogs_f( arg_list )
 {
 	level notify( "remove_dogs" );
+	level com_printf( channel, "cmdinfo", "Removed all cmd spawned dogs", self );
 }
 
 wait_for_removal()

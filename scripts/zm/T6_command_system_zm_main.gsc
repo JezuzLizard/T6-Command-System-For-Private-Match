@@ -815,21 +815,6 @@ set_global_zombie_stat( stat, stat_name, stat_value )
 	}
 }
 
-	level.tcs_modifiable_zombie_stats[ statname ] = spawnStruct();
-	level.tcs_modifiable_zombie_stats[ statname ].type = value_type;
-	level.tcs_modifiable_zombie_stats[ statname ].current_value = current_value;
-	level.tcs_modifiable_zombie_stats[ statname ].reset_value = reset_value;
-	level.tcs_modifiable_zombie_stats[ statname ].recalculate_func = recalculate_func;
-	register_modifiable_zombie_stat( "health_increase_flat", "wholenum", 100 );
-	register_modifiable_zombie_stat( "health_increase_multiplier", "wholefloat", 0.1 );
-	register_modifiable_zombie_stat( "health_start", "wholenum", 150 );
-	register_modifiable_zombie_stat( "spawn_delay", "wholefloat", 2.0 );
-	register_modifiable_zombie_stat( "move_speed_multiplier", "wholenum", 8 );
-	register_modifiable_zombie_stat( "move_speed_multiplier_easy", "wholenum", 2 );
-	register_modifiable_zombie_stat( "max_ai", "wholenum", 24 );
-	register_modifiable_zombie_stat( "ai_per_player", "wholenum", 6 );
-	register_modifiable_zombie_stat( "ai_limit", "wholenum", 24 );
-
 cmd_listglobalzombiestats_f( arg_list )
 {
 	result = [];

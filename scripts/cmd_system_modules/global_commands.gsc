@@ -450,6 +450,14 @@ cmd_teleportplayer_f( arg_list )
 }
 
 //Unimplemented
+cmd_execonrandomplayers( arg_list )
+{
+	//count = arg_list[ 0 ];
+	//cmd = arg_list[ 1 ];
+	
+}
+
+//Unimplemented
 cmd_printentitiesinradius_f( arg_list )
 {
 	/*
