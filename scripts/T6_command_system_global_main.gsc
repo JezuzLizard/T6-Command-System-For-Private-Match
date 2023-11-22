@@ -1,4 +1,5 @@
 
+#include scripts\cmd_system_modules\_cmd_script;
 #include scripts\cmd_system_modules\_cmd_util;
 #include scripts\cmd_system_modules\_com;
 #include scripts\cmd_system_modules\_debug;
@@ -23,6 +24,7 @@ main()
 	level.tcs_use_silent_commands = getDvarIntDefault( "tcs_silent_cmds", 0 );
 	level.tcs_logprint_cmd_usage = getDvarIntDefault( "tcs_logprint_cmd_usage", 1 );
 	level.tcs_allow_hidden_commands = getDvarIntDefault( "tcs_allow_hidden_commands", 1 );
+	level.tcs_random_entity_token[ getDvarStringDefault( "tcs_random_entity_token", "*" ) ] = true;
 	level.CMD_POWER_NONE = 0;
 	level.CMD_POWER_USER = 1;
 	level.CMD_POWER_TRUSTED_USER = 20;
@@ -83,7 +85,8 @@ main()
 		}
 	}
 	// "\" is always useable by default
-	CMD_INIT_PERMS();
+	cmd_init_perms();
+	cmd_init_script();
 	level.tcs_add_command_func = ::cmd_addcommand;
 	level.tcs_set_command_power_func = ::cmd_setcommandpower;
 	level.tcs_remove_command = ::cmd_removecommand;
@@ -105,6 +108,7 @@ main()
 
 	cmd_addcommand( "execonallplayers", false, "execonall exall", "execonallplayers <cmdname> [cmdargs] ...", ::CMD_EXECONALLPLAYERS_f, "host", 1, false );
 	cmd_addcommand( "execonteam", false, "execteam exteam", "execonteam <team> <cmdname> [cmdargs] ...", ::CMD_EXECONTEAM_f, "host", 2, false );
+	cmd_addcommand( "execonplayer", false, "execon", "execonplayer <name|guid|clientnum|self> <cmdname> [cmdargs] ...", ::cmd_execonplayer_f, "host", 2, false );
 
 	cmd_addcommand( "cmdlist", false, "cl", "cmdlist", ::CMD_CMDLIST_f, "none", 0, false );
 	cmd_addcommand( "playerlist", false, "plist", "playerlist [team]", ::CMD_PLAYERLIST_f, "none", 0, false );
@@ -171,9 +175,9 @@ main()
 	
 	if ( !isDedicated() )
 	{
-		if ( getDvarInt( "g_logsync" ) != 2 )
+		if ( getDvarInt( "g_logsync" ) != 1 )
 		{
-			setDvar( "g_logsync", 2 );
+			setDvar( "g_logsync", 1 );
 		}
 		if ( getDvar( "g_log" ) == "" )
 		{
@@ -193,6 +197,7 @@ main()
 	level thread scr_dvar_command_watcher();
 	level thread tcs_on_connect();
 	level thread check_for_command_alias_collisions();
+	level thread run_autoexec_commands();
 	level.command_init_done = true;
 }
 
@@ -322,6 +327,8 @@ tcs_on_connect()
 	{
 		level waittill( "connected", player );
 		player on_connect_internal();
+		player thread on_player_spawned();
+		player run_connected_autoexec_commands();
 	}
 }
 
@@ -365,6 +372,7 @@ on_connect_internal()
 				self.cmdpower = entry.cmdpower;
 				self.tcs_rank = entry.rank;
 				found_entry = true;
+				break;
 			}
 		}
 	}
@@ -374,4 +382,14 @@ on_connect_internal()
 		self.tcs_rank = getDvarStringDefault( "tcs_default_rank", level.TCS_RANK_USER );
 	}
 	self._connected = true;
+}
+
+on_player_spawned()
+{
+	self endon( "disconnect" );
+	while ( true )
+	{
+		self waittill( "spawned_player" );
+		self run_spawned_player_autoexec_commands();
+	}
 }

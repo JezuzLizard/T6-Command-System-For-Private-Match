@@ -196,6 +196,34 @@ CMD_EXECONTEAM_f( arg_list )
 	return result;	
 }
 
+cmd_execonplayer_f( arg_list )
+{
+	result = [];
+	target = arg_list[ 0 ];
+	cmd = arg_list[ 1 ];
+	cmd_to_execute = get_cmd_from_alias( cmd );
+	if ( !level.tcs_commands[ cmd_to_execute ].is_clientcmd )
+	{
+		result[ "filter" ] = "cmderror";
+		result[ "message" ] = "You cannot call a server cmd with execonplayer";
+		return result;
+	}
+	var_args = [];
+	for ( i = 2; i < arg_list.size; i++ )
+	{
+		var_args[ i - 2 ] = arg_list[ i ];
+	}
+	if ( !self test_cmd_is_valid( cmd_to_execute, var_args ) )
+	{
+		return result;
+	}
+
+	target thread cmd_execute_internal( cmd_to_execute, var_args, false, false );
+	result[ "filter" ] = "cmdinfo";
+	result[ "message" ] = "Executed " + cmd_to_execute + " on player " + target.name;
+	return result;	
+}
+
 CMD_PLAYERLIST_f( arg_list )
 {
 	result = [];

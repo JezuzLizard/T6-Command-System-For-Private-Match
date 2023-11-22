@@ -252,6 +252,13 @@ cast_str_to_player( clientnum_guid_or_name, noprint = false )
 		}
 		return self;
 	}
+	else if ( level.tcs_random_entity_token[ clientnum_guid_or_name[ 0 ] ] )
+	{
+		players = level.players;
+		player = players[ randomInt( players.size ) ];
+
+		return player;
+	}
 	is_whole_number = is_natural_num( clientnum_guid_or_name );
 	client_num = int( clientnum_guid_or_name );
 	guid = int( clientnum_guid_or_name );
@@ -372,6 +379,11 @@ cast_str_to_entity( entnum_targetname_or_self, noprint = false )
 		level com_printf( channel, "cmderror", "No entities currently in the server", self );
 		return undefined;
 	}
+	if ( level.tcs_random_entity_token[ entnum_targetname_or_self[ 0 ] ] )
+	{
+		ent = entities[ randomInt( entities.size ) ];
+		return ent;
+	}
 	ent = undefined;
 	is_whole_number = is_natural_num( entnum_targetname_or_self );
 	entnum = int( entnum_targetname_or_self );
@@ -451,6 +463,11 @@ is_command_token( char )
 		return true;
 	}
 	return false;
+}
+
+is_str_str( str )
+{
+	return !is_str_int( str ) && !is_str_float( str );
 }
 
 is_str_int( str )
@@ -917,12 +934,15 @@ get_cmd_from_alias( alias )
 	return "";
 }
 
-test_cmd_is_valid( cmdname, arg_list )
+test_cmd_is_valid( cmdname, arg_list, no_print = false )
 {
 	channel = self com_get_cmd_feedback_channel();
 	if ( arg_list.size < level.tcs_commands[ cmdname ].minargs )
 	{
-		level com_printf( channel, "cmderror", "Usage: " + level.tcs_commands[ cmdname ].usage, self );
+		if ( !no_print )
+		{
+			level com_printf( channel, "cmderror", "Usage: " + level.tcs_commands[ cmdname ].usage, self );
+		}
 		return false;
 	}
 	if ( isDefined( level.tcs_commands[ cmdname ].argtypes ) && arg_list.size > 0 )
@@ -935,7 +955,10 @@ test_cmd_is_valid( cmdname, arg_list )
 				if ( !self [[ level.tcs_arg_type_handlers[ argtypes[ i ] ].checker_func ]]( arg_list[ i ] ) )
 				{
 					arg_num = i;
-					level com_printf( channel, "cmderror", "Arg " + arg_num + " " + arg_list[ i ] + " is " + level.tcs_arg_type_handlers[ argtypes[ i ] ].error_message, self );
+					if ( !no_print )
+					{
+						level com_printf( channel, "cmderror", "Arg " + arg_num + " " + arg_list[ i ] + " is " + level.tcs_arg_type_handlers[ argtypes[ i ] ].error_message, self );
+					}
 					return false;
 				}
 			}
@@ -1020,11 +1043,11 @@ arg_generate_rand_player()
 {
 	if ( is_true( self.is_server ) )
 	{
-		randomint = randomInt( 3 );
+		randomint = randomInt( 4 );
 	}
 	else 
 	{
-		randomint = randomInt( 4 );
+		randomint = randomInt( 5 );
 	}
 	players = getPlayers();
 
@@ -1043,6 +1066,8 @@ arg_generate_rand_player()
 		case 2:
 			return random_player.name;
 		case 3:
+			return "*";
+		case 4:
 			return "self";
 	}
 }

@@ -18,6 +18,7 @@ com_init()
 	com_addfilter( "permserror", 1 ); 
 	com_addfilter( "debug", 0 );
 	com_addfilter( "notitle", 1 );
+	com_addfilter( "autoexec", 1 );
 
 	com_addchannel( "con", ::com_print );
 	com_addchannel( "g_log", ::com_logprint );
@@ -63,9 +64,13 @@ com_is_channel_active( channel )
 
 com_caps_msg_title( channel, filter )
 {
-	if ( filter == "notitle" || channel == "con" )
+	if ( filter == "notitle" )
 	{
 		return "";
+	}
+	if ( channel == "con" )
+	{
+		return "TCS:";
 	}
 	if ( channel == "g_log" )
 	{

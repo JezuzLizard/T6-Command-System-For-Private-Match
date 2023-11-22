@@ -318,6 +318,7 @@ activate_specific_cmd()
 	self endon( "disconnect" );
 	while ( true )
 	{
+		waittillframeend;
 		self construct_chat_message_for_testcmd( self.specific_cmd );
 		wait 0.05;
 	}

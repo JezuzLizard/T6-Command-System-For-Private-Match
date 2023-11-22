@@ -131,7 +131,7 @@ weapon_give_custom( weapon, is_upgrade, should_switch_weapon )
 		self giveweapon( weapon );
 	else
 		self giveweapon( weapon, 0, self get_pack_a_punch_weapon_options( weapon ) );
-	if ( is_true( self.pers["isBot"] ) )
+	if ( self isTestClient() )
 	{
 		self setSpawnWeapon( weapon );
 	}
@@ -204,7 +204,7 @@ zombie_recalculate_health( stat_name, new_value )
 {
 	level.zombie_health = level.zombie_vars["zombie_health_start"];
 
-	for ( i = 2; i <= round_number; i++ )
+	for ( i = 2; i <= level.round_number; i++ )
 	{
 		if ( i >= 10 )
 		{
