@@ -8,13 +8,13 @@
 
 main()
 {
-	while ( !is_true( level.command_init_done ) )
+	while ( !is_true( level.cmd_init_done ) )
 	{
 		wait 0.05;
 	}
 
-	cmd_addcommand( "sicdogsonplayer", false, "sicdogsonplayer", "sicdogsonplayer <name|guid|clientnum|self> [count] [invisible]", ::cmd_sicdogsonplayer_f, "cheat", 1, false );
-	cmd_addcommand( "removedogs", false, "removedogs", "removedogs", ::cmd_removedogs_f, "cheat", 0, false );
+	cmd_add( "sicdogsonplayer", false, "sicdogsonplayer", "sicdogsonplayer <name|guid|clientnum|self> [count] [invisible]", ::cmd_sicdogsonplayer_f, "cheat", 1, false );
+	cmd_add( "removedogs", false, "removedogs", "removedogs", ::cmd_removedogs_f, "cheat", 0, false );
 
 	cmd_register_arg_types_for_cmd( "sicdogsonplayer", "player wholenum wholenum" );
 
@@ -23,7 +23,7 @@ main()
 	level thread on_unittest();
 
 	level thread on_player_connect();
-	level.command_init_mp_done = true;
+	level.cmd_init_mp_done = true;
 }
 
 on_unittest()
@@ -49,7 +49,7 @@ on_player_connect()
 	while ( true )
 	{
 		level waittill( "connected", player );
-		if ( is_true( level.doing_command_system_unittest ) && is_true( player.pers[ "isBot" ] ) )
+		if ( is_true( level.doing_cmd_system_unittest ) && is_true( player.pers[ "isBot" ] ) )
 		{
 			player thread wait_spawn_bot_think();
 		}
@@ -62,11 +62,11 @@ wait_spawn_bot_think()
 	self thread maps\mp\bots\_bot::bot_spawn_think( random( level.teams ) );
 }
 
-cmd_sicdogsonplayer_f( arg_list )
+cmd_sicdogsonplayer_f( args )
 {
-	target = arg_list[ 0 ];
-	count = arg_list[ 1 ];
-	invisible = arg_list[ 2 ];
+	target = args[ 0 ];
+	count = args[ 1 ];
+	invisible = args[ 2 ];
 
 	other_team = getOtherTeam( target.team );
 	channel = self com_get_cmd_feedback_channel();
@@ -89,9 +89,10 @@ cmd_sicdogsonplayer_f( arg_list )
 	level com_printf( channel, "cmdinfo", "Use cmd removedogs to remove the dogs spawned with this cmd", self );
 }
 
-cmd_removedogs_f( arg_list )
+cmd_removedogs_f( args )
 {
 	level notify( "remove_dogs" );
+	channel = self com_get_cmd_feedback_channel();
 	level com_printf( channel, "cmdinfo", "Removed all cmd spawned dogs", self );
 }
 

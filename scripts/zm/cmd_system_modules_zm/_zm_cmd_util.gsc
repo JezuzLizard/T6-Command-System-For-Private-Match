@@ -204,7 +204,7 @@ zombie_recalculate_health( stat_name, new_value )
 {
 	level.zombie_health = level.zombie_vars["zombie_health_start"];
 
-	for ( i = 2; i <= round_number; i++ )
+	for ( i = 2; i <= level.round_number; i++ )
 	{
 		if ( i >= 10 )
 		{

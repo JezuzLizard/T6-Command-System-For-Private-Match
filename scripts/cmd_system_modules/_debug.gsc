@@ -3,23 +3,23 @@
 #include scripts\cmd_system_modules\_cmd_util;
 #include scripts\cmd_system_modules\_com;
 
-cmd_unittest_validargs_f( arg_list )
+cmd_unittest_validargs_f( args )
 {
 	result = [];
-	level.doing_command_system_unittest = !is_true( level.doing_command_system_unittest );
-	if ( level.doing_command_system_unittest )
+	level.doing_cmd_system_unittest = !is_true( level.doing_cmd_system_unittest );
+	if ( level.doing_cmd_system_unittest )
 	{
-		if ( !is_true( level.command_system_unittest_first_run ) )
+		if ( !is_true( level.cmd_system_unittest_first_run ) )
 		{
-			level.command_system_unittest_first_run = true;
+			level.cmd_system_unittest_first_run = true;
 			add_unittest_cmd_exclusions();
 		}
-		required_bots = isDefined( arg_list[ 0 ] ) ? arg_list[ 0 ] : 1;
-		if ( isDefined( arg_list[ 1 ] ) )
-			level thread end_unittest_after_time( arg_list[ 1 ] );
+		required_bots = isDefined( args[ 0 ] ) ? args[ 0 ] : 1;
+		if ( isDefined( args[ 1 ] ) )
+			level thread end_unittest_after_time( args[ 1 ] );
 		setDvar( "tcs_unittest", required_bots );
-		level.unittest_total_commands_used = 0;
-		level thread set_command_rate();
+		level.unittest_total_cmds_used = 0;
+		level thread set_cmd_rate();
 		level thread do_unit_test();
 		level notify( "unittest_start" );
 	}
@@ -28,22 +28,22 @@ cmd_unittest_validargs_f( arg_list )
 		setDvar( "tcs_unittest", 0 );
 	}
 	result[ "filter" ] = "cmdinfo";
-	result[ "message" ] = "Command system unit test activated";
+	result[ "message" ] = "Cmd system unit test activated";
 	return result;
 }
 
-set_command_rate()
+set_cmd_rate()
 {
-	level.unittest_command_rate = 0.05;
+	level.unittest_cmd_rate = 0.05;
 	while ( true )
 	{
 		if ( !sessionModeIsZombiesGame() && level.players.size > 12 )
 		{
-			level.unittest_command_rate = 0.1;
+			level.unittest_cmd_rate = 0.1;
 		}
 		else 
 		{
-			level.unittest_command_rate = 0.05;
+			level.unittest_cmd_rate = 0.05;
 		}
 		wait 1;
 	}
@@ -73,10 +73,10 @@ do_unit_test()
 			kick( level.players[ i ] getEntityNumber() );
 		}
 	}
-	level.doing_command_system_unittest = false;
+	level.doing_cmd_system_unittest = false;
 }
 
-manage_unittest_bots( required_bots, cmdname )
+manage_unittest_bots( required_bots, cmd )
 {
 	bot_count = 0;
 	for ( i = 0; i < level.players.size; i++ )
@@ -99,13 +99,13 @@ manage_unittest_bots( required_bots, cmdname )
 			return;
 		}
 		bot.pers[ "isBot" ] = true;
-		if ( isDefined( level.bot_command_system_unittest_func ) )
+		if ( isDefined( level.bot_cmd_system_unittest_func ) )
 		{
-			bot thread [[ level.bot_command_system_unittest_func ]]();
+			bot thread [[ level.bot_cmd_system_unittest_func ]]();
 		}
-		if ( isDefined( cmdname ) )
+		if ( isDefined( cmd ) )
 		{
-			bot.specific_cmd = cmdname;
+			bot.specific_cmd = cmd;
 		}
 	}
 }
@@ -126,7 +126,7 @@ activate_random_cmds()
 	while ( true )
 	{
 		self construct_chat_message_for_unittest();
-		wait level.unittest_command_rate;
+		wait level.unittest_cmd_rate;
 	}
 }
 
@@ -134,54 +134,54 @@ construct_chat_message_for_unittest()
 {
 	cmdalias = arg_generate_rand_cmdalias();
 	//logprint( "random cmdalias: " + cmdalias + "\n" );
-	cmdname = get_cmd_from_alias( cmdalias );
-	if ( cmdname == "" )
+	cmd = get_cmd_from_alias( cmdalias );
+	if ( cmd == "" )
 	{
 		return;
 	}
-	//logprint( "random cmdname: " + cmdname + "\n" );
-	cmdargs = self create_random_valid_args2( cmdname );
+	//logprint( "random cmd: " + cmd + "\n" );
+	cmdargs = self create_random_valid_args2( cmd );
 	if ( cmdargs.size == 0 )
 	{
-		message = cmdname;
+		message = cmd;
 	}
 	else 
 	{
 		arg_str = repackage_args( cmdargs );
-		message = cmdname + " " + arg_str;
+		message = cmd + " " + arg_str;
 	}
-	cmd_log = self.name + " executed " + message + " count " + level.unittest_total_commands_used;
+	cmd_log = self.name + " executed " + message + " count " + level.unittest_total_cmds_used;
 	level com_printf( "con", "notitle", cmd_log );
 	level com_printf( "g_log", "cmdinfo", cmd_log );
 	level notify( "say", message, self, true );
-	level.unittest_total_commands_used++;
+	level.unittest_total_cmds_used++;
 }
 
-get_cmdargs_types( cmdname )
+get_cmdargs_types( cmd )
 {
-	return level.tcs_commands[ cmdname ].argtypes;
+	return level.tcs_cmds[ cmd ].arg_types;
 }
 
-create_random_valid_args2( cmdname )
+create_random_valid_args2( cmd )
 {
-	//message = "cmdname: " + cmdname;
+	//message = "cmd: " + cmd;
 	//logprint( message + "\n" );
 	args = [];
-	types = get_cmdargs_types( cmdname );
+	types = get_cmdargs_types( cmd );
 
 	if ( !isDefined( types ) )
 	{
 		return args;
 	}
-	minargs = level.tcs_commands[ cmdname ].minargs;
-	//message = "minargs: " + minargs;
+	min_args = level.tcs_cmds[ cmd ].min_args;
+	//message = "min_args: " + min_args;
 	//logprint( message + "\n" );
-	for ( i = 0; i < minargs; i++ )
+	for ( i = 0; i < min_args; i++ )
 	{
 		args[ i ] = self generate_args_from_type( types[ i ] );
 		//message1 = "types defined: " + isDefined( types[ i ] ) + " args defined: " + isDefined( args[ i ] );
 		//logprint( message1 + "\n" );
-		//message = "minargs: " + minargs +  " types[" + i + "]: " + types[ i ] + " args[" + i + "]: " + args[ i ];
+		//message = "min_args: " + min_args +  " types[" + i + "]: " + types[ i ] + " args[" + i + "]: " + args[ i ];
 		//logprint( message + "\n" );
 	}
 
@@ -189,7 +189,7 @@ create_random_valid_args2( cmdname )
 
 	//message = "max_optional_args: " + max_optional_args;
 	//logprint( message + "\n" );
-	for ( i = minargs; i < max_optional_args; i++ )
+	for ( i = min_args; i < max_optional_args; i++ )
 	{
 		args[ i ] = self generate_args_from_type( types[ i ] );
 		//message = "max_optional_args: " + max_optional_args + " types[" + i + "]: " + types[ i ] + " args[" + i + "]: " + args[ i ];
@@ -208,7 +208,7 @@ generate_args_from_type( type )
 	return "";
 }
 
-cmd_unittest_invalidargs_f( arg_list )
+cmd_unittest_invalidargs_f( args )
 {
 	result = [];
 	return result;
@@ -226,15 +226,15 @@ end_unittest_after_time( time_in_minutes )
 	setDvar( "tcs_unittest", 0 );
 }
 
-cmd_testcmd_f( arg_list )
+cmd_testcmd_f( args )
 {
 	result = [];
-	level.doing_command_system_unittest = !is_true( level.doing_command_system_unittest );
-	level.doing_command_system_testcmd = !is_true( level.doing_command_system_testcmd );
-	if ( level.doing_command_system_testcmd )
+	level.doing_cmd_system_unittest = !is_true( level.doing_cmd_system_unittest );
+	level.doing_cmd_system_testcmd = !is_true( level.doing_cmd_system_testcmd );
+	if ( level.doing_cmd_system_testcmd )
 	{
-		level.unittest_total_commands_used = 0;
-		level thread test_cmd_for_time( arg_list[ 0 ], arg_list[ 1 ], arg_list[ 2 ] );
+		level.unittest_total_cmds_used = 0;
+		level thread test_cmd_for_time( args[ 0 ], args[ 1 ], args[ 2 ] );
 		level thread test_cmd_kick_bots_at_end();
 	}
 	else 
@@ -242,10 +242,10 @@ cmd_testcmd_f( arg_list )
 		level notify( "stop_testcmd" );
 	}
 	result[ "filter" ] = "cmdinfo";
-	result[ "message" ] = "Testcmd " + cast_bool_to_str( level.doing_command_system_testcmd, "activated deactivated" ) + " for cmd " + arg_list[ 0 ];
+	result[ "message" ] = "Testcmd " + cast_bool_to_str( level.doing_cmd_system_testcmd, "activated deactivated" ) + " for cmd " + args[ 0 ];
 }
 
-test_cmd_for_time( cmdname, threadcount = 1, duration )
+test_cmd_for_time( cmd, threadcount = 1, duration )
 {
 	if ( isDefined( duration ) )
 	{
@@ -258,17 +258,17 @@ test_cmd_for_time( cmdname, threadcount = 1, duration )
 	}
 	for ( i = 0; i < threadcount; i++ )
 	{
-		if ( level.tcs_commands[ cmdname ].is_clientcmd )
+		if ( level.tcs_cmds[ cmd ].is_clientcmd )
 		{
 			if ( getPlayers().size < getDvarInt( "sv_maxclients" ) )
 			{
 				break;
 			}
-			manage_unittest_bots( 1, cmdname );
+			manage_unittest_bots( 1, cmd );
 		}
 		else 
 		{
-			level thread testcmd_thread_server( cmdname );
+			level thread testcmd_thread_server( cmd );
 		}
 	}
 }
@@ -283,33 +283,33 @@ end_testcmd_after_time( time_in_minutes )
 	level notify( "stop_testcmd" );
 }
 
-testcmd_thread_server( cmdname )
+testcmd_thread_server( cmd )
 {
 	level endon( "stop_testcmd" );
 	while ( true )
 	{
-		level.server construct_chat_message_for_testcmd( cmdname );
+		level.server construct_chat_message_for_testcmd( cmd );
 		wait 0.05;
 	}
 }
 
-construct_chat_message_for_testcmd( cmdname )
+construct_chat_message_for_testcmd( cmd )
 {
-	cmdargs = self create_random_valid_args2( cmdname );
+	cmdargs = self create_random_valid_args2( cmd );
 	if ( cmdargs.size == 0 )
 	{
-		message = cmdname;
+		message = cmd;
 	}
 	else 
 	{
 		arg_str = repackage_args( cmdargs );
-		message = cmdname + " " + arg_str;
+		message = cmd + " " + arg_str;
 	}
-	cmd_log = self.name + " executed " + message + " count " + level.unittest_total_commands_used;
+	cmd_log = self.name + " executed " + message + " count " + level.unittest_total_cmds_used;
 	level com_printf( "con", "notitle", cmd_log );
 	level com_printf( "g_log", "cmdinfo", cmd_log );
 	level notify( "say", message, self, true );
-	level.unittest_total_commands_used++;
+	level.unittest_total_cmds_used++;
 }
 
 activate_specific_cmd()

@@ -112,7 +112,7 @@ wait_network_frame_override()
 
 check_end_game_intermission_delay_override()
 {
-	while ( is_true( level.doing_command_system_unittest ) || isDefined( level.custom_unittest_end_game_delay_func ) && [[ level.custom_unittest_end_game_delay_func ]]() )
+	while ( is_true( level.doing_cmd_system_unittest ) || isDefined( level.custom_unittest_end_game_delay_func ) && [[ level.custom_unittest_end_game_delay_func ]]() )
 	{
 		wait 1;
 	}
@@ -125,7 +125,7 @@ never_end_game()
 
 no_player_damage_during_unittest( einflictor, eattacker, idamage, idflags, smeansofdeath, sweapon, vpoint, vdir, shitloc, psoffsettime )
 {
-	if ( is_true( level.doing_command_system_unittest ) )
+	if ( is_true( level.doing_cmd_system_unittest ) )
 	{
 		return 0;
 	}
@@ -337,7 +337,7 @@ player_damage_override( einflictor, eattacker, idamage, idflags, smeansofdeath, 
 		}
 	}
 
-	if ( is_true( level.doing_command_system_unittest ) )
+	if ( is_true( level.doing_cmd_system_unittest ) )
 	{
 		return finaldamage;
 	}

@@ -97,7 +97,7 @@ When writing a function for the command system to execute all it requires is to 
 The result is the message and outcome of the command function. 
 Example in scripts\cmd_system_modules\global_client_commands.gsc
 ```
-CMD_GOD_f( arg_list )
+cmd_god_f( arg_list )
 {
 	result = [];
 	on_off = cast_bool_to_str( !is_true( self.tcs_is_invulnerable ), "on off" );

@@ -2,7 +2,7 @@
 #include maps\mp\_utility;
 #include scripts\cmd_system_modules\_cmd_util;
 
-CMD_TOGGLEHUD_f( arg_list )
+cmd_togglehud_f( args )
 {
 	result = [];
 	on_off = cast_bool_to_str( is_true( self.tcs_hud_toggled ), "on off" );
@@ -21,7 +21,7 @@ CMD_TOGGLEHUD_f( arg_list )
 	return result;
 }
 
-CMD_GOD_f( arg_list )
+cmd_god_f( args )
 {
 	result = [];
 	on_off = cast_bool_to_str( !is_true( self.tcs_is_invulnerable ), "on off" );
@@ -40,7 +40,7 @@ CMD_GOD_f( arg_list )
 	return result;
 }
 
-CMD_NOTARGET_f( arg_list )
+cmd_notarget_f( args )
 {
 	result = [];
 	on_off = cast_bool_to_str( !is_true( self.ignoreme ), "on off" );
@@ -57,7 +57,7 @@ CMD_NOTARGET_f( arg_list )
 	return result;
 }
 
-CMD_INVISIBLE_f( arg_list )
+cmd_invisible_f( args )
 {
 	result = [];
 	on_off = cast_bool_to_str( !is_true( self.tcs_is_invisible ), "on off" );
@@ -76,7 +76,7 @@ CMD_INVISIBLE_f( arg_list )
 	return result;
 }
 
-CMD_PRINTORIGIN_f( arg_list )
+cmd_printorigin_f( args )
 {
 	result = [];
 	result[ "filter" ] = "cmdinfo";
@@ -84,7 +84,7 @@ CMD_PRINTORIGIN_f( arg_list )
 	return result;
 }
 
-CMD_PRINTANGLES_f( arg_list )
+cmd_printangles_f( args )
 {
 	result = [];
 	result[ "filter" ] = "cmdinfo";
@@ -92,7 +92,7 @@ CMD_PRINTANGLES_f( arg_list )
 	return result;
 }
 
-CMD_BOTTOMLESSCLIP_f( arg_list )
+cmd_bottomlessclip_f( args )
 {
 	result = [];
 	on_off = cast_bool_to_str( !is_true( self.tcs_bottomless_clip ), "on off" );
@@ -127,10 +127,10 @@ bottomless_clip()
 	}
 }
 
-CMD_TELEPORT_f( arg_list )
+cmd_teleport_f( args )
 {
 	result = [];
-	target = arg_list[ 0 ];
+	target = args[ 0 ];
 	if ( target == self )
 	{
 		result[ "filter" ] = "cmderror";
@@ -143,11 +143,11 @@ CMD_TELEPORT_f( arg_list )
 	return result;
 }
 
-CMD_CVAR_f( arg_list )
+cmd_cvar_f( args )
 {
 	result = [];
-	self setClientDvar( arg_list[ 0 ], arg_list[ 1 ] );
+	self setClientDvar( args[ 0 ], args[ 1 ] );
 	result[ "filter" ] = "cmdinfo";
-	result[ "message" ] = "Successfully set " + arg_list[ 0 ] + " to " + arg_list[ 1 ];
+	result[ "message" ] = "Successfully set " + args[ 0 ] + " to " + args[ 1 ];
 	return result;
 }
