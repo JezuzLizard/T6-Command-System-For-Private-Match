@@ -189,6 +189,6 @@ com_get_cmd_feedback_channel()
 	}
 	else 
 	{
-		return "iprint|con";
+		return "iprint|con|g_log";
 	}
 }

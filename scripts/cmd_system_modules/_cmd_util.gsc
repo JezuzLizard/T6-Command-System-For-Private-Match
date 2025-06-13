@@ -239,7 +239,7 @@ cast_str_to_player( clientnum_guid_or_name, noprint = false )
 	{
 		if ( is_true( self.is_server ) )
 		{
-			if ( isDedicated() )
+			if ( isdedicated() )
 			{
 				level com_printf( channel, "cmderror", "You cannot use self as an arg for type player as the dedicated server" );
 				partial_message = undefined;
@@ -260,7 +260,7 @@ cast_str_to_player( clientnum_guid_or_name, noprint = false )
 		for ( i = 0; i < level.players.size; i++ )
 		{
 			player = level.players[ i ];
-			if ( player getEntityNumber() == client_num )
+			if ( player getentitynumber() == client_num )
 			{
 				return player;
 			}
@@ -268,7 +268,7 @@ cast_str_to_player( clientnum_guid_or_name, noprint = false )
 		for ( i = 0; i < level.players.size; i++ )
 		{
 			player = level.players[ i ];
-			if ( !is_true( player.pers["isBot"] ) && player getGUID() == guid )
+			if ( !is_true( player.pers["isBot"] ) && player getguid() == guid )
 			{
 				return player;
 			}
@@ -278,12 +278,12 @@ cast_str_to_player( clientnum_guid_or_name, noprint = false )
 	is_whole_number = undefined;
 	client_num = undefined;
 	guid = undefined;
-	name = toLower( clientnum_guid_or_name );
+	name = tolower( clientnum_guid_or_name );
 	for ( i = 0; i < level.players.size; i++ )
 	{
 		player = level.players[ i ];
-		target_playername = toLower( player.name );
-		if ( isSubStr( target_playername, name ) )
+		target_playername = tolower( player.name );
+		if ( issubstr( target_playername, name ) )
 		{
 			return player;
 		}

@@ -1,4 +1,5 @@
 #include scripts\cmd_system_modules\_cmd_util;
+#include scripts\cmd_system_modules\_com;
 #include common_scripts\utility;
 #include maps\mp\_utility;
 
@@ -519,7 +520,48 @@ cmd_seteditortargetorigin_f( args )
 
 cmd_setviewpos_f( args )
 {
-	level com_printf( self com_get_feedback_channel(), "cmderror", "UNIMPLEMENTED" );
+	level com_printf( self com_get_cmd_feedback_channel(), "cmderror", "UNIMPLEMENTED" );
+}
+
+cmd_seteditortargetmodel_f( args )
+{
+	level com_printf( self com_get_cmd_feedback_channel(), "cmderror", "UNIMPLEMENTED" );
+}
+
+equipment_watch_placement( equipment )
+{
+
+}
+
+cmd_seteditorheldmodel_f( args )
+{
+	self.turret_placement = undefined;
+	carry_offset = ( 22, 0, 0 );
+	carry_angles = ( 0, 0, 0 );
+	placeturret = spawnturret( "auto_turret", self.origin, "equip_turbine_zm_turret" );
+	placeturret.angles = self.angles;
+	placeturret setmodel( "zombie_vending_doubletap2_on" );
+	placeturret setturretcarried( true );
+	placeturret setturretowner( self );
+	//placeturret setturrettype( "wallmount" );
+
+	self carryturret( placeturret, carry_offset, carry_angles );
+
+	ended = self waittill_any_return( "weapon_change", "grenade_fire", "death_or_disconnect" );
+
+	if ( !( isdefined( level.use_legacy_equipment_placement ) && level.use_legacy_equipment_placement ) )
+		self.turret_placement = self canplayerplaceturret( placeturret );
+
+	if ( self.turret_placement[ "result" ] )
+	{
+		new_ent = spawn( "script_model", self.turret_placement[ "origin" ] );
+		new_ent.angles = self.turret_placement[ "angles" ];
+		new_ent setmodel( placeturret.model );
+	}
+
+	self stopcarryturret( placeturret );
+	placeturret setturretcarried( false );
+	placeturret delete();
 }
 
 main()
@@ -559,9 +601,78 @@ main()
 	level [[ level.tcs_add_command_func ]]( "seteditortargetangles", true, "seteditangles", "seteditortargetangles <angles> [relative]", ::cmd_seteditortargetangles_f, "cheat", 1, false );
 	cmd_register_arg_types_for_cmd( "seteditortargetangles", "vector boolean" );
 	level [[ level.tcs_add_command_func ]]( "seteditortargetorigin", true, "seteditorigin", "seteditortargetorigin <pos> [relative]", ::cmd_seteditortargetorigin_f, "cheat", 1, false );
-	cmd_register_arg_types_for_cmd( "seteditortargetorigin", "vector" );
-	level [[ level.tcs_add_command_func ]]( "seteditortargetmodel", true, "seteditmodel", "seteditortargetmodel <model>", ::cmd_seteditortargetorigin_f, "cheat", 1, false );
+	cmd_register_arg_types_for_cmd( "seteditortargetorigin", "vector boolean" );
+	level [[ level.tcs_add_command_func ]]( "seteditortargetmodel", true, "seteditmodel", "seteditortargetmodel <model>", ::cmd_seteditortargetmodel_f, "cheat", 1, false );
 	cmd_register_arg_types_for_cmd( "seteditortargetmodel", "model" );
+	level [[ level.tcs_add_command_func ]]( "seteditorheldmodel", true, "seteditheld", "seteditorheldmodel <model>", ::cmd_seteditorheldmodel_f, "cheat", 1, false );
+	// TODO:
+	//setmins
+	//setmaxs
+	//show/hide/ghost
+	//print/display existing values
+	//THE LINES
+	//spawn command
+	//setcontents
+	//disconnectpaths/connectpaths
+	//attach/detach
+	//set/get tags
+	//setanim
+	//setasd
+	//setentityanimrate
+	//startragdoll
+	//physicslaunch
+	//setzombiename
+	//setteam
+	//setowner
+	//setphysparams
+	//setplayercollision
+	//setvelocity
+	//rotateto
+	//moveto
+	//spawnactor
+	//magicbullet
+	//magicgrenade
+	//makeusable
+	//makeunusable
+	//spawnturret
+	//setworldactivefogbank
+	//hidezbarrierpiece/showzbarrierpiece/setzbarrierpiecestate/zbarrierpieceusedefaultmodel/zbarrierpieceusealternatemodel/zbarrierpieceuseupgradedmodel/zbarrierpieceuseboxriselogic
+	//setzbarriercolmodel
+	//setweaponoptions
+	//setviewmodel
+	//clientsyssetstate
+	//initialweaponraise
+	//kill
+	//cloneplayer
+	//carryturret
+	// all of these
+	/*
+		const BuiltinMethodDef methods_2[22] =
+		{
+			{ "moveto", 1130u, 2, 4, &ScriptEntCmd_MoveTo, 0 },
+			{ "movex", 1131u, 2, 4, &ScriptEntCmd_MoveX, 0 },
+			{ "movey", 1132u, 2, 4, &ScriptEntCmd_MoveY, 0 },
+			{ "movez", 1133u, 2, 4, &ScriptEntCmd_MoveZ, 0 },
+			{ "movegravity", 1126u, 2, 2, &ScriptEntCmd_GravityMove, 0 },
+			{ "moveslide", 1129u, 3, 3, &ScriptEntCmd_MoveSlide, 0 },
+			{ "stopmoveslide", 1924u, 0, 0, &ScriptEntCmd_StopMoveSlide, 0 },
+			{ "rotateto", 1395u, 2, 4, &ScriptEntCmd_RotateTo, 0 },
+			{ "rotatepitch", 1392u, 2, 4, &ScriptEntCmd_RotatePitch, 0 },
+			{ "rotateyaw", 1397u, 2, 4, &ScriptEntCmd_RotateYaw, 0 },
+			{ "rotateroll", 1394u, 2, 4, &ScriptEntCmd_RotateRoll, 0 },
+			{ "devaddpitch", 288u, 1, 1, &ScriptEntCmd_DevAddPitch, 1 },
+			{ "devaddyaw", 290u, 1, 1, &ScriptEntCmd_DevAddYaw, 1 },
+			{ "devaddroll", 289u, 1, 1, &ScriptEntCmd_DevAddRoll, 1 },
+			{ "vibrate", 2073u, 4, 4, &ScriptEntCmd_Vibrate, 0 },
+			{ "rotatevelocity", 1396u, 2, 4, &ScriptEntCmd_RotateVelocity, 0 },
+			{ "solid", 1844u, 0, 0, &ScriptEntCmd_Solid, 0 },
+			{ "notsolid", 1161u, 0, 0, &ScriptEntCmd_NotSolid, 0 },
+			{ "setcandamage", 1482u, 1, 1, &ScriptEntCmd_SetCanDamage, 0 },
+			{ "physicslaunch", 1227u, 0, 2, &ScriptEntCmd_PhysicsLaunch, 0 },
+			{ "setcheapflag", 2352u, 1, 1, &ScriptEntCmd_SetCheapFlag, 0 },
+			{ "ignorecheapentityflag", 2407u, 1, 1, &ScriptEntCmd_IgnoreCheapEntityFlag, 0 }
+		};
+	*/
 
 	// debugging
 	level [[ level.tcs_add_command_func ]]( "setviewpos", true, "setviewpos", "setviewpos <origin> [angles]", ::cmd_setviewpos_f, "cheat", 1, false );

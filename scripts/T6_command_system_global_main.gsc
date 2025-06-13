@@ -218,6 +218,7 @@ scr_dvar_command_watcher()
 	level endon( "end_commands" );
 	wait 1;
 	setDvar( "tcscmd", "" );
+	setDvar( "sv_tcscmd", "" );
 	while ( true )
 	{
 		parse_command_dvar();
@@ -230,7 +231,20 @@ parse_command_dvar()
 	dvar_value = getDvar( "tcscmd" );
 	if ( dvar_value != "" )
 	{
-		level notify( "say", dvar_value, undefined, false );
+		tokens = strtok( dvar_value, " " );
+		player = undefined;
+		if ( tokens.size > 0 )
+		{
+			player = cast_str_to_player( tokens[ 0 ] );
+		}
+		level notify( "say", dvar_value, player, false, true );
+		setDvar( "tcscmd", "" );
+	}
+
+	dvar_value = getDvar( "sv_tcscmd" );
+	if ( dvar_value != "" )
+	{
+		level notify( "say", dvar_value, undefined, false, true );
 		setDvar( "tcscmd", "" );
 	}
 	dvar_value = undefined;
@@ -269,14 +283,14 @@ command_buffer()
 	level endon( "end_commands" );
 	while ( true )
 	{
-		level waittill( "say", message, player, isHidden );
-		cmd_execute( message, player, isHidden );
+		level waittill( "say", message, player, isHidden, from_rcon );
+		cmd_execute( message, player, isHidden, from_rcon );
 	}
 }
 
-cmd_execute( message, player, is_hidden )
+cmd_execute( message, player, is_hidden, from_rcon )
 {
-	if ( isDefined( player ) )
+	if ( isDefined( player ) && !from_rcon )
 	{
 		if ( !level.tcs_allow_hidden_commands && is_hidden )
 		{
@@ -300,7 +314,7 @@ cmd_execute( message, player, is_hidden )
 		}
 	}
 	channel = player COM_GET_CMD_FEEDBACK_CHANNEL();
-	if ( isDefined( player.cmd_cooldown ) && player.cmd_cooldown > 0 )
+	if ( !from_rcon && isDefined( player.cmd_cooldown ) && player.cmd_cooldown > 0 )
 	{
 		level COM_PRINTF( channel, "cmderror", "You cannot use another command for " + player.cmd_cooldown + " seconds", player );
 		return;
@@ -312,7 +326,7 @@ cmd_execute( message, player, is_hidden )
 		level COM_PRINTF( channel, "cmderror", "Invalid command", player );
 		return;
 	}
-	if ( multi_cmds.size > 1 && !player can_use_multi_cmds() )
+	if ( multi_cmds.size > 1 && !player can_use_multi_cmds() && !from_rcon )
 	{
 		temp_array_index = multi_cmds[ 0 ];
 		multi_cmds = [];
@@ -323,7 +337,7 @@ cmd_execute( message, player, is_hidden )
 	{
 		cmdname = multi_cmds[ cmd_index ][ "cmdname" ];
 		args = multi_cmds[ cmd_index ][ "args" ];
-		if ( !player has_permission_for_cmd( cmdname ) )
+		if ( !player has_permission_for_cmd( cmdname ) && !from_rcon )
 		{
 			level COM_PRINTF( channel, "cmderror", "You do not have permission to use " + cmdname + " command", player );
 		}
