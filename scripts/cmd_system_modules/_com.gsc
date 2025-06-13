@@ -189,6 +189,6 @@ com_get_cmd_feedback_channel()
 	}
 	else 
 	{
-		return "iprint";
+		return "iprint|con";
 	}
 }

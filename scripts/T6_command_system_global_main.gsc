@@ -154,6 +154,7 @@ main()
 	cmd_register_arg_type_handlers( "player", ::arg_player_handler, ::arg_generate_rand_player, ::arg_cast_to_player, "not a valid player" );
 	//cmd_register_arg_type_handlers( "playernotself", ::arg_playernotself_handler, ::arg_generate_rand_playernotself, ::arg_cast_to_player, "not a valid player(cannot be self)" );
 	cmd_register_arg_type_handlers( "wholenum", ::arg_wholenum_handler, ::arg_generate_rand_wholenum, ::arg_cast_to_int, "not a whole number" );
+	cmd_register_arg_type_handlers( "boolean", ::arg_boolean_handler, ::arg_generate_rand_boolean, ::arg_cast_to_boolean, "not a boolean" );
 	cmd_register_arg_type_handlers( "int", ::arg_int_handler, ::arg_generate_rand_int, ::arg_cast_to_int, "not an int" );
 	cmd_register_arg_type_handlers( "float", ::arg_float_handler, ::arg_generate_rand_float, ::arg_cast_to_float, "not a float" );
 	cmd_register_arg_type_handlers( "wholefloat", ::arg_wholefloat_handler, ::arg_generate_rand_wholefloat, ::arg_cast_to_float, "not a float greater than 0" );

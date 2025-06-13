@@ -535,13 +535,13 @@ cast_str_to_vector( str )
 	floats = strTok( str, "," );
 	if ( floats.size != 3 )
 	{
-		return ( 0, 0, 0 );
+		return ( 1, 1, 1 );
 	}
 	for ( i = 0; i < floats.size; i++ )
 	{
 		if ( !is_str_float( floats[ i ] ) || !is_str_int( floats[ i ] ) )
 		{
-			return ( 0, 0, 0 );
+			return ( 2, 2, 2 );
 		}
 	}
 	return ( float( floats[ 0 ] ), float( floats[ 1 ] ), float( floats[ 2 ]) );
@@ -562,6 +562,20 @@ cast_bool_to_str( bool, binary_string_options )
 		}
 	}
 	return bool + "";
+}
+
+cast_str_to_bool( str )
+{
+	if ( str == "true" || str == "1" )
+	{
+		return true;
+	}
+	else if ( str == "false" || str == "0" )
+	{
+		return false;
+	}
+
+	return false;
 }
 
 repackage_args( arg_list )
@@ -600,7 +614,7 @@ cmd_addcommand( cmdname, is_clientcmd, cmdaliases, cmdusage, cmdfunc, rankgroup,
 	if ( isDefined( cmdaliases ) )
 	{
 		cmd_aliases_tokens = strTok( cmdaliases, " " );
-		for ( i = 1; i < cmd_aliases_tokens.size; i++ )
+		for ( i = 1; i <= cmd_aliases_tokens.size; i++ )
 		{
 			aliases[ i ] = cmd_aliases_tokens[ i - 1 ];
 		}
@@ -1059,6 +1073,21 @@ arg_wholenum_handler( arg )
 arg_generate_rand_wholenum()
 {
 	return randomint( 1000000 );
+}
+
+arg_boolean_handler( arg )
+{
+	return cast_str_to_bool( arg );
+}
+
+arg_generate_rand_boolean()
+{
+	return cointoss();
+}
+
+arg_cast_to_boolean( arg )
+{
+	return cast_str_to_bool( arg );
 }
 
 arg_int_handler( arg )

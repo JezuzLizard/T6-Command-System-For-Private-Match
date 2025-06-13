@@ -1,5 +1,6 @@
 #include scripts\cmd_system_modules\_cmd_util;
 #include common_scripts\utility;
+#include maps\mp\_utility;
 
 init()
 {
@@ -416,7 +417,14 @@ cmd_deletecamera_f( args )
 		return result;
 	}
 }
-
+// GScr_PhysicsTrace masks
+/*
+	level.physicstracemaskphysics = 1;
+	level.physicstracemaskvehicle = 2;
+	level.physicstracemaskwater = 4;
+	level.physicstracemaskclip = 8;
+	level.physicstracecontentsvehicleclip = 16;
+*/
 cmd_seteditortargetent_f( args )
 {
 	direction = self getplayerangles();
@@ -424,16 +432,20 @@ cmd_seteditortargetent_f( args )
     eye = self geteye();
     scale = 8000;
     direction_vec = ( direction_vec[0] * scale, direction_vec[1] * scale, direction_vec[2] * scale );
-    trace = bullettrace( eye, eye + direction_vec, 0, undefined );
+    trace = bullettrace( eye, eye + direction_vec, false, undefined );
 
-	if ( !isDefined( trace["entity"] ) )
+	if ( !isdefined( trace[ "entity" ] ) )
 	{
-		result[ "filter" ] = "cmderror";
-		result[ "message" ] = "Not looking at an entity!";
-		return result;
+		trace = physicstrace( eye, eye + direction_vec, vectorscale( ( -1, -1, 0 ), 15.0 ), vectorscale( ( 1, 1, 0 ), 15.0 ), self, level._editor_ent_mask );
+		if ( !isdefined( trace[ "entity" ] ) )
+		{
+			result[ "filter" ] = "cmderror";
+			result[ "message" ] = "Not looking at an entity!";
+			return result;
+		}
 	}
 
-	self.targetent_selected = trace["entity"];
+	self.targetent_selected = trace[ "entity" ];
 	result[ "filter" ] = "cmdinfo";
 	result[ "message" ] = "Selected target entity: " + self.targetent_selected.classname;
 	return result;
@@ -441,7 +453,7 @@ cmd_seteditortargetent_f( args )
 
 cmd_seteditortargetangles_f( args )
 {
-	if ( !isDefined( self.targetent_selected ) )
+	if ( !isdefined( self.targetent_selected ) )
 	{
 		result[ "filter" ] = "cmderror";
 		result[ "message" ] = "No target entity selected!";
@@ -456,7 +468,16 @@ cmd_seteditortargetangles_f( args )
 	}
 
 	new_angles = args[ 0 ];
-	self.targetent_selected.angles = new_angles;
+	is_relative = args[ 1 ];
+
+	if ( is_true( is_relative ) )
+	{
+		self.targetent_selected.angles += new_angles;
+	}
+	else
+	{
+		self.targetent_selected.angles = new_angles;
+	}
 
 	result[ "filter" ] = "cmdinfo";
 	result[ "message" ] = "Set angles of target entity: '" + self.targetent_selected.classname + "' to: '" + new_angles + "'";
@@ -465,7 +486,7 @@ cmd_seteditortargetangles_f( args )
 
 cmd_seteditortargetorigin_f( args )
 {
-	if ( !isDefined( self.targetent_selected ) )
+	if ( !isdefined( self.targetent_selected ) )
 	{
 		result[ "filter" ] = "cmderror";
 		result[ "message" ] = "No target entity selected!";
@@ -480,7 +501,16 @@ cmd_seteditortargetorigin_f( args )
 	}
 
 	new_origin = args[ 0 ];
-	self.targetent_selected.origin = new_origin;
+	is_relative = args[ 1 ];
+
+	if ( is_true( is_relative ) )
+	{
+		self.targetent_selected.origin += new_origin;
+	}
+	else
+	{
+		self.targetent_selected.origin = new_origin;
+	}
 
 	result[ "filter" ] = "cmdinfo";
 	result[ "message" ] = "Set origin of target entity: '" + self.targetent_selected.classname + "' to: '" + new_origin + "'";
@@ -489,7 +519,7 @@ cmd_seteditortargetorigin_f( args )
 
 cmd_setviewpos_f( args )
 {
-
+	level com_printf( self com_get_feedback_channel(), "cmderror", "UNIMPLEMENTED" );
 }
 
 main()
@@ -509,6 +539,13 @@ main()
 		level._cmds_cameras = [];
 	}
 
+	level.physicstracemaskphysics = 1;
+	level.physicstracemaskvehicle = 2;
+	level.physicstracemaskwater = 4;
+	level.physicstracemaskclip = 8;
+	level.physicstracecontentsvehicleclip = 16;
+	level._editor_ent_mask = level.physicstracemaskphysics | level.physicstracemaskvehicle | level.physicstracemaskwater | level.physicstracemaskclip;
+
 	level [[ level.tcs_add_command_func ]]( "dumpent", true, "dent", "dumpent <type> [classname]", ::cmd_dumpent_f, "cheat", 1, false );
 
 	// camera commands
@@ -519,10 +556,12 @@ main()
 
 	// entity manipulation
 	level [[ level.tcs_add_command_func ]]( "seteditortargetent", true, "seteditent", "seteditortargetent [entnum]", ::cmd_seteditortargetent_f, "cheat", 0, false );
-	level [[ level.tcs_add_command_func ]]( "seteditortargetangles", true, "seteditangles", "seteditortargetangles <angles>", ::cmd_seteditortargetangles_f, "cheat", 1, false );
-	cmd_register_arg_types_for_cmd( "seteditortargetangles", "vector" );
-	level [[ level.tcs_add_command_func ]]( "seteditortargetorigin", true, "seteditorigin", "seteditortargetorigin <pos>", ::cmd_seteditortargetorigin_f, "cheat", 1, false );
+	level [[ level.tcs_add_command_func ]]( "seteditortargetangles", true, "seteditangles", "seteditortargetangles <angles> [relative]", ::cmd_seteditortargetangles_f, "cheat", 1, false );
+	cmd_register_arg_types_for_cmd( "seteditortargetangles", "vector boolean" );
+	level [[ level.tcs_add_command_func ]]( "seteditortargetorigin", true, "seteditorigin", "seteditortargetorigin <pos> [relative]", ::cmd_seteditortargetorigin_f, "cheat", 1, false );
 	cmd_register_arg_types_for_cmd( "seteditortargetorigin", "vector" );
+	level [[ level.tcs_add_command_func ]]( "seteditortargetmodel", true, "seteditmodel", "seteditortargetmodel <model>", ::cmd_seteditortargetorigin_f, "cheat", 1, false );
+	cmd_register_arg_types_for_cmd( "seteditortargetmodel", "model" );
 
 	// debugging
 	level [[ level.tcs_add_command_func ]]( "setviewpos", true, "setviewpos", "setviewpos <origin> [angles]", ::cmd_setviewpos_f, "cheat", 1, false );
