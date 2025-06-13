@@ -92,6 +92,8 @@ cmd_sicdogsonplayer_f( arg_list )
 cmd_removedogs_f( arg_list )
 {
 	level notify( "remove_dogs" );
+	
+	channel = self com_get_cmd_feedback_channel();
 	level com_printf( channel, "cmdinfo", "Removed all cmd spawned dogs", self );
 }
 

@@ -17,6 +17,10 @@ main()
 	level.server.playername = "Server";
 	level.server.is_server = true;
 	level.server.name = "Server";
+	level.exception_obj = spawnstruct();
+	level.exception_obj.filter = "";
+	level.exception_obj.message = "";
+	level.exception_obj.channels = "";
 	level.custom_commands_restart_countdown = 5;
 	level.tcs_commands_total = 0;
 	level.custom_commands_cooldown_time = getDvarIntDefault( "tcs_cmd_cd", 5 );
@@ -161,6 +165,7 @@ main()
 	cmd_register_arg_type_handlers( "hitloc", ::arg_hitloc_handler, ::arg_generate_rand_hitloc, undefined, "not a valid hitloc" );
 	cmd_register_arg_type_handlers( "MOD", ::arg_mod_handler, ::arg_generate_rand_mod, ::arg_cast_to_mod, "not a valid mod" );
 	cmd_register_arg_type_handlers( "idflags", ::arg_idflags_handler, ::arg_generate_rand_idflags, ::arg_cast_to_int, "not a valid idflag" );
+	cmd_register_arg_type_handlers( "bot", ::arg_bot_handler, ::arg_generate_rand_bot, ::arg_cast_to_bot, "not a valid bot" );
 
 	//exclude_clientcommand_from_unittest_pool();
 	//exclude_servercommand_from_unittest_pool();
@@ -228,6 +233,34 @@ parse_command_dvar()
 		setDvar( "tcscmd", "" );
 	}
 	dvar_value = undefined;
+}
+
+throw_exception( filter, message, channels )
+{
+	level.exception_obj.channels = channels;
+	level.exception_obj.filter = filter;
+	level.exception_obj.message = message;
+	level.exception_obj.error = true;
+}
+
+clear_exception()
+{
+	level.exception_obj.channels = "";
+	level.exception_obj.filter = "";
+	level.exception_obj.message = "";
+	level.exception_obj.error = false;
+}
+
+try( func, arg1, arg2, arg3 )
+{
+	level.exception_obj endon( "exception" );
+
+	[[ func ]]( arg1, arg2, arg3 );
+}
+
+catch()
+{
+	level.exception_obj waittill( "exception", arg1, arg2, arg3 );
 }
 	
 command_buffer()

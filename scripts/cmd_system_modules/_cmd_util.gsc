@@ -522,10 +522,6 @@ is_str_float( str )
 			return false;
 		}
 	}
-	if ( periods_found == 0 )
-	{
-		return false;
-	}
 	return true;
 }
 
@@ -751,11 +747,14 @@ cmd_execute_internal( cmdname, arg_list, silent, logprint )
 	if ( arg_list.size > 0 )
 	{
 		argtypes = level.tcs_commands[ cmdname ].argtypes;
-		for ( i = 0; i < arg_list.size; i++ )
+		if ( isdefined( argtypes ) )
 		{
-			if ( isDefined( level.tcs_arg_type_handlers[ argtypes[ i ] ] ) && isDefined( level.tcs_arg_type_handlers[ argtypes[ i ] ].cast_func ) )
+			for ( i = 0; i < arg_list.size; i++ )
 			{
-				arg_list[ i ] = self [[ level.tcs_arg_type_handlers[ argtypes[ i ] ].cast_func ]]( arg_list[ i ] );
+				if ( isDefined( level.tcs_arg_type_handlers[ argtypes[ i ] ] ) && isDefined( level.tcs_arg_type_handlers[ argtypes[ i ] ].cast_func ) )
+				{
+					arg_list[ i ] = self [[ level.tcs_arg_type_handlers[ argtypes[ i ] ].cast_func ]]( arg_list[ i ] );
+				}
 			}
 		}
 	}
@@ -1259,4 +1258,55 @@ arg_generate_rand_idflags()
 		arrayRemoveIndex( idflags_array, random_flag_index );
 	}
 	return flags;
+}
+
+arg_bot_handler( arg )
+{
+	player = self cast_str_to_player( arg );
+	return isDefined( player ) && player istestclient();
+} 
+
+arg_generate_rand_bot()
+{
+	if ( is_true( self.is_server ) )
+	{
+		randomint = randomInt( 3 );
+	}
+	else 
+	{
+		randomint = randomInt( 4 );
+	}
+
+	bots = [];
+	for ( i = 0; i < level.players.size; i++ )
+	{
+		if ( !level.players[ i ] istestclient() )
+		{
+			continue;
+		}
+		bots[ bots.size ] = level.players[ i ];
+	}
+
+	if ( bots.size <= 0 )
+	{
+		return -1;
+	}
+
+	random_bot = bots[ randomInt( bots.size ) ];
+	switch ( randomint )
+	{
+		case 0:
+			return random_bot getEntityNumber();
+		case 1:
+			return random_bot getGuid();
+		case 2:
+			return random_bot.name;
+		case 3:
+			return "self";
+	}
+}
+
+arg_cast_to_bot( arg )
+{
+	return self cast_str_to_player( arg, true );
 }
