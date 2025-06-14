@@ -720,7 +720,7 @@ cmd_add( cmd, is_clientcmd, cmdaliases, cmdusage, cmdfunc, rank_group, min_args,
 	if ( isdefined( cmdaliases ) )
 	{
 		cmd_aliases_tokens = strTok( cmdaliases, " " );
-		for ( i = 1; i < cmd_aliases_tokens.size; i++ )
+		for ( i = 1; i <= cmd_aliases_tokens.size; i++ )
 		{
 			aliases[ i ] = cmd_aliases_tokens[ i - 1 ];
 		}
