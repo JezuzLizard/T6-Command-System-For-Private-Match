@@ -178,11 +178,11 @@ has_permission_for_cmd( cmd )
 	{
 		return true;
 	}
-	if ( isDefined( level.tcs_ranks[ self.tcs_rank ] ) && isDefined( level.tcs_ranks[ self.tcs_rank ].disallowed_cmds ) )
+	if ( isDefined( level.tcs_perms.ranks[ self.tcs_rank ] ) && isDefined( level.tcs_perms.ranks[ self.tcs_rank ].disallowed_cmds ) )
 	{
-		for ( i = 0; i < level.tcs_ranks[ self.tcs_rank ].disallowed_cmds.size; i++ )
+		for ( i = 0; i < level.tcs_perms.ranks[ self.tcs_rank ].disallowed_cmds.size; i++ )
 		{
-			disallowed_cmd = level.tcs_ranks[ self.tcs_rank ].disallowed_cmds[ i ];
+			disallowed_cmd = level.tcs_perms.ranks[ self.tcs_rank ].disallowed_cmds[ i ];
 			if ( disallowed_cmd == "all_cmds" )
 			{
 				return false;
@@ -209,11 +209,11 @@ has_permission_for_cmd( cmd )
 			}
 		}
 	}
-	if ( isDefined( level.tcs_ranks[ self.tcs_rank ] ) && isDefined( level.tcs_ranks[ self.tcs_rank ].allowed_cmds ) )
+	if ( isDefined( level.tcs_perms.ranks[ self.tcs_rank ] ) && isDefined( level.tcs_perms.ranks[ self.tcs_rank ].allowed_cmds ) )
 	{
-		for ( i = 0; i < level.tcs_ranks[ self.tcs_rank ].allowed_cmds.size; i++ )
+		for ( i = 0; i < level.tcs_perms.ranks[ self.tcs_rank ].allowed_cmds.size; i++ )
 		{
-			allowed_cmd = level.tcs_ranks[ self.tcs_rank ].allowed_cmds[ i ];
+			allowed_cmd = level.tcs_perms.ranks[ self.tcs_rank ].allowed_cmds[ i ];
 			if ( allowed_cmd == "all_cmds" )
 			{
 				return true;

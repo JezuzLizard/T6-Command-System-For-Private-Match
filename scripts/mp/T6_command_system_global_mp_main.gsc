@@ -13,12 +13,14 @@ main()
 		wait 0.05;
 	}
 
-	cmd_add( "sicdogsonplayer", false, "sicdogsonplayer", "sicdogsonplayer <name|guid|clientnum|self> [count] [invisible]", ::cmd_sicdogsonplayer_f, "cheat", 1, false );
-	cmd_add( "removedogs", false, "removedogs", "removedogs", ::cmd_removedogs_f, "cheat", 0, false );
+	cmd_block_set_rank_group( "cheat" );
+	sicdogsonplayer_cmd = cmd_add( "sicdogsonplayer", false, "sicdogsonplayer", "sicdogsonplayer <name|guid|clientnum|self> [count] [invisible]", ::cmd_sicdogsonplayer_f );
+	sicdogsonplayer_cmd arg_obj_add_cmd( "player wholenum wholenum", 1, 3 );
 
-	arg_obj_add_cmd( "sicdogsonplayer", "player wholenum wholenum" );
+	removedogs_cmd = cmd_add( "removedogs", false, "removedogs", "removedogs", ::cmd_removedogs_f );
+	removedogs_cmd arg_obj_add_cmd( "", 0, 0 );
 
-	arg_obj_register( "weapon", ::arg_weapon_handler, ::arg_generate_rand_weapon, undefined, "not a valid weapon" );
+	arg_obj_register( "weapon", ::arg_obj_weapon_validate, ::arg_obj_weapon_generate, undefined, "not a valid weapon" );
 
 	level thread on_unittest();
 
@@ -69,7 +71,6 @@ cmd_sicdogsonplayer_f( arg_list )
 	invisible = arg_list[ 2 ];
 
 	other_team = getOtherTeam( target.team );
-	channel = self com_get_cmd_feedback_channel();
 
 	if ( !isDefined( count ) )
 	{
@@ -84,8 +85,8 @@ cmd_sicdogsonplayer_f( arg_list )
 	{
 		dog_manager_spawn_dog( target, other_team, invisible );
 	}
-	level com_printf( channel, "cmdinfo", "Spawned in " + count + " dogs to hunt " + target.name, self );
-	level com_printf( channel, "cmdinfo", "Use cmd removedogs to remove the dogs spawned with this cmd", self );
+	self com_printinfo( "Spawned in " + count + " dogs to hunt " + target.name );
+	self com_printinfo( "Use cmd removedogs to remove the dogs spawned with this cmd" );
 }
 
 cmd_removedogs_f( arg_list )

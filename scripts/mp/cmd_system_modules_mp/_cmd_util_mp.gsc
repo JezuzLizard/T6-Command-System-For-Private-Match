@@ -27,12 +27,12 @@ build_weapons_array()
 	}
 }
 
-arg_weapon_handler( arg )
+arg_obj_weapon_validate( arg )
 {
 	return isDefined( level.tcs_weapons[ arg ] );
 } 
 
-arg_generate_rand_weapon()
+arg_obj_generate_rand_weapon()
 {
 	weapons = getArrayKeys( level.tcs_weapons );
 	return weapons[ randomInt( weapons.size ) ];

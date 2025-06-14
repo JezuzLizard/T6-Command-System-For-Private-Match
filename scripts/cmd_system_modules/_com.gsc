@@ -177,6 +177,29 @@ com_printf( channels, filter, message, players )
 	}
 }
 
+com_printannouncment( message, players )
+{
+	level com_printf( "iprintbold", "notitle", message, players );
+}
+
+com_printinfo( message )
+{
+	channels = self com_get_cmd_feedback_channel();
+	level com_printf( channels, "cmdinfo", message, self );
+}
+
+com_printwarning( message )
+{
+	channels = self com_get_cmd_feedback_channel();
+	level com_printf( channels, "cmdwarning", message, self );
+}
+
+com_printerror( message )
+{
+	channels = self com_get_cmd_feedback_channel();
+	level com_printf( channels, "cmderror", message, self );
+}
+
 com_get_cmd_feedback_channel()
 {
 	if ( is_true( self.is_server ) )

@@ -134,21 +134,23 @@ construct_chat_message_for_unittest()
 {
 	cmdalias = arg_obj_cmdalias_generate();
 	//logprint( "random cmdalias: " + cmdalias + "\n" );
-	cmd = get_cmd_from_alias( cmdalias );
-	if ( cmd == "" )
+	cmd_find_result = get_cmd_from_alias( cmdalias );
+	if ( cmd_find_result.errored )
 	{
 		return;
 	}
+
+	cmd_object = cmd_find_result.value;
 	//logprint( "random cmd: " + cmd + "\n" );
-	cmdargs = self create_random_valid_args2( cmd );
+	cmdargs = self create_random_valid_args2( cmd_find_result.value );
 	if ( cmdargs.size == 0 )
 	{
-		message = cmd;
+		message = cmd_object.cmd_name;
 	}
 	else 
 	{
 		arg_str = repackage_args( cmdargs );
-		message = cmd + " " + arg_str;
+		message = cmd_object.cmd_name + " " + arg_str;
 	}
 	cmd_log = self.name + " executed " + message + " count " + level.unittest_total_cmds_used;
 	level com_printf( "con", "notitle", cmd_log );
@@ -157,23 +159,18 @@ construct_chat_message_for_unittest()
 	level.unittest_total_cmds_used++;
 }
 
-get_cmdargs_types( cmd )
-{
-	return level.tcs_cmds[ cmd ].arg_types;
-}
-
-create_random_valid_args2( cmd )
+create_random_valid_args2( cmd_object )
 {
 	//message = "cmd: " + cmd;
 	//logprint( message + "\n" );
 	args = [];
-	types = get_cmdargs_types( cmd );
+	types = cmd_object.arg_types;
 
 	if ( !isDefined( types ) )
 	{
 		return args;
 	}
-	min_args = level.tcs_cmds[ cmd ].min_args;
+	min_args = cmd_object.min_args;
 	//message = "min_args: " + min_args;
 	//logprint( message + "\n" );
 	for ( i = 0; i < min_args; i++ )
@@ -260,17 +257,18 @@ test_cmd_for_time( cmd, threadcount = 1, duration )
 	}
 	for ( i = 0; i < threadcount; i++ )
 	{
-		if ( level.tcs_cmds[ cmd ].is_clientcmd )
+		cmd_object = level.tcs_cmds[ cmd ];
+		if ( cmd_object.is_clientcmd )
 		{
-			if ( getPlayers().size < getDvarInt( "sv_maxclients" ) )
+			if ( level.players.size < getDvarInt( "sv_maxclients" ) )
 			{
 				break;
 			}
-			manage_unittest_bots( 1, cmd );
+			manage_unittest_bots( 1, cmd_object.cmd_name );
 		}
 		else 
 		{
-			level thread testcmd_thread_server( cmd );
+			level thread testcmd_thread_server( cmd_object.cmd_name );
 		}
 	}
 }

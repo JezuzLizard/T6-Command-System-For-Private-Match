@@ -282,10 +282,9 @@ zombie_recalculate_total( stat_name, new_value )
 arg_obj_perk_validate( arg )
 {
 	perks = perk_list_zm();
-	channel = self com_get_cmd_feedback_channel();
 	if ( perks.size <= 0 )
 	{
-		level com_printf( channel, "notitle", "There are no perks on the map", self );
+		self com_printerror( "There are no perks on the map" );
 		return false;
 	}
 	return isInArray( perks, arg ) || arg == "all";
@@ -303,10 +302,9 @@ arg_obj_perk_generate()
 
 arg_obj_weapon_validate( arg )
 {
-	channel = self com_get_cmd_feedback_channel();
 	if ( !isDefined( level.zombie_include_weapons ) || level.zombie_include_weapons.size <= 0 )
 	{
-		level com_printf( channel, "notitle", "There are no weapons on the map", self );
+		self com_printerror( "There are no weapons on the map" );
 		return false;
 	}
 	return isDefined( level.zombie_include_weapons[ arg ] );
@@ -324,10 +322,9 @@ arg_obj_weapon_generate()
 
 arg_obj_powerup_validate( arg )
 {
-	channel = self com_get_cmd_feedback_channel();
 	if ( !isDefined( level.zombie_include_powerups ) || level.zombie_include_powerups.size <= 0 )
 	{
-		level com_printf( channel, "notitle", "There are no powerups on the map", self );
+		self com_printerror( "There are no powerups on the map" );
 		return false;
 	}
 	return isDefined( level.zombie_include_powerups[ arg ] );

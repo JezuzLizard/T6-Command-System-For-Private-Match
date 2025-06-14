@@ -672,16 +672,17 @@ cast_bool_to_str( bool, binary_string_options )
 
 cast_str_to_bool( str )
 {
+	result_obj = result_obj_new( "boolean" );
 	if ( str == "true" || str == "1" )
 	{
-		return true;
+		return set_cast_success( result_obj, true, str == "true" ? "boolean==true" : "boolean==1" );
 	}
 	else if ( str == "false" || str == "0" )
 	{
-		return false;
+		return set_cast_success( result_obj, false, str == "true" ? "boolean==false" : "boolean==0" );
 	}
 
-	return false;
+	return set_cast_error( result_obj, "boolean!=boolean" );
 }
 
 repackage_args( args )
@@ -703,20 +704,25 @@ repackage_args( args )
 	return args_string;
 }
 
-cmd_add( cmd, is_clientcmd, cmdaliases, cmdusage, cmdfunc, rank_group, min_args, uses_player_validity_check, is_threaded_cmd )
+cmd_add( cmd_name, is_clientcmd, cmdaliases, cmdusage, cmdfunc, user_valid_check_func, rank_group )
 {
 	if ( !isdefined( level.tcs_cmds ) )
 	{
 		level.tcs_cmds = [];
-		level.threaded_cmds = [];
 	}
-	if ( !isdefined( level.tcs_ranks[ rank_group ] ) )
+
+	if ( !isdefined( rank_group ) && isdefined( level.tcs_cmd_register_rank_group ) )
 	{
-		level com_printf( "con|g_log", "cmderror", "Failed to register cmd " + cmd + ", attempted to use an unregistered rank_group " + rank_group );
+		rank_group = level.tcs_cmd_register_rank_group;
+	}
+	if ( !isdefined( rank_group ) || !isdefined( level.tcs_perms.ranks[ rank_group ] ) )
+	{
+		level com_printf( "con|g_log", "cmderror", "Failed to register cmd " + cmd_name + ", attempted to use an unregistered rank_group!" );
 		return;
 	}
+
 	aliases = [];
-	aliases[ 0 ] = cmd;
+	aliases[ 0 ] = cmd_name;
 	if ( isdefined( cmdaliases ) )
 	{
 		cmd_aliases_tokens = strTok( cmdaliases, " " );
@@ -726,19 +732,19 @@ cmd_add( cmd, is_clientcmd, cmdaliases, cmdusage, cmdfunc, rank_group, min_args,
 		}
 	}
 
-	level.tcs_cmds[ cmd ] = spawnstruct();
-	level.tcs_cmds[ cmd ].is_clientcmd = is_clientcmd;
-	level.tcs_cmds[ cmd ].usage = cmdusage;
-	level.tcs_cmds[ cmd ].func = cmdfunc;
-	level.tcs_cmds[ cmd ].aliases = aliases;
-	level.tcs_cmds[ cmd ].power = level.tcs_ranks[ rank_group ].cmdpower;
-	level.tcs_cmds[ cmd ].min_args = min_args;
-	level.tcs_cmds[ cmd ].uses_player_validity_check = uses_player_validity_check;
-	level.tcs_cmds_total++;
-	if ( is_true( is_threaded_cmd ) )
-	{
-		level.threaded_cmds[ cmd ] = true;
-	}
+	level.tcs_cmds[ cmd_name ] = spawnstruct();
+	level.tcs_cmds[ cmd_name ].cmd_name = cmd_name;
+	level.tcs_cmds[ cmd_name ].is_clientcmd = is_clientcmd;
+	level.tcs_cmds[ cmd_name ].usage = cmdusage;
+	level.tcs_cmds[ cmd_name ].func = cmdfunc;
+	level.tcs_cmds[ cmd_name ].aliases = aliases;
+	level.tcs_cmds[ cmd_name ].power = level.tcs_perms.ranks[ rank_group ].cmdpower;
+	level.tcs_cmds[ cmd_name ].user_valid_check_func = user_valid_check_func;
+	level.tcs_cmds[ cmd_name ].is_cmd_object = true;
+	level.tcs_cmds[ cmd_name ].min_args = 0;
+	level.tcs_cmds[ cmd_name ].max_args = 0;
+	level.tcs_cmds[ cmd_name ].arg_types = [];
+	level.tcs_glob.icmd_total++;
 	if ( !isdefined( level.cmd_groups ) )
 	{
 		level.cmd_groups = [];
@@ -747,7 +753,9 @@ cmd_add( cmd, is_clientcmd, cmdaliases, cmdusage, cmdfunc, rank_group, min_args,
 	{
 		level.cmd_groups[ rank_group ] = [];
 	}
-	level.cmd_groups[ rank_group ][ cmd ] = true;	
+	level.cmd_groups[ rank_group ][ cmd_name ] = true;
+
+	return level.tcs_cmds[ cmd_name ];
 }
 
 cmd_remove( cmd )
@@ -767,12 +775,13 @@ cmd_remove( cmd )
 			new_cmd_array[ cmd_k ].aliases = level.tcs_cmds[ cmd_k ].aliases;
 			new_cmd_array[ cmd_k ].power = level.tcs_cmds[ cmd_k ].power;
 			new_cmd_array[ cmd_k ].min_args = level.tcs_cmds[ cmd_k ].min_args;
-			new_cmd_array[ cmd_k ].uses_player_validity_check = level.tcs_cmds[ cmd_k ].uses_player_validity_check;
+			new_cmd_array[ cmd_k ].max_args = level.tcs_cmds[ cmd_k ].max_args;
+			new_cmd_array[ cmd_k ].arg_types = level.tcs_cmds[ cmd_k ].arg_types;
+			new_cmd_array[ cmd_k ].user_valid_check_func = level.tcs_cmds[ cmd_k ].user_valid_check_func;
 		}
 		else 
 		{
 			found_cmd = true;
-			level.threaded_cmds[ cmd_k ] = undefined;
 			rank_groups = getarraykeys( level.cmd_groups );
 			for ( j = 0; j < rank_groups.size; j++ )
 			{
@@ -786,7 +795,7 @@ cmd_remove( cmd )
 	}
 	if ( found_cmd )
 	{
-		level.tcs_cmds_total--;
+		level.tcs_glob.icmd_total--;
 	}
 	level.tcs_cmds = new_cmd_array;
 }
@@ -804,26 +813,35 @@ cmd_remove_by_group( rank_group )
 	}
 }
 
-cmd_set_power( cmd, power )
+cmd_set_power( power )
 {
-	if ( isdefined( level.tcs_cmds[ cmd ] ) )
+	if ( is_true( self.is_cmd_object ) )
 	{
-		level.tcs_cmds[ cmd ].power = power;
+		self.power = power;
 	}
 }
 
-arg_obj_add_cmd( cmd, arg_types )
+cmd_block_set_rank_group( rank_group )
 {
-	if ( !isdefined( level.tcs_cmds[ cmd ] ) )
+	level.tcs_cmd_register_rank_group = rank_group;
+}
+
+arg_obj_add_cmd( arg_types, min_args, max_args )
+{
+	if ( !is_true( self.is_cmd_object ) )
 	{
-		level com_printf( "con|g_log", "cmderror", "arg_obj_add_cmd() " + cmd + " is not registered" );
+		assert( false );
 		return;
 	}
+
+	self.min_args = min_args;
+	self.max_args = max_args;
+
 	if ( !isdefined( arg_types ) || arg_types == "" )
 	{
 		return;
 	}
-	level.tcs_cmds[ cmd ].arg_types = strTok( arg_types, " " );
+	self.arg_types = strTok( arg_types, " " );
 }
 
 arg_obj_register( argtype, checker_func, rand_gen_func, cast_func, error_message )
@@ -884,15 +902,15 @@ handle_result_feedback( result, cmd, original_args, logprint, silent )
 		channel = result.channels;
 	}
 
-	level com_printf( channel, result[ "filter" ], result[ "message" ], self );
+	level com_printf( channel, result.filter, result.msg, self );
 }
 
-cmd_execute_internal( cmd, args, silent, logprint )
+cmd_execute_internal( cmd_object, args, silent, logprint )
 {
+	cmd_name = cmd_object.cmd_name;
 	original_args = args;
-	channel = self com_get_cmd_feedback_channel();
 	result = undefined;
-	if ( !self test_cmd_is_valid( cmd, args ) )
+	if ( !self test_cmd_is_valid( cmd_object, args ) )
 	{
 		return;
 	}
@@ -900,9 +918,9 @@ cmd_execute_internal( cmd, args, silent, logprint )
 	// Cast the args using the cast handlers
 	// Arg types without a cast handler don't get casted
 	// Leaving the casting up to the cmd itself
-	if ( args.size > 0 )
+	if ( args.size > 0 && array_validate( cmd_object.arg_types ) )
 	{
-		arg_types = level.tcs_cmds[ cmd ].arg_types;
+		arg_types = cmd_object.arg_types;
 		for ( i = 0; i < args.size; i++ )
 		{
 			if ( isDefined( level.tcs_arg_type_handlers[ arg_types[ i ] ] ) && isDefined( level.tcs_arg_type_handlers[ arg_types[ i ] ].cast_func ) )
@@ -910,7 +928,7 @@ cmd_execute_internal( cmd, args, silent, logprint )
 				cast_result = self [[ level.tcs_arg_type_handlers[ arg_types[ i ] ].cast_func ]]( args[ i ] );
 				if ( cast_result.errored )
 				{
-					level com_printf( channel, "cmderror", cast_result.msg, self );
+					self com_printerror( cast_result.msg );
 					return;
 				}
 				args[ i ] = cast_result.value;
@@ -921,39 +939,31 @@ cmd_execute_internal( cmd, args, silent, logprint )
 	// Check if the cmd should execute if the target is in an invalid state
 	// Could be changed to use handlers if entities or other types need to be validated
 	// For not only checks players
-	if ( is_true( level.tcs_cmds[ cmd ].uses_player_validity_check ) )
+	if ( isdefined( cmd_object.user_valid_check_func ) )
 	{
 		if ( isDefined( level.tcs_player_is_valid_check ) )
 		{
-			if ( level.tcs_cmds[ cmd ].is_clientcmd )
+			if ( cmd_object.is_clientcmd )
 			{
-				message = "You are not in a valid state for " + cmd + " to work";
+				message = "You are not in a valid state for " + cmd_name + " to work";
 				target = self;
 			}
 			else 
 			{
-				message = "Target " + args[ 0 ].name + " is not in a valid state for " + cmd + " to work";
+				message = "Target " + args[ 0 ].name + " is not in a valid state for " + cmd_name + " to work";
 				target = args[ 0 ];
 			}
 			if ( ![[ level.tcs_player_is_valid_check ]]( target ) )
 			{
-				level com_printf( channel, "cmderror", message, self );
+				self com_printerror( message );
 				return;
 			}
 		}
 	}
 
-	if ( is_true( level.threaded_cmds[ cmd ] ) )
-	{
-		self thread [[ level.tcs_cmds[ cmd ].func ]]( args );
-		return;
-	}
-	else 
-	{
-		result = self [[ level.tcs_cmds[ cmd ].func ]]( args );
-	}
+	result = self [[ cmd_object.func ]]( args );
 
-	self handle_result_feedback( result, cmd, original_args, logprint, silent );
+	self handle_result_feedback( result, cmd_name, original_args, logprint, silent );
 }
 
 
@@ -980,9 +990,9 @@ check_for_cmd_alias_collisions()
 	{
 		for ( j = i + 1; j < aliases.size; j++ )
 		{
-			if ( aliases[ i ] == aliases[ j ] )
+			if ( i != j && aliases[ i ] == aliases[ j ] )
 			{
-				level com_printf( "con", "cmderror", "Cmd alias collision detected alias " + aliases[ i ] + " is duplicated" );
+				level com_printf( "con|g_log", "cmderror", "Cmd alias collision detected alias " + aliases[ i ] + " is duplicated" );
 				break;
 			}
 		}
@@ -1013,10 +1023,10 @@ parse_cmd_message( message )
 	for ( i = 0; i < multiple_cmds_keys.size; i++ )
 	{
 		cmd_args = strTok( multiple_cmds_keys[ i ], " " );
-		cmd = get_cmd_from_alias( cmd_args[ 0 ] );
-		if ( cmd != "" )
+		cmd_find_result = get_cmd_from_alias( cmd_args[ 0 ] );
+		if ( !cmd_find_result.errored )
 		{
-			cmd_keys[ "cmd" ] = cmd;
+			cmd_keys[ "cmd" ] = cmd_find_result.value;
 			arrayremoveindex( cmd_args, 0 );
 			cmd_keys[ "args" ] = [];
 			cmd_keys[ "args" ] = cmd_args;
@@ -1029,7 +1039,7 @@ parse_cmd_message( message )
 
 get_cmd_from_alias( alias )
 {
-	result_obj = result_obj_new( "cmdalias" );
+	result_obj = result_obj_new( "cmdobject" );
 	if ( alias == "" )
 	{
 		return set_cast_error( result_obj, "No alias provided" );
@@ -1042,7 +1052,7 @@ get_cmd_from_alias( alias )
 		{
 			if ( alias == level.tcs_cmds[ cmd_keys[ i ] ].aliases[ j ] )
 			{
-				return cmd_keys[ i ];
+				return set_cast_success( result_obj, level.tcs_cmds[ cmd_keys[ i ] ], "alias==" + cmd_keys[ i ] );
 			}
 		}
 	}
@@ -1050,27 +1060,39 @@ get_cmd_from_alias( alias )
 	return set_cast_error( result_obj, "Couldn't find cmd" );
 }
 
-test_cmd_is_valid( cmd, args )
+test_cmd_is_valid( cmd_object, args )
 {
-	channel = self com_get_cmd_feedback_channel();
-	if ( args.size < level.tcs_cmds[ cmd ].min_args )
+	if ( args.size < cmd_object.min_args )
 	{
-		level com_printf( channel, "cmderror", "Usage: " + level.tcs_cmds[ cmd ].usage, self );
+		self com_printerror( "Too few args: usage: " + cmd_object.usage );
 		return false;
 	}
-	if ( isdefined( level.tcs_cmds[ cmd ].arg_types ) && args.size > 0 )
+	if ( args.size > cmd_object.max_args )
 	{
-		arg_types = level.tcs_cmds[ cmd ].arg_types;
+		self com_printerror( "Too many args: usage: " + cmd_object.usage );
+		return false;
+	}
+	if ( array_validate( cmd_object.arg_types ) && args.size > 0 )
+	{
+		arg_types = cmd_object.arg_types;
 		for ( i = 0; i < args.size; i++ )
 		{
-			if ( isdefined( level.tcs_arg_type_handlers[ arg_types[ i ] ] ) && isdefined( level.tcs_arg_type_handlers[ arg_types[ i ] ].checker_func ) )
+			if ( isdefined( level.tcs_arg_type_handlers[ arg_types[ i ] ] ) )
 			{
-				if ( !self [[ level.tcs_arg_type_handlers[ arg_types[ i ] ].checker_func ]]( args[ i ] ) )
-				{
-					arg_num = i;
-					level com_printf( channel, "cmderror", "Arg " + arg_num + " " + args[ i ] + " is " + level.tcs_arg_type_handlers[ arg_types[ i ] ].error_message, self );
-					return false;
-				}
+				self com_printerror( "Unhandled argtype: '" + arg_types[ i ] + "' in cmd: '" + cmd_object.cmd_name + "'!" );
+				continue;
+			}
+
+			if ( !isdefined( level.tcs_arg_type_handlers[ arg_types[ i ] ].checker_func ) )
+			{
+				continue;
+			}
+
+			if ( !self [[ level.tcs_arg_type_handlers[ arg_types[ i ] ].checker_func ]]( args[ i ] ) )
+			{
+				arg_num = i;
+				self com_printerror( "Arg " + arg_num + " " + args[ i ] + " is " + level.tcs_arg_type_handlers[ arg_types[ i ] ].error_message );
+				return false;
 			}
 		}
 	}
@@ -1130,7 +1152,8 @@ arg_obj_wholenum_generate()
 
 arg_obj_boolean_validate( arg )
 {
-	return cast_str_to_bool( arg );
+	result_obj = cast_str_to_bool( arg );
+	return !result_obj.errored;
 }
 
 arg_obj_boolean_generate()
@@ -1155,7 +1178,8 @@ arg_obj_int_generate()
 
 arg_obj_int_cast( arg )
 {
-	return int( arg );
+	result_obj = result_obj_new( "int" );
+	return set_cast_success( result_obj, int( arg ), "int==true" );
 }
 
 arg_obj_float_validate( arg )
@@ -1170,7 +1194,8 @@ arg_obj_float_generate()
 
 arg_obj_float_cast( arg )
 {
-	return float( arg );
+	result_obj = result_obj_new( "float" );
+	return set_cast_success( result_obj, float( arg ), "float==true" );
 }
 
 arg_obj_wholefloat_validate( arg )
@@ -1185,20 +1210,8 @@ arg_obj_wholefloat_generate()
 
 arg_obj_vector_validate( arg )
 {
-	numbers_array = strTok( arg, "," );
-	if ( numbers_array.size != 3 )
-	{
-		
-		return false;
-	}
-	for ( i = 0; i < numbers_array.size; i++ )
-	{
-		if ( !is_str_float( numbers_array[ i ] ) && !is_str_int( numbers_array[ i ] ) )
-		{
-			return false;
-		}
-	}
-	return true;
+	result_obj = cast_str_to_vector( arg );
+	return !result_obj.errored;
 }
 
 arg_obj_vector_generate()
@@ -1226,8 +1239,8 @@ arg_obj_team_generate()
 
 arg_obj_cmdalias_validate( arg )
 {
-	cmd_to_execute = get_cmd_from_alias( arg );
-	return cmd_to_execute != "";
+	cmd_find_result = get_cmd_from_alias( arg );
+	return !cmd_find_result.errored;
 }
 
 arg_obj_cmdalias_generate()
@@ -1250,18 +1263,18 @@ arg_obj_cmdalias_generate()
 
 arg_obj_cmdalias_cast( arg )
 {
-	cmd_to_execute = get_cmd_from_alias( arg );
-	return cmd_to_execute;	
+	cmd_find_result = get_cmd_from_alias( arg );
+	return cmd_find_result;	
 }
 
 arg_obj_rank_validate( arg )
 {
-	return isdefined( level.tcs_ranks[ arg ] );
+	return isdefined( level.tcs_perms.ranks[ arg ] );
 }
 
 arg_obj_rank_generate()
 {
-	ranks = getarraykeys( level.tcs_ranks );
+	ranks = getarraykeys( level.tcs_perms.ranks );
 	return ranks[ randomInt( ranks.size ) ]; 
 }
 
@@ -1401,4 +1414,62 @@ arg_obj_bot_generate()
 arg_obj_bot_cast( arg )
 {
 	return self cast_str_to_player( arg, true );
+}
+
+arg_obj_string_validate( arg )
+{
+	list = [];
+	val = 1;
+	list["0"] = val;
+	list["1"] = val;
+	list["2"] = val;
+	list["3"] = val;
+	list["4"] = val;
+	list["5"] = val;
+	list["6"] = val;
+	list["7"] = val;
+	list["8"] = val;
+	list["9"] = val;
+	list["_"] = val;
+	list["a"] = val;
+	list["b"] = val;
+	list["c"] = val;
+	list["d"] = val;
+	list["e"] = val;
+	list["f"] = val;
+	list["g"] = val;
+	list["h"] = val;
+	list["i"] = val;
+	list["j"] = val;
+	list["k"] = val;
+	list["l"] = val;
+	list["m"] = val;
+	list["n"] = val;
+	list["o"] = val;
+	list["p"] = val;
+	list["q"] = val;
+	list["r"] = val;
+	list["s"] = val;
+	list["t"] = val;
+	list["u"] = val;
+	list["v"] = val;
+	list["w"] = val;
+	list["x"] = val;
+	list["y"] = val;
+	list["z"] = val;
+
+	for ( i = 0; i < arg.size; i++ )
+	{
+		if ( !isdefined( list[ arg[ i ] ] ) )
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
+arg_obj_string_generate( arg )
+{
+
 }

@@ -90,15 +90,15 @@ cmd_setrank_f( args )
 		return result_cmderror( "Insufficient cmdpower to set " + target.name + "'s rank" );
 	}
 	new_rank = args[ 1 ];
-	if ( !is_true( self.is_server ) && ( level.tcs_ranks[ new_rank ].cmdpower >= self.cmdpower ) && self.cmdpower < level.CMD_POWER_HOST )
+	if ( !is_true( self.is_server ) && ( level.tcs_perms.ranks[ new_rank ].cmdpower >= self.cmdpower ) && self.cmdpower < level.tcs_perms.ranks[ "host" ].cmdpower )
 	{
 		return result_cmderror( "You cannot set " + target.name + " to a rank higher than or equal to your own" );
 	}
 
 	target.tcs_rank = new_rank;
-	target.cmdpower = level.tcs_ranks[ new_rank ].cmdpower;
+	target.cmdpower = level.tcs_perms.ranks[ new_rank ].cmdpower;
 	add_player_perms_entry( target );
-	level com_printf( target com_get_cmd_feedback_channel(), "cmdinfo", "Your new rank is " + new_rank, target );
+	target com_printinfo( "Your new rank is " + new_rank );
 
 	return result_cmdinfo( "Target's new rank is " + new_rank );
 }
@@ -109,8 +109,14 @@ cmd_setrank_f( args )
 cmd_execonallplayers_f( args )
 {
 	cmd = args[ 0 ];
-	cmd_to_execute = get_cmd_from_alias( cmd );
-	if ( !level.tcs_cmds[ cmd_to_execute ].is_clientcmd )
+	cmd_find_result = get_cmd_from_alias( cmd );
+	if ( cmd_find_result.errored )
+	{
+		return result_cmderror( cmd_find_result.msg );
+	}
+
+	cmd_object = cmd_find_result.value;
+	if ( !cmd_object.is_clientcmd )
 	{
 		return result_cmderror( "You cannot call a server cmd with execonallplayers" );
 	}
@@ -119,7 +125,7 @@ cmd_execonallplayers_f( args )
 	{
 		var_args[ i - 1 ] = args[ i ];
 	}
-	if ( !self test_cmd_is_valid( cmd_to_execute, var_args ) )
+	if ( !self test_cmd_is_valid( cmd_object, var_args ) )
 	{
 		return result_cmderror( "!self test_cmd_is_valid" );
 	}
@@ -130,18 +136,24 @@ cmd_execonallplayers_f( args )
 	}
 	for ( i = 0; i < players.size; i++ )
 	{
-		players[ i ] thread cmd_execute_internal( cmd_to_execute, var_args, false, false );
+		players[ i ] thread cmd_execute_internal( cmd_object, var_args, false, false );
 	}
 
-	return result_cmdinfo( "Executed " + cmd_to_execute + " on all players" );
+	return result_cmdinfo( "Executed " + cmd_object.cmd_name + " on all players" );
 }
 
 cmd_execonteam_f( args )
 {
 	team = args[ 0 ];
 	cmd = args[ 1 ];
-	cmd_to_execute = get_cmd_from_alias( cmd );
-	if ( !level.tcs_cmds[ cmd_to_execute ].is_clientcmd )
+	cmd_find_result = get_cmd_from_alias( cmd );
+	if ( cmd_find_result.errored )
+	{
+		return result_cmderror( cmd_find_result.msg );
+	}
+
+	cmd_object = cmd_find_result.value;
+	if ( !cmd_object.is_clientcmd )
 	{
 		return result_cmderror( "You cannot call a server cmd with execonteam" );
 	}
@@ -151,7 +163,7 @@ cmd_execonteam_f( args )
 	{
 		var_args[ i - 2 ] = args[ i ];
 	}
-	if ( !self test_cmd_is_valid( cmd_to_execute, var_args ) )
+	if ( !self test_cmd_is_valid( cmd_object, var_args ) )
 	{
 		return result_cmderror( "!self test_cmd_is_valid" );
 	}
@@ -162,10 +174,10 @@ cmd_execonteam_f( args )
 	}
 	for ( i = 0; i < players.size; i++ )
 	{
-		players[ i ] thread cmd_execute_internal( cmd_to_execute, var_args, false, false );
+		players[ i ] thread cmd_execute_internal( cmd_object, var_args, false, false );
 	}
 
-	return result_cmdinfo( "Executed " + cmd_to_execute + " on team " + team );
+	return result_cmdinfo( "Executed " + cmd_object.cmd_name + " on team " + team );
 }
 
 cmd_playerlist_f( args )
@@ -200,7 +212,7 @@ list_players_throttled( channel, players )
 	}
 	if ( !is_true( self.is_server ) )
 	{
-		level com_printf( channel, "cmdinfo", "Use shift + ` and scroll to the bottom to view the full list", self );
+		self com_printinfo( "Use shift + ` and scroll to the bottom to view the full list" );
 	}
 }
 
@@ -228,7 +240,7 @@ list_cmds_throttled( channel )
 	}
 	if ( !is_true( self.is_server ) )
 	{
-		level com_printf( channel, "cmdinfo", "Use shift + ` and scroll to the bottom to view the full list", self );
+		self com_printinfo( "Use shift + ` and scroll to the bottom to view the full list" );
 	}
 }
 
@@ -263,7 +275,7 @@ cmd_help_f( args )
 		{
 			self [[ level.tcs_additional_help_prints_func ]]( channel );
 		}
-		level com_printf( channel, "cmdinfo", "^3Use shift + ` and scroll to the bottom to view the full list", self );
+		self com_printinfo( "Use shift + ` and scroll to the bottom to view the full list" );
 	}
 
 	return result_cmdinfo( "" );
@@ -394,7 +406,7 @@ list_entities_throttled( channel, str, entities )
 	}
 	if ( !is_true( self.is_server ) )
 	{
-		level com_printf( channel, "cmdinfo", "Use shift + ` and scroll to the bottom to view the full list", self );
+		self com_printinfo( "Use shift + ` and scroll to the bottom to view the full list" );
 	}
 }
 
