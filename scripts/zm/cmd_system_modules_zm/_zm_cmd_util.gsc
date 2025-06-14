@@ -279,7 +279,7 @@ zombie_recalculate_total( stat_name, new_value )
 	}	
 }
 
-arg_perk_handler( arg )
+arg_obj_perk_validate( arg )
 {
 	perks = perk_list_zm();
 	channel = self com_get_cmd_feedback_channel();
@@ -291,7 +291,7 @@ arg_perk_handler( arg )
 	return isInArray( perks, arg ) || arg == "all";
 }
 
-arg_generate_rand_perk()
+arg_obj_perk_generate()
 {
 	perks = perk_list_zm();
 	if ( perks.size <= 0 )
@@ -301,7 +301,7 @@ arg_generate_rand_perk()
 	return randomInt( 20 ) < 1 ? "all" : perks[ randomInt( perks.size ) ];	
 }
 
-arg_weapon_handler( arg )
+arg_obj_weapon_validate( arg )
 {
 	channel = self com_get_cmd_feedback_channel();
 	if ( !isDefined( level.zombie_include_weapons ) || level.zombie_include_weapons.size <= 0 )
@@ -312,7 +312,7 @@ arg_weapon_handler( arg )
 	return isDefined( level.zombie_include_weapons[ arg ] );
 }
 
-arg_generate_rand_weapon()
+arg_obj_weapon_generate()
 {
 	if ( !isDefined( level.zombie_include_weapons ) || level.zombie_include_weapons.size <= 0 )
 	{
@@ -322,7 +322,7 @@ arg_generate_rand_weapon()
 	return weapon_keys[ randomInt( weapon_keys.size ) ];	
 }
 
-arg_powerup_handler( arg )
+arg_obj_powerup_validate( arg )
 {
 	channel = self com_get_cmd_feedback_channel();
 	if ( !isDefined( level.zombie_include_powerups ) || level.zombie_include_powerups.size <= 0 )
@@ -333,7 +333,7 @@ arg_powerup_handler( arg )
 	return isDefined( level.zombie_include_powerups[ arg ] );
 }
 
-arg_generate_rand_powerup()
+arg_obj_powerup_generate()
 {
 	if ( !isDefined( level.zombie_include_powerups ) || level.zombie_include_powerups.size <= 0 )
 	{
@@ -348,12 +348,12 @@ arg_generate_rand_powerup()
 	return powerup;	
 }
 
-arg_round_handler( arg )
+arg_obj_round_validate( arg )
 {
 	return is_natural_num( arg ) && int( arg ) <= 255;
 }
 
-arg_generate_rand_round()
+arg_obj_round_generate()
 {
 	return randomint( 256 );
 }

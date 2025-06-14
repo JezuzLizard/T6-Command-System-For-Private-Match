@@ -88,13 +88,13 @@ main()
 	arg_obj_add_cmd( "powerup", "powerup" );
 	arg_obj_add_cmd( "weapon", "weapon" );
 
-	cmd_register_arg_type_handlers( "weapon", ::arg_weapon_handler, ::arg_generate_rand_weapon, undefined, "not a valid weapon" );
-	cmd_register_arg_type_handlers( "perk", ::arg_perk_handler, ::arg_generate_rand_perk, undefined, "not a valid perk" );
-	cmd_register_arg_type_handlers( "powerup", ::arg_powerup_handler, ::arg_generate_rand_powerup, undefined, "not a valid powerup" );
-	cmd_register_arg_type_handlers( "round", ::arg_round_handler, ::arg_generate_rand_round, ::arg_cast_to_int, "not a valid round" );
+	arg_obj_register( "weapon", ::arg_obj_weapon_validate, ::arg_obj_weapon_generate, undefined, "not a valid weapon" );
+	arg_obj_register( "perk", ::arg_obj_perk_validate, ::arg_obj_perk_generate, undefined, "not a valid perk" );
+	arg_obj_register( "powerup", ::arg_obj_powerup_validate, ::arg_obj_powerup_generate, undefined, "not a valid powerup" );
+	arg_obj_register( "round", ::arg_obj_round_validate, ::arg_obj_round_generate, ::arg_obj_int_cast, "not a valid round" );
 
 	level thread on_unittest();
-	level thread check_for_command_alias_collisions();
+	level thread check_for_cmd_alias_collisions();
 	level.zm_command_init_done = true;
 }
 

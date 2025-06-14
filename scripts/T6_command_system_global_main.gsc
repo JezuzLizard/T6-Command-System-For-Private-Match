@@ -17,7 +17,7 @@ main()
 	level.tcs_sv = spawnStruct();
 	level.tcs_sv.playername = getdvar( "sv_hostname" );
 	level.tcs_sv.bis_server = true;
-	level.tcs_sv.name = tcs_sv.playername;
+	level.tcs_sv.name = level.tcs_sv.playername;
 	level.tcs_glob.irestart_countdown = 5;
 	level.tcs_glob.icmd_total = 0;
 	level.tcs_glob.icooldown = getdvarintdefault( "tcs_cmd_cd", 5 );
@@ -70,7 +70,7 @@ main()
 		}
 	}
 	// "\" is always useable by default
-	cmd_perms_init();
+	cmd_init_perms();
 	level.tcs_add_cmd_func = ::cmd_add;
 	level.tcs_set_cmd_power_func = ::cmd_set_power;
 	level.tcs_remove_cmd = ::cmd_remove;
@@ -136,11 +136,11 @@ main()
 
 	arg_obj_register( "player", ::arg_obj_player_validate, ::arg_obj_player_generate, ::arg_obj_player_cast, "not a valid player" );
 	//arg_obj_register( "playernotself", ::arg_obj_playernotself_validate, ::arg_obj_generate_rand_playernotself, ::arg_obj_cast_to_player, "not a valid player(cannot be self)" );
-	arg_obj_register( "wholenum", ::arg_obj_wholenum_validate, ::arg_obj_wholenum_generate, ::arg_obj_wholenum_cast, "not a whole number" );
+	arg_obj_register( "wholenum", ::arg_obj_wholenum_validate, ::arg_obj_wholenum_generate, ::arg_obj_int_cast, "not a whole number" );
 	arg_obj_register( "boolean", ::arg_obj_boolean_validate, ::arg_obj_boolean_generate, ::arg_obj_boolean_cast, "not a boolean" );
 	arg_obj_register( "int", ::arg_obj_int_validate, ::arg_obj_int_generate, ::arg_obj_int_cast, "not an int" );
 	arg_obj_register( "float", ::arg_obj_float_validate, ::arg_obj_float_generate, ::arg_obj_float_cast, "not a float" );
-	arg_obj_register( "wholefloat", ::arg_obj_wholefloat_validate, ::arg_obj_wholefloat_generate, ::arg_obj_wholefloat_cast, "not a float greater than 0" );
+	arg_obj_register( "wholefloat", ::arg_obj_wholefloat_validate, ::arg_obj_wholefloat_generate, ::arg_obj_float_cast, "not a float greater than 0" );
 	arg_obj_register( "vector", ::arg_obj_vector_validate, ::arg_obj_vector_generate, ::arg_obj_vector_cast, "not a valid vector, format is float,float,float" );
 	arg_obj_register( "team", ::arg_obj_team_validate, ::arg_obj_team_generate, undefined, "not a valid team" );
 	arg_obj_register( "cmdalias", ::arg_obj_cmdalias_validate, ::arg_obj_cmdalias_generate, ::arg_obj_cmdalias_cast, "not a valid cmdalias" );
@@ -149,7 +149,7 @@ main()
 	arg_obj_register( "hitloc", ::arg_obj_hitloc_validate, ::arg_obj_hitloc_generate, undefined, "not a valid hitloc" );
 	arg_obj_register( "MOD", ::arg_obj_mod_validate, ::arg_obj_mod_generate, ::arg_obj_mod_cast, "not a valid mod" );
 	arg_obj_register( "idflags", ::arg_obj_idflags_validate, ::arg_obj_idflags_generate, ::arg_obj_idflags_cast, "not a valid idflag" );
-	arg_obj_register( "bot", ::arg_obj_bot_handler, ::arg_obj_bot_generate, ::arg_obj_bot_cast, "not a valid bot" );
+	arg_obj_register( "bot", ::arg_obj_bot_validate, ::arg_obj_bot_generate, ::arg_obj_bot_cast, "not a valid bot" );
 
 	//exclude_clientcmd_from_unittest_pool();
 	//exclude_servercmd_from_unittest_pool();
@@ -268,7 +268,7 @@ cmd_execute( message, player, is_hidden, from_rcon )
 			player = level.host;
 		}
 	}
-	channel = player com_get_feedback_channel();
+	channel = player com_get_cmd_feedback_channel();
 	if ( !from_rcon && isDefined( player.cmd_cooldown ) && player.cmd_cooldown > 0 )
 	{
 		level com_printf( channel, "cmderror", "You cannot use another cmd for " + player.cmd_cooldown + " seconds", player );

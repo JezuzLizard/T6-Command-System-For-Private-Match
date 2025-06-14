@@ -28,7 +28,7 @@ main()
 	cmd_add( "hasscriptgoal", true, "hsg", "hasscriptgoal <bot>", ::cmd_hasscriptgoal_f, "cheat", 1, false );
 	arg_obj_add_cmd( "hasscriptgoal", "bot" );
 
-	level thread check_for_command_alias_collisions();
+	level thread check_for_cmd_alias_collisions();
 }
 
 cmd_setscriptgoal_f( args )
@@ -37,7 +37,7 @@ cmd_setscriptgoal_f( args )
 	bot = args[ 0 ];
 	goal = args[ 1 ];
 	player = self;
-	dist = isdefined( args[ 2 ] ) ? arg_cast_to_float( args[ 2 ] ) : 16;
+	dist = isdefined( args[ 2 ] ) ? arg_obj_float_cast( args[ 2 ] ) : 16;
 
 	if ( !isdefined( goal ) )
 	{
@@ -56,10 +56,10 @@ cmd_setscriptgoal_f( args )
 	}
 	else
 	{
-		is_vector_goal = arg_vector_handler( args[ 1 ] );
+		is_vector_goal = arg_vector_validate( args[ 1 ] );
 		if ( !is_vector_goal )
 		{
-			ent = arg_cast_to_entity( args[ 1 ] );
+			ent = arg_obj_entity_cast( args[ 1 ] );
 			if ( !isdefined( ent ) )
 			{
 				return result_cmderror( "Invalid entity for bot goal" );
@@ -82,12 +82,14 @@ cmd_setscriptgoal_f( args )
 
 cmd_clearscriptgoal_f( args )
 {
+	bot = args[ 0 ];
 	bot ClearScriptGoal();
 	return result_cmdinfo( "Cleared " + bot.name + " goal" );
 }
 
 cmd_hasscriptgoal_f( args )
 {
+	bot = args[ 0 ];
 	bot ClearScriptGoal();
 	return result_cmdinfo( "Bot " + bot.name + " has goal: " + cast_bool_to_str( bot HasScriptGoal(), "yes no" ) );
 }

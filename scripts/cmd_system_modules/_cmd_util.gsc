@@ -269,7 +269,7 @@ server_safe_notify_thread( notify_name, index )
 	return copy_result_obj;
 }
 
-/*result_obj_t*/ set_cast_error_msg( result_obj, error_msg )
+/*result_obj_t*/ set_cast_error( result_obj, error_msg )
 {
 	result_obj.errored = true;
 	result_obj.value = undefined;
@@ -649,8 +649,8 @@ cast_str_to_vector( str )
 		}
 	}
 
-	result.value = ( float( floats[ 0 ] ), float( floats[ 1 ] ), float( floats[ 2 ]) );
-	return result;
+	new_vector = ( float( floats[ 0 ] ), float( floats[ 1 ] ), float( floats[ 2 ] ) );
+	return set_cast_success( result_obj, new_vector, "vector==vector" );
 }
 
 cast_bool_to_str( bool, binary_string_options )
@@ -668,6 +668,20 @@ cast_bool_to_str( bool, binary_string_options )
 		}
 	}
 	return bool + "";
+}
+
+cast_str_to_bool( str )
+{
+	if ( str == "true" || str == "1" )
+	{
+		return true;
+	}
+	else if ( str == "false" || str == "0" )
+	{
+		return false;
+	}
+
+	return false;
 }
 
 repackage_args( args )
@@ -777,7 +791,7 @@ cmd_remove( cmd )
 	level.tcs_cmds = new_cmd_array;
 }
 
-cmd_remove_cmd_by_group( rank_group )
+cmd_remove_by_group( rank_group )
 {
 	if ( !isdefined( level.cmd_groups[ rank_group ] ) )
 	{
@@ -790,7 +804,7 @@ cmd_remove_cmd_by_group( rank_group )
 	}
 }
 
-cmd_set_cmd_power( cmd, power )
+cmd_set_power( cmd, power )
 {
 	if ( isdefined( level.tcs_cmds[ cmd ] ) )
 	{
@@ -798,11 +812,11 @@ cmd_set_cmd_power( cmd, power )
 	}
 }
 
-cmd_register_arg_types_for_cmd( cmd, arg_types )
+arg_obj_add_cmd( cmd, arg_types )
 {
 	if ( !isdefined( level.tcs_cmds[ cmd ] ) )
 	{
-		level com_printf( "con|g_log", "cmderror", "cmd_register_arg_types_for_cmd() " + cmd + " is not registered" );
+		level com_printf( "con|g_log", "cmderror", "arg_obj_add_cmd() " + cmd + " is not registered" );
 		return;
 	}
 	if ( !isdefined( arg_types ) || arg_types == "" )
@@ -854,11 +868,16 @@ handle_result_feedback( result, cmd, original_args, logprint, silent )
 		level com_printf( "con|g_log", "screrror", "Attempted to print feedback for " + cmd + " but no filter exists in the result" );
 		return;
 	}
-	if ( !isDefined( result.msg ) || result.msg == "" )
+	if ( !isDefined( result.msg ) )
 	{
 		level com_printf( "con|g_log", "screrror", "Attempted to print feedback for " + cmd + " but no message exists in the result" );
 		return;
 	}
+	if ( result.msg == "" )
+	{
+		return;
+	}
+
 	channel = self com_get_cmd_feedback_channel();
 	if ( result.channels != "" )
 	{
@@ -1010,10 +1029,10 @@ parse_cmd_message( message )
 
 get_cmd_from_alias( alias )
 {
-	result_obj = result_obj_new( "cmdalias", noprint );
+	result_obj = result_obj_new( "cmdalias" );
 	if ( alias == "" )
 	{
-		return set_cast_error_msg( result_obj, "No alias provided" );
+		return set_cast_error( result_obj, "No alias provided" );
 	}
 
 	cmd_keys = getarraykeys( level.tcs_cmds );
@@ -1028,7 +1047,7 @@ get_cmd_from_alias( alias )
 		}
 	}
 
-	return set_cast_error_msg( result_obj, "Couldn't find cmd" );
+	return set_cast_error( result_obj, "Couldn't find cmd" );
 }
 
 test_cmd_is_valid( cmd, args )
@@ -1058,27 +1077,12 @@ test_cmd_is_valid( cmd, args )
 	return true;
 }
 
-arg_boolean_handler( arg )
-{
-	return cast_str_to_bool( arg );
-}
-
-arg_generate_rand_boolean()
-{
-	return cointoss();
-}
-
-arg_cast_to_boolean( arg )
-{
-	return cast_str_to_bool( arg );
-}
-
-arg_obj_player_handler( arg )
+arg_obj_player_validate( arg )
 {
 	return isdefined( self cast_str_to_player( arg ) ); 
 }
 
-arg_obj_generate_rand_player()
+arg_obj_player_generate()
 {
 	if ( is_true( self.is_server ) )
 	{
@@ -1109,62 +1113,77 @@ arg_obj_generate_rand_player()
 	}
 }
 
-arg_obj_cast_to_player( arg )
+arg_obj_player_cast( arg )
 {
 	return self cast_str_to_player( arg, true );
 }
 
-arg_obj_wholenum_handler( arg )
+arg_obj_wholenum_validate( arg )
 {
 	return is_natural_num( arg );
 }
 
-arg_obj_generate_rand_wholenum()
+arg_obj_wholenum_generate()
 {
 	return randomint( 1000000 );
 }
 
-arg_obj_int_handler( arg )
+arg_obj_boolean_validate( arg )
+{
+	return cast_str_to_bool( arg );
+}
+
+arg_obj_boolean_generate()
+{
+	return cointoss();
+}
+
+arg_obj_boolean_cast( arg )
+{
+	return cast_str_to_bool( arg );
+}
+
+arg_obj_int_validate( arg )
 {
 	return is_str_int( arg );
 }
 
-arg_obj_generate_rand_int()
+arg_obj_int_generate()
 {
 	return cointoss() ? randomint( 1000000 ) : randomint( 1000000 ) * -1;
 }
 
-arg_obj_cast_to_int( arg )
+arg_obj_int_cast( arg )
 {
 	return int( arg );
 }
 
-arg_obj_float_handler( arg )
+arg_obj_float_validate( arg )
 {
 	return is_str_float( arg ) || is_str_int( arg );
 }
 
-arg_obj_generate_rand_float()
+arg_obj_float_generate()
 {
 	return cointoss() ? randomFloat( 1000000 ) : randomFloat( 1000000 ) * -1;
 }
 
-arg_obj_cast_to_float( arg )
+arg_obj_float_cast( arg )
 {
 	return float( arg );
 }
 
-arg_obj_wholefloat_handler( arg )
+arg_obj_wholefloat_validate( arg )
 {
 	return is_whole_float( arg );
 }
 
-arg_obj_generate_rand_wholefloat()
+arg_obj_wholefloat_generate()
 {
 	return randomfloat( 1000000 );
 }
 
-arg_obj_vector_handler( arg )
+arg_obj_vector_validate( arg )
 {
 	numbers_array = strTok( arg, "," );
 	if ( numbers_array.size != 3 )
@@ -1182,7 +1201,7 @@ arg_obj_vector_handler( arg )
 	return true;
 }
 
-arg_obj_generate_rand_vector()
+arg_obj_vector_generate()
 {
 	x = cointoss() ? randomfloat( 1000 ) : randomfloat( 1000 ) * -1;
 	y = cointoss() ? randomfloat( 1000 ) : randomfloat( 1000 ) * -1;
@@ -1190,28 +1209,28 @@ arg_obj_generate_rand_vector()
 	return x + "," + y + "," + z;
 }
 
-arg_obj_cast_to_vector( arg )
+arg_obj_vector_cast( arg )
 {
 	return cast_str_to_vector( arg );
 }
 
-arg_obj_team_handler( arg )
+arg_obj_team_validate( arg )
 {
 	return isdefined( level.teams[ arg ] );
 }
 
-arg_obj_generate_rand_team()
+arg_obj_team_generate()
 {
 	return random( level.teams );
 }
 
-arg_obj_cmdalias_handler( arg )
+arg_obj_cmdalias_validate( arg )
 {
 	cmd_to_execute = get_cmd_from_alias( arg );
 	return cmd_to_execute != "";
 }
 
-arg_obj_generate_rand_cmdalias()
+arg_obj_cmdalias_generate()
 {
 	cmd_keys = getarraykeys( level.tcs_cmds );
 	aliases = [];
@@ -1229,30 +1248,30 @@ arg_obj_generate_rand_cmdalias()
 	return aliases[ randomInt( aliases.size ) ];
 }
 
-arg_obj_cast_to_cmd( arg )
+arg_obj_cmdalias_cast( arg )
 {
 	cmd_to_execute = get_cmd_from_alias( arg );
 	return cmd_to_execute;	
 }
 
-arg_obj_rank_handler( arg )
+arg_obj_rank_validate( arg )
 {
 	return isdefined( level.tcs_ranks[ arg ] );
 }
 
-arg_obj_generate_rand_rank()
+arg_obj_rank_generate()
 {
 	ranks = getarraykeys( level.tcs_ranks );
 	return ranks[ randomInt( ranks.size ) ]; 
 }
 
-arg_obj_entity_handler( arg )
+arg_obj_entity_validate( arg )
 {
 	test_result = self cast_str_to_entity( arg );
 	return !test_result.errored;
 }
 
-arg_obj_generate_rand_entity()
+arg_obj_entity_generate()
 {
 	randomint = randomint( 2 );
 	entities = getentarray();
@@ -1274,45 +1293,45 @@ arg_obj_generate_rand_entity()
 	}
 }
 
-arg_obj_cast_to_entity( arg )
+arg_obj_entity_cast( arg )
 {
 	return self cast_str_to_entity( arg, true );
 }
 
-arg_obj_hitloc_handler( arg )
+arg_obj_hitloc_validate( arg )
 {
 	return isdefined( level.tcs_hitlocs[ arg ] );
 }
 
-arg_obj_generate_rand_hitloc()
+arg_obj_hitloc_generate()
 {
 	hitlocs = getarraykeys( level.tcs_hitlocs );
 	return hitlocs[ randomint( hitlocs.size ) ];
 }
 
-arg_obj_mod_handler( arg )
+arg_obj_mod_validate( arg )
 {
 	return isdefined( level.tcs_mods[ toupper( arg ) ] );
 }
 
-arg_obj_generate_rand_mod()
+arg_obj_mod_generate()
 {
 	mods = getarraykeys( level.tcs_mods );
 	return mods[ randomInt( mods.size ) ];
 }
 
-arg_obj_cast_to_mod( arg )
+arg_obj_mod_cast( arg )
 {
 	cast_obj = toupper( arg );
 	return cast_obj;
 }
 
-arg_obj_idflags_handler( arg )
+arg_obj_idflags_validate( arg )
 {
 	return is_natural_num( arg ) && int( arg ) < 2048;
 } 
 
-arg_obj_generate_rand_idflags()
+arg_obj_idflags_generate()
 {
 	flags = 0;
 	idflags_array = level.tcs_idflags;
@@ -1323,5 +1342,63 @@ arg_obj_generate_rand_idflags()
 		flags |= idflags_array[ random_flag_index ];
 		arrayremoveindex( idflags_array, random_flag_index );
 	}
+
 	return flags;
+}
+
+// unimplmented
+arg_obj_idflags_cast( arg )
+{
+
+}
+
+arg_obj_bot_validate( arg )
+{
+	player = self cast_str_to_player( arg );
+	return isDefined( player ) && player istestclient();
+} 
+
+arg_obj_bot_generate()
+{
+	if ( is_true( self.is_server ) )
+	{
+		randomint = randomInt( 3 );
+	}
+	else 
+	{
+		randomint = randomInt( 4 );
+	}
+
+	bots = [];
+	for ( i = 0; i < level.players.size; i++ )
+	{
+		if ( !level.players[ i ] istestclient() )
+		{
+			continue;
+		}
+		bots[ bots.size ] = level.players[ i ];
+	}
+
+	if ( bots.size <= 0 )
+	{
+		return -1;
+	}
+
+	random_bot = bots[ randomInt( bots.size ) ];
+	switch ( randomint )
+	{
+		case 0:
+			return random_bot getEntityNumber();
+		case 1:
+			return random_bot getGuid();
+		case 2:
+			return random_bot.name;
+		case 3:
+			return "self";
+	}
+}
+
+arg_obj_bot_cast( arg )
+{
+	return self cast_str_to_player( arg, true );
 }

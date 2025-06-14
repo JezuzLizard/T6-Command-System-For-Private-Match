@@ -157,7 +157,7 @@ com_printf( channels, filter, message, players )
 	for ( i = 0; i < channel_keys.size; i++ )
 	{
 		channel = channel_keys[ i ];
-		if ( com_is_channel_active( channel ) && com_is_filter_active( filter ) )
+		if ( com_channel_is_active( channel ) && com_filter_is_active( filter ) )
 		{
 			if ( channel == "g_log" )
 			{

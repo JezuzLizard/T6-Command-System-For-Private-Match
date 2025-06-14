@@ -16,9 +16,9 @@ main()
 	cmd_add( "sicdogsonplayer", false, "sicdogsonplayer", "sicdogsonplayer <name|guid|clientnum|self> [count] [invisible]", ::cmd_sicdogsonplayer_f, "cheat", 1, false );
 	cmd_add( "removedogs", false, "removedogs", "removedogs", ::cmd_removedogs_f, "cheat", 0, false );
 
-	cmd_register_arg_types_for_cmd( "sicdogsonplayer", "player wholenum wholenum" );
+	arg_obj_add_cmd( "sicdogsonplayer", "player wholenum wholenum" );
 
-	cmd_register_arg_type_handlers( "weapon", ::arg_weapon_handler, ::arg_generate_rand_weapon, undefined, "not a valid weapon" );
+	arg_obj_register( "weapon", ::arg_weapon_handler, ::arg_generate_rand_weapon, undefined, "not a valid weapon" );
 
 	level thread on_unittest();
 

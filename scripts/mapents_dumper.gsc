@@ -599,11 +599,11 @@ main()
 	// entity manipulation
 	level [[ level.tcs_add_command_func ]]( "seteditortargetent", true, "seteditent", "seteditortargetent [entnum]", ::cmd_seteditortargetent_f, "cheat", 0, false );
 	level [[ level.tcs_add_command_func ]]( "seteditortargetangles", true, "seteditangles", "seteditortargetangles <angles> [relative]", ::cmd_seteditortargetangles_f, "cheat", 1, false );
-	cmd_register_arg_types_for_cmd( "seteditortargetangles", "vector boolean" );
+	arg_obj_add_cmd( "seteditortargetangles", "vector boolean" );
 	level [[ level.tcs_add_command_func ]]( "seteditortargetorigin", true, "seteditorigin", "seteditortargetorigin <pos> [relative]", ::cmd_seteditortargetorigin_f, "cheat", 1, false );
-	cmd_register_arg_types_for_cmd( "seteditortargetorigin", "vector boolean" );
+	arg_obj_add_cmd( "seteditortargetorigin", "vector boolean" );
 	level [[ level.tcs_add_command_func ]]( "seteditortargetmodel", true, "seteditmodel", "seteditortargetmodel <model>", ::cmd_seteditortargetmodel_f, "cheat", 1, false );
-	cmd_register_arg_types_for_cmd( "seteditortargetmodel", "model" );
+	arg_obj_add_cmd( "seteditortargetmodel", "model" );
 	level [[ level.tcs_add_command_func ]]( "seteditorheldmodel", true, "seteditheld", "seteditorheldmodel <model>", ::cmd_seteditorheldmodel_f, "cheat", 1, false );
 	// TODO:
 	//setmins

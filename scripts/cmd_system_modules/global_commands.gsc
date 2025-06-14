@@ -317,8 +317,7 @@ cmd_entitylist_f( args )
 	entities = getEntArray();
 	if ( entities.size <= 0 )
 	{
-		level com_printf( channel, "notitle", "There are no entities in the server", self );
-		return result;
+		return result_cmderror( "There are no entities in the server" );
 	}
 	self thread list_entities_throttled( channel, args[ 0 ], entities );
 

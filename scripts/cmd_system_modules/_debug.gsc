@@ -132,7 +132,7 @@ activate_random_cmds()
 
 construct_chat_message_for_unittest()
 {
-	cmdalias = arg_generate_rand_cmdalias();
+	cmdalias = arg_obj_cmdalias_generate();
 	//logprint( "random cmdalias: " + cmdalias + "\n" );
 	cmd = get_cmd_from_alias( cmdalias );
 	if ( cmd == "" )
