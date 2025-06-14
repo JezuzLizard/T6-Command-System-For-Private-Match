@@ -21,12 +21,12 @@ main()
 		wait 0.05;
 	}
 
-	cmd_addcommand( "setscriptgoal", true, "ssg", "scriptgoal <bot> [goal|entity] [dist]", ::cmd_setscriptgoal_f, "cheat", 1, false );
-	cmd_register_arg_types_for_cmd( "setscriptgoal", "bot" );
-	cmd_addcommand( "clearscriptgoal", true, "csg", "clearscriptgoal <bot>", ::cmd_clearscriptgoal_f, "cheat", 1, false );
-	cmd_register_arg_types_for_cmd( "clearscriptgoal", "bot" );
-	cmd_addcommand( "hasscriptgoal", true, "hsg", "hasscriptgoal <bot>", ::cmd_hasscriptgoal_f, "cheat", 1, false );
-	cmd_register_arg_types_for_cmd( "hasscriptgoal", "bot" );
+	cmd_add( "setscriptgoal", true, "ssg", "scriptgoal <bot> [goal|entity] [dist]", ::cmd_setscriptgoal_f, "cheat", 1, false );
+	arg_obj_add_cmd( "setscriptgoal", "bot" );
+	cmd_add( "clearscriptgoal", true, "csg", "clearscriptgoal <bot>", ::cmd_clearscriptgoal_f, "cheat", 1, false );
+	arg_obj_add_cmd( "clearscriptgoal", "bot" );
+	cmd_add( "hasscriptgoal", true, "hsg", "hasscriptgoal <bot>", ::cmd_hasscriptgoal_f, "cheat", 1, false );
+	arg_obj_add_cmd( "hasscriptgoal", "bot" );
 
 	level thread check_for_command_alias_collisions();
 }
@@ -62,9 +62,7 @@ cmd_setscriptgoal_f( args )
 			ent = arg_cast_to_entity( args[ 1 ] );
 			if ( !isdefined( ent ) )
 			{
-				result[ "filter" ] = "cmderror";
-				result[ "message" ] = "Invalid entity for bot goal";
-				return result;
+				return result_cmderror( "Invalid entity for bot goal" );
 			}
 			else
 			{
@@ -79,25 +77,17 @@ cmd_setscriptgoal_f( args )
 		}
 	}
 
-	result[ "filter" ] = "cmdinfo";
-	result[ "message" ] = "Set " + bot.name + " goal to " + goal;
-	return result;
+	return result_cmdinfo( "Set " + bot.name + " goal to " + goal );
 }
 
 cmd_clearscriptgoal_f( args )
 {
-	bot = args[ 0 ];
 	bot ClearScriptGoal();
-	result[ "filter" ] = "cmdinfo";
-	result[ "message" ] = "Cleared " + bot.name + " goal";
-	return result;
+	return result_cmdinfo( "Cleared " + bot.name + " goal" );
 }
 
 cmd_hasscriptgoal_f( args )
 {
-	bot = args[ 0 ];
 	bot ClearScriptGoal();
-	result[ "filter" ] = "cmdinfo";
-	result[ "message" ] = "Bot " + bot.name + " has goal: " + cast_bool_to_str( bot HasScriptGoal(), "yes no" );
-	return result;
+	return result_cmdinfo( "Bot " + bot.name + " has goal: " + cast_bool_to_str( bot HasScriptGoal(), "yes no" ) );
 }

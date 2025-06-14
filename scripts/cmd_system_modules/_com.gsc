@@ -4,30 +4,30 @@
 
 com_init()
 {
-	com_addfilter( "cominfo", 1 );
-	com_addfilter( "comwarning", 1 );
-	com_addfilter( "comerror", 1 );
-	com_addfilter( "cmdinfo", 1 );
-	com_addfilter( "cmdwarning", 1 );
-	com_addfilter( "cmderror", 1 );
-	com_addfilter( "scrinfo", 1 );
-	com_addfilter( "scrwarning", 1 );
-	com_addfilter( "screrror", 1 );
-	com_addfilter( "permsinfo", 1 );
-	com_addfilter( "permswarning", 1 );
-	com_addfilter( "permserror", 1 ); 
-	com_addfilter( "debug", 0 );
-	com_addfilter( "notitle", 1 );
+	com_filter_add( "cominfo", 1 );
+	com_filter_add( "comwarning", 1 );
+	com_filter_add( "comerror", 1 );
+	com_filter_add( "cmdinfo", 1 );
+	com_filter_add( "cmdwarning", 1 );
+	com_filter_add( "cmderror", 1 );
+	com_filter_add( "scrinfo", 1 );
+	com_filter_add( "scrwarning", 1 );
+	com_filter_add( "screrror", 1 );
+	com_filter_add( "permsinfo", 1 );
+	com_filter_add( "permswarning", 1 );
+	com_filter_add( "permserror", 1 ); 
+	com_filter_add( "debug", 0 );
+	com_filter_add( "notitle", 1 );
 
-	com_addchannel( "con", ::com_print );
-	com_addchannel( "g_log", ::com_logprint );
-	com_addchannel( "iprint", ::com_iprintln );
-	com_addchannel( "iprintbold", ::com_iprintlnbold );
+	com_channel_add( "con", ::com_print );
+	com_channel_add( "g_log", ::com_logprint );
+	com_channel_add( "iprint", ::com_iprintln );
+	com_channel_add( "iprintbold", ::com_iprintlnbold );
 
-	com_addchannel( "iprint_array", ::com_iprintln_array );
+	com_channel_add( "iprint_array", ::com_iprintln_array );
 }
 
-com_addfilter( filter, default_value )
+com_filter_add( filter, default_value )
 {
 	if ( !isDefined( level.com_filters ) )
 	{
@@ -39,7 +39,7 @@ com_addfilter( filter, default_value )
 	}
 }
 
-com_addchannel( channel, func )
+com_channel_add( channel, func )
 {
 	if ( !isDefined( level.com_channels ) )
 	{
@@ -51,12 +51,12 @@ com_addchannel( channel, func )
 	}
 }
 
-com_is_filter_active( filter )
+com_filter_is_active( filter )
 {
 	return is_true( level.com_filters[ filter ] );
 }
 
-com_is_channel_active( channel )
+com_channel_is_active( channel )
 {
 	return isDefined( level.com_channels[ channel ] );
 }
@@ -105,7 +105,7 @@ com_logprint( message, players )
 
 com_iprintln( message, player )
 {
-	if ( is_true( level.doing_command_system_unittest ) )
+	if ( is_true( level.doing_cmd_system_unittest ) )
 	{
 		return;
 	}
@@ -117,7 +117,7 @@ com_iprintln( message, player )
 
 com_iprintln_array( message, players )
 {
-	if ( is_true( level.doing_command_system_unittest ) )
+	if ( is_true( level.doing_cmd_system_unittest ) )
 	{
 		return;
 	}
@@ -129,7 +129,7 @@ com_iprintln_array( message, players )
 
 com_iprintlnbold( message, players )
 {
-	if ( is_true( level.doing_command_system_unittest ) )
+	if ( is_true( level.doing_cmd_system_unittest ) )
 	{
 		return;
 	}
@@ -183,7 +183,7 @@ com_get_cmd_feedback_channel()
 	{
 		return "con";
 	}
-	else if ( is_true( level.doing_command_system_unittest ) )
+	else if ( is_true( level.doing_cmd_system_unittest ) )
 	{
 		return "g_log";
 	}

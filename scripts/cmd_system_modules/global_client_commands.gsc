@@ -2,47 +2,42 @@
 #include maps\mp\_utility;
 #include scripts\cmd_system_modules\_cmd_util;
 
-CMD_TOGGLEHUD_f( arg_list )
+cmd_togglehud_f( args )
 {
-	result = [];
 	on_off = cast_bool_to_str( is_true( self.tcs_hud_toggled ), "on off" );
 	if ( on_off == "off" )
 	{
 		self setclientuivisibilityflag( "hud_visible", 0 );
 		self.tcs_hud_toggled = true;
 	}
-	else 
+	else
 	{
 		self setclientuivisibilityflag( "hud_visible", 1 );
 		self.tcs_hud_toggled = false;
 	}
-	result[ "filter" ] = "cmdinfo";
-	result[ "message" ] = "Your hud has been toggled " + on_off;
-	return result;
+
+	return result_cmdinfo( "Your hud has been toggled " + on_off );
 }
 
-CMD_GOD_f( arg_list )
+cmd_god_f( args )
 {
-	result = [];
 	on_off = cast_bool_to_str( !is_true( self.tcs_is_invulnerable ), "on off" );
 	if ( on_off == "on" )
 	{
 		self enableInvulnerability();
 		self.tcs_is_invulnerable = true;
 	}
-	else 
+	else
 	{
 		self disableInvulnerability();
 		self.tcs_is_invulnerable = false;
 	}
-	result[ "filter" ] = "cmdinfo";
-	result[ "message" ] = "God " + on_off;
-	return result;
+
+	return result_cmdinfo( "God " + on_off );
 }
 
-CMD_NOTARGET_f( arg_list )
+cmd_notarget_f( args )
 {
-	result = [];
 	on_off = cast_bool_to_str( !is_true( self.ignoreme ), "on off" );
 	if ( on_off == "on" )
 	{
@@ -52,14 +47,12 @@ CMD_NOTARGET_f( arg_list )
 	{
 		self.ignoreme = false;
 	}
-	result[ "filter" ] = "cmdinfo";
-	result[ "message" ] = "Notarget " + on_off;
-	return result;
+	
+	return result_cmdinfo( "Notarget " + on_off );
 }
 
-CMD_INVISIBLE_f( arg_list )
+cmd_invisible_f( args )
 {
-	result = [];
 	on_off = cast_bool_to_str( !is_true( self.tcs_is_invisible ), "on off" );
 	if ( on_off == "on" )
 	{
@@ -71,30 +64,22 @@ CMD_INVISIBLE_f( arg_list )
 		self show();
 		self.tcs_is_invisible = false;
 	}
-	result[ "filter" ] = "cmdinfo";
-	result[ "message" ] = "Invisible " + on_off;
-	return result;
+
+	return result_cmdinfo( "Invisible " + on_off );
 }
 
-CMD_PRINTORIGIN_f( arg_list )
+cmd_printorigin_f( args )
 {
-	result = [];
-	result[ "filter" ] = "cmdinfo";
-	result[ "message" ] = "Your origin is " + self.origin;
-	return result;
+	return result_cmdinfo( "Your origin is " + self.origin );
 }
 
-CMD_PRINTANGLES_f( arg_list )
+cmd_printangles_f( args )
 {
-	result = [];
-	result[ "filter" ] = "cmdinfo";
-	result[ "message" ] = "Your angles are " + self.angles;
-	return result;
+	return result_cmdinfo( "Your angles are " + self.angles );
 }
 
-CMD_BOTTOMLESSCLIP_f( arg_list )
+cmd_bottomlessclip_f( args )
 {
-	result = [];
 	on_off = cast_bool_to_str( !is_true( self.tcs_bottomless_clip ), "on off" );
 	if ( on_off == "on" )
 	{
@@ -106,9 +91,8 @@ CMD_BOTTOMLESSCLIP_f( arg_list )
 		self notify( "stop_bottomless_clip" );
 		self.tcs_bottomless_clip = false;
 	}
-	result[ "filter" ] = "cmdinfo";
-	result[ "message" ] = "Bottomless Clip " + on_off;
-	return result;
+
+	return result_cmdinfo( "Bottomless Clip " + on_off );
 }
 
 bottomless_clip()
@@ -127,27 +111,23 @@ bottomless_clip()
 	}
 }
 
-CMD_TELEPORT_f( arg_list )
+cmd_teleport_f( args )
 {
-	result = [];
-	target = arg_list[ 0 ];
+	target = args[ 0 ];
 	if ( target == self )
 	{
-		result[ "filter" ] = "cmderror";
-		result[ "message" ] = "You cannot teleport to yourself";
-		return result;
+		return result_cmderror( "You cannot teleport to yourself" );
 	}
+
 	self setOrigin( target.origin + anglesToForward( target.angles ) * 64 + anglesToRight( target.angles ) * 64 );
-	result[ "filter" ] = "cmdinfo";
-	result[ "message" ] = "Successfully teleported to " + target.name + "'s position";
-	return result;
+	return result_cmdinfo( "Successfully teleported to " + target.name + "'s position" );
 }
 
-CMD_CVAR_f( arg_list )
+cmd_cvar_f( args )
 {
-	result = [];
-	self setClientDvar( arg_list[ 0 ], arg_list[ 1 ] );
-	result[ "filter" ] = "cmdinfo";
-	result[ "message" ] = "Successfully set " + arg_list[ 0 ] + " to " + arg_list[ 1 ];
-	return result;
+	dvarname = args[ 0 ];
+	dvarvalue = args[ 1 ];
+	self setClientDvar( dvarname, dvarvalue );
+
+	return result_cmdinfo( "Successfully set " + dvarname + " to " + dvarvalue );
 }
