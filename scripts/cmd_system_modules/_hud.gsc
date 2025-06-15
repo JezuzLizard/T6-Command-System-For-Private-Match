@@ -104,6 +104,57 @@ set_hud_field( max_depth, field_name, val )
 	}
 }
 
+create_text_hud_baseline()
+{
+	level._text_limit = 40;
+	level._text_count = 0;
+	level._text_huds = [];
+	hud = newhudelem();
+	hud.is_text_baseline = true;
+	return hud;
+}
+
+set_safe_text( text )
+{
+	if ( level._text_count >= level._text_limit )
+	{
+		// clear all strings
+		level._baseline_text_hud clearalltextafterhudelem();
+		for ( i = 0; i < level._text_huds.size; i++ )
+		{
+			text_hud = level._text_huds[ i ];
+			text_hud settext( "" );
+		}
+
+		level._text_count = 0;
+
+		// restore previous text for active huds
+		for ( i = 0; i < level._text_huds.size; i++ )
+		{
+			text_hud = level._text_huds[ i ];
+			text_hud settext( level._text_huds[ i ].save_text );
+			level._text_count++;
+		}
+
+		level.server com_printinfo( "Had to clear the text cache..." );
+	}
+
+	if ( isdefined( self.save_text ) && self.save_text == text )
+	{
+		return;
+	}
+
+	level._text_count++;
+
+	self.save_text = text;
+	self settext( text );
+}
+
+set_safe_label( text )
+{
+
+}
+
 call_hud_method( max_depth, call_name, arg1 = undefined, arg2 = undefined, arg3 = undefined, arg4 = undefined, arg5 = undefined )
 {
 	max_depth = _DEFAULT( max_depth, 0 );
@@ -112,7 +163,7 @@ call_hud_method( max_depth, call_name, arg1 = undefined, arg2 = undefined, arg3 
 	{
 		case "fadeovertime":
 			time = arg1;
-			self fadeOverTime( time );
+			self fadeovertime( time );
 			break;
 		default:
 			return;
@@ -200,7 +251,7 @@ hud_binding_set( binding_name, hud, new_value )
 			switch ( hud_binding_obj.binding_subtype )
 			{
 				case "edit_mode":
-					hud settext( new_value );
+					hud set_safe_text( new_value );
 					break;
 				default:
 					break;
@@ -219,28 +270,21 @@ hud_binding_set( binding_name, hud, new_value )
 
 hud_binding_set_default( hud_binding_obj, hud )
 {
-	if ( is_true( hud_binding_obj.inited ) && hud_binding_obj.binding_val == hud_binding_obj.binding_default_val )
-	{
-		return;
-	}
-
 	switch ( hud_binding_obj.binding_subtype )
 	{
 		case "edit_mode":
 		case "selected_entity":
 		case "held_entity":
 		case "placed_entities":
-			hud settext( hud_binding_obj.binding_default_val );
+			hud_binding_obj.binding_val = hud_binding_obj.binding_default_val;
+			hud set_safe_text( hud_binding_obj.binding_default_val );
 			break;
 		default:
 			break;
 	}
-
-	hud_binding_obj.binding_val = hud_binding_obj.binding_default_val;
-	hud_binding_obj.inited = true;
 }
 
-hud_binding_subscribe_to_entity( binding_name, entity )
+/*gentity_t*/ hud_binding_subscribe_to_entity( binding_name, entity )
 {
 	self endon( "disconnect" );
 	hud_binding_obj = self hud_binding_get( binding_name );
@@ -252,7 +296,7 @@ hud_binding_subscribe_to_entity( binding_name, entity )
 
 	hud_binding_obj.binding_subscribed_entity = entity;
 
-	return hud_binding_obj;
+	return entity;
 }
 
 hud_binding_get_subscribed_entity( binding_name )
@@ -277,16 +321,22 @@ hud_binding_update( hud_binding_obj, hud )
 
 	if ( hud_binding_obj.binding_type == "entity" )
 	{
-		switch ( hud_binding_obj.binding_type )
+		switch ( hud_binding_obj.binding_subtype )
 		{
 			case "held_entity":
-				hud settext( "HOLDING: " + "Classname: " + entity.classname + " Org: " + entity.origin + " Ang: " + entity.angles );
+				hud_binding_obj.binding_val = "HOLDING: " + "Classname: " + entity.classname + " Org: " + entity.origin + " Ang: " + entity.angles;
+				hud set_safe_text( hud_binding_obj.binding_val );
 				break;
 			case "selected_entity":
-				hud settext( "SELECTED: " + "Classname: " + entity.classname + " Org: " + entity.origin + " Ang: " + entity.angles );
+				hud_binding_obj.binding_val = "SELECTED: " + "Classname: " + entity.classname + " Org: " + entity.origin + " Ang: " + entity.angles;
+				hud set_safe_text( hud_binding_obj.binding_val );
 				break;
 			case "placed_entities":
-				hud settext( "Placed ent count: " + hud_binding_obj.binding_subscribed_entity.size );
+				hud_binding_obj.binding_val = "Placed ent count: " + hud_binding_obj.binding_subscribed_entity.size;
+				hud set_safe_text( hud_binding_obj.binding_val );
+				break;
+			default:
+				assert( false );
 				break;
 		}
 	}
@@ -302,12 +352,10 @@ hud_bindings_update_loop()
 
 	for ( ;; )
 	{
-		bindings = self hud_bindings_get();
-
-		keys = getarraykeys( bindings );
+		keys = getarraykeys( self._hud_bindings );
 		for ( i = 0; i < keys.size; i++ )
 		{
-			hud_binding_obj = bindings[ keys[ i ] ];
+			hud_binding_obj = self._hud_bindings[ keys[ i ] ];
 			entity = hud_binding_obj.binding_subscribed_entity;
 			hud = hud_binding_obj.binding_subscriber_hud;
 			if ( isdefined( hud ) )
@@ -385,9 +433,16 @@ vertical_text_list_create( vertical_spacing, alpha, font, fontscale, alignx, ali
 	return root;
 }
 
+new_client_hud_wrapper( client )
+{
+	hudelem = newclienthudelem( client );
+	level._text_huds[ level._text_huds.size ] = hudelem;
+	return hudelem;
+}
+
 vertical_text_list_add( parent, binding_name )
 {
-	hudelem = newclienthudelem( self );
+	hudelem = new_client_hud_wrapper( self );
 	hudelem.elem_type = "font";
 
 	if ( isdefined( self._hud_bindings[ binding_name ] ) )

@@ -415,6 +415,8 @@ cmd_deletecamera_f( args )
 	camera_ent = self._cmds_cameras[ camera_name ];
 	if ( isdefined( camera_ent ) )
 	{
+		camera_ent unlink();
+		camera_ent delete();
 		return result_cmdinfo( "Deleted camera lookat for a camera named: '" + camera_name + "' at: '" + self.origin + " with angles: '" + self.angles + "'" );
 	}
 	else
@@ -422,6 +424,71 @@ cmd_deletecamera_f( args )
 		return result_cmderror( "No camera with name '" + camera_name + "' exists!" );
 	}
 }
+
+link_camera_to_ent( camera_name, ent, tag_name, origin_offset = undefined, angles_offset = undefined )
+{
+	origin_offset = _DEFAULT( origin_offset, ( 0, 0, 0 ) );
+	angles_offset = _DEFAULT( angles_offset, ( 0, 0, 0 ) );
+	if ( !isdefined( self._cmds_cameras[ camera_name ] ) )
+	{
+		return;
+	}
+
+	camera_ent = self._cmds_cameras[ camera_name ];
+	camera_ent linkto( ent, tag_name, origin_offset, angles_offset );
+}
+
+cmd_linkcameratoent_f( args )
+{
+	camera_name = args[ 0 ];
+	entity = args[ 1 ];
+	tag_name = _DEFAULT( args[ 2 ], "" );
+	origin_offset = _DEFAULT( args[ 3 ], ( 0, 0, 0 ) );
+	angles_offset = _DEFAULT( args[ 4 ], ( 0, 0, 0 ) );
+	camera_ent = self._cmds_cameras[ camera_name ];
+	if ( isdefined( camera_ent ) )
+	{
+		self link_camera_to_ent( camera_name, entity, tag_name, origin_offset, angles_offset );
+		return result_cmdinfo( "Linked camera '" + camera_name + "' to ent '" + entity.classname + "'!"  );
+	}
+	else
+	{
+		return result_cmderror( "No camera with name '" + camera_name + "' exists!" );
+	}
+}
+
+cmd_unlinkcamera_f( args )
+{
+	camera_name = args[ 0 ];
+	camera_ent = self._cmds_cameras[ camera_name ];
+	if ( isdefined( camera_ent ) )
+	{
+		camera_ent unlink();
+		return result_cmdinfo( "Unlinked camera '" + camera_name + "'!"  );
+	}
+	else
+	{
+		return result_cmderror( "No camera with name '" + camera_name + "' exists!" );
+	}
+	
+}
+
+cmd_spectateactor_f( args )
+{
+	actor = args[ 0 ];
+	tag_name = args[ 1 ];
+
+	args2 = [];
+	args2[ 0 ] = "auto1";
+	args3 = [];
+	args3[ 0 ] = "auto1";
+	self cmd_createcamera_f( args2 );
+	self link_camera_to_ent( "auto1", actor, tag_name );
+	self cmd_setcamera_f( args3 );
+
+	return result_cmdinfo( "You are now linked to actor: " + actor getentitynumber() );
+}
+
 // GScr_PhysicsTrace masks
 /*
 	level.physicstracemaskphysics = 1;
@@ -562,9 +629,7 @@ editor_spawn_held_model_thread( ent_name, model, carry_offset, carry_angles )
 	self carryturret( placeturret, carry_offset, carry_angles );
 
 	self.is_holding_model = true;
-	hud_binding_obj = self hud_binding_subscribe_to_entity( "editor_held_context", placeturret );
-
-	held_ent = self hud_binding_get_subscribed_entity( "editor_held_context" );
+	held_ent = self hud_binding_subscribe_to_entity( "editor_held_context", placeturret );
 	for ( ;; )
 	{
 		self notifyonplayercommand( "toggle_unlink", "+speed_throw" );
@@ -608,18 +673,6 @@ live_pickup_adjust_preview( placeturret, carry_offset, carry_angles )
 
 editor_pickup_model_thread( original_ent, carry_offset, carry_angles )
 {
-	original_ent hide(); // we haven't actually moved the entity yet, we are actually picking up a copy of the model aka "preview"
-
-	placeturret = spawnturret( "auto_turret", self.origin, "equip_turbine_zm_turret" );
-	placeturret.angles = self.angles;
-	placeturret setmodel( original_ent.model );
-	placeturret setturretcarried( true );
-	placeturret setturretowner( self );
-
-	self carryturret( placeturret, carry_offset, carry_angles );
-
-	self.is_holding_model = true;
-	hud_binding_obj = self hud_binding_subscribe_to_entity( "editor_held_context", placeturret );
 	held_ent = self hud_binding_get_subscribed_entity( "editor_held_context" );
 
 	for ( ;; )
@@ -677,6 +730,19 @@ cmd_editorpickup_f( args )
 
 		target_entity = trace[ "entity" ];
 	}
+
+	target_entity hide(); // we haven't actually moved the entity yet, we are actually picking up a copy of the model aka "preview"
+
+	placeturret = spawnturret( "auto_turret", self.origin, "equip_turbine_zm_turret" );
+	placeturret.angles = self.angles;
+	placeturret setmodel( target_entity.model );
+	placeturret setturretcarried( true ); // this causes the offset/angles to be ignored from links
+	placeturret setturretowner( self );
+
+	self carryturret( placeturret, carry_offset, carry_angles );
+
+	self.is_holding_model = true;
+	self hud_binding_subscribe_to_entity( "editor_held_context", placeturret );
 
 	self thread editor_pickup_model_thread( target_entity, carry_offset, carry_angles );
 	return result_cmdinfo( "Picked up target entity: " + target_entity.classname );
@@ -764,6 +830,14 @@ editor_hud()
 {
 	self endon( "disconnect" );
 
+	if ( !isdefined( level._first_player ) )
+	{
+		level._first_player = true;
+		level._baseline_text_hud = create_text_hud_baseline();
+		level._baseline_text_hud.alpha = 0.0;
+		level._baseline_text_hud settext( "REEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE" );
+	}
+
 	if ( !isdefined( self._cmds_cameras ) )
 	{
 		self._cmds_cameras = [];
@@ -817,17 +891,26 @@ main()
 	dumpent_cmd arg_obj_add_cmd( "string string", 1, 2 );
 
 	// camera commands
-	createcamera_cmd = level [[ level.tcs_add_cmd_func ]]( "createcamera", true, "createcam", "createcamera <name>", ::cmd_createcamera_f );
+	createcamera_cmd = level [[ level.tcs_add_cmd_func ]]( "createcamera", true, "createcam", "createcamera <camera_name>", ::cmd_createcamera_f );
 	createcamera_cmd arg_obj_add_cmd( "string", 1, 1 );
 
-	setcamera_cmd = level [[ level.tcs_add_cmd_func ]]( "setcamera", true, "setcam", "setcamera <name> [flags]", ::cmd_setcamera_f );
+	setcamera_cmd = level [[ level.tcs_add_cmd_func ]]( "setcamera", true, "setcam", "setcamera <camera_name> [flags]", ::cmd_setcamera_f );
 	setcamera_cmd arg_obj_add_cmd( "string cameraflags", 1, 2 );
 
-	unsetcamera_cmd = level [[ level.tcs_add_cmd_func ]]( "unsetcamera", true, "unsetcam", "unsetcamera <name>", ::cmd_unsetcamera_f );
+	unsetcamera_cmd = level [[ level.tcs_add_cmd_func ]]( "unsetcamera", true, "unsetcam", "unsetcamera <camera_name>", ::cmd_unsetcamera_f );
 	unsetcamera_cmd arg_obj_add_cmd( "string", 1, 1 );
 
-	deletecamera_cmd = level [[ level.tcs_add_cmd_func ]]( "deletecamera", true, "delcam", "deletecamera <name>", ::cmd_deletecamera_f );
+	deletecamera_cmd = level [[ level.tcs_add_cmd_func ]]( "deletecamera", true, "delcam", "deletecamera <camera_name>", ::cmd_deletecamera_f );
 	deletecamera_cmd arg_obj_add_cmd( "string", 1, 1 );
+
+	linkcameratoent_cmd = level [[ level.tcs_add_cmd_func ]]( "linkcameratoent", true, undefined, "linkcameratoent <camera_name> <entity> [tagname] [origin_offset] [angles_offset]", ::cmd_linkcameratoent_f );
+	linkcameratoent_cmd arg_obj_add_cmd( "string entity string vector vector", 2, 5 );
+
+	linkcameratoent_cmd = level [[ level.tcs_add_cmd_func ]]( "unlinkcamera", true, undefined, "unlinkcamera <camera_name>", ::cmd_unlinkcamera_f );
+	linkcameratoent_cmd arg_obj_add_cmd( "string", 1, 1 );
+
+	spectateactor_cmd = level [[ level.tcs_add_cmd_func ]]( "spectateactor", true, undefined, "spectateactor <actor> [tagname]", ::cmd_spectateactor_f );
+	spectateactor_cmd arg_obj_add_cmd( "actor string", 2, 2 );
 
 	// entity manipulation
 	seteditortargetent_cmd = level [[ level.tcs_add_cmd_func ]]( "seteditortargetent", true, "seteditent", "seteditortargetent [entnum]", ::cmd_seteditortargetent_f );

@@ -857,3 +857,20 @@ arg_obj_model_cast( arg )
 	result_obj = result_obj_new( "model" );
 	return set_cast_success( result_obj, arg, "model==" + arg );
 }
+
+arg_obj_actor_validate( arg )
+{
+	test_result = self cast_str_to_entity( arg );
+	return !test_result.errored && isai( test_result.value );
+} 
+
+arg_obj_actor_generate()
+{
+	return undefined;
+}
+
+// unimplmented
+arg_obj_actor_cast( arg )
+{
+	return self cast_str_to_entity( arg );
+}
