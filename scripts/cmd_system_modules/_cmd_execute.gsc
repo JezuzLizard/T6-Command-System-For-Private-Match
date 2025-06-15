@@ -135,12 +135,9 @@ cmd_execute_internal( cmd_object, args, silent, logprint )
 	// Leaving the casting up to the cmd itself
 	if ( array_validate( casted_args ) && array_validate( cmd_object.arg_types ) )
 	{
-		self com_printinfo( casted_args.size + "" );
 		arg_types = cmd_object.arg_types;
-		for ( i = 0; i < casted_args.size; i++ )
+		for ( i = 0; i < args.size; i++ )
 		{
-			self com_printinfo( "array_size1: " + casted_args.size );
-			self com_printinfo( "array_val[" + i + "]: " + casted_args[ i ] );
 			cast_result = self arg_cast( arg_types[ i ], args[ i ], i );
 			if ( cast_result.errored )
 			{
@@ -151,7 +148,6 @@ cmd_execute_internal( cmd_object, args, silent, logprint )
 			{
 				casted_args[ i ] = cast_result.value;
 			}
-			self com_printinfo( "array_size2: " + casted_args.size );
 		}
 	}
 
