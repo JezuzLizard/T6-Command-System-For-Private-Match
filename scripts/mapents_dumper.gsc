@@ -3,6 +3,8 @@
 #include common_scripts\utility;
 #include maps\mp\_utility;
 
+#include scripts\cmd_system_modules\_hud;
+
 init()
 {
 	level.spawnpoints_mapents_fh = fs_fopen( "spawns_" + getdvar( "mapname" ) + ".mapents", "append" );
@@ -360,16 +362,16 @@ cmd_createcamera_f( args )
 {
 	camera_name = args[ 0 ];
 	player = self;
-	if ( isdefined( level._cmds_cameras[ camera_name ] ) )
+	if ( isdefined( self._cmds_cameras[ camera_name ] ) )
 	{
-		level._cmds_cameras[ camera_name ] delete();
+		self._cmds_cameras[ camera_name ] delete();
 	}
 	camera_ent = spawn( "script_model", self.origin );
 	camera_ent.angles = self.angles;
 	camera_ent setmodel( "tag_origin" );
 	camera_ent.camera_name = camera_name;
 
-	level._cmds_cameras[ camera_name ] = camera_ent;
+	self._cmds_cameras[ camera_name ] = camera_ent;
 
 	return result_cmdinfo( "Created a camera named: '" + camera_name + "' at: '" + self.origin + "' with angles: '" + self.angles + "'" );
 }
@@ -380,7 +382,7 @@ cmd_setcamera_f( args )
 	camera_flags = _DEFAULT( args[ 1 ], 1 );
 	
 	player = self;
-	camera_ent = level._cmds_cameras[ camera_name ];
+	camera_ent = self._cmds_cameras[ camera_name ];
 	if ( isdefined( camera_ent ) )
 	{
 		player camerasetposition( camera_ent );
@@ -410,7 +412,7 @@ cmd_deletecamera_f( args )
 	camera_flags = args[ 1 ];
 	player = self;
 
-	camera_ent = level._cmds_cameras[ camera_name ];
+	camera_ent = self._cmds_cameras[ camera_name ];
 	if ( isdefined( camera_ent ) )
 	{
 		return result_cmdinfo( "Deleted camera lookat for a camera named: '" + camera_name + "' at: '" + self.origin + " with angles: '" + self.angles + "'" );
@@ -446,20 +448,16 @@ cmd_seteditortargetent_f( args )
 		}
 	}
 
-	self.targetent_selected = trace[ "entity" ];
-	return result_cmdinfo( "Selected target entity: " + self.targetent_selected.classname );
+	editor_ent = self hud_binding_subscribe_to_entity( "editor_ent_context", trace[ "entity" ] );
+	return result_cmdinfo( "Selected target entity: " + editor_ent.classname );
 }
 
 cmd_seteditortargetangles_f( args )
 {
-	if ( !isdefined( self.targetent_selected ) )
+	editor_ent = self hud_binding_get_subscribed_entity( "editor_ent_context" );
+	if ( !isdefined( editor_ent ) )
 	{
 		return result_cmderror( "No target entity selected!" );
-	}
-
-	if ( args.size < 1 )
-	{
-		return result_cmderror( "No angles specified!" );
 	}
 
 	new_angles = args[ 0 ];
@@ -467,26 +465,22 @@ cmd_seteditortargetangles_f( args )
 
 	if ( is_true( is_relative ) )
 	{
-		self.targetent_selected.angles += new_angles;
+		editor_ent.angles += new_angles;
 	}
 	else
 	{
-		self.targetent_selected.angles = new_angles;
+		editor_ent.angles = new_angles;
 	}
 
-	return result_cmdinfo( "Set angles of target entity: '" + self.targetent_selected.classname + "' to: '" + new_angles + "'" );
+	return result_cmdinfo( "Set angles of target entity: '" + editor_ent.classname + "' to: '" + new_angles + "'" );
 }
 
 cmd_seteditortargetorigin_f( args )
 {
-	if ( !isdefined( self.targetent_selected ) )
+	editor_ent = self hud_binding_get_subscribed_entity( "editor_ent_context" );
+	if ( !isdefined( editor_ent ) )
 	{
 		return result_cmderror( "No target entity selected!" );
-	}
-
-	if ( args.size < 1 )
-	{
-		return result_cmderror( "No pos specified!" );
 	}
 
 	new_origin = args[ 0 ];
@@ -494,14 +488,14 @@ cmd_seteditortargetorigin_f( args )
 
 	if ( is_true( is_relative ) )
 	{
-		self.targetent_selected.origin += new_origin;
+		editor_ent.origin += new_origin;
 	}
 	else
 	{
-		self.targetent_selected.origin = new_origin;
+		editor_ent.origin = new_origin;
 	}
 
-	return result_cmdinfo( "Set origin of target entity: '" + self.targetent_selected.classname + "' to: '" + new_origin + "'" );
+	return result_cmdinfo( "Set origin of target entity: '" + editor_ent.classname + "' to: '" + new_origin + "'" );
 }
 
 cmd_setviewpos_f( args )
@@ -511,11 +505,12 @@ cmd_setviewpos_f( args )
 
 cmd_editheldmodel_f( args )
 {
+	editor_held_ent = self hud_binding_get_subscribed_entity( "editor_held_context" );
 	model = _DEFAULT( args[ 0 ], "null" );
 	carry_offset = _DEFAULT( args[ 1 ], ( 22, 0, 0 ) );
 	carry_angles = _DEFAULT( args[ 2 ], ( 0, 0, 0 ) );
 
-	if ( !isdefined( self.carried_model ) )
+	if ( !isdefined( editor_held_ent ) )
 	{
 		return result_cmderror( "Cannot set model on held model, you are not holding a model!" );
 	}
@@ -525,22 +520,17 @@ cmd_editheldmodel_f( args )
 		return result_cmderror( "No arguments, no changes..." );
 	}
 
-	self stopcarryturret( self.carried_model );
-	self.carried_model setturretcarried( false );
+	self stopcarryturret( editor_held_ent );
+	editor_held_ent setturretcarried( false );
 	if ( model != "null" )
 	{
-		self.carried_model setmodel( model );
+		editor_held_ent setmodel( model );
 	}
 	
-	self.carried_model setturretcarried( true );
-	self carryturret( self.carried_model, carry_offset, carry_angles );
+	editor_held_ent setturretcarried( true );
+	self carryturret( editor_held_ent, carry_offset, carry_angles );
 
 	return result_cmdinfo( "Successfully set your carried model to " + model );
-}
-
-equipment_watch_placement( equipment )
-{
-
 }
 
 cmd_editorspawnheldmodel_f( args )
@@ -550,7 +540,8 @@ cmd_editorspawnheldmodel_f( args )
 	carry_offset = _DEFAULT( args[ 2 ], ( 22, 0, 0 ) );
 	carry_angles = _DEFAULT( args[ 3 ], ( 0, 0, 0 ) );
 
-	if ( is_true( self.is_holding_model ) )
+	editor_held_ent = self hud_binding_get_subscribed_entity( "editor_held_context" );
+	if ( isdefined( editor_held_ent ) )
 	{
 		return result_cmderror( "You are already holding a model!" );
 	}
@@ -571,35 +562,36 @@ editor_spawn_held_model_thread( ent_name, model, carry_offset, carry_angles )
 	self carryturret( placeturret, carry_offset, carry_angles );
 
 	self.is_holding_model = true;
-	self.carried_model = placeturret;
+	hud_binding_obj = self hud_binding_subscribe_to_entity( "editor_held_context", placeturret );
 
+	held_ent = self hud_binding_get_subscribed_entity( "editor_held_context" );
 	for ( ;; )
 	{
 		self notifyonplayercommand( "toggle_unlink", "+speed_throw" );
 		ended = self waittill_any_return( "toggle_unlink" );
 
 		if ( !( isdefined( level.use_legacy_equipment_placement ) && level.use_legacy_equipment_placement ) )
-			turret_placement = self canplayerplaceturret( self.carried_model );
+			turret_placement = self canplayerplaceturret( held_ent );
 
 		if ( turret_placement[ "result" ] )
 		{
 			new_ent = spawn( "script_model", turret_placement[ "origin" ] );
 			new_ent.angles = turret_placement[ "angles" ];
-			new_ent setmodel( self.carried_model.model );
+			new_ent setmodel( held_ent.model );
 
-			if ( isdefined( level._editor_placed_ents[ ent_name ] ) )
+			if ( isdefined( self._editor_placed_ents[ ent_name ] ) )
 			{
-				level._editor_placed_ents[ ent_name ] delete();
+				self._editor_placed_ents[ ent_name ] delete();
 			}
-			level._editor_placed_ents[ ent_name ] = new_ent;
+			self._editor_placed_ents[ ent_name ] = new_ent;
 
 			break;
 		}
 	}
 
-	self stopcarryturret( self.carried_model );
-	self.carried_model setturretcarried( false );
-	self.carried_model delete();
+	self stopcarryturret( held_ent );
+	held_ent setturretcarried( false );
+	held_ent delete();
 
 	self.is_holding_model = false;
 }
@@ -614,20 +606,21 @@ live_pickup_adjust_preview( placeturret, carry_offset, carry_angles )
 	
 }
 
-editor_pickup_model_thread( entity, carry_offset, carry_angles )
+editor_pickup_model_thread( original_ent, carry_offset, carry_angles )
 {
-	entity hide(); // we haven't actually moved the entity yet, we are actually picking up a copy of the model aka "preview"
+	original_ent hide(); // we haven't actually moved the entity yet, we are actually picking up a copy of the model aka "preview"
 
 	placeturret = spawnturret( "auto_turret", self.origin, "equip_turbine_zm_turret" );
 	placeturret.angles = self.angles;
-	placeturret setmodel( entity.model );
+	placeturret setmodel( original_ent.model );
 	placeturret setturretcarried( true );
 	placeturret setturretowner( self );
 
 	self carryturret( placeturret, carry_offset, carry_angles );
 
 	self.is_holding_model = true;
-	self.carried_model = placeturret;
+	hud_binding_obj = self hud_binding_subscribe_to_entity( "editor_held_context", placeturret );
+	held_ent = self hud_binding_get_subscribed_entity( "editor_held_context" );
 
 	for ( ;; )
 	{
@@ -635,20 +628,20 @@ editor_pickup_model_thread( entity, carry_offset, carry_angles )
 		ended = self waittill_any_return( "toggle_unlink" );
 
 		if ( !( isdefined( level.use_legacy_equipment_placement ) && level.use_legacy_equipment_placement ) )
-			turret_placement = self canplayerplaceturret( self.carried_model );
+			turret_placement = self canplayerplaceturret( held_ent );
 
 		if ( turret_placement[ "result" ] )
 		{
-			entity.angles = turret_placement[ "angles" ];
-			entity.origin = turret_placement[ "origin" ];
-			entity show();
+			original_ent.angles = turret_placement[ "angles" ];
+			original_ent.origin = turret_placement[ "origin" ];
+			original_ent show();
 			break;
 		}
 	}
 
-	self stopcarryturret( self.carried_model );
-	self.carried_model setturretcarried( false );
-	self.carried_model delete();
+	self stopcarryturret( held_ent );
+	held_ent setturretcarried( false );
+	held_ent delete();
 
 	self.is_holding_model = false;
 }
@@ -685,9 +678,8 @@ cmd_editorpickup_f( args )
 		target_entity = trace[ "entity" ];
 	}
 
-	self.pickupent_selected = target_entity;
 	self thread editor_pickup_model_thread( target_entity, carry_offset, carry_angles );
-	return result_cmdinfo( "Picked up target entity: " + self.pickupent_selected.classname );
+	return result_cmdinfo( "Picked up target entity: " + target_entity.classname );
 }
 
 cmd_editorcontextmodifyentity_f( args )
@@ -702,7 +694,8 @@ cmd_editorcontextmodifyentity_f( args )
 		return result_cmderror( "<scale> cannot be 0!" );
 	}
 
-	if ( !isdefined( self.editor_modify_context ) )
+	editor_context = self hud_binding_get( "editor_mode_context" );
+	if ( editor_context.binding_val == "none" )
 	{
 		return result_cmderror( "You must set the context using the command 'editorsetmodifycontext' first!" );
 	}
@@ -710,7 +703,7 @@ cmd_editorcontextmodifyentity_f( args )
 	base_delta = 1;
 	delta = base_delta * scale;
 	ent = self.editor_modify_context_ent;
-	switch ( self.editor_modify_context )
+	switch ( editor_context )
 	{
 		case "pitch":
 			ent rotateto( ent.angles + ( delta, 0, 0 ), total_time, accel_time, decel_time );
@@ -753,11 +746,13 @@ cmd_editorsetmodifycontext_f( args )
 			break;
 		case "z":
 			break;
+		case "none":
+			break;
 		default:
 			return result_cmderror( "<context> must be one of 'pitch', 'yaw', 'roll', 'x', 'y', 'z'!" );
 	}
 	
-	self.editor_modify_context = context;
+	self hud_binding_set( "editor_mode_context", context );
 }
 
 on_editor_connect()
@@ -769,20 +764,37 @@ editor_hud()
 {
 	self endon( "disconnect" );
 
-	vertical_hud_list_obj = vertical_text_list_create( 10 );
-
-	root = self scripts\zm\utility::create_root_hud();
-	root.child_huds = [];
-	root.child_huds[ "editor_context_text" ] = self maps\mp\gametypes_zm\_hud_util::createfontstring( "objective", 1.8 );
-	for ( ;; )
+	if ( !isdefined( self._cmds_cameras ) )
 	{
-
+		self._cmds_cameras = [];
 	}
+
+	if ( !isdefined( self._editor_placed_ents ) )
+	{
+		self._editor_placed_ents = [];
+	}
+
+	self hud_binding_register( "editor_mode_context", "text", "edit_mode", "No editor context!" );
+	self hud_binding_register( "editor_ent_context", "entity", "selected_entity", "No selected entity!" );
+	self hud_binding_register( "editor_held_context", "entity", "held_entity", "No held entity!" );
+	self hud_binding_register( "editor_placed_context", "entity", "placed_entities", "No placed entities!" );
+
+	vertical_hud_list_obj = vertical_text_list_create( 20, 1.0, "objective", 1.8, "left", "top", "user_left", "user_top" );
+	vertical_hud_list_obj set_alpha( 1, 1.0 );
+
+	fontelem = self vertical_text_list_add( vertical_hud_list_obj, "editor_mode_context" );
+	//fontelem settext( "GRUS1" );
+	fontelem = self vertical_text_list_add( vertical_hud_list_obj, "editor_ent_context" );
+	//fontelem settext( "GRUS2" );
+	fontelem = self vertical_text_list_add( vertical_hud_list_obj, "editor_held_context" );
+	//fontelem settext( "GRUS3" );
+
+	self thread hud_bindings_update_loop();
 }
 
 main()
 {
-	onplayerconnect_callback( ::on_editor_connect );
+	addcallback( "on_player_connect", ::on_editor_connect );
 	while ( !isdefined( level.cmd_init_done ) )
 	{
 		wait 0.05;
@@ -791,16 +803,6 @@ main()
 	if ( !isdefined( level.tcs_add_cmd_func ) )
 	{
 		return;	
-	}
-
-	if ( !isdefined( level._cmds_cameras ) )
-	{
-		level._cmds_cameras = [];
-	}
-
-	if ( !isdefined( level._editor_placed_ents ) )
-	{
-		level._editor_placed_ents = [];
 	}
 
 	level.physicstracemaskphysics = 1;

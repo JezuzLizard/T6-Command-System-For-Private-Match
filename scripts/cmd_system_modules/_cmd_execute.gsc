@@ -123,6 +123,7 @@ cmd_execute_internal( cmd_object, args, silent, logprint )
 {
 	cmd_name = cmd_object.cmd_name;
 	original_args = args;
+	casted_args = args;
 	result = undefined;
 	if ( !self scripts\cmd_system_modules\_cmd_arg::test_cmd_is_valid( cmd_object, args ) )
 	{
@@ -132,29 +133,25 @@ cmd_execute_internal( cmd_object, args, silent, logprint )
 	// Cast the args using the cast handlers
 	// Arg types without a cast handler don't get casted
 	// Leaving the casting up to the cmd itself
-	if ( args.size > 0 && array_validate( cmd_object.arg_types ) )
+	if ( array_validate( casted_args ) && array_validate( cmd_object.arg_types ) )
 	{
+		self com_printinfo( casted_args.size + "" );
 		arg_types = cmd_object.arg_types;
-		for ( i = 0; i < args.size; i++ )
+		for ( i = 0; i < casted_args.size; i++ )
 		{
-			if ( isDefined( level.tcs_arg_type_handlers[ arg_types[ i ] ] ) && isDefined( level.tcs_arg_type_handlers[ arg_types[ i ] ].cast_func ) )
+			self com_printinfo( "array_size1: " + casted_args.size );
+			self com_printinfo( "array_val[" + i + "]: " + casted_args[ i ] );
+			cast_result = self arg_cast( arg_types[ i ], args[ i ], i );
+			if ( cast_result.errored )
 			{
-				cast_result = self [[ level.tcs_arg_type_handlers[ arg_types[ i ] ].cast_func ]]( args[ i ] );
-				if ( cast_result.errored )
-				{
-					self com_printerror( cast_result.msg );
-					return;
-				}
-
-				if ( isdefined( cast_result.default_value ) && !isdefined( cast_result.value ) )
-				{
-					args[ i ] = cast_result.default_value;
-				}
-				else
-				{
-					args[ i ] = cast_result.value;
-				}
+				self com_printerror( cast_result.msg );
+				return;
 			}
+			else
+			{
+				casted_args[ i ] = cast_result.value;
+			}
+			self com_printinfo( "array_size2: " + casted_args.size );
 		}
 	}
 
@@ -183,7 +180,7 @@ cmd_execute_internal( cmd_object, args, silent, logprint )
 		}
 	}
 
-	result = self [[ cmd_object.func ]]( args );
+	result = self [[ cmd_object.func ]]( casted_args );
 
 	self handle_result_feedback( result, cmd_name, original_args, logprint, silent );
 }

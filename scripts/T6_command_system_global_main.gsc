@@ -184,7 +184,7 @@ main()
 	arg_obj_register( "idflags", ::arg_obj_idflags_validate, ::arg_obj_idflags_generate, ::arg_obj_idflags_cast, "not a valid idflag" );
 	arg_obj_register( "bot", ::arg_obj_bot_validate, ::arg_obj_bot_generate, ::arg_obj_bot_cast, "not a valid bot" );
 	arg_obj_register( "string", ::arg_obj_string_validate, ::arg_obj_string_generate, undefined, "not a valid string" );
-	arg_obj_register( "string", ::arg_obj_model_validate, ::arg_obj_model_generate, ::arg_obj_model_cast, "not a valid string" );
+	arg_obj_register( "model", ::arg_obj_model_validate, ::arg_obj_model_generate, ::arg_obj_model_cast, "not a valid string" );
 
 	//exclude_clientcmd_from_unittest_pool();
 	//exclude_servercmd_from_unittest_pool();

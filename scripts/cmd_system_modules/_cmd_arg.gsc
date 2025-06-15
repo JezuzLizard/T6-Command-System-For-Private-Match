@@ -413,6 +413,19 @@ get_cmd_from_alias( alias )
 	return set_cast_error( result_obj, "Couldn't find cmd" );
 }
 
+arg_cast( arg_type, arg, arg_index )
+{
+	cast_result = result_obj_new( "argtype" );
+	if ( isDefined( level.tcs_arg_type_handlers[ arg_type ] ) && isDefined( level.tcs_arg_type_handlers[ arg_type ].cast_func ) )
+	{
+		cast_result = self [[ level.tcs_arg_type_handlers[ arg_type ].cast_func ]]( arg );
+			
+		return cast_result;
+	}
+
+	return set_cast_success( cast_result, arg, "no argtype defined" );
+}
+
 test_cmd_is_valid( cmd_object, args )
 {
 	self com_printcmd( cmd_object );

@@ -1,10 +1,11 @@
 #include common_scripts\utility;
 #include maps\mp\_utility;
+#include scripts\cmd_system_modules\_cmd_util;
 #include scripts\cmd_system_modules\_com;
 
 HAS_CHILD_HUDS()
 {
-	return isdefined( self.child_huds ) && self.child_huds.size > 0;
+	return array_validate( self.members );
 }
 
 set_alignment( max_depth, alignx, aligny, horzalign, vertalign )
@@ -56,9 +57,13 @@ set_hud_field( max_depth, field_name, val )
 			self.vertalign = val;
 			break;
 		case "alpha":
-			if ( !is_true( self.root ) )
+			if ( !is_true( self.is_root ) )
 			{
 				self.alpha = val;
+			}
+			else
+			{
+				self.parent_alpha = val;
 			}
 			break;
 		case "hidewheninmenu":
@@ -91,11 +96,9 @@ set_hud_field( max_depth, field_name, val )
 	}
 	max_depth--;
 
-	child_hud_keys = getarraykeys( self.child_huds );
-
-	for ( i = 0; i < child_hud_keys.size; i++ )
+	for ( i = 0; i < self.members.size; i++ )
 	{
-		child = self.child_huds[ child_hud_keys[ i ] ];
+		child = self.members[ i ];
 
 		child set_hud_field( max_depth, field_name, val );
 	}
@@ -126,11 +129,9 @@ call_hud_method( max_depth, call_name, arg1 = undefined, arg2 = undefined, arg3 
 	}
 	max_depth--;
 
-	child_hud_keys = getarraykeys( self.child_huds );
-
-	for ( i = 0; i < child_hud_keys.size; i++ )
+	for ( i = 0; i < self.members.size; i++ )
 	{
-		child = self.child_huds[ child_hud_keys[ i ] ];
+		child = self.members[ i ];
 
 		child call_hud_method( max_depth, call_name, arg1, arg2, arg3, arg4, arg5 );
 	}
@@ -138,44 +139,28 @@ call_hud_method( max_depth, call_name, arg1 = undefined, arg2 = undefined, arg3 
 
 create_root_hud()
 {
-	root = self maps\mp\gametypes_zm\_hud_util::createfontstring( "objective", 1.8 );
+	root = newclienthudelem( self );
 	root.alpha = 0.0;
-	root.root = true;
+	root.parent_alpha = 1.0;
+	root.is_root = true;
 	return root;
 }
 
-/*hud_binding_t*/ hud_binding_new( binding_name, binding_type, binding_default_val )
+/*hud_binding_t*/ hud_binding_new( binding_name, binding_type, binding_subtype, binding_default_val )
 {
 	hud_binding_obj = spawnstruct();
 	hud_binding_obj.binding_name = binding_name;
 	hud_binding_obj.binding_type = binding_type;
+	hud_binding_obj.binding_subtype = binding_subtype;
 	hud_binding_obj.binding_val = binding_default_val;
-	hud_binding_obj.binding_subscriber_huds = [];
+	hud_binding_obj.binding_default_val = binding_default_val;
+	hud_binding_obj.binding_subscribed_entity = undefined;
+	hud_binding_obj.binding_subscriber_hud = undefined;
+
+	return hud_binding_obj;
 }
 
-register_hud_binding( binding_name, binding_type, binding_default_val )
-{
-	if ( !isdefined( level._hud_bindings ) )
-	{
-		level._hud_bindings = [];
-	}
-
-	if ( !isdefined( level._hud_bindings[ binding_name ] ) )
-	{
-		level._hud_bindings[ binding_name ] = hud_binding_new( binding_name, binding_type, binding_default_val );
-	}
-
-	hud_binding_obj = level._hud_bindings[ binding_name ];
-	switch ( binding_type )
-	{
-		case "text":
-			break;
-		case "value":
-			break;
-	}
-}
-
-register_hud_binding_for_player( binding_name, subscriber_hud, binding_type, binding_default_val )
+hud_binding_register( binding_name, binding_type, binding_subtype, binding_default_val )
 {
 	if ( !isdefined( self._hud_bindings ) )
 	{
@@ -184,93 +169,232 @@ register_hud_binding_for_player( binding_name, subscriber_hud, binding_type, bin
 
 	if ( !isdefined( self._hud_bindings[ binding_name ] ) )
 	{
-		self._hud_bindings[ binding_name ] = hud_binding_new( binding_name, binding_type, binding_default_val );
+		self._hud_bindings[ binding_name ] = hud_binding_new( binding_name, binding_type, binding_subtype, binding_default_val );
 	}
 }
 
-binding_add_subscriber_hud( subscriber_hud )
+hud_binding_unregister( binding_name )
 {
-	self.binding_subscriber_huds = add_to_array( self.binding_subscriber_huds, subscriber_hud, false );
+	hud_binding_obj = self hud_binding_get( binding_name );
 }
 
-update_binding_for_player( binding_name, new_value )
+hud_binding_add_subscriber_hud( subscriber_hud )
 {
-	hud_binding_obj = self._hud_bindings[ binding_name ];
+	self.binding_subscriber_hud = subscriber_hud;
+	hud_binding_set_default( self, subscriber_hud );
+}
 
+hud_binding_set( binding_name, hud, new_value )
+{
+	hud_binding_obj = self hud_binding_get( binding_name );
+
+	if ( !isdefined( hud_binding_obj ) )
+	{
+		return undefined;
+	}
+
+	if ( hud_binding_obj.binding_type == "text" )
+	{
+		if ( hud_binding_obj.binding_val != new_value )
+		{
+			switch ( hud_binding_obj.binding_subtype )
+			{
+				case "edit_mode":
+					hud settext( new_value );
+					break;
+				default:
+					break;
+			}
+
+			hud_binding_obj.binding_val = new_value;
+		}
+	}
+	else
+	{
+		assert( false );
+	}
+
+	return hud_binding_obj;
+}
+
+hud_binding_set_default( hud_binding_obj, hud )
+{
+	if ( is_true( hud_binding_obj.inited ) && hud_binding_obj.binding_val == hud_binding_obj.binding_default_val )
+	{
+		return;
+	}
+
+	switch ( hud_binding_obj.binding_subtype )
+	{
+		case "edit_mode":
+		case "selected_entity":
+		case "held_entity":
+		case "placed_entities":
+			hud settext( hud_binding_obj.binding_default_val );
+			break;
+		default:
+			break;
+	}
+
+	hud_binding_obj.binding_val = hud_binding_obj.binding_default_val;
+	hud_binding_obj.inited = true;
+}
+
+hud_binding_subscribe_to_entity( binding_name, entity )
+{
+	self endon( "disconnect" );
+	hud_binding_obj = self hud_binding_get( binding_name );
+	if ( !isdefined( hud_binding_obj ) || !isdefined( entity ) )
+	{
+		assert( isdefined( entity ) );
+		return undefined;
+	}
+
+	hud_binding_obj.binding_subscribed_entity = entity;
+
+	return hud_binding_obj;
+}
+
+hud_binding_get_subscribed_entity( binding_name )
+{
+	hud_binding_obj = self hud_binding_get( binding_name );
+	if ( !isdefined( hud_binding_obj ) )
+	{
+		return undefined;
+	}
+
+	return hud_binding_obj.binding_subscribed_entity;
+}
+
+hud_bindings_get()
+{
+	return self._hud_bindings;
+}
+
+hud_binding_update( hud_binding_obj, hud )
+{
+	entity = hud_binding_obj.binding_subscribed_entity;
+
+	if ( hud_binding_obj.binding_type == "entity" )
+	{
+		switch ( hud_binding_obj.binding_type )
+		{
+			case "held_entity":
+				hud settext( "HOLDING: " + "Classname: " + entity.classname + " Org: " + entity.origin + " Ang: " + entity.angles );
+				break;
+			case "selected_entity":
+				hud settext( "SELECTED: " + "Classname: " + entity.classname + " Org: " + entity.origin + " Ang: " + entity.angles );
+				break;
+			case "placed_entities":
+				hud settext( "Placed ent count: " + hud_binding_obj.binding_subscribed_entity.size );
+				break;
+		}
+	}
+	else
+	{
+		assert( false );
+	}
+}
+
+hud_bindings_update_loop()
+{
+	self endon( "disconnect" );
+
+	for ( ;; )
+	{
+		bindings = self hud_bindings_get();
+
+		keys = getarraykeys( bindings );
+		for ( i = 0; i < keys.size; i++ )
+		{
+			hud_binding_obj = bindings[ keys[ i ] ];
+			entity = hud_binding_obj.binding_subscribed_entity;
+			hud = hud_binding_obj.binding_subscriber_hud;
+			if ( isdefined( hud ) )
+			{
+				if ( isdefined( entity ) )
+				{
+					self hud_binding_update( hud_binding_obj, hud );
+				}
+				else
+				{
+					self hud_binding_set_default( hud_binding_obj, hud );
+				}
+			}
+		}
+
+		wait 0.05;
+	}
+}
+
+hud_binding_unsubscribe_from_entity( binding_name )
+{
+	hud_binding_obj = self hud_binding_get( binding_name );
 	if ( !isdefined( hud_binding_obj ) )
 	{
 		return;
 	}
 
-	for ( i = 0; i < hud_binding_obj.binding_subscriber_huds.size; i++ )
-	{
-		hud = hud_binding_obj.binding_subscriber_huds[ i ];
-		switch ( hud_binding_obj.binding_type )
-		{
-			case "text":
-				hud settext( new_value );
-				break;
-			case "value":
-				hud setvalue( new_value );
-				break;
-		}
-	}
+	hud_binding_obj.binding_subscribed_entity = undefined;
 }
 
-set_position( max_depth, x, y )
+hud_binding_get( binding_name )
 {
-	self set_hud_field( max_depth, "setx", x );
-	self set_hud_field( max_depth, "sety", y );
+	return self._hud_bindings[ binding_name ];
 }
 
-set_alpha( max_depth, val )
+vertical_text_list_update_member( parent, member, member_index )
 {
-	self set_hud_field( max_depth, "alpha", val );
-}
+	member set_alignment( 0, parent.alignx, parent.aligny, parent.horzalign, parent.vertalign );
+	member set_alpha( 0, parent.parent_alpha );
+	member set_position( 0, parent.x, ( parent.y + ( parent.vertical_spacing * member_index ) ) );
+	member set_hide_in_menu_flag( 0, parent.hidewheninmenu );
 
-set_hide_in_menu_flag( max_depth, val )
-{
-	self set_hud_field( max_depth, "hidewheninmenu", val );
+	member.font = parent.font;
+	member.fontscale = parent.fontscale;
 }
 
 vertical_text_list_add_member( parent, new_member )
 {
-	new_member set_alignment( 0, parent.alignx, parent.aligny, parent.horzalign, parent.vertalign );
-	new_member set_alpha( 0, parent.alpha );
-	new_member set_position( 0, parent.x, ( parent.y + ( parent.vertical_spacing * parent.members.size ) ) );
-	new_member set_hide_in_menu_flag( 0, parent.hidewheninmenu );
-
-	new_member.font = parent.font;
-	new_member.fontscale = parent.fontscale;
+	vertical_text_list_update_member( parent, new_member, parent.members.size );
 
 	parent.members = add_to_array( parent.members, new_member, false );
 }
 
-vertical_text_list_create( vertical_spacing, font, fontscale )
+vertical_text_list_update_members( parent )
+{
+	for ( i = 0; i < parent.members.size; i++ )
+	{
+		member = parent.members[ i ];
+		vertical_text_list_update_member( parent, member, i );
+	}
+}
+
+vertical_text_list_create( vertical_spacing, alpha, font, fontscale, alignx, aligny, horzalign, vertalign )
 {
 	root = create_root_hud();
 	root.elem_type = "vertical_list";
-	root.list_root = true;
 	root.members = [];
 	root.add_member_func = ::vertical_text_list_add_member;
 	root.vertical_spacing = _DEFAULT( vertical_spacing, 10 );
+	root.parent_alpha = alpha;
 
-	root.alpha = 0.0;
 	root.font = font;
 	root.fontscale = fontscale;
+	root set_alignment( 0, alignx, aligny, horzalign, vertalign );
 	return root;
 }
 
 vertical_text_list_add( parent, binding_name )
 {
-	fontelem = newclienthudelem( self );
-	fontelem.elem_type = "font";
+	hudelem = newclienthudelem( self );
+	hudelem.elem_type = "font";
 
 	if ( isdefined( self._hud_bindings[ binding_name ] ) )
 	{
-		self._hud_bindings[ binding_name ] binding_add_subscriber_hud( fontelem );
+		self._hud_bindings[ binding_name ] hud_binding_add_subscriber_hud( hudelem );
 	}
 	
-	level [[ parent.add_member_func ]]( parent, fontelem );
-	return fontelem;
+	level [[ parent.add_member_func ]]( parent, hudelem );
+	return hudelem;
 }

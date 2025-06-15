@@ -211,6 +211,7 @@ com_printcmd( cmd_object )
 	level com_printf( channels, "notitle", "power: " + cmd_object.power, self );
 	level com_printf( channels, "notitle", "min_args: " + cmd_object.min_args, self );
 	level com_printf( channels, "notitle", "max_args: " + cmd_object.max_args, self );
+	level com_printf( channels, "notitle", "arg_types: " + repackage_args( cmd_object.arg_types ), self );
 	level com_printf( channels, "notitle", "rank_group: " + cmd_object.rank_group, self );
 }
 
