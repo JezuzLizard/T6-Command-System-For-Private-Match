@@ -9,6 +9,28 @@ init()
 	level.spawnpoints_gsc_fh = fs_fopen( "spawns_" + getdvar( "mapname" ) + ".gsc", "append" );
 }
 
+new_debug_hud( x, y_offset, multi_hud = false )
+{
+	if ( !multi_hud )
+	{
+		level.debug_hud_y_offset += y_offset;
+	}
+	hud = newClientHudElem( self );
+	hud.alignx = "left";
+	hud.aligny = "middle";
+	hud.horzalign = "user_left";
+	hud.vertalign = "user_bottom";
+	hud.x += x;
+	hud.y += level.debug_hud_y_offset;
+	hud.fontscale = 1.4;
+	hud.alpha = 1;
+	hud.color = ( 1, 1, 1 );
+	hud.hidewheninmenu = 1;
+	hud.foreground = 1;
+
+	return hud;
+}
+
 /*
 get_mapents_vector( vector_str )
 {
@@ -355,11 +377,8 @@ cmd_createcamera_f( args )
 cmd_setcamera_f( args )
 {
 	camera_name = args[ 0 ];
-	camera_flags = 1;
-	if ( isdefined( args[ 1 ] ) )
-	{
-		camera_flags = args[ 1 ];
-	}
+	camera_flags = _DEFAULT( args[ 1 ], 1 );
+	
 	player = self;
 	camera_ent = level._cmds_cameras[ camera_name ];
 	if ( isdefined( camera_ent ) )
@@ -412,11 +431,11 @@ cmd_deletecamera_f( args )
 cmd_seteditortargetent_f( args )
 {
 	direction = self getplayerangles();
-    direction_vec = anglestoforward( direction );
-    eye = self geteye();
-    scale = 8000;
-    direction_vec = ( direction_vec[0] * scale, direction_vec[1] * scale, direction_vec[2] * scale );
-    trace = bullettrace( eye, eye + direction_vec, false, undefined );
+	direction_vec = anglestoforward( direction );
+	eye = self geteye();
+	scale = 8000;
+	direction_vec = ( direction_vec[0] * scale, direction_vec[1] * scale, direction_vec[2] * scale );
+	trace = bullettrace( eye, eye + direction_vec, false, undefined );
 
 	if ( !isdefined( trace[ "entity" ] ) )
 	{
@@ -492,14 +511,30 @@ cmd_setviewpos_f( args )
 
 cmd_editheldmodel_f( args )
 {
-	model = args[ 0 ];
+	model = _DEFAULT( args[ 0 ], "null" );
+	carry_offset = _DEFAULT( args[ 1 ], ( 22, 0, 0 ) );
+	carry_angles = _DEFAULT( args[ 2 ], ( 0, 0, 0 ) );
 
 	if ( !isdefined( self.carried_model ) )
 	{
 		return result_cmderror( "Cannot set model on held model, you are not holding a model!" );
 	}
 
-	self.carried_model setmodel( model );
+	if ( !isdefined( args[ 0 ] ) && !isdefined( args[ 1 ] ) && !isdefined( args[ 2 ] ) )
+	{
+		return result_cmderror( "No arguments, no changes..." );
+	}
+
+	self stopcarryturret( self.carried_model );
+	self.carried_model setturretcarried( false );
+	if ( model != "null" )
+	{
+		self.carried_model setmodel( model );
+	}
+	
+	self.carried_model setturretcarried( true );
+	self carryturret( self.carried_model, carry_offset, carry_angles );
+
 	return result_cmdinfo( "Successfully set your carried model to " + model );
 }
 
@@ -512,24 +547,15 @@ cmd_editorspawnheldmodel_f( args )
 {
 	ent_name = args[ 0 ];
 	model = args[ 1 ];
-	carry_offset = args[ 2 ];
-	carry_angles = args[ 3 ];
-	if ( !isdefined( carry_offset ) )
-	{
-		carry_offset = ( 22, 0, 0 );
-	}
-
-	if ( !isdefined( carry_angles ) )
-	{
-		carry_angles = ( 0, 0, 0 );
-	}
+	carry_offset = _DEFAULT( args[ 2 ], ( 22, 0, 0 ) );
+	carry_angles = _DEFAULT( args[ 3 ], ( 0, 0, 0 ) );
 
 	if ( is_true( self.is_holding_model ) )
 	{
 		return result_cmderror( "You are already holding a model!" );
 	}
 
-	self thread editor_spawn_held_model_thread();
+	self thread editor_spawn_held_model_thread( ent_name, model, carry_offset, carry_angles );
 
 	return result_cmdinfo( "Successfully set your carried model to " + model );
 }
@@ -543,12 +569,14 @@ editor_spawn_held_model_thread( ent_name, model, carry_offset, carry_angles )
 	placeturret setturretowner( self );
 
 	self carryturret( placeturret, carry_offset, carry_angles );
+
 	self.is_holding_model = true;
 	self.carried_model = placeturret;
 
 	for ( ;; )
 	{
-		ended = self waittill_any_return( "weapon_change" );
+		self notifyonplayercommand( "toggle_unlink", "+speed_throw" );
+		ended = self waittill_any_return( "toggle_unlink" );
 
 		if ( !( isdefined( level.use_legacy_equipment_placement ) && level.use_legacy_equipment_placement ) )
 			turret_placement = self canplayerplaceturret( self.carried_model );
@@ -581,8 +609,180 @@ cmd_editorspawn_f( args )
 
 }
 
+live_pickup_adjust_preview( placeturret, carry_offset, carry_angles )
+{
+	
+}
+
+editor_pickup_model_thread( entity, carry_offset, carry_angles )
+{
+	entity hide(); // we haven't actually moved the entity yet, we are actually picking up a copy of the model aka "preview"
+
+	placeturret = spawnturret( "auto_turret", self.origin, "equip_turbine_zm_turret" );
+	placeturret.angles = self.angles;
+	placeturret setmodel( entity.model );
+	placeturret setturretcarried( true );
+	placeturret setturretowner( self );
+
+	self carryturret( placeturret, carry_offset, carry_angles );
+
+	self.is_holding_model = true;
+	self.carried_model = placeturret;
+
+	for ( ;; )
+	{
+		self notifyonplayercommand( "toggle_unlink", "+speed_throw" );
+		ended = self waittill_any_return( "toggle_unlink" );
+
+		if ( !( isdefined( level.use_legacy_equipment_placement ) && level.use_legacy_equipment_placement ) )
+			turret_placement = self canplayerplaceturret( self.carried_model );
+
+		if ( turret_placement[ "result" ] )
+		{
+			entity.angles = turret_placement[ "angles" ];
+			entity.origin = turret_placement[ "origin" ];
+			entity show();
+			break;
+		}
+	}
+
+	self stopcarryturret( self.carried_model );
+	self.carried_model setturretcarried( false );
+	self.carried_model delete();
+
+	self.is_holding_model = false;
+}
+
+cmd_editorpickup_f( args )
+{
+	target_entity = args[ 0 ];
+	carry_offset = _DEFAULT( args[ 1 ], ( 22, 0, 0 ) );
+	carry_angles = _DEFAULT( args[ 2 ], ( 0, 0, 0 ) );
+
+	if ( is_true( self.is_holding_model ) )
+	{
+		return result_cmderror( "You are already holding a model!" );
+	}
+
+	if ( !isdefined( target_entity ) )
+	{
+		direction = self getplayerangles();
+		direction_vec = anglestoforward( direction );
+		eye = self geteye();
+		scale = 8000;
+		direction_vec = ( direction_vec[0] * scale, direction_vec[1] * scale, direction_vec[2] * scale );
+		trace = bullettrace( eye, eye + direction_vec, false, undefined );
+
+		if ( !isdefined( trace[ "entity" ] ) )
+		{
+			trace = physicstrace( eye, eye + direction_vec, vectorscale( ( -1, -1, 0 ), 15.0 ), vectorscale( ( 1, 1, 0 ), 15.0 ), self, level._editor_ent_mask );
+			if ( !isdefined( trace[ "entity" ] ) )
+			{
+				return result_cmderror( "Not looking at an entity!" );
+			}
+		}
+
+		target_entity = trace[ "entity" ];
+	}
+
+	self.pickupent_selected = target_entity;
+	self thread editor_pickup_model_thread( target_entity, carry_offset, carry_angles );
+	return result_cmdinfo( "Picked up target entity: " + self.pickupent_selected.classname );
+}
+
+cmd_editorcontextmodifyentity_f( args )
+{
+	scale = args[ 0 ];
+	total_time = _DEFAULT( args[ 1 ], 0.1 );
+	accel_time = _DEFAULT( args[ 2 ], 0.05 );
+	decel_time = _DEFAULT( args[ 3 ], 0.05 );
+
+	if ( scale == 0.0 )
+	{
+		return result_cmderror( "<scale> cannot be 0!" );
+	}
+
+	if ( !isdefined( self.editor_modify_context ) )
+	{
+		return result_cmderror( "You must set the context using the command 'editorsetmodifycontext' first!" );
+	}
+
+	base_delta = 1;
+	delta = base_delta * scale;
+	ent = self.editor_modify_context_ent;
+	switch ( self.editor_modify_context )
+	{
+		case "pitch":
+			ent rotateto( ent.angles + ( delta, 0, 0 ), total_time, accel_time, decel_time );
+			break;
+		case "yaw":
+			ent rotateto( ent.angles + ( 0, delta, 0 ), total_time, accel_time, decel_time );
+			break;
+		case "roll":
+			ent rotateto( ent.angles + ( 0, 0, delta ), total_time, accel_time, decel_time );
+			break;
+		case "x":
+			ent moveto( ent.origin + ( delta, 0, 0 ), total_time, accel_time, decel_time );
+			break;
+		case "y":
+			ent moveto( ent.origin + ( 0, delta, 0 ), total_time, accel_time, decel_time );
+			break;
+		case "z":
+			ent moveto( ent.origin + ( 0, 0, delta ), total_time, accel_time, decel_time );
+			break;
+		default:
+			return result_cmderror( "<context> must be one of 'pitch', 'yaw', 'roll', 'x', 'y', 'z'!" );
+	}
+}
+
+cmd_editorsetmodifycontext_f( args )
+{
+	context = args[ 0 ];
+
+	switch ( context )
+	{
+		case "pitch":
+			break;
+		case "yaw":
+			break;
+		case "roll":
+			break;
+		case "x":
+			break;
+		case "y":
+			break;
+		case "z":
+			break;
+		default:
+			return result_cmderror( "<context> must be one of 'pitch', 'yaw', 'roll', 'x', 'y', 'z'!" );
+	}
+	
+	self.editor_modify_context = context;
+}
+
+on_editor_connect()
+{
+	self thread editor_hud();
+}
+
+editor_hud()
+{
+	self endon( "disconnect" );
+
+	vertical_hud_list_obj = vertical_text_list_create( 10 );
+
+	root = self scripts\zm\utility::create_root_hud();
+	root.child_huds = [];
+	root.child_huds[ "editor_context_text" ] = self maps\mp\gametypes_zm\_hud_util::createfontstring( "objective", 1.8 );
+	for ( ;; )
+	{
+
+	}
+}
+
 main()
 {
+	onplayerconnect_callback( ::on_editor_connect );
 	while ( !isdefined( level.cmd_init_done ) )
 	{
 		wait 0.05;
@@ -637,11 +837,17 @@ main()
 	seteditortargetorigin_cmd = level [[ level.tcs_add_cmd_func ]]( "seteditortargetorigin", true, "seteditorigin", "seteditortargetorigin <pos> [relative]", ::cmd_seteditortargetorigin_f );
 	seteditortargetorigin_cmd arg_obj_add_cmd( "vector boolean", 1, 2 );
 
-	editheldmodel_cmd = level [[ level.tcs_add_cmd_func ]]( "editheldmodel", true, "editheldmodel", "editheldmodel <model>", ::cmd_editheldmodel_f );
-	editheldmodel_cmd arg_obj_add_cmd( "string", 1, 1 );
+	editheldmodel_cmd = level [[ level.tcs_add_cmd_func ]]( "editheldmodel", true, "editheldmodel", "editheldmodel [model] [carry_origin_offset] [carry_angles_offset]", ::cmd_editheldmodel_f );
+	editheldmodel_cmd arg_obj_add_cmd( "model vector vector", 0, 3 );
 
 	editorspawnheldmodel_cmd = level [[ level.tcs_add_cmd_func ]]( "editorspawnheldmodel", true, "spawnheld", "editorspawnheldmodel <ent_name> <model> [carry_origin_offset] [carry_angles_offset]", ::cmd_editorspawnheldmodel_f );
-	editorspawnheldmodel_cmd = arg_obj_add_cmd( "string model vector vector", 2, 4 );
+	editorspawnheldmodel_cmd arg_obj_add_cmd( "string model vector vector", 2, 4 );
+
+	editorpickup_cmd = level [[ level.tcs_add_cmd_func ]]( "editorpickup", true, "pickup", "editorpickup [entnum] [carry_origin_offset] [carry_angles_offset]", ::cmd_editorpickup_f );
+	editorpickup_cmd arg_obj_add_cmd( "entity vector vector", 0, 3 );
+
+	editorcontextmodifyentity_cmd = level [[ level.tcs_add_cmd_func ]]( "editorcontextmodifyentity", true, undefined, "editorcontextmodifyentity <direction>", ::cmd_editorcontextmodifyentity_f );
+	editorcontextmodifyentity_cmd arg_obj_add_cmd( "string", 1, 1 );
 	// TODO:
 	//setmins
 	//setmaxs
@@ -713,5 +919,5 @@ main()
 
 	// debugging
 	setviewpos_cmd = level [[ level.tcs_add_cmd_func ]]( "setviewpos", true, "setviewpos", "setviewpos <origin> [angles]", ::cmd_setviewpos_f );
-	setviewpos_cmd = arg_obj_add_cmd( "vector vector", 1, 2 );
+	setviewpos_cmd arg_obj_add_cmd( "vector vector", 1, 2 );
 }

@@ -72,8 +72,8 @@ set_player_perms_entry( player )
 		{
 			player_entry = player_entries[ i ];
 			player_entry_array = strTok( player_entry, " " );
-			player_in_server = level.server cast_str_to_player( player_entry_array[ 0 ], true );
-			if ( isDefined( player_in_server ) && player_in_server == player )
+			player_in_server = level.server scripts\cmd_system_modules\_cmd_arg::cast_str_to_player( player_entry_array[ 0 ], true );
+			if ( !player_in_server.errored && player_in_server.value == player )
 			{
 				player_entry_array[ 1 ] = player.tcs_rank;
 				player_entry_array[ 2 ] = player.cmdpower + "";
@@ -108,8 +108,8 @@ player_exists_in_perms_system( player )
 {
 	for ( i = 0; i < level.tcs_player_entries.size; i++ )
 	{
-		player_in_server = level.server cast_str_to_player( level.tcs_player_entries[ i ].player_entry, true );
-		if ( isDefined( player_in_server ) && player_in_server == player )
+		player_in_server = level.server scripts\cmd_system_modules\_cmd_arg::cast_str_to_player( level.tcs_player_entries[ i ].player_entry, true );
+		if ( !player_in_server.errored && player_in_server.value == player )
 		{
 			return true;
 		}

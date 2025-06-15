@@ -1,4 +1,5 @@
-
+#include scripts\cmd_system_modules\_cmd_arg;
+#include scripts\cmd_system_modules\_cmd_execute;
 #include scripts\cmd_system_modules\_cmd_util;
 #include scripts\cmd_system_modules\_com;
 #include scripts\cmd_system_modules\_debug;
@@ -79,7 +80,7 @@ main()
 	level.tcs_com_get_feedback_channel = ::com_get_cmd_feedback_channel;
 	level.tcs_find_player_in_server = ::cast_str_to_player;
 	level.tcs_check_cmd_collisions = ::check_for_cmd_alias_collisions;
-	level.tcs_player_is_valid_check = scripts\cmd_system_modules\_cmd_util::is_player_valid;
+	level.tcs_player_is_valid_check = ::is_player_valid;
 	level.tcs_debug_create_random_valid_args = ::create_random_valid_args2;
 	level.tcs_repackage_args = ::repackage_args;
 
@@ -183,6 +184,7 @@ main()
 	arg_obj_register( "idflags", ::arg_obj_idflags_validate, ::arg_obj_idflags_generate, ::arg_obj_idflags_cast, "not a valid idflag" );
 	arg_obj_register( "bot", ::arg_obj_bot_validate, ::arg_obj_bot_generate, ::arg_obj_bot_cast, "not a valid bot" );
 	arg_obj_register( "string", ::arg_obj_string_validate, ::arg_obj_string_generate, undefined, "not a valid string" );
+	arg_obj_register( "string", ::arg_obj_model_validate, ::arg_obj_model_generate, ::arg_obj_model_cast, "not a valid string" );
 
 	//exclude_clientcmd_from_unittest_pool();
 	//exclude_servercmd_from_unittest_pool();
@@ -210,11 +212,14 @@ main()
 		}
 	}
 	
-	level thread cmd_buffer();
+	level thread scripts\cmd_system_modules\_cmd_execute::cmd_buffer();
 	level thread end_cmds_on_end_game();
-	level thread scr_dvar_cmd_watcher();
+	level thread scripts\cmd_system_modules\_cmd_execute::scr_dvar_cmd_watcher();
 	level thread tcs_on_connect();
 	level thread check_for_cmd_alias_collisions();
+
+	precachemodel( "defaultactor" );
+
 	level.cmd_init_done = true;
 }
 
@@ -226,121 +231,6 @@ init()
 		args = [];
 		args[ 0 ] = getdvarInt( "tcs_unittest" );
 		cmd_unittest_validargs_f( args );
-	}
-}
-
-scr_dvar_cmd_watcher()
-{
-	level endon( "end_cmds" );
-	wait 1;
-	setDvar( "tcscmd", "" );
-	setDvar( "sv_tcscmd", "" );
-	while ( true )
-	{
-		parse_cmd_dvar();
-		wait 0.05;
-	}
-}
-
-parse_cmd_dvar()
-{
-	dvar_value = getdvar( "tcscmd" );
-	if ( dvar_value != "" )
-	{
-		tokens = strtok( dvar_value, " " );
-		player = undefined;
-		if ( tokens.size > 0 )
-		{
-			player = cast_str_to_player( tokens[ 0 ] );
-		}
-		level notify( "say", dvar_value, player, false, true );
-		setDvar( "tcscmd", "" );
-	}
-
-	dvar_value = getdvar( "sv_tcscmd" );
-	if ( dvar_value != "" )
-	{
-		level notify( "say", dvar_value, undefined, false, true );
-		setDvar( "sv_tcscmd", "" );
-	}
-	dvar_value = undefined;
-}
-	
-cmd_buffer()
-{
-	level endon( "end_cmds" );
-	while ( true )
-	{
-		level waittill( "say", message, player, is_hidden, from_rcon );
-		cmd_execute( message, player, is_hidden, from_rcon );
-	}
-}
-
-cmd_execute( message, player, is_hidden, from_rcon )
-{
-	if ( isdefined( player ) && !is_true( from_rcon ) )
-	{
-		if ( !level.tcs_glob.bhidden_cmds && is_hidden )
-		{
-			player com_printerror( "Hidden cmds are not allowed" );
-			return;
-		}
-		else if ( !is_hidden && !is_cmd_token( message[ 0 ] ) )
-		{
-			return;
-		}
-	}
-	else
-	{
-		if ( isdedicated() )
-		{
-			player = level.server;
-		}
-		else 
-		{
-			player = level.host;
-		}
-	}
-	channel = player com_get_cmd_feedback_channel();
-	if (!is_true( from_rcon ) && isDefined( player.cmd_cooldown ) && player.cmd_cooldown > 0 )
-	{
-		player com_printerror( "You cannot use another cmd for " + player.cmd_cooldown + " seconds" );
-		return;
-	}
-	message = tolower( message );
-	multi_cmds = parse_cmd_message( message );
-	if ( multi_cmds.size < 1 )
-	{
-		player com_printerror( "Unknown cmd" );
-		return;
-	}
-	if ( multi_cmds.size > 1 && !player can_use_multi_cmds() && !is_true( from_rcon ) )
-	{
-		temp_array_index = multi_cmds[ 0 ];
-		multi_cmds = [];
-		multi_cmds[ 0 ] = temp_array_index;
-		player com_printwarning( "You do not have permission to use multi cmds; only executing the first cmd" );
-	}
-	for ( cmd_index = 0; cmd_index < multi_cmds.size; cmd_index++ )
-	{
-		cmd_object = multi_cmds[ cmd_index ][ "cmd" ];
-		args = multi_cmds[ cmd_index ][ "args" ];
-		if ( !player has_permission_for_cmd( cmd_object.cmd_name ) && !is_true( from_rcon ) )
-		{
-			player com_printerror( "You do not have permission to use " + cmd_object.cmd_name + " cmd" );
-		}
-		else
-		{
-			if ( cmd_object.is_clientcmd && is_true( player.is_server ) )
-			{
-				player com_printerror( "You cannot use " + cmd_object.cmd_name + " client cmd as the server" );
-			}
-			else 
-			{
-				player cmd_execute_internal( cmd_object, args, getdvarintdefault( "tcs_silent_cmds", 0 ), getdvarintdefault( "tcs_logprint_cmd_usage", 1 ) );
-				player thread cmd_cooldown();
-			}
-		}
 	}
 }
 

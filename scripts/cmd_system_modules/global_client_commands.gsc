@@ -21,7 +21,7 @@ cmd_togglehud_f( args )
 
 cmd_god_f( args )
 {
-	on_off = cast_bool_to_str( !is_true( self.tcs_is_invulnerable ), "on off" );
+	on_off = scripts\cmd_system_modules\_cmd_arg::cast_bool_to_str( !is_true( self.tcs_is_invulnerable ), "on off" );
 	if ( on_off == "on" )
 	{
 		self enableInvulnerability();
@@ -38,7 +38,7 @@ cmd_god_f( args )
 
 cmd_notarget_f( args )
 {
-	on_off = cast_bool_to_str( !is_true( self.ignoreme ), "on off" );
+	on_off = scripts\cmd_system_modules\_cmd_arg::cast_bool_to_str( !is_true( self.ignoreme ), "on off" );
 	if ( on_off == "on" )
 	{
 		self.ignoreme = true;
@@ -53,7 +53,7 @@ cmd_notarget_f( args )
 
 cmd_invisible_f( args )
 {
-	on_off = cast_bool_to_str( !is_true( self.tcs_is_invisible ), "on off" );
+	on_off = scripts\cmd_system_modules\_cmd_arg::cast_bool_to_str( !is_true( self.tcs_is_invisible ), "on off" );
 	if ( on_off == "on" )
 	{
 		self hide();
@@ -80,7 +80,7 @@ cmd_printangles_f( args )
 
 cmd_bottomlessclip_f( args )
 {
-	on_off = cast_bool_to_str( !is_true( self.tcs_bottomless_clip ), "on off" );
+	on_off = scripts\cmd_system_modules\_cmd_arg::cast_bool_to_str( !is_true( self.tcs_bottomless_clip ), "on off" );
 	if ( on_off == "on" )
 	{
 		self thread bottomless_clip();

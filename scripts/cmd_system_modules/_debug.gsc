@@ -134,7 +134,7 @@ construct_chat_message_for_unittest()
 {
 	cmdalias = arg_obj_cmdalias_generate();
 	//logprint( "random cmdalias: " + cmdalias + "\n" );
-	cmd_find_result = get_cmd_from_alias( cmdalias );
+	cmd_find_result = scripts\cmd_system_modules\_cmd_arg::get_cmd_from_alias( cmdalias );
 	if ( cmd_find_result.errored )
 	{
 		return;
@@ -240,7 +240,7 @@ cmd_testcmd_f( args )
 	}
 
 	result[ "filter" ] = "cmdinfo";
-	result[ "message" ] = "Testcmd " + cast_bool_to_str( level.doing_cmd_system_testcmd, "activated deactivated" ) + " for cmd " + args[ 0 ];
+	result[ "message" ] = "Testcmd " + scripts\cmd_system_modules\_cmd_arg::cast_bool_to_str( level.doing_cmd_system_testcmd, "activated deactivated" ) + " for cmd " + args[ 0 ];
 	return result;
 }
 

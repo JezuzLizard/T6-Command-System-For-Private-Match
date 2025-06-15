@@ -8,6 +8,7 @@
 
 #include scripts\cmd_system_modules\_cmd_util;
 #include scripts\cmd_system_modules\_com;
+#include scripts\cmd_system_modules\_consts;
 #include scripts\cmd_system_modules\_perms;
 #include scripts\zm\cmd_system_modules_zm\_overrides;
 #include scripts\zm\cmd_system_modules_zm\_zm_cmd_util;
@@ -577,7 +578,7 @@ cmd_weapon_f( args )
 cmd_toggleperssystemforplayer_f( args )
 {
 	target = args[ 0 ];
-	on_off = cast_bool_to_str( is_true( target.tcs_disable_pers_system ), "on off" );
+	on_off = scripts\cmd_system_modules\_cmd_arg::cast_bool_to_str( is_true( target.tcs_disable_pers_system ), "on off" );
 	target.tcs_disable_pers_system = !is_true( target.tcs_disable_pers_system );
 
 	return result_cmdinfo( "Toggled pers system for " + target.name + " " + on_off );
@@ -585,7 +586,7 @@ cmd_toggleperssystemforplayer_f( args )
 
 cmd_toggleperssystem_f( args )
 {
-	on_off = cast_bool_to_str( !is_true( self.tcs_disable_pers_system ), "on off" );
+	on_off = scripts\cmd_system_modules\_cmd_arg::cast_bool_to_str( !is_true( self.tcs_disable_pers_system ), "on off" );
 	self.tcs_disable_pers_system = !is_true( self.tcs_disable_pers_system );
 
 	return result_cmdinfo( "Toggled your pers system " + on_off );
@@ -593,7 +594,7 @@ cmd_toggleperssystem_f( args )
 
 cmd_toggleoutofplayableareamonitor_f( args )
 {
-	on_off = cast_bool_to_str( !is_true( level.player_out_of_playable_area_monitor ), "on off" );
+	on_off = scripts\cmd_system_modules\_cmd_arg::cast_bool_to_str( !is_true( level.player_out_of_playable_area_monitor ), "on off" );
 	level.player_out_of_playable_area_monitor = !level.player_out_of_playable_area_monitor;
 	if ( on_off == "on" )
 	{

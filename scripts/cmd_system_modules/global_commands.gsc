@@ -109,7 +109,7 @@ cmd_setrank_f( args )
 cmd_execonallplayers_f( args )
 {
 	cmd = args[ 0 ];
-	cmd_find_result = get_cmd_from_alias( cmd );
+	cmd_find_result = scripts\cmd_system_modules\_cmd_arg::get_cmd_from_alias( cmd );
 	if ( cmd_find_result.errored )
 	{
 		return result_cmderror( cmd_find_result.msg );
@@ -125,7 +125,7 @@ cmd_execonallplayers_f( args )
 	{
 		var_args[ i - 1 ] = args[ i ];
 	}
-	if ( !self test_cmd_is_valid( cmd_object, var_args ) )
+	if ( !self scripts\cmd_system_modules\_cmd_arg::test_cmd_is_valid( cmd_object, var_args ) )
 	{
 		return result_cmderror( "!self test_cmd_is_valid" );
 	}
@@ -136,7 +136,7 @@ cmd_execonallplayers_f( args )
 	}
 	for ( i = 0; i < players.size; i++ )
 	{
-		players[ i ] thread cmd_execute_internal( cmd_object, var_args, false, false );
+		players[ i ] thread scripts\cmd_system_modules\_cmd_execute::cmd_execute_internal( cmd_object, var_args, false, false );
 	}
 
 	return result_cmdinfo( "Executed " + cmd_object.cmd_name + " on all players" );
@@ -146,7 +146,7 @@ cmd_execonteam_f( args )
 {
 	team = args[ 0 ];
 	cmd = args[ 1 ];
-	cmd_find_result = get_cmd_from_alias( cmd );
+	cmd_find_result = scripts\cmd_system_modules\_cmd_arg::get_cmd_from_alias( cmd );
 	if ( cmd_find_result.errored )
 	{
 		return result_cmderror( cmd_find_result.msg );
@@ -163,7 +163,7 @@ cmd_execonteam_f( args )
 	{
 		var_args[ i - 2 ] = args[ i ];
 	}
-	if ( !self test_cmd_is_valid( cmd_object, var_args ) )
+	if ( !self scripts\cmd_system_modules\_cmd_arg::test_cmd_is_valid( cmd_object, var_args ) )
 	{
 		return result_cmderror( "!self test_cmd_is_valid" );
 	}
@@ -174,7 +174,7 @@ cmd_execonteam_f( args )
 	}
 	for ( i = 0; i < players.size; i++ )
 	{
-		players[ i ] thread cmd_execute_internal( cmd_object, var_args, false, false );
+		players[ i ] thread scripts\cmd_system_modules\_cmd_execute::cmd_execute_internal( cmd_object, var_args, false, false );
 	}
 
 	return result_cmdinfo( "Executed " + cmd_object.cmd_name + " on team " + team );

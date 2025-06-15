@@ -5,6 +5,7 @@
 #include maps\mp\zombies\_zm_magicbox;
 #include scripts\cmd_system_modules\_cmd_util;
 #include scripts\cmd_system_modules\_com;
+#include scripts\cmd_system_modules\_consts;
 
 weapon_give_custom( weapon, is_upgrade, should_switch_weapon )
 {
@@ -279,6 +280,55 @@ zombie_recalculate_total( stat_name, new_value )
 	}	
 }
 
+perk_list_zm()
+{
+	if ( !isDefined( level._zm_perks ) )
+	{
+		level._zm_perks = [];
+	}
+	else 
+	{
+		return level._zm_perks; //Fix so even if quickrevive machine is removed it can still be given.
+	}
+	switch ( level.script )
+	{
+		case "zm_tomb":
+			level._zm_perks = level._random_perk_machine_perk_list;
+			return level._zm_perks;
+		case "zm_transit": //Fix so you can give perks with cmds on maps without perk machines.
+			level._zm_perks = array( "specialty_quickrevive", "specialty_rof", "specialty_fastreload", "specialty_armorvest", "specialty_longersprint", "specialty_scavenger" );
+			return level._zm_perks;
+		default:
+			machines = getentarray( "zombie_vending", "targetname" );
+			perks = [];
+
+			for ( i = 0; i < machines.size; i++ )
+			{
+				if ( machines[ i ].script_noteworthy == "specialty_weapupgrade" )
+					continue;
+
+				perks[ perks.size ] = machines[ i ].script_noteworthy;
+			}
+			level._zm_perks = perks;
+			return level._zm_perks;
+	}
+}
+
+permaperk_list_zm()
+{
+	return getarraykeys( level.pers_upgrades );
+}
+
+get_all_weapons()
+{
+	return getarraykeys( level.zombie_include_weapons );
+}
+
+weapon_is_upgrade( weapon )
+{
+	return issubstr( weapon, "upgraded" );
+}
+
 arg_obj_perk_validate( arg )
 {
 	perks = perk_list_zm();
@@ -347,7 +397,7 @@ arg_obj_powerup_generate()
 
 arg_obj_round_validate( arg )
 {
-	return is_natural_num( arg ) && int( arg ) <= 255;
+	return scripts\cmd_system_modules\_cmd_arg::is_natural_num( arg ) && int( arg ) <= 255;
 }
 
 arg_obj_round_generate()

@@ -73,3 +73,151 @@ build_sessionstate_array()
 	level.tcs_sessstates[ "spectator" ] = 2;
 	level.tcs_sessstates[ "intermission" ] = 3;
 }
+
+get_perk_from_alias_zm( alias )
+{
+	switch ( alias )
+	{
+		case "ju":
+		case "jug":
+		case "jugg":
+		case "juggernog":
+			return "specialty_armorvest";
+		case "ro":
+		case "rof":
+		case "double":
+		case "doubletap":
+			return "specialty_rof";
+		case "qq":
+		case "quick":
+		case "revive":
+		case "quickrevive":
+			return "specialty_quickrevive";
+		case "sp":
+		case "speed":
+		case "fastreload":
+		case "speedcola":
+			return "specialty_fastreload";
+		case "st":
+		case "staminup":
+		case "longersprint":
+			return "specialty_longersprint";
+		case "fl":
+		case "flakjacket":
+		case "flopper":
+			return "specialty_flakjacket";
+		case "ds":
+		case "deadshot":
+			return "specialty_deadshot";
+		case "mk":
+		case "mulekick":
+			return "specialty_additionalprimaryweapon";
+		case "tm":
+		case "tombstone":
+			return "specialty_scavenger";
+		case "ww":
+		case "whoswho":
+			return "specialty_finalstand";
+		case "ec":
+		case "electriccherry":
+			return "specialty_grenadepulldeath";
+		case "va":
+		case "vultureaid":
+			return "specialty_nomotionsensor";
+		case "all":
+			return "all";
+		default:
+			return alias;
+	}
+}
+
+get_powerup_from_alias_zm( alias )
+{
+	switch ( alias )
+	{
+		case "nuke":
+			return "nuke";
+		case "insta":
+		case "instakill":
+			return "insta_kill";
+		case "double":
+		case "doublepoints":
+			return "double_points";
+		case "max":
+		case "ammo":
+		case "maxammo":
+			return "full_ammo";
+		case "carp":
+			return "carpenter";
+		case "sale":
+		case "firesale":
+			return "fire_sale";
+		case "perk":
+		case "freeperk":
+			return "free_perk";
+		case "blood":
+		case "zombieblood":
+			return "zombie_blood";
+		case "points":
+			return "bonus_points";
+		case "teampoints":
+			return "bonus_points_team";
+		default:
+			return alias;
+	}
+}
+
+powerup_list_zm()
+{
+	return getarraykeys( level.zombie_include_powerups );
+}
+
+get_perma_perk_from_alias( alias )
+{
+	switch ( alias )
+	{
+		case "bo":
+		case "boards":
+			return "pers_boarding";
+		case "re":
+		case "revive":
+			return "pers_reviveonperk";
+		case "he":
+		case "headshots":
+			return "pers_multikill_headshots";
+		case "ca":
+		case "cashback":
+			return "pers_cash_back_prone";
+		case "in":
+		case "instakill":
+			return "pers_insta_kill";
+		case "ju":
+		case "jugg":
+			return "pers_jugg";
+		case "cr":
+		case "carpenter":
+			return "pers_carpenter";
+		case "fl":
+		case "flopper":
+			return "pers_flopper_counter";
+		case "pe":
+		case "perklose":
+			return "pers_perk_lose_counter";
+		case "pp":
+		case "pistolpoints":
+			return "pers_double_points_counter";
+		case "sn":
+		case "sniperpoints":
+			return "pers_sniper_counter";
+		case "bx":
+		case "boxweapon":
+			return "pers_box_weapon_counter";
+		case "nu":
+		case "nube":
+			return "pers_nube_counter";
+		case "all":
+			return "all";
+		default: 
+			return alias;
+	}
+}
