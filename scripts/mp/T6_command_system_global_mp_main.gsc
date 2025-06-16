@@ -14,11 +14,11 @@ main()
 	}
 
 	cmd_block_set_rank_group( "cheat" );
-	sicdogsonplayer_cmd = cmd_add( "sicdogsonplayer", false, "sicdogsonplayer", "sicdogsonplayer <name|guid|clientnum|self> [count] [invisible]", ::cmd_sicdogsonplayer_f );
-	sicdogsonplayer_cmd arg_obj_add_cmd( "player wholenum wholenum", 1, 3 );
+	sicdogsonplayer_cmd = cmd_add( "sicdogsonplayer", ::cmd_sicdogsonplayer_f, "sicdogsonplayer {player} [count] [invisible]" );
+	sicdogsonplayer_cmd arg_obj_add_cmd( "wholenum wholenum", 0, 2 );
+	givenotarget_cmd target_obj_add_cmd( "player" );
 
-	removedogs_cmd = cmd_add( "removedogs", false, "removedogs", "removedogs", ::cmd_removedogs_f );
-	removedogs_cmd arg_obj_add_cmd( "", 0, 0 );
+	removedogs_cmd = cmd_add( "removedogs", ::cmd_removedogs_f );
 
 	arg_obj_register( "weapon", ::arg_obj_weapon_validate, ::arg_obj_weapon_generate, undefined, "not a valid weapon" );
 
@@ -64,11 +64,11 @@ wait_spawn_bot_think()
 	self thread maps\mp\bots\_bot::bot_spawn_think( random( level.teams ) );
 }
 
-cmd_sicdogsonplayer_f( arg_list )
+cmd_sicdogsonplayer_f( target_obj, args )
 {
-	target = arg_list[ 0 ];
-	count = arg_list[ 1 ];
-	invisible = arg_list[ 2 ];
+	target = args[ 0 ];
+	count = args[ 1 ];
+	invisible = args[ 2 ];
 
 	other_team = getOtherTeam( target.team );
 
@@ -89,7 +89,7 @@ cmd_sicdogsonplayer_f( arg_list )
 	self com_printinfo( "Use cmd removedogs to remove the dogs spawned with this cmd" );
 }
 
-cmd_removedogs_f( arg_list )
+cmd_removedogs_f( target_obj, args )
 {
 	level notify( "remove_dogs" );
 

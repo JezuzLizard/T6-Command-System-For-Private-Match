@@ -251,7 +251,10 @@ hud_binding_set( binding_name, hud, new_value )
 			switch ( hud_binding_obj.binding_subtype )
 			{
 				case "edit_mode":
-					hud set_safe_text( new_value );
+					hud set_safe_text( "Context edit mode: " + new_value );
+					break;
+				case "edit_scale":
+					hud set_safe_text( "Context scale: " + new_value );
 					break;
 				default:
 					break;
@@ -273,6 +276,7 @@ hud_binding_set_default( hud_binding_obj, hud )
 	switch ( hud_binding_obj.binding_subtype )
 	{
 		case "edit_mode":
+		case "edit_scale":
 		case "selected_entity":
 		case "held_entity":
 		case "placed_entities":

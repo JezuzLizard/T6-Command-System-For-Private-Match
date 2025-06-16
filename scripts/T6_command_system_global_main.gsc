@@ -18,6 +18,8 @@ main()
 	level.server.playername = getdvar( "sv_hostname" );
 	level.server.name = getdvar( "sv_hostname" );
 	level.server.is_server = true;
+	level.server.default_target = level.server; // treat this value as the default target for optional target specifying
+	level.server.default_executor = level.server; // treat this value as the default executor for the command; the command is executed on behalf of the server on a player
 	level.tcs_glob = spawnstruct();
 	level.tcs_glob.irestart_countdown = 5;
 	level.tcs_glob.icmd_total = 0;
@@ -84,115 +86,128 @@ main()
 	level.tcs_debug_create_random_valid_args = ::create_random_valid_args2;
 	level.tcs_repackage_args = ::repackage_args;
 
-	cmd_block_set_rank_group( "cheat" );
-	setcvar_cmd = cmd_add( "setcvar", false, "scv", "setcvar <name|guid|clientnum|self> <cvarname> <newval>", ::cmd_setcvar_f );
-	setcvar_cmd arg_obj_add_cmd( "player string string", 3, 3 );
+	// Special target syntax for players/entities:
+	// {*} - if the argument expects a player/entity, execute on all of them
+	// {playername1,playername2} - execute only on these players
+	// certain reserved syntaxes also apply:
+	// {*[team=allies&classname=player]} - only execute on <team> AND <classname>
+	// {*[team=axis|classname=player]} - execute on <team> OR <classname>
+	// {*[target=self]} - manually set the target to an entity in this case self or the executor, default behavior; if server is executing they must specify the target
+	// {$39} - pick random targets up to $<x> from possible pool of targets, <x> defaults to 1
+	// {$[team=allies&classname=player]} - pick one random target matching the criteria
+	// %{player} - forces this player to be the executor of the command as if they typed the command in the chat
+	// {(some_func(arg1,arg2,arg3))} - execute a script function to retrieve targets
 
-	dvar_cmd = cmd_add( "dvar", false, "dv", "dvar <dvarname> <newval>", ::cmd_server_dvar_f );
+	// TLDR;
+	// {} by itself represents targets of the command
+	// %{} represents executors of the command
+	// you can specify both the executor and targets syntax since they have different enough syntax
+
+	// Target Hierarchy:
+	// Entity{Everything}
+	// Player{Bot}, Sentient{Actor, Bot}
+
+
+	cmd_block_set_rank_group( "cheat" );
+	setcvar_cmd = cmd_add( "cvar", ::cmd_setcvar_f, "cvar {player} <cvarname> <newval>" );
+	setcvar_cmd arg_obj_add_cmd( "string string", 2, 2 );
+	setcvar_cmd target_obj_add_cmd( "player" );
+
+	dvar_cmd = cmd_add( "dvar", ::cmd_server_dvar_f, "dvar <dvarname> <newval>" );
 	dvar_cmd arg_obj_add_cmd( "string string", 2, 2 );
 
-	cvarall_cmd = cmd_add( "cvarall", false, "cva", "cvarall <cvarname> <newval>", ::cmd_cvarall_f );
-	cvarall_cmd arg_obj_add_cmd( "string string", 2, 2 );
+	givegod_cmd = cmd_add( "god", ::cmd_givegod_f, "god {player}" );
+	givegod_cmd target_obj_add_cmd( "player" );
 
-	givegod_cmd = cmd_add( "givegod", false, "ggd", "givegod <name|guid|clientnum|self>", ::cmd_givegod_f, true );
-	givegod_cmd arg_obj_add_cmd( "player", 1, 1 );
+	givenotarget_cmd = cmd_add( "notarget", ::cmd_givenotarget_f, "notarget {player}" );
+	givenotarget_cmd target_obj_add_cmd( "player" );
 
-	givenotarget_cmd = cmd_add( "givenotarget", false, "gnt", "givenotarget <name|guid|clientnum|self>", ::cmd_givenotarget_f, true );
-	givenotarget_cmd arg_obj_add_cmd( "player", 1, 1 );
+	giveinvisible_cmd = cmd_add( "invisible", ::cmd_giveinvisible_f, "invisible {player}" );
+	giveinvisible_cmd target_obj_add_cmd( "player" );
 
-	giveinvisible_cmd = cmd_add( "giveinvisible", false, "ginv", "giveinvisible <name|guid|clientnum|self>", ::cmd_giveinvisible_f, true );
-	giveinvisible_cmd arg_obj_add_cmd( "player", 1, 1 );
+	setrank_cmd = cmd_add( "setrank", ::cmd_setrank_f, "setrank {player} <rank>" );
+	setrank_cmd arg_obj_add_cmd( "rank", 1, 1 );
+	setrank_cmd target_obj_add_cmd( "player" );
 
-	setrank_cmd = cmd_add( "setrank", false, "sr", "setrank <name|guid|clientnum|self> <rank>", ::cmd_setrank_f );
-	setrank_cmd arg_obj_add_cmd( "player rank", 2, 2 );
-
-	entitylist_cmd = cmd_add( "entitylist", false, "elist", "entitylist [targetname]", ::cmd_entitylist_f );
+	entitylist_cmd = cmd_add( "entitylist", ::cmd_entitylist_f, "entitylist [targetname]" );
 	entitylist_cmd arg_obj_add_cmd( "string", 0, 1 );
 
-	execonallplayers_cmd = cmd_add( "execonallplayers", false, "execonall exall", "execonallplayers <cmd> [cmdargs] ...", ::cmd_execonallplayers_f );
-	execonallplayers_cmd arg_obj_add_cmd( "cmdalias", 1, 255 );
-
-	execonteam_cmd = cmd_add( "execonteam", false, "execteam exteam", "execonteam <team> <cmd> [cmdargs] ...", ::cmd_execonteam_f );
-	execonteam_cmd arg_obj_add_cmd( "team cmdalias", 2, 255 );
-
-	unittest_cmd = cmd_add( "unittest", false, undefined, "unittest [botcount] [duration]", ::cmd_unittest_validargs_f );
+	unittest_cmd = cmd_add( "unittest", ::cmd_unittest_validargs_f, "unittest [botcount] [duration]" );
 	unittest_cmd arg_obj_add_cmd( "wholenum wholenum", 0, 2 );
 
-	testcmd_cmd = cmd_add( "testcmd", false, undefined, "testcmd <cmdalias> [threadcount] [duration]", ::cmd_testcmd_f );
+	testcmd_cmd = cmd_add( "testcmd", ::cmd_testcmd_f, "testcmd <cmdalias> [threadcount] [duration]" );
 	testcmd_cmd arg_obj_add_cmd( "cmdalias wholenum wholenum", 1, 3 );
 
-	dodamage_cmd = cmd_add( "dodamage", false, "dd", "dodamage <entitynum|classname|targetname|self> <damage> <origin> [entitynum|classname|targetname|self] [entitynum|classname|targetname|self] [hitloc] [MOD] [idflags] [weapon]", ::cmd_dodamage_f );
-	dodamage_cmd arg_obj_add_cmd( "entity float vector entity entity hitloc MOD idflags weapon", 3, 9 );
+	dodamage_cmd = cmd_add( "dodamage", ::cmd_dodamage_f, "dodamage {entity} <damage> <origin> [entitynum|classname|targetname|self] [entitynum|classname|targetname|self] [hitloc] [MOD] [idflags] [weapon]" );
+	dodamage_cmd arg_obj_add_cmd( "float vector entity entity hitloc MOD idflags weapon", 2, 8 );
+	dodamage_cmd target_obj_add_cmd( "entity" );
 
-	teleportplayer_cmd = cmd_add( "teleportplayer", false, "tp", "teleportplayer <name|guid|clientnum|self> <name|guid|clientnum>", ::cmd_teleportplayer_f );
-	teleportplayer_cmd arg_obj_add_cmd( "player player", 2, 2 );
+	teleportplayer_cmd = cmd_add( "teleporttoplayer", ::cmd_teleportplayer_f, "teleporttoplayer {player_from} {player_to}" );
+	teleportplayer_cmd target_obj_add_cmd( "player player" );
 
-	god_cmd = cmd_add( "god", true, undefined, "god", ::cmd_god_f, true );
-	god_cmd arg_obj_add_cmd( "", 0, 0 );
+	bottomlessclip_cmd = cmd_add( "bottomlessclip", ::cmd_bottomlessclip_f, "bottomlessclip {player}" );
+	bottomlessclip_cmd target_obj_add_cmd( "player" );
 
-	notarget_cmd = cmd_add( "notarget", true, "nt", "notarget", ::cmd_notarget_f, true );
-	notarget_cmd arg_obj_add_cmd( "", 0, 0 );
+	printentitiesinradius_cmd = cmd_add( "printentitiesinradius", ::cmd_printentitiesinradius_f, "printentitiesinradius {entity_anchor} {entity_filter} [radius=1000]" );
+	printentitiesinradius_cmd arg_obj_add_cmd( "float", 0, 1 );
+	printentitiesinradius_cmd target_obj_add_cmd( "entity entity" );
 
-	invisible_cmd = cmd_add( "invisible", true, "invis", "invisible", ::cmd_invisible_f, true );
-	invisible_cmd arg_obj_add_cmd( "", 0, 0 );
-
-	bottomlessclip_cmd = cmd_add( "bottomlessclip", true, "botclip bcl", "bottomlessclip", ::cmd_bottomlessclip_f, true );
-	bottomlessclip_cmd arg_obj_add_cmd( "", 0, 0 );
-
-	teleport_cmd = cmd_add( "teleport", true, "tele", "teleport <name|guid|clientnum>", ::cmd_teleport_f );
-	teleport_cmd arg_obj_add_cmd( "player", 1, 1 );
-
-	cvar_cmd = cmd_add( "cvar", true, "cv", "cvar <cvarname> <newval>", ::cmd_cvar_f, 2 );
-	cvar_cmd arg_obj_add_cmd( "string string", 2, 2 );
-
-	printentitiesinradius_cmd = cmd_add( "printentitiesinradius", true, "peir", "printentitiesinradius [radius=1000] [classname|targetname|script_noteworthy]", ::cmd_printentitiesinradius_f );
-	printentitiesinradius_cmd arg_obj_add_cmd( "float string", 0, 2 );
+	togglehud_cmd = cmd_add( "scrnotify", ::cmd_scrnotify_f, "scrnotify {entity} <notifyent> <notifyname> [notifyargs] ..." );
+	togglehud_cmd arg_obj_add_cmd( "string string ...", 2, 255 );
+	togglehud_cmd target_obj_add_cmd( "entity" );
 
 	cmd_block_set_rank_group( "none" );
-	cmdlist_cmd = cmd_add( "cmdlist", false, "cl", "cmdlist", ::cmd_cmdlist_f );
-	cmdlist_cmd arg_obj_add_cmd( "team cmdalias", 0, 0 );
+	cmdlist_cmd = cmd_add( "cmdlist", ::cmd_cmdlist_f );
 
-	playerlist_cmd = cmd_add( "playerlist", false, "plist", "playerlist [team]", ::cmd_playerlist_f );
-	playerlist_cmd arg_obj_add_cmd( "team", 0, 1 );
+	playerlist_cmd = cmd_add( "playerlist", ::cmd_playerlist_f, "playerlist {team}" );
+	playerlist_cmd target_obj_add_cmd( "team" );
 
-	printorigin_cmd = cmd_add( "printorigin", true, "printorg por", "printorigin", ::cmd_printorigin_f );
-	printorigin_cmd arg_obj_add_cmd( "", 0, 0 );
+	printorigin_cmd = cmd_add( "printorigin", ::cmd_printorigin_f, "printorigin {entity}" );
+	printorigin_cmd target_obj_add_cmd( "entity" );
 
-	printangles_cmd = cmd_add( "printangles", true, "printang pan", "printangles", ::cmd_printangles_f );
-	printangles_cmd arg_obj_add_cmd( "", 0, 0 );
+	printangles_cmd = cmd_add( "printangles", ::cmd_printangles_f, "printangles {entity}" );
+	printangles_cmd target_obj_add_cmd( "entity" );
 
-	help_cmd = cmd_add( "help", false, undefined, "help [cmdalias]", ::cmd_help_f );
+	help_cmd = cmd_add( "help", ::cmd_help_f, "help [cmdalias]" );
 	help_cmd arg_obj_add_cmd( "cmdalias", 0, 1 );
 
-	togglehud_cmd = cmd_add( "togglehud", true, "toghud", "togglehud", ::cmd_togglehud_f );
-	togglehud_cmd arg_obj_add_cmd( "", 0, 0 );
+	togglehud_cmd = cmd_add( "togglehud", ::cmd_togglehud_f, "togglehud {player}" );
+	togglehud_cmd target_obj_add_cmd( "player" );
 
-	arg_obj_register( "player", ::arg_obj_player_validate, ::arg_obj_player_generate, ::arg_obj_player_cast, "not a valid player" );
-	//arg_obj_register( "playernotself", ::arg_obj_playernotself_validate, ::arg_obj_generate_rand_playernotself, ::arg_obj_cast_to_player, "not a valid player(cannot be self)" );
+	// Sets the default cmd target for the executor(normally 'self'); this allows the server through rcon or otherwise to still use the default target functionality that makes the default target 'self' or another entity.
+	setdefaultcmdtarget_cmd = cmd_add( "setdefaultcmdtarget", ::cmd_setdefaultcmdtarget_f, "setdefaultcmdtarget <player>" );
+	setdefaultcmdtarget_cmd arg_obj_add_cmd( "player", 1, 1 );
+
+	setdefaultcmdexecutor_cmd = cmd_add( "setdefaultcmdexecutor", ::cmd_setdefaultcmdexecutor_f, "setdefaultcmdexecutor <player>" );
+	setdefaultcmdexecutor_cmd arg_obj_add_cmd( "player", 1, 1 );
+
+	arg_obj_register( "player", ::arg_obj_player_validate, ::arg_obj_player_generate, ::arg_obj_player_cast, "not a valid player", true );
 	arg_obj_register( "wholenum", ::arg_obj_wholenum_validate, ::arg_obj_wholenum_generate, ::arg_obj_int_cast, "not a whole number" );
 	arg_obj_register( "boolean", ::arg_obj_boolean_validate, ::arg_obj_boolean_generate, ::arg_obj_boolean_cast, "not a boolean" );
 	arg_obj_register( "int", ::arg_obj_int_validate, ::arg_obj_int_generate, ::arg_obj_int_cast, "not an int" );
 	arg_obj_register( "float", ::arg_obj_float_validate, ::arg_obj_float_generate, ::arg_obj_float_cast, "not a float" );
 	arg_obj_register( "wholefloat", ::arg_obj_wholefloat_validate, ::arg_obj_wholefloat_generate, ::arg_obj_float_cast, "not a float greater than 0" );
 	arg_obj_register( "vector", ::arg_obj_vector_validate, ::arg_obj_vector_generate, ::arg_obj_vector_cast, "not a valid vector, format is float,float,float" );
-	arg_obj_register( "team", ::arg_obj_team_validate, ::arg_obj_team_generate, undefined, "not a valid team" );
+	arg_obj_register( "team", ::arg_obj_team_validate, ::arg_obj_team_generate, undefined, "not a valid team", true );
 	arg_obj_register( "cmdalias", ::arg_obj_cmdalias_validate, ::arg_obj_cmdalias_generate, ::arg_obj_cmdalias_cast, "not a valid cmdalias" );
 	arg_obj_register( "rank", ::arg_obj_rank_validate, ::arg_obj_rank_generate, undefined, "not a valid rank" );
-	arg_obj_register( "entity", ::arg_obj_entity_validate, ::arg_obj_entity_generate, ::arg_obj_entity_cast, "not a valid entity" );
+	arg_obj_register( "entity", ::arg_obj_entity_validate, ::arg_obj_entity_generate, ::arg_obj_entity_cast, "not a valid entity", true );
+	arg_obj_register( "entity_allow_null", ::arg_obj_entity_allow_null_validate, ::arg_obj_entity_allow_null_generate, ::arg_obj_entity_allow_null_cast, "not a valid entity or null entity", true );
 	arg_obj_register( "hitloc", ::arg_obj_hitloc_validate, ::arg_obj_hitloc_generate, undefined, "not a valid hitloc" );
 	arg_obj_register( "MOD", ::arg_obj_mod_validate, ::arg_obj_mod_generate, ::arg_obj_mod_cast, "not a valid mod" );
 	arg_obj_register( "idflags", ::arg_obj_idflags_validate, ::arg_obj_idflags_generate, ::arg_obj_idflags_cast, "not a valid idflag" );
-	arg_obj_register( "bot", ::arg_obj_bot_validate, ::arg_obj_bot_generate, ::arg_obj_bot_cast, "not a valid bot" );
+	arg_obj_register( "bot", ::arg_obj_bot_validate, ::arg_obj_bot_generate, ::arg_obj_bot_cast, "not a valid bot", true );
 	arg_obj_register( "string", ::arg_obj_string_validate, ::arg_obj_string_generate, undefined, "not a valid string" );
+	arg_obj_register( "string_allow_null", ::arg_obj_string_allow_null_validate, ::arg_obj_string_allow_null_generate, undefined, "not a valid string or blank string" );
 	arg_obj_register( "model", ::arg_obj_model_validate, ::arg_obj_model_generate, ::arg_obj_model_cast, "not a valid model" );
-	arg_obj_register( "actor", ::arg_obj_actor_validate, ::arg_obj_actor_generate, ::arg_obj_actor_cast, "not a valid actor" );
+	arg_obj_register( "actor", ::arg_obj_actor_validate, ::arg_obj_actor_generate, ::arg_obj_actor_cast, "not a valid actor", true );
+	arg_obj_register( "spawnable_classname", ::arg_obj_spawnable_classname_validate, ::arg_obj_spawnable_classname_generate, ::arg_obj_spawnable_classname_cast, "not a spawnable classname" );
+	// executor argtype/target for level.server and player commands
 
 	//exclude_clientcmd_from_unittest_pool();
 	//exclude_servercmd_from_unittest_pool();
 
-	scripts\cmd_system_modules\_consts::build_hitlocs_array();
-	scripts\cmd_system_modules\_consts::build_mods_array();
-	scripts\cmd_system_modules\_consts::build_idflags_array();
+	scripts\cmd_system_modules\_consts::init_consts();
 	
 	if ( !isdedicated() )
 	{
@@ -231,7 +246,7 @@ init()
 	{
 		args = [];
 		args[ 0 ] = getdvarInt( "tcs_unittest" );
-		cmd_unittest_validargs_f( args );
+		cmd_unittest_validargs_f( target_obj, args );
 	}
 }
 
@@ -306,4 +321,7 @@ on_connect_internal()
 		}
 	}
 	self._connected = true;
+
+	self.default_target = self;
+	self.default_executor = self;
 }

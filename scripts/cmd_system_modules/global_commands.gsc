@@ -4,7 +4,7 @@
 #include scripts\cmd_system_modules\_com;
 #include scripts\cmd_system_modules\_perms;
 
-cmd_server_dvar_f( args )
+cmd_server_dvar_f( target_obj, args )
 {
 	dvarname = args[ 0 ];
 	dvarvalue = args[ 1 ];
@@ -13,7 +13,7 @@ cmd_server_dvar_f( args )
 	return result_cmdinfo( "Successfully set " + dvarname + " to " + dvarvalue );
 }
 
-cmd_cvarall_f( args )
+cmd_cvarall_f( target_obj, args )
 {
 	dvarname = args[ 0 ];
 	dvarvalue = args[ 1 ];
@@ -30,7 +30,7 @@ cmd_cvarall_f( args )
 	return result_cmdinfo( "Successfully set " + dvarname + " to " + dvarvalue + " for all players" );
 }
 
-cmd_setcvar_f( args )
+cmd_setcvar_f( target_obj, args )
 {
 	target = args[ 0 ];
 	dvarname = args[ 1 ];
@@ -40,7 +40,7 @@ cmd_setcvar_f( args )
 	return result_cmdinfo( "Successfully set " + target.name + "'s " + dvarname + " to " + dvarvalue );
 }
 
-cmd_givegod_f( args )
+cmd_givegod_f( target_obj, args )
 {
 	target = args[ 0 ];
 	if ( !is_true( target.tcs_is_invulnerable ) )
@@ -57,7 +57,7 @@ cmd_givegod_f( args )
 	return result_cmdinfo( "Toggled god for " + target.name );
 }
 
-cmd_givenotarget_f( args )
+cmd_givenotarget_f( target_obj, args )
 {
 	target = args[ 0 ];
 	target.ignoreme = !target.ignoreme;
@@ -65,7 +65,7 @@ cmd_givenotarget_f( args )
 	return result_cmdinfo( "Toggled notarget for " + target.name );
 }
 
-cmd_giveinvisible_f( args )
+cmd_giveinvisible_f( target_obj, args )
 {
 	target = args[ 0 ];
 	if ( !is_true( target.tcs_is_invisible ) )
@@ -82,7 +82,7 @@ cmd_giveinvisible_f( args )
 	return result_cmdinfo( "Toggled invisibility for " + target.name );
 }
 
-cmd_setrank_f( args )
+cmd_setrank_f( target_obj, args )
 {
 	target = args[ 0 ];
 	if ( !is_true( self.is_server ) && self.cmdpower < target.cmdpower )
@@ -106,7 +106,7 @@ cmd_setrank_f( args )
 /*
 	Executes a client cmd on all players in the server. 
 */
-cmd_execonallplayers_f( args )
+cmd_execonallplayers_f( target_obj, args )
 {
 	cmd = args[ 0 ];
 	cmd_find_result = scripts\cmd_system_modules\_cmd_arg::get_cmd_from_alias( cmd );
@@ -142,7 +142,7 @@ cmd_execonallplayers_f( args )
 	return result_cmdinfo( "Executed " + cmd_object.cmd_name + " on all players" );
 }
 
-cmd_execonteam_f( args )
+cmd_execonteam_f( target_obj, args )
 {
 	team = args[ 0 ];
 	cmd = args[ 1 ];
@@ -180,7 +180,7 @@ cmd_execonteam_f( args )
 	return result_cmdinfo( "Executed " + cmd_object.cmd_name + " on team " + team );
 }
 
-cmd_playerlist_f( args )
+cmd_playerlist_f( target_obj, args )
 {
 	channel = self com_get_cmd_feedback_channel();
 	players = getPlayers();
@@ -216,7 +216,7 @@ list_players_throttled( channel, players )
 	}
 }
 
-cmd_cmdlist_f( args )
+cmd_cmdlist_f( target_obj, args )
 {
 	channel = self com_get_cmd_feedback_channel();
 	self thread list_cmds_throttled( channel );
@@ -244,7 +244,7 @@ list_cmds_throttled( channel )
 	}
 }
 
-cmd_help_f( args )
+cmd_help_f( target_obj, args )
 {
 	channel = self com_get_cmd_feedback_channel();
 	if ( is_true( self.is_server ) )
@@ -281,7 +281,7 @@ cmd_help_f( args )
 	return result_cmdinfo( "" );
 }
 
-cmd_dodamage_f( args )
+cmd_dodamage_f( target_obj, args )
 {
 	result = [];
 	target = args[ 0 ];
@@ -323,7 +323,7 @@ cmd_dodamage_f( args )
 	return result_cmdinfo( "Executed dodamage on target" );
 }
 
-cmd_entitylist_f( args )
+cmd_entitylist_f( target_obj, args )
 {
 	channel = self com_get_cmd_feedback_channel();
 	entities = getEntArray();
@@ -410,13 +410,13 @@ list_entities_throttled( channel, str, entities )
 	}
 }
 
-cmd_teleportplayer_f( args )
+cmd_teleportplayer_f( target_obj, args )
 {
 	target1 = args[ 0 ];
 	target2 = args[ 1 ];
 	if ( target1 == self && target2 == self )
 	{
-		return result_cmdinfo( "You cannot teleport to yourself" );
+		return result_cmderror( "You cannot teleport to yourself" );
 	}
 	target1 setOrigin( target2.origin + anglesToForward( target2.angles ) * 64 + anglesToRight( target2.angles ) * 64 );
 
@@ -424,7 +424,7 @@ cmd_teleportplayer_f( args )
 }
 
 //Unimplemented
-cmd_execonrandomplayers( args )
+cmd_execonrandomplayers( target_obj, args )
 {
 	//count = args[ 0 ];
 	//cmd = args[ 1 ];
@@ -432,7 +432,7 @@ cmd_execonrandomplayers( args )
 }
 
 //Unimplemented
-cmd_printentitiesinradius_f( args )
+cmd_printentitiesinradius_f( target_obj, args )
 {
 	/*
 	result = [];
@@ -447,4 +447,58 @@ cmd_printentitiesinradius_f( args )
 		entity_search_name = args[ 1 ];
 	}
 	*/
+}
+
+cmd_scrnotify_f( target_obj, args )
+{
+	notify_ent_str = args[ 0 ];
+	notify_name = args[ 1 ];
+
+	arg_count = args.size - 2;
+
+	notify_ent = undefined;
+	if ( notify_ent_str == "level" )
+	{
+		notify_ent = level;
+	}
+	else if ( notify_ent_str == "self" )
+	{
+		notify_ent = self;
+	}
+	else
+	{
+		ent_find = self scripts\zm\cmd_system_modules\_cmd_arg::cast_str_to_entity( notify_ent_str );
+
+		if ( ent_find.errored )
+		{
+			return result_cmderror( ent_find.msg );
+		}
+
+		notify_ent = ent_find.value;
+	}
+
+	switch ( arg_count )
+	{
+		case 0:
+			notify_ent notify( notify_name );
+			break;
+		case 1:
+			notify_ent notify( notify_name, args[ 2 ] );
+			break;
+		case 2:
+			notify_ent notify( notify_name, args[ 2 ], args[ 3 ] );
+			break;
+		case 3:
+			notify_ent notify( notify_name, args[ 2 ], args[ 3 ], args[ 4 ] );
+			break;
+		default:
+			return result_cmderror( "Max arguments is 3!" );
+	}
+
+	return result_cmdinfo( "Successfully delivered notify " + notify_name );
+}
+
+cmd_setdefaultcmdtarget_f( target_obj, args )
+{
+	
 }

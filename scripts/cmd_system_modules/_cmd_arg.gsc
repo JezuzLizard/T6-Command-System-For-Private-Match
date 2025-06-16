@@ -3,6 +3,45 @@
 #include scripts\cmd_system_modules\_com;
 #include scripts\cmd_system_modules\_cmd_util;
 
+cast_contents_to_str( contents_int, noprint = false )
+{
+	result_obj = result_obj_new( "contents", "string", noprint );
+
+	contents_str = "";
+	keys = getarraykeys( level.tcs_contents );
+	for ( i = 0; i < keys.size; i++ )
+	{
+		if ( ( contents_int & level.tcs_contents[ keys[ i ] ] ) != 0 )
+		{
+			if ( contents_str != "" )
+			{
+				contents_str += "|";
+			}
+
+			contents_str += keys[ i ];
+		}
+	}
+
+	return set_cast_success( result_obj, contents_str, "contents==" + contents_str );
+}
+
+cast_str_to_contents( contents_str, noprint = false )
+{
+	result_obj = result_obj_new( "contents", "int", noprint );
+
+	contents_int = level.tcs_contents[ "NONE" ];
+	keys = strtok( contents_str, "|" );
+	for ( i = 0; i < keys.size; i++ )
+	{
+		if ( isdefined( level.tcs_contents[ keys[ i ] ] ) )
+		{
+			contents_int |= level.tcs_contents[ keys[ i ] ];
+		}
+	}
+
+	return set_cast_success( result_obj, contents_int, "contents==" + contents_int );
+}
+
 /*result_obj_t*/ cast_str_to_self( result_obj, str )
 {
 	if ( str == "self" )
@@ -59,9 +98,9 @@ cast_origin_to_ent( result_obj, radius )
 
 }
 
-/*result_obj_t*/ cast_str_to_player( clientnum_guid_or_name, noprint = false )
+/*result_obj_t*/ cast_str_to_player( clientnum_guid_or_name, noprint = false, allow_null_player = false )
 {
-	result_obj = result_obj_new( "player", noprint );
+	result_obj = result_obj_new( "player", "entity", noprint );
 
 	if ( is_true( self.is_server ) || self.cmdpower >= level.CMD_POWER_MODERATOR )
 	{
@@ -91,13 +130,21 @@ cast_origin_to_ent( result_obj, radius )
 	}
 
 	is_whole_number = is_natural_num( clientnum_guid_or_name );
-	if ( is_whole_number )
+	client_num = int( clientnum_guid_or_name );
+	if ( is_whole_number && client_num <= 17 )
 	{
+		if ( client_num == 1023 && allow_null_player )
+		{
+			return set_cast_success( result_obj, undefined, "ent==allow_null_player" );
+		}
+		else
+		{
+			return set_cast_error( result_obj, "ent!=allow_null_player" );
+		}
 		for ( i = 0; i < level.players.size; i++ )
 		{
 			player = level.players[ i ];
 			
-			client_num = int( clientnum_guid_or_name );
 			if ( player getentitynumber() == client_num )
 			{
 				return set_cast_success( result_obj, player, "player==entnum" );
@@ -108,14 +155,6 @@ cast_origin_to_ent( result_obj, radius )
 			{
 				return set_cast_success( result_obj, player, "player==guid" );
 			}
-		}
-	}
-	else if ( is_str_int( clientnum_guid_or_name ) )
-	{
-		int_number = int( clientnum_guid_or_name );
-		if ( int_number == -1 )
-		{
-			return set_cast_success( result_obj, undefined, "player==undefined" );
 		}
 	}
 
@@ -192,9 +231,9 @@ cast_origin_to_ent( result_obj, radius )
 	return true;
 }
 
-/*result_obj_t*/ cast_str_to_entity( entnum_targetname_or_self, noprint = false )
+/*result_obj_t*/ cast_str_to_entity( entnum_targetname_or_self, noprint = false, allow_null_ent = false, allow_world_ent = false )
 {
-	result_obj = result_obj_new( "entity", noprint );
+	result_obj = result_obj_new( "entity", "entity", noprint );
 	if ( !isDefined( entnum_targetname_or_self ) )
 	{
 		return set_cast_error( result_obj, "Missing value to find entity" );
@@ -208,12 +247,31 @@ cast_origin_to_ent( result_obj, radius )
 
 	is_whole_number = is_natural_num( entnum_targetname_or_self );
 	entnum = int( entnum_targetname_or_self );
-	if ( is_whole_number )
+	if ( is_whole_number && entnum <= 1023 )
 	{
 		if ( entnum == 1023 )
 		{
-			return set_cast_success( result_obj, undefined, "ent==undefined" );
+			if ( allow_null_ent )
+			{
+				return set_cast_success( result_obj, undefined, "ent==allow_null_ent" );
+			}
+			else
+			{
+				return set_cast_error( result_obj, "ent!=allow_null_ent" );
+			}
 		}
+		if ( entnum == 1022 )
+		{
+			if ( allow_world_ent )
+			{
+				return set_cast_success( result_obj, undefined, "ent==allow_world_ent" );
+			}
+			else
+			{
+				return set_cast_error( result_obj, "ent!=allow_world_ent" );
+			}
+		}
+
 		for ( i = 0; i < entities.size; i++ )
 		{
 			ent = entities[ i ];
@@ -340,7 +398,7 @@ is_whole_float( str )
 
 cast_str_to_vector( str )
 {
-	result_obj = result_obj_new( "vector" );
+	result_obj = result_obj_new( "vector", "vector" );
 	floats = strTok( str, "," );
 	if ( floats.size != 3 )
 	{
@@ -377,7 +435,7 @@ cast_bool_to_str( bool, binary_string_options )
 
 cast_str_to_bool( str )
 {
-	result_obj = result_obj_new( "boolean" );
+	result_obj = result_obj_new( "boolean", "boolean" );
 	if ( str == "true" || str == "1" )
 	{
 		return set_cast_success( result_obj, true, str == "true" ? "boolean==true" : "boolean==1" );
@@ -392,7 +450,7 @@ cast_str_to_bool( str )
 
 get_cmd_from_alias( alias )
 {
-	result_obj = result_obj_new( "cmdobject" );
+	result_obj = result_obj_new( "cmdobject", "struct" );
 	if ( alias == "" )
 	{
 		return set_cast_error( result_obj, "No alias provided" );
@@ -415,7 +473,7 @@ get_cmd_from_alias( alias )
 
 arg_cast( arg_type, arg, arg_index )
 {
-	cast_result = result_obj_new( "argtype" );
+	cast_result = result_obj_new( "argtype", "struct" );
 	if ( isDefined( level.tcs_arg_type_handlers[ arg_type ] ) && isDefined( level.tcs_arg_type_handlers[ arg_type ].cast_func ) )
 	{
 		cast_result = self [[ level.tcs_arg_type_handlers[ arg_type ].cast_func ]]( arg );
@@ -545,7 +603,7 @@ arg_obj_int_generate()
 
 arg_obj_int_cast( arg )
 {
-	result_obj = result_obj_new( "int" );
+	result_obj = result_obj_new( "int", "int" );
 	return set_cast_success( result_obj, int( arg ), "int==true" );
 }
 
@@ -561,7 +619,7 @@ arg_obj_float_generate()
 
 arg_obj_float_cast( arg )
 {
-	result_obj = result_obj_new( "float" );
+	result_obj = result_obj_new( "float", "float" );
 	return set_cast_success( result_obj, float( arg ), "float==true" );
 }
 
@@ -653,29 +711,52 @@ arg_obj_entity_validate( arg )
 
 arg_obj_entity_generate()
 {
-	randomint = randomint( 2 );
+	randomint = randomint( 4 );
 	entities = getentarray();
 	if ( entities.size <= 0 )
 	{
-		return -1;
+		return 1023;
 	}
 	random_entity = entities[ randomint( entities.size ) ];
-	if ( is_true( self.is_server ) )
-	{
-		return random_entity getentitynumber();
-	}
 	switch ( randomint )
 	{
 		case 0:
 			return random_entity getentitynumber();
 		case 1:
-			return "self";
+			if ( is_true( self.is_server ) )
+			{
+				return random_entity getentitynumber();
+			}
+			else
+			{
+				return "self";
+			}
+		case 2:
+			return 1022;
+		case 3:
+			return 1023;
 	}
 }
 
 arg_obj_entity_cast( arg )
 {
 	return self cast_str_to_entity( arg, true );
+}
+
+arg_obj_entity_allow_null_validate( arg )
+{
+	test_result = self cast_str_to_entity( arg, true, true );
+	return !test_result.errored;
+}
+
+arg_obj_entity_allow_null_generate()
+{
+	return arg_obj_entity_generate();
+}
+
+arg_obj_entity_allow_null_cast( arg )
+{
+	return self cast_str_to_entity( arg, true, true );
 }
 
 arg_obj_hitloc_validate( arg )
@@ -841,6 +922,21 @@ arg_obj_string_generate( arg )
 	return "null";
 }
 
+arg_obj_string_allow_null_validate( arg )
+{
+	if ( arg == "" )
+	{
+		return true;
+	}
+
+	return arg_obj_string_validate( arg );
+}
+
+arg_obj_string_allow_null_generate()
+{
+	return "null";
+}
+
 arg_obj_model_validate( arg )
 {
 	return true;
@@ -854,7 +950,7 @@ arg_obj_model_generate()
 // unimplmented
 arg_obj_model_cast( arg )
 {
-	result_obj = result_obj_new( "model" );
+	result_obj = result_obj_new( "model", "string" );
 	return set_cast_success( result_obj, arg, "model==" + arg );
 }
 
@@ -873,4 +969,33 @@ arg_obj_actor_generate()
 arg_obj_actor_cast( arg )
 {
 	return self cast_str_to_entity( arg );
+}
+
+arg_obj_spawnable_classname_validate( arg )
+{
+	result_obj = result_obj_new( "spawnable_classname", "string" );
+
+	if ( !isdefined( level.tcs_dynamic_spawns[ arg ] ) )
+	{
+		return set_cast_error( result_obj, "arg!=classname" );
+	}
+
+	return set_cast_success( result_obj, arg, "classname==" + arg );
+}
+
+arg_obj_spawnable_classname_generate()
+{
+	return undefined;
+}
+
+arg_obj_spawnable_classname_cast( arg )
+{
+	result_obj = result_obj_new( "spawnable_classname", "string" );
+
+	if ( !isdefined( level.tcs_dynamic_spawns[ arg ] ) )
+	{
+		return set_cast_error( result_obj, "arg!=classname" );
+	}
+
+	return set_cast_success( result_obj, arg, "classname==" + arg );
 }

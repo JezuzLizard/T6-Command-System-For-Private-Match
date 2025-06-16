@@ -58,14 +58,14 @@ server_safe_notify_thread( notify_name, index )
 	return result;
 }
 
-/*result_obj_t*/ result_obj_new( expected_value_type, noprint = true, default_value = undefined )
+/*result_obj_t*/ result_obj_new( expected_value_type, underlying_type, noprint = true )
 {
 	result_obj = spawnstruct();
 	result_obj.errored = false;
 	result_obj.noprint = noprint;
 	result_obj.value = undefined;
-	result_obj.default_value = default_value;
 	result_obj.type = expected_value_type;
+	result_obj.underlying_type = underlying_type;
 	result_obj.msg = "";
 
 	return result_obj;
@@ -78,27 +78,84 @@ server_safe_notify_thread( notify_name, index )
 	copy_result_obj.noprint = result_obj.noprint;
 	copy_result_obj.value = result_obj.value;
 	copy_result_obj.type = result_obj.type;
+	copy_result_obj.underlying_type = result_obj.underlying_type;
 	copy_result_obj.msg = result_obj.msg;
 
 	return copy_result_obj;
 }
 
-/*result_obj_t*/ set_cast_error( result_obj, error_msg )
+/*result_obj_t*/ set_cast_error( result_obj, error_msg, expected_value_type = undefined )
 {
 	result_obj.errored = true;
 	result_obj.value = undefined;
-	result_obj.type = "undefined";
+	if ( isdefined( expected_value_type ) )
+	{
+		result_obj.type = expected_value_type;
+	}
 	result_obj.msg = error_msg;
 
 	return result_obj;
 }
 
-/*result_obj_t*/ set_cast_success( result_obj, new_value, success_msg )
+/*result_obj_t*/ set_cast_success( result_obj, new_value, success_msg, expected_value_type = undefined )
 {
 	result_obj.value = new_value;
 	result_obj.msg = success_msg;
+	if ( isdefined( expected_value_type ) )
+	{
+		result_obj.type = expected_value_type;
+	}
 
 	return result_obj;
+}
+
+/*target_obj_t*/ target_obj_new( expected_value_type, underlying_type, max_targets = 64, error_if_not_found = true )
+{
+	target_obj = spawnstruct();
+	target_obj.errored = false;
+	target_obj.error_if_not_found = error_if_not_found;
+	target_obj.targets = [];
+	target_obj.max_targets = max_targets;
+	target_obj.type = expected_value_type;
+	target_obj.underlying_type = underlying_type;
+	target_obj.msg = "";
+
+	return target_obj;
+}
+
+/*target_obj_t*/ set_targets_error( target_obj, error_msg, expected_value_type = undefined )
+{
+	target_obj.errored = true;
+	if ( isdefined( expected_value_type ) )
+	{
+		target_obj.type = expected_value_type;
+	}
+	target_obj.msg = error_msg;
+
+	return target_obj;
+}
+
+/*bool*/ add_target( target_obj, /*entity*/ new_target )
+{
+	if ( target_obj.targets.size >= target_obj.max_targets )
+	{
+		return false;
+	}
+
+	target_obj.targets = add_to_array( target_obj.targets, new_target, false );
+
+	return true;
+}
+
+/*target_obj_t*/ set_targets_success( target_obj, success_msg, expected_value_type = undefined )
+{
+	target_obj.msg = success_msg;
+	if ( isdefined( expected_value_type ) )
+	{
+		target_obj.type = expected_value_type;
+	}
+
+	return target_obj;
 }
 
 repackage_args( args )
@@ -120,17 +177,15 @@ repackage_args( args )
 	return args_string;
 }
 
-cmd_add( cmd_name, is_clientcmd, cmdaliases, cmdusage, cmdfunc, user_valid_check_func, rank_group )
+cmd_add( cmd_name, cmdfunc, cmd_usage )
 {
+	cmd_usage = _DEFAULT( cmd_usage, cmd_name );
 	if ( !isdefined( level.tcs_cmds ) )
 	{
 		level.tcs_cmds = [];
 	}
 
-	if ( !isdefined( rank_group ) && isdefined( level.tcs_cmd_register_rank_group ) )
-	{
-		rank_group = level.tcs_cmd_register_rank_group;
-	}
+	rank_group = level.tcs_cmd_register_rank_group;
 	if ( !isdefined( rank_group ) || !isdefined( level.tcs_perms.ranks[ rank_group ] ) )
 	{
 		level com_printf( "con|g_log", "cmderror", "Failed to register cmd " + cmd_name + ", attempted to use an unregistered rank_group!" );
@@ -139,27 +194,19 @@ cmd_add( cmd_name, is_clientcmd, cmdaliases, cmdusage, cmdfunc, user_valid_check
 
 	aliases = [];
 	aliases[ 0 ] = cmd_name;
-	if ( isdefined( cmdaliases ) )
-	{
-		cmd_aliases_tokens = strTok( cmdaliases, " " );
-		for ( i = 1; i <= cmd_aliases_tokens.size; i++ )
-		{
-			aliases[ i ] = cmd_aliases_tokens[ i - 1 ];
-		}
-	}
 
 	level.tcs_cmds[ cmd_name ] = spawnstruct();
 	level.tcs_cmds[ cmd_name ].cmd_name = cmd_name;
 	level.tcs_cmds[ cmd_name ].is_clientcmd = is_clientcmd;
-	level.tcs_cmds[ cmd_name ].usage = cmdusage;
+	level.tcs_cmds[ cmd_name ].usage = cmd_usage;
 	level.tcs_cmds[ cmd_name ].func = cmdfunc;
 	level.tcs_cmds[ cmd_name ].aliases = aliases;
 	level.tcs_cmds[ cmd_name ].power = level.tcs_perms.ranks[ rank_group ].cmdpower;
-	level.tcs_cmds[ cmd_name ].user_valid_check_func = user_valid_check_func;
 	level.tcs_cmds[ cmd_name ].is_cmd_object = true;
 	level.tcs_cmds[ cmd_name ].min_args = 0;
 	level.tcs_cmds[ cmd_name ].max_args = 0;
 	level.tcs_cmds[ cmd_name ].arg_types = [];
+	level.tcs_cmds[ cmd_name ].target_types = [];
 	level.tcs_cmds[ cmd_name ].rank_group = rank_group;
 	level.tcs_glob.icmd_total++;
 	if ( !isdefined( level.cmd_groups ) )
@@ -186,7 +233,6 @@ cmd_remove( cmd )
 		if ( cmd != cmd_k )
 		{
 			new_cmd_array[ cmd_k ] = spawnstruct();
-			new_cmd_array[ cmd_k ].is_clientcmd = level.tcs_cmds[ cmd_k ].is_clientcmd;
 			new_cmd_array[ cmd_k ].usage = level.tcs_cmds[ cmd_k ].usage;
 			new_cmd_array[ cmd_k ].func = level.tcs_cmds[ cmd_k ].func;
 			new_cmd_array[ cmd_k ].aliases = level.tcs_cmds[ cmd_k ].aliases;
@@ -261,7 +307,39 @@ arg_obj_add_cmd( arg_types, min_args, max_args )
 	self.arg_types = strTok( arg_types, " " );
 }
 
-arg_obj_register( argtype, checker_func, rand_gen_func, cast_func, error_message )
+target_obj_add_cmd( target_type_name, is_required_target, max_targets = 64 )
+{
+	if ( !is_true( self.is_cmd_object ) )
+	{
+		assert( false );
+		return;
+	}
+
+	if ( !isdefined( target_type_name ) || target_type_name == "" )
+	{
+		return;
+	}
+
+	self.target_types[ self.target_types.size ] = spawnstruct();
+	target_type = self.target_types[ self.target_types.size - 1 ];
+	target_type.type = target_type_name;
+	target_type.is_required = is_required_target;
+	target_type.max_targets = max_targets;
+}
+
+alias_obj_add_cmd( cmd_aliases )
+{
+	if ( isdefined( cmd_aliases ) && cmd_aliases != "" )
+	{
+		cmd_aliases_tokens = strTok( cmd_aliases, " " );
+		for ( i = 1; i <= cmd_aliases_tokens.size; i++ )
+		{
+			self.aliases[ i ] = cmd_aliases_tokens[ i - 1 ];
+		}
+	}
+}
+
+arg_obj_register( argtype, checker_func, rand_gen_func, cast_func, error_message, is_targetable = false )
 {
 	if ( !isDefined( level.tcs_arg_type_handlers ) )
 	{
@@ -276,6 +354,7 @@ arg_obj_register( argtype, checker_func, rand_gen_func, cast_func, error_message
 	level.tcs_arg_type_handlers[ argtype ].rand_gen_func = rand_gen_func;
 	level.tcs_arg_type_handlers[ argtype ].cast_func = cast_func;
 	level.tcs_arg_type_handlers[ argtype ].error_message = error_message;
+	level.tcs_arg_type_handlers[ argtype ].is_targetable = is_targetable;
 }
 
 cmd_add_unittest_exclusion( cmd )

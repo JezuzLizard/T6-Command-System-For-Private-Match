@@ -2,7 +2,7 @@
 #include maps\mp\_utility;
 #include scripts\cmd_system_modules\_cmd_util;
 
-cmd_togglehud_f( args )
+cmd_togglehud_f( target_obj, args )
 {
 	on_off = cast_bool_to_str( is_true( self.tcs_hud_toggled ), "on off" );
 	if ( on_off == "off" )
@@ -19,7 +19,7 @@ cmd_togglehud_f( args )
 	return result_cmdinfo( "Your hud has been toggled " + on_off );
 }
 
-cmd_god_f( args )
+cmd_god_f( target_obj, args )
 {
 	on_off = scripts\cmd_system_modules\_cmd_arg::cast_bool_to_str( !is_true( self.tcs_is_invulnerable ), "on off" );
 	if ( on_off == "on" )
@@ -36,7 +36,7 @@ cmd_god_f( args )
 	return result_cmdinfo( "God " + on_off );
 }
 
-cmd_notarget_f( args )
+cmd_notarget_f( target_obj, args )
 {
 	on_off = scripts\cmd_system_modules\_cmd_arg::cast_bool_to_str( !is_true( self.ignoreme ), "on off" );
 	if ( on_off == "on" )
@@ -51,7 +51,7 @@ cmd_notarget_f( args )
 	return result_cmdinfo( "Notarget " + on_off );
 }
 
-cmd_invisible_f( args )
+cmd_invisible_f( target_obj, args )
 {
 	on_off = scripts\cmd_system_modules\_cmd_arg::cast_bool_to_str( !is_true( self.tcs_is_invisible ), "on off" );
 	if ( on_off == "on" )
@@ -68,17 +68,17 @@ cmd_invisible_f( args )
 	return result_cmdinfo( "Invisible " + on_off );
 }
 
-cmd_printorigin_f( args )
+cmd_printorigin_f( target_obj, args )
 {
 	return result_cmdinfo( "Your origin is " + self.origin );
 }
 
-cmd_printangles_f( args )
+cmd_printangles_f( target_obj, args )
 {
 	return result_cmdinfo( "Your angles are " + self.angles );
 }
 
-cmd_bottomlessclip_f( args )
+cmd_bottomlessclip_f( target_obj, args )
 {
 	on_off = scripts\cmd_system_modules\_cmd_arg::cast_bool_to_str( !is_true( self.tcs_bottomless_clip ), "on off" );
 	if ( on_off == "on" )
@@ -111,7 +111,7 @@ bottomless_clip()
 	}
 }
 
-cmd_teleport_f( args )
+cmd_teleport_f( target_obj, args )
 {
 	target = args[ 0 ];
 	if ( target == self )
@@ -123,7 +123,7 @@ cmd_teleport_f( args )
 	return result_cmdinfo( "Successfully teleported to " + target.name + "'s position" );
 }
 
-cmd_cvar_f( args )
+cmd_cvar_f( target_obj, args )
 {
 	dvarname = args[ 0 ];
 	dvarvalue = args[ 1 ];

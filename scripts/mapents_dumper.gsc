@@ -5,360 +5,7 @@
 
 #include scripts\cmd_system_modules\_hud;
 
-init()
-{
-	level.spawnpoints_mapents_fh = fs_fopen( "spawns_" + getdvar( "mapname" ) + ".mapents", "append" );
-	level.spawnpoints_gsc_fh = fs_fopen( "spawns_" + getdvar( "mapname" ) + ".gsc", "append" );
-}
-
-new_debug_hud( x, y_offset, multi_hud = false )
-{
-	if ( !multi_hud )
-	{
-		level.debug_hud_y_offset += y_offset;
-	}
-	hud = newClientHudElem( self );
-	hud.alignx = "left";
-	hud.aligny = "middle";
-	hud.horzalign = "user_left";
-	hud.vertalign = "user_bottom";
-	hud.x += x;
-	hud.y += level.debug_hud_y_offset;
-	hud.fontscale = 1.4;
-	hud.alpha = 1;
-	hud.color = ( 1, 1, 1 );
-	hud.hidewheninmenu = 1;
-	hud.foreground = 1;
-
-	return hud;
-}
-
-/*
-get_mapents_vector( vector_str )
-{
-	final_vector_str = "";
-	for ( i = 0; i < vector_str.size; i++ )
-	{
-		if ( vector_str[ i ] == "(" || vector_str[ i ] == ")" || vector_str[ i ] == "," )
-		{
-			continue;
-		}
-		final_vector_str += vector_str[ i ];
-	}
-
-	return final_vector_str;
-}
-*/
-
-get_mapents_vector( vector )
-{
-	mapents_vector_str = "\"" + vector[ 0 ] + " " + vector[ 1 ] + 90.0 + " " + vector[ 2 ] + "\""; // [1]+90 to handle player location offset
-
-	return mapents_vector_str;
-}
-
-get_vector_filename( vector )
-{
-	vector_str = vector + "";
-
-	final_vector_str = "";
-	for ( i = 0; i < vector_str.size; i++ )
-	{
-		if ( vector_str[ i ] == "(" || vector_str[ i ] == ")" )
-		{
-			continue;
-		}
-
-		if ( vector_str[ i ] == "," )
-		{
-			final_vector_str += "_";
-			continue;
-		}
-
-		if ( vector_str[ i ] == "." )
-		{
-			final_vector_str += "-";
-			continue;
-		}
-
-		final_vector_str += vector_str[ i ];
-	}
-
-	return final_vector_str;
-}
-
-dump_mapents_angles_key( fh, angles )
-{
-	angles_str = get_mapents_vector( angles );
-	fs_writeline( fh, "\"angles\"" + " " + angles_str );
-}
-
-dump_mapents_origin_key( fh, origin )
-{
-	origin_str = get_mapents_vector( origin );
-	fs_writeline( fh, "\"origin\"" + " " + origin_str );
-}
-
-dump_mapents_classname_key( fh, classname )
-{
-	fs_writeline( fh, "\"classname\"" + " " + "\"" + classname + "\"" );
-}
-
-// TODO: support script_gameobjectname space delimited array
-dump_mapents_script_gameobjectname_key( fh, script_gameobjectname )
-{
-	fs_writeline( fh, "\"script_gameobjectname\"" + " " + "\"" + script_gameobjectname + "\"" );
-}
-
-dump_mapents_model_key( fh, model )
-{
-	fs_writeline( fh, "\"model\"" + " " + "\"" + model + "\"" );
-}
-
-dump_mapents_export_key( fh, export )
-{
-	fs_writeline( fh, "\"export\"" + " " + "\"" + export + "\"" );
-}
-
-dump_mapents_targetname_key( fh, targetname )
-{
-	fs_writeline( fh, "\"targetname\"" + " " + "\"" + targetname + "\"" );
-}
-
-dump_mapents_spawnflags_key( fh, spawnflags )
-{
-	fs_writeline( fh, "\"spawnflags\"" + " " + "\"" + spawnflags + "\"" );
-}
-
-dump_mapents_spawnpoint( classname, angles, origin )
-{
-	fh = level.spawnpoints_mapents_fh;
-
-	fs_writeline( fh, "{" );
-	level dump_mapents_classname_key( fh, classname );
-	level dump_mapents_script_gameobjectname_key( fh, level.gametype );
-	level dump_mapents_angles_key( fh, angles );
-	level dump_mapents_origin_key( fh, origin );
-	fs_writeline( fh, "}" );
-}
-
-dump_gsc_spawnpoint( classname, angles, origin )
-{
-	fh = level.spawnpoints_gsc_fh;
-
-	func = "new_spawn = spawn( ";
-	classname_arg = "\"" + classname + "\"" + "," + " ";
-	origin_arg = origin + "," + " ";
-	spawnflags_arg = "0" + "," + " ";
-	angles_yaw_arg = angles[ 1 ] + "," + " ";
-	unk_last_arg = "0" + " );";
-	fs_writeline( fh, func + classname_arg + origin_arg + spawnflags_arg + angles_yaw_arg + unk_last_arg );
-	new_spawn_script_gameobjectname_field = "new_spawn.script_gameobjectname = " + "\"" + level.gametype + "\"" + ";";
-	fs_writeline( fh, new_spawn_script_gameobjectname_field );
-}
-
-dump_mapents_dog_actor_spawner( angles, origin )
-{
-	fh = level.spawnpoints_mapents_fh;
-	spawner_classname = "actor_enemy_dog_mp";
-	fs_writeline( fh, "{" );
-	level dump_mapents_classname_key( fh, spawner_classname );
-	level dump_mapents_script_gameobjectname_key( fh, level.gametype );
-	level dump_mapents_angles_key( fh, angles );
-	level dump_mapents_origin_key( fh, origin );
-	level dump_mapents_model_key( fh, "tag_origin" );
-	level dump_mapents_targetname_key( fh, "dog_spawner" );
-	level dump_mapents_spawnflags_key( fh, "1" );
-	fs_writeline( fh, "}" );
-}
-
-dump_mapents_minimap_corner( angles, origin )
-{
-	fh = level.spawnpoints_mapents_fh;
-	fs_writeline( fh, "{" );
-	level dump_mapents_classname_key( fh, "script_origin" );
-	level dump_mapents_script_gameobjectname_key( fh, level.gametype );
-	level dump_mapents_targetname_key( fh, "minimap_corner" );
-	level dump_mapents_angles_key( fh, angles );
-	level dump_mapents_origin_key( fh, origin );
-	fs_writeline( fh, "}" );
-}
-
-// Perk Machine
-/*
-{
-"origin" "326 9144 1128"
-"model" "zombie_vending_doubletap2"
-"classname" "script_struct"
-"angles" "0 2.50448e-006 0"
-"script_noteworthy" "specialty_rof"
-"targetname" "zm_perk_machine"
-"script_string" " zclassic_perks_prison"
-"guid" "8A9A347E"
-}
-*/
-dump_mapents_perk_machine( angles, origin, location, gametype, perk, modelm )
-{
-	fh = level.spawnpoints_mapents_fh;
-	level dump_mapents_classname_key( fh, "script_origin" );
-	level dump_mapents_script_gameobjectname_key( fh, level.gametype );
-	level dump_mapents_targetname_key( fh, "minimap_corner" );
-	level dump_mapents_angles_key( fh, angles );
-	level dump_mapents_origin_key( fh, origin );
-}
-
-create_entity_location_screenshot( type, player_name, angles, origin, classname = undefined, location = undefined, gamemodegroup = undefined )
-{
-	angles_str = get_vector_filename( angles );
-	origin_str = get_vector_filename( origin );
-
-	screenshot_name = level.script + "_" + level.gametype + "_" + player_name + "_" + type + "_" + angles_str + "_" + origin_str;
-
-	if ( isdefined( classname ) )
-	{
-		screenshot_name += "_" + classname;
-	}
-
-	if ( isdefined( location ) )
-	{
-		screenshot_name += "_" + location;
-	}
-
-	if ( isdefined( gamemodegroup ) )
-	{
-		screenshot_name += "_" + gamemodegroup;
-	}
-	
-	level.players[ 0 ] iprintln( "Created screenshot of your location in the players folder!" );
-	cmdexec( "screenshotJpeg " + screenshot_name );
-}
-
-/*
-{
-"classname" "trigger_radius"
-"radius" "160"
-"height" "128"
-"targetname" "flag_primary"
-"origin" "-2247 -457 -124.5"
-"script_gameobjectname" "dom onslaught"
-"model" "mp_flag_neutral"
-"script_index" "3"
-"script_label" "_c"
-"guid" "142763D2"
-}
-{
-"classname" "trigger_radius"
-"radius" "160"
-"height" "128"
-"targetname" "flag_primary"
-"origin" "3.5 18 -24"
-"script_gameobjectname" "dom onslaught"
-"model" "mp_flag_neutral"
-"script_index" "2"
-"script_label" "_b"
-"guid" "8E4E74CD"
-}
-{
-"script_index" "1"
-"script_label" "_a"
-"model" "mp_flag_neutral"
-"script_gameobjectname" "dom onslaught"
-"origin" "2220.5 493.5 -0.5"
-"targetname" "flag_primary"
-"height" "128"
-"radius" "160"
-"classname" "trigger_radius"
-"guid" "9F776647"
-}
-{
-"classname" "script_origin"
-"script_linkto" "flag1 flag3"
-"targetname" "flag_descriptor"
-"script_linkname" "flag2"
-"origin" "3.5 18 72"
-"guid" "BB80AC82"
-}
-{
-"classname" "script_origin"
-"targetname" "flag_descriptor"
-"script_linkname" "flag3"
-"script_linkto" "flag2"
-"origin" "-2247 -457 -30.5"
-"guid" "FC178022"
-}
-{
-"classname" "script_origin"
-"script_linkname" "flag1"
-"script_linkto" "flag2"
-"targetname" "flag_descriptor"
-"origin" "2220.5 493.5 99.5"
-"guid" "E2C49D90"
-}
-
-*/
-
-
-
-cmd_dumpent_f( args )
-{
-	type = args[ 0 ];
-	classname = args[ 1 ];
-	description = args[ 2 ];
-	player = self;
-	fh = level.spawnpoints_mapents_fh;
-
-	result = undefined;
-	valid_type = false;
-	switch ( type )
-	{
-		case "dogs":
-			valid_type = true;
-			result = result_cmdinfo( "Successfully added a dog spawner!" );
-			break;
-
-		case "minimap":
-			valid_type = true;
-			result = result_cmdinfo( "Successfully added a minimap corner!" );
-			break;
-
-		case "player_spawn":
-			if ( !isdefined( classname ) )
-			{
-				return result_cmderror( "player_spawn type requires a classname!" );
-			}
-
-			valid_type = true;
-			result = result_cmdinfo( "Successfully added a player spawnpoint!" );
-			break;
-	}
-
-	if ( valid_type )
-	{
-		switch ( type )
-		{
-			case "dogs":
-				level dump_mapents_dog_actor_spawner( player.angles, player.origin );
-				break;
-
-			case "minimap":
-				level dump_mapents_minimap_corner( player.angles, player.origin );
-				break;
-
-			case "player_spawn":
-				level dump_gsc_spawnpoint( classname, player.angles, player.origin );
-				level dump_mapents_spawnpoint( classname, player.angles, player.origin );
-				break;
-		}
-		create_entity_location_screenshot( type, player.name, player.angles, player.origin, classname );
-		return result;
-	}
-	else
-	{
-		return result_cmderror( "Type " + type + " is unsupported!" );
-	}
-}
-
-cmd_createcamera_f( args )
+cmd_createcamera_f( target_obj, args )
 {
 	camera_name = args[ 0 ];
 	player = self;
@@ -376,7 +23,7 @@ cmd_createcamera_f( args )
 	return result_cmdinfo( "Created a camera named: '" + camera_name + "' at: '" + self.origin + "' with angles: '" + self.angles + "'" );
 }
 
-cmd_setcamera_f( args )
+cmd_setcamera_f( target_obj, args )
 {
 	camera_name = args[ 0 ];
 	camera_flags = _DEFAULT( args[ 1 ], 1 );
@@ -397,7 +44,7 @@ cmd_setcamera_f( args )
 	}
 }
 
-cmd_unsetcamera_f( args )
+cmd_unsetcamera_f( target_obj, args )
 {
 	player = self;
 	player cameraactivate( 0 );
@@ -406,7 +53,7 @@ cmd_unsetcamera_f( args )
 	return result_cmdinfo( "Set camera lookat to a camera named: '" + camera_name + "' at: '" + self.origin + "' with angles: '" + self.angles + "'" );
 }
 
-cmd_deletecamera_f( args )
+cmd_deletecamera_f( target_obj, args )
 {
 	camera_name = args[ 0 ];
 	camera_flags = args[ 1 ];
@@ -438,7 +85,7 @@ link_camera_to_ent( camera_name, ent, tag_name, origin_offset = undefined, angle
 	camera_ent linkto( ent, tag_name, origin_offset, angles_offset );
 }
 
-cmd_linkcameratoent_f( args )
+cmd_linkcameratoent_f( target_obj, args )
 {
 	camera_name = args[ 0 ];
 	entity = args[ 1 ];
@@ -457,7 +104,7 @@ cmd_linkcameratoent_f( args )
 	}
 }
 
-cmd_unlinkcamera_f( args )
+cmd_unlinkcamera_f( target_obj, args )
 {
 	camera_name = args[ 0 ];
 	camera_ent = self._cmds_cameras[ camera_name ];
@@ -473,7 +120,7 @@ cmd_unlinkcamera_f( args )
 	
 }
 
-cmd_spectateactor_f( args )
+cmd_spectateactor_f( target_obj, args )
 {
 	actor = args[ 0 ];
 	tag_name = args[ 1 ];
@@ -489,15 +136,7 @@ cmd_spectateactor_f( args )
 	return result_cmdinfo( "You are now linked to actor: " + actor getentitynumber() );
 }
 
-// GScr_PhysicsTrace masks
-/*
-	level.physicstracemaskphysics = 1;
-	level.physicstracemaskvehicle = 2;
-	level.physicstracemaskwater = 4;
-	level.physicstracemaskclip = 8;
-	level.physicstracecontentsvehicleclip = 16;
-*/
-cmd_seteditortargetent_f( args )
+cast_entity_raycast_from_player_eye()
 {
 	direction = self getplayerangles();
 	direction_vec = anglestoforward( direction );
@@ -511,21 +150,42 @@ cmd_seteditortargetent_f( args )
 		trace = physicstrace( eye, eye + direction_vec, vectorscale( ( -1, -1, 0 ), 15.0 ), vectorscale( ( 1, 1, 0 ), 15.0 ), self, level._editor_ent_mask );
 		if ( !isdefined( trace[ "entity" ] ) )
 		{
-			return result_cmderror( "Not looking at an entity!" );
+			return trace;
 		}
 	}
 
-	editor_ent = self hud_binding_subscribe_to_entity( "editor_ent_context", trace[ "entity" ] );
-	return result_cmdinfo( "Selected target entity: " + editor_ent.classname );
+	return trace;
 }
 
-cmd_seteditortargetangles_f( args )
+// GScr_PhysicsTrace masks
+/*
+	level.physicstracemaskphysics = 1;
+	level.physicstracemaskvehicle = 2;
+	level.physicstracemaskwater = 4;
+	level.physicstracemaskclip = 8;
+	level.physicstracecontentsvehicleclip = 16;
+*/
+cmd_seteditortargetent_f( target_obj, args )
 {
-	editor_ent = self hud_binding_get_subscribed_entity( "editor_ent_context" );
+	trace = self cast_entity_raycast_from_player_eye();
+	if ( !isdefined( trace[ "entity" ] ) )
+	{
+		return result_cmderror( "Not looking at an entity!" );
+	}
+
+	editor_ent = self hud_binding_subscribe_to_entity( "editor_selected_ent_context", trace[ "entity" ] );
+	return result_cmdinfo( "Selected target entity: " + editor_ent.classname + " origin: " + editor_ent.origin + " angles: " + editor_ent.angles );
+}
+
+cmd_seteditortargetangles_f( target_obj, args )
+{
+	editor_ent = self hud_binding_get_subscribed_entity( "editor_selected_ent_context" );
 	if ( !isdefined( editor_ent ) )
 	{
 		return result_cmderror( "No target entity selected!" );
 	}
+
+	self editor_move_selected_ent( editor_ent, ( 0, 0, 0 ), new_angles )
 
 	new_angles = args[ 0 ];
 	is_relative = args[ 1 ];
@@ -542,9 +202,9 @@ cmd_seteditortargetangles_f( args )
 	return result_cmdinfo( "Set angles of target entity: '" + editor_ent.classname + "' to: '" + new_angles + "'" );
 }
 
-cmd_seteditortargetorigin_f( args )
+cmd_seteditortargetorigin_f( target_obj, args )
 {
-	editor_ent = self hud_binding_get_subscribed_entity( "editor_ent_context" );
+	editor_ent = self hud_binding_get_subscribed_entity( "editor_selected_ent_context" );
 	if ( !isdefined( editor_ent ) )
 	{
 		return result_cmderror( "No target entity selected!" );
@@ -565,12 +225,12 @@ cmd_seteditortargetorigin_f( args )
 	return result_cmdinfo( "Set origin of target entity: '" + editor_ent.classname + "' to: '" + new_origin + "'" );
 }
 
-cmd_setviewpos_f( args )
+cmd_setviewpos_f( target_obj, args )
 {
 	self com_printerror( "UNIMPLEMENTED" );
 }
 
-cmd_editheldmodel_f( args )
+cmd_editheldmodel_f( target_obj, args )
 {
 	editor_held_ent = self hud_binding_get_subscribed_entity( "editor_held_context" );
 	model = _DEFAULT( args[ 0 ], "null" );
@@ -600,7 +260,35 @@ cmd_editheldmodel_f( args )
 	return result_cmdinfo( "Successfully set your carried model to " + model );
 }
 
-cmd_editorspawnheldmodel_f( args )
+give_player_turret( model, turret_classname, turret_weapon_name, turret_type, set_turret_carried, carry_offset, carry_angles )
+{
+	placeturret = spawnturret( turret_name, self.origin, turret_weapon_name );
+	placeturret.angles = self.angles;
+	placeturret setmodel( model );
+	placeturret setturretcarried( set_turret_carried );
+	placeturret setturretowner( self );
+
+	self carryturret( placeturret, carry_offset, carry_angles );
+	self hud_binding_subscribe_to_entity( "editor_held_context", placeturret );
+
+	return placeturret;
+}
+
+take_player_turret()
+{
+	self stopcarryturret( held_ent );
+	held_ent setturretcarried( false );
+	held_ent delete();
+}
+
+take_player_turret_thread( held_ent )
+{
+	result = self waittill_any_return( "disconnect", "editor_place_cancel", "editor_place_success" );
+
+	self take_player_turret( held_ent );
+}
+
+cmd_editorspawnheldmodel_f( target_obj, args )
 {
 	ent_name = args[ 0 ];
 	model = args[ 1 ];
@@ -613,149 +301,147 @@ cmd_editorspawnheldmodel_f( args )
 		return result_cmderror( "You are already holding a model!" );
 	}
 
-	self thread editor_spawn_held_model_thread( ent_name, model, carry_offset, carry_angles );
+	self.editor_spawn_ent_name = ent_name;
+	held_ent = give_player_turret( model, "auto_turret", "equip_turbine_zm_turret", "", true, carry_offset, carry_angles );
+	self thread take_player_turret_thread( held_ent );
+	self thread editor_held_model_thread( held_ent, "spawn" );
 
 	return result_cmdinfo( "Successfully set your carried model to " + model );
 }
 
-editor_spawn_held_model_thread( ent_name, model, carry_offset, carry_angles )
+add_placed_ent( new_ent )
 {
-	placeturret = spawnturret( "auto_turret", self.origin, "equip_turbine_zm_turret" );
-	placeturret.angles = self.angles;
-	placeturret setmodel( model );
-	placeturret setturretcarried( true );
-	placeturret setturretowner( self );
+	ent_name = self.editor_spawn_ent_name;
+	if ( isdefined( self._editor_placed_ents[ ent_name ] ) )
+	{
+		self._editor_placed_ents[ ent_name ] delete();
+	}
+	self._editor_placed_ents[ ent_name ] = new_ent;
 
-	self carryturret( placeturret, carry_offset, carry_angles );
+	new_ent.editor_name = ent_name;
+	self.editor_spawn_ent_name = undefined;
+}
 
-	self.is_holding_model = true;
-	held_ent = self hud_binding_subscribe_to_entity( "editor_held_context", placeturret );
+add_moved_ent( moved_ent )
+{
+	entnum = moved_ent getentitynumber();
+	self._editor_moved_ents[ entnum ] = moved_ent;
+}
+
+editor_spawn_held_ent( held_ent, angles, origin )
+{
+	new_ent = spawn( "script_model", origin );
+	new_ent.angles = angles;
+	new_ent setmodel( held_ent.model );
+
+	self add_placed_ent( new_ent );
+}
+
+editor_move_held_ent( held_ent, angles, origin )
+{
+	original_ent = self.editor_move_ent;
+	original_ent.angles = angles;
+	original_ent.origin = origin;
+	original_ent show();
+
+	self add_moved_ent( original_ent );
+	self.editor_move_ent = undefined;
+}
+
+editor_move_selected_ent_absolute( selected_ent, absolute_angles, absolute_origin )
+{
+	scale = _DEFAULT( scale, 1.0 );
+	selected_ent.angles = absolute_angles;
+	selected_ent.origin = absolute_origin;
+
+	self add_moved_ent( selected_ent );
+}
+
+editor_move_selected_ent_relative( selected_ent, relative_angles, relative_origin, scale )
+{
+	scale = _DEFAULT( scale, 1.0 );
+	selected_ent.angles += ( relative_angles * scale );
+	selected_ent.origin += ( relative_origin * scale );
+
+	self add_moved_ent( selected_ent );
+}
+
+editor_held_model_thread( held_ent, place_mode )
+{
+	self endon( "disconnect" );
+	self endon( "editor_place_cancel" );
+
 	for ( ;; )
 	{
-		self notifyonplayercommand( "toggle_unlink", "+speed_throw" );
-		ended = self waittill_any_return( "toggle_unlink" );
+		self waittill( "editor_place_held" );
 
 		if ( !( isdefined( level.use_legacy_equipment_placement ) && level.use_legacy_equipment_placement ) )
 			turret_placement = self canplayerplaceturret( held_ent );
 
 		if ( turret_placement[ "result" ] )
 		{
-			new_ent = spawn( "script_model", turret_placement[ "origin" ] );
-			new_ent.angles = turret_placement[ "angles" ];
-			new_ent setmodel( held_ent.model );
-
-			if ( isdefined( self._editor_placed_ents[ ent_name ] ) )
+			if ( place_mode == "spawn" )
 			{
-				self._editor_placed_ents[ ent_name ] delete();
+				self editor_spawn_held_ent( held_ent, turret_placement[ "angles" ], turret_placement[ "origin" ] );
 			}
-			self._editor_placed_ents[ ent_name ] = new_ent;
+			else if ( place_mode == "move" )
+			{
+				self editor_move_held_ent( held_ent, turret_placement[ "angles" ], turret_placement[ "origin" ] );
+			}
 
 			break;
 		}
 	}
 
-	self stopcarryturret( held_ent );
-	held_ent setturretcarried( false );
-	held_ent delete();
-
-	self.is_holding_model = false;
+	self notify( "editor_place_success" );
 }
 
-cmd_editorspawn_f( args )
+cmd_editorspawn_f( target_obj, args )
 {
 
 }
 
-live_pickup_adjust_preview( placeturret, carry_offset, carry_angles )
-{
-	
-}
-
-editor_pickup_model_thread( original_ent, carry_offset, carry_angles )
-{
-	held_ent = self hud_binding_get_subscribed_entity( "editor_held_context" );
-
-	for ( ;; )
-	{
-		self notifyonplayercommand( "toggle_unlink", "+speed_throw" );
-		ended = self waittill_any_return( "toggle_unlink" );
-
-		if ( !( isdefined( level.use_legacy_equipment_placement ) && level.use_legacy_equipment_placement ) )
-			turret_placement = self canplayerplaceturret( held_ent );
-
-		if ( turret_placement[ "result" ] )
-		{
-			original_ent.angles = turret_placement[ "angles" ];
-			original_ent.origin = turret_placement[ "origin" ];
-			original_ent show();
-			break;
-		}
-	}
-
-	self stopcarryturret( held_ent );
-	held_ent setturretcarried( false );
-	held_ent delete();
-
-	self.is_holding_model = false;
-}
-
-cmd_editorpickup_f( args )
+cmd_editorpickup_f( target_obj, args )
 {
 	target_entity = args[ 0 ];
 	carry_offset = _DEFAULT( args[ 1 ], ( 22, 0, 0 ) );
 	carry_angles = _DEFAULT( args[ 2 ], ( 0, 0, 0 ) );
 
-	if ( is_true( self.is_holding_model ) )
+	editor_held_ent = self hud_binding_get_subscribed_entity( "editor_held_context" );
+	if ( isdefined( editor_held_ent ) )
 	{
 		return result_cmderror( "You are already holding a model!" );
 	}
 
 	if ( !isdefined( target_entity ) )
 	{
-		direction = self getplayerangles();
-		direction_vec = anglestoforward( direction );
-		eye = self geteye();
-		scale = 8000;
-		direction_vec = ( direction_vec[0] * scale, direction_vec[1] * scale, direction_vec[2] * scale );
-		trace = bullettrace( eye, eye + direction_vec, false, undefined );
-
+		trace = self cast_entity_raycast_from_player_eye();
 		if ( !isdefined( trace[ "entity" ] ) )
 		{
-			trace = physicstrace( eye, eye + direction_vec, vectorscale( ( -1, -1, 0 ), 15.0 ), vectorscale( ( 1, 1, 0 ), 15.0 ), self, level._editor_ent_mask );
-			if ( !isdefined( trace[ "entity" ] ) )
-			{
-				return result_cmderror( "Not looking at an entity!" );
-			}
+			return result_cmderror( "Not looking at an entity!" );
 		}
 
 		target_entity = trace[ "entity" ];
 	}
 
 	target_entity hide(); // we haven't actually moved the entity yet, we are actually picking up a copy of the model aka "preview"
-
-	placeturret = spawnturret( "auto_turret", self.origin, "equip_turbine_zm_turret" );
-	placeturret.angles = self.angles;
-	placeturret setmodel( target_entity.model );
-	placeturret setturretcarried( true ); // this causes the offset/angles to be ignored from links
-	placeturret setturretowner( self );
-
-	self carryturret( placeturret, carry_offset, carry_angles );
-
-	self.is_holding_model = true;
+	self.editor_move_ent = target_entity;
 	self hud_binding_subscribe_to_entity( "editor_held_context", placeturret );
 
-	self thread editor_pickup_model_thread( target_entity, carry_offset, carry_angles );
+	held_ent = give_player_turret( target_entity.model, "auto_turret", "equip_turbine_zm_turret", "", true, carry_offset, carry_angles );
+	self thread take_player_turret_thread( held_ent );
+	self thread editor_held_model_thread( "", held_ent, "move" );
 	return result_cmdinfo( "Picked up target entity: " + target_entity.classname );
 }
 
-cmd_editorcontextmodifyentity_f( args )
+cmd_editorcontextmodifyentity_f( target_obj, args )
 {
-	scale = args[ 0 ];
-	total_time = _DEFAULT( args[ 1 ], 0.1 );
-	accel_time = _DEFAULT( args[ 2 ], 0.05 );
-	decel_time = _DEFAULT( args[ 3 ], 0.05 );
+	context_scale = self hud_binding_get( "editor_scale_context" );
+	total_time = _DEFAULT( args[ 0 ], 0.1 );
+	accel_time = _DEFAULT( args[ 1 ], 0.05 );
+	decel_time = _DEFAULT( args[ 2 ], 0.05 );
 
-	if ( scale == 0.0 )
+	if ( context_scale == 0.0 )
 	{
 		return result_cmderror( "<scale> cannot be 0!" );
 	}
@@ -767,8 +453,8 @@ cmd_editorcontextmodifyentity_f( args )
 	}
 
 	base_delta = 1;
-	delta = base_delta * scale;
-	ent = self.editor_modify_context_ent;
+	delta = base_delta * context_scale;
+	ent = self hud_binding_get( "editor_selected_ent_context" );
 	switch ( editor_context )
 	{
 		case "pitch":
@@ -794,11 +480,22 @@ cmd_editorcontextmodifyentity_f( args )
 	}
 }
 
-cmd_editorsetmodifycontext_f( args )
+cmd_editorsetcontext_f( target_obj, args )
 {
-	context = args[ 0 ];
+	context_mode = args[ 0 ];
+	current_scale = self hud_binding_get( "editor_scale_context" );
+	context_scale = _DEFAULT( current_scale, args[ 1 ] );
 
-	switch ( context )
+	if ( context_scale > 0.0 || context_scale < 0.0 )
+	{
+		self hud_binding_set( "editor_scale_context", context_scale );
+	}
+	else
+	{
+		return result_cmderror( "<context_scale> cannot be 0.0!" );
+	}
+
+	switch ( context_mode )
 	{
 		case "pitch":
 			break;
@@ -815,10 +512,15 @@ cmd_editorsetmodifycontext_f( args )
 		case "none":
 			break;
 		default:
-			return result_cmderror( "<context> must be one of 'pitch', 'yaw', 'roll', 'x', 'y', 'z'!" );
+			return result_cmderror( "<context> must be one of 'pitch', 'yaw', 'roll', 'x', 'y', 'z', 'none'!" );
 	}
 	
-	self hud_binding_set( "editor_mode_context", context );
+	self hud_binding_set( "editor_mode_context", context_mode );
+}
+
+cmd_editorsave_f( target_obj, args )
+{
+
 }
 
 on_editor_connect()
@@ -847,18 +549,28 @@ editor_hud()
 	{
 		self._editor_placed_ents = [];
 	}
+	if ( !isdefined( self._editor_moved_ents ) )
+	{
+		self._editor_moved_ents = [];
+	}
+
+	self notifyonplayercommand( "toggle_unlink", "+speed_throw" );
 
 	self hud_binding_register( "editor_mode_context", "text", "edit_mode", "No editor context!" );
-	self hud_binding_register( "editor_ent_context", "entity", "selected_entity", "No selected entity!" );
+	self hud_binding_register( "editor_scale_context", "text", "edit_scale", "No editor context scale!" );
+	self hud_binding_register( "editor_selected_ent_context", "entity", "selected_entity", "No selected entity!" );
 	self hud_binding_register( "editor_held_context", "entity", "held_entity", "No held entity!" );
 	self hud_binding_register( "editor_placed_context", "entity", "placed_entities", "No placed entities!" );
+	self hud_binding_set( "editor_mode_context", "none" );
+	self hud_binding_set( "editor_scale_context", 1.0 );
 
 	vertical_hud_list_obj = vertical_text_list_create( 20, 1.0, "objective", 1.8, "left", "top", "user_left", "user_top" );
 	vertical_hud_list_obj set_alpha( 1, 1.0 );
 
 	fontelem = self vertical_text_list_add( vertical_hud_list_obj, "editor_mode_context" );
+	fontelem = self vertical_text_list_add( vertical_hud_list_obj, "editor_scale_context" );
 	//fontelem settext( "GRUS1" );
-	fontelem = self vertical_text_list_add( vertical_hud_list_obj, "editor_ent_context" );
+	fontelem = self vertical_text_list_add( vertical_hud_list_obj, "editor_selected_ent_context" );
 	//fontelem settext( "GRUS2" );
 	fontelem = self vertical_text_list_add( vertical_hud_list_obj, "editor_held_context" );
 	//fontelem settext( "GRUS3" );
@@ -887,52 +599,57 @@ main()
 	level._editor_ent_mask = level.physicstracemaskphysics | level.physicstracemaskvehicle | level.physicstracemaskwater | level.physicstracemaskclip;
 
 	cmd_block_set_rank_group( "cheat" );
-	dumpent_cmd = level [[ level.tcs_add_cmd_func ]]( "dumpent", true, "dent", "dumpent <type> [classname]", ::cmd_dumpent_f );
-	dumpent_cmd arg_obj_add_cmd( "string string", 1, 2 );
 
 	// camera commands
-	createcamera_cmd = level [[ level.tcs_add_cmd_func ]]( "createcamera", true, "createcam", "createcamera <camera_name>", ::cmd_createcamera_f );
+	createcamera_cmd = level [[ level.tcs_add_cmd_func ]]( "createcamera", ::cmd_createcamera_f, "createcamera <camera_name>" );
 	createcamera_cmd arg_obj_add_cmd( "string", 1, 1 );
 
-	setcamera_cmd = level [[ level.tcs_add_cmd_func ]]( "setcamera", true, "setcam", "setcamera <camera_name> [flags]", ::cmd_setcamera_f );
+	setcamera_cmd = level [[ level.tcs_add_cmd_func ]]( "setcamera", ::cmd_setcamera_f, "setcamera <camera_name> [flags]" );
 	setcamera_cmd arg_obj_add_cmd( "string cameraflags", 1, 2 );
 
-	unsetcamera_cmd = level [[ level.tcs_add_cmd_func ]]( "unsetcamera", true, "unsetcam", "unsetcamera <camera_name>", ::cmd_unsetcamera_f );
+	unsetcamera_cmd = level [[ level.tcs_add_cmd_func ]]( "unsetcamera", ::cmd_unsetcamera_f, "unsetcamera <camera_name>" );
 	unsetcamera_cmd arg_obj_add_cmd( "string", 1, 1 );
 
-	deletecamera_cmd = level [[ level.tcs_add_cmd_func ]]( "deletecamera", true, "delcam", "deletecamera <camera_name>", ::cmd_deletecamera_f );
+	deletecamera_cmd = level [[ level.tcs_add_cmd_func ]]( "deletecamera", ::cmd_deletecamera_f, "deletecamera <camera_name>" );
 	deletecamera_cmd arg_obj_add_cmd( "string", 1, 1 );
 
-	linkcameratoent_cmd = level [[ level.tcs_add_cmd_func ]]( "linkcameratoent", true, undefined, "linkcameratoent <camera_name> <entity> [tagname] [origin_offset] [angles_offset]", ::cmd_linkcameratoent_f );
-	linkcameratoent_cmd arg_obj_add_cmd( "string entity string vector vector", 2, 5 );
+	linkcameratoent_cmd = level [[ level.tcs_add_cmd_func ]]( "linkcameratoent", ::cmd_linkcameratoent_f, "linkcameratoent {entity} <camera_name> [tagname] [origin_offset] [angles_offset]" );
+	linkcameratoent_cmd arg_obj_add_cmd( "string string_allow_null vector vector", 1, 4 );
+	linkcameratoent_cmd target_obj_add_cmd( "entity" );
 
-	linkcameratoent_cmd = level [[ level.tcs_add_cmd_func ]]( "unlinkcamera", true, undefined, "unlinkcamera <camera_name>", ::cmd_unlinkcamera_f );
+	linkcameratoent_cmd = level [[ level.tcs_add_cmd_func ]]( "unlinkcamera", ::cmd_unlinkcamera_f, "unlinkcamera <camera_name>" );
 	linkcameratoent_cmd arg_obj_add_cmd( "string", 1, 1 );
 
-	spectateactor_cmd = level [[ level.tcs_add_cmd_func ]]( "spectateactor", true, undefined, "spectateactor <actor> [tagname]", ::cmd_spectateactor_f );
-	spectateactor_cmd arg_obj_add_cmd( "actor string", 2, 2 );
+	spectateactor_cmd = level [[ level.tcs_add_cmd_func ]]( "spectateactor", ::cmd_spectateactor_f, "spectateactor {actor} <tagname>" );
+	spectateactor_cmd arg_obj_add_cmd( "string_allow_null", 1, 1 );
+	spectateactor_cmd target_obj_add_cmd( "actor" );
 
 	// entity manipulation
-	seteditortargetent_cmd = level [[ level.tcs_add_cmd_func ]]( "seteditortargetent", true, "seteditent", "seteditortargetent [entnum]", ::cmd_seteditortargetent_f );
+	seteditortargetent_cmd = level [[ level.tcs_add_cmd_func ]]( "seteditortargetent", ::cmd_seteditortargetent_f, "seteditortargetent [entnum]" );
 	seteditortargetent_cmd arg_obj_add_cmd( "entity", 0, 1 );
 
-	seteditortargetangles_cmd = level [[ level.tcs_add_cmd_func ]]( "seteditortargetangles", true, "seteditangles", "seteditortargetangles <angles> [relative]", ::cmd_seteditortargetangles_f );
+	seteditortargetangles_cmd = level [[ level.tcs_add_cmd_func ]]( "seteditortargetangles", ::cmd_seteditortargetangles_f, "seteditortargetangles <angles> [relative]" );
 	seteditortargetangles_cmd arg_obj_add_cmd( "vector boolean", 1, 2 );
 
-	seteditortargetorigin_cmd = level [[ level.tcs_add_cmd_func ]]( "seteditortargetorigin", true, "seteditorigin", "seteditortargetorigin <pos> [relative]", ::cmd_seteditortargetorigin_f );
+	seteditortargetorigin_cmd = level [[ level.tcs_add_cmd_func ]]( "seteditortargetorigin", ::cmd_seteditortargetorigin_f, "seteditortargetorigin <pos> [relative]" );
 	seteditortargetorigin_cmd arg_obj_add_cmd( "vector boolean", 1, 2 );
 
-	editheldmodel_cmd = level [[ level.tcs_add_cmd_func ]]( "editheldmodel", true, "editheldmodel", "editheldmodel [model] [carry_origin_offset] [carry_angles_offset]", ::cmd_editheldmodel_f );
+	editheldmodel_cmd = level [[ level.tcs_add_cmd_func ]]( "editheldmodel", ::cmd_editheldmodel_f, "editheldmodel [model] [carry_origin_offset] [carry_angles_offset]" );
 	editheldmodel_cmd arg_obj_add_cmd( "model vector vector", 0, 3 );
 
-	editorspawnheldmodel_cmd = level [[ level.tcs_add_cmd_func ]]( "editorspawnheldmodel", true, "spawnheld", "editorspawnheldmodel <ent_name> <model> [carry_origin_offset] [carry_angles_offset]", ::cmd_editorspawnheldmodel_f );
+	editorspawnheldmodel_cmd = level [[ level.tcs_add_cmd_func ]]( "editorspawnheldmodel", ::cmd_editorspawnheldmodel_f, "editorspawnheldmodel <ent_name> <model> [carry_origin_offset] [carry_angles_offset]" );
 	editorspawnheldmodel_cmd arg_obj_add_cmd( "string model vector vector", 2, 4 );
 
-	editorpickup_cmd = level [[ level.tcs_add_cmd_func ]]( "editorpickup", true, "pickup", "editorpickup [entnum] [carry_origin_offset] [carry_angles_offset]", ::cmd_editorpickup_f );
+	editorpickup_cmd = level [[ level.tcs_add_cmd_func ]]( "editorpickup", ::cmd_editorpickup_f, "editorpickup [entnum] [carry_origin_offset] [carry_angles_offset]" );
 	editorpickup_cmd arg_obj_add_cmd( "entity vector vector", 0, 3 );
 
-	editorcontextmodifyentity_cmd = level [[ level.tcs_add_cmd_func ]]( "editorcontextmodifyentity", true, undefined, "editorcontextmodifyentity <direction>", ::cmd_editorcontextmodifyentity_f );
-	editorcontextmodifyentity_cmd arg_obj_add_cmd( "string", 1, 1 );
+	editorsetcontext_cmd = level [[ level.tcs_add_cmd_func ]]( "editorsetcontext", ::cmd_editorsetcontext_f, "editorsetcontext <context_mode> [context_scale]" );
+	editorsetcontext_cmd arg_obj_add_cmd( "string", 1, 1 );
+
+	editorcontextmodifyentity_cmd = level [[ level.tcs_add_cmd_func ]]( "editorcontextmodifyentity", ::cmd_editorcontextmodifyentity_f, "editorcontextmodifyentity <scale> [total_time] [accel_time] [decel_time]" );
+	editorcontextmodifyentity_cmd arg_obj_add_cmd( "float float float float", 1, 4 );
+
+	editorsave_cmd = level [[ level.tcs_add_cmd_func ]]( "editorsave", ::cmd_editorsave_f );
 	// TODO:
 	//setmins
 	//setmaxs
@@ -1003,6 +720,6 @@ main()
 	*/
 
 	// debugging
-	setviewpos_cmd = level [[ level.tcs_add_cmd_func ]]( "setviewpos", true, "setviewpos", "setviewpos <origin> [angles]", ::cmd_setviewpos_f );
+	setviewpos_cmd = level [[ level.tcs_add_cmd_func ]]( "setviewpos", "setviewpos", "setviewpos <origin> [angles]", ::cmd_setviewpos_f );
 	setviewpos_cmd arg_obj_add_cmd( "vector vector", 1, 2 );
 }

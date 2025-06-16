@@ -37,100 +37,77 @@ main()
 	register_modifiable_zombie_stat( "ai_limit", "wholenum", 24 );
 
 	cmd_block_set_rank_group( "cheat" );
-	spectator_cmd = cmd_add( "spectator", false, "spec", "spectator <name|guid|clientnum|self>", ::cmd_spectator_f );
-	spectator_cmd arg_obj_add_cmd( "player", 1, 1 );
+	spectator_cmd = cmd_add( "spectator", ::cmd_spectator_f, "spectator {player}" );
+	spectator_cmd target_obj_add_cmd( "player" );
 	
-	togglerespawn_cmd = cmd_add( "togglerespawn", false, "togresp", "togglerespawn <name|guid|clientnum|self>", ::cmd_togglerespawn_f );
-	togglerespawn_cmd arg_obj_add_cmd( "player", 1, 1 );
+	togglerespawn_cmd = cmd_add( "togglerespawn", ::cmd_togglerespawn_f, "togglerespawn {player}" );
+	togglerespawn_cmd target_obj_add_cmd( "player" );
 
-	killactors_cmd = cmd_add( "killactors", false, "ka", "killactors", ::cmd_killactors_f );
-	killactors_cmd arg_obj_add_cmd( "", 0, 0 );
+	killactors_cmd = cmd_add( "killactors", ::cmd_killactors_f, "killactors {actor}" );
+	killactors_cmd target_obj_add_cmd( "player" );
 
-	respawnspectators_cmd = cmd_add( "respawnspectators", false, "respspec", "respawnspectators", ::cmd_respawnspectators_f );
-	killactors_cmd arg_obj_add_cmd( "", 0, 0 );
+	respawnspectators_cmd = cmd_add( "respawnspectators", ::cmd_respawnspectators_f, "respawnspectators {player}" );
+	respawnspectators_cmd target_obj_add_cmd( "player" );
 
-	pause_cmd = cmd_add( "pause", false, "pa", "pause [minutes]", ::cmd_pause_f );
+	pause_cmd = cmd_add( "pause", ::cmd_pause_f, "pause [minutes]" );
 	pause_cmd arg_obj_add_cmd( "wholenum", 0, 1 );
 
-	unpause_cmd = cmd_add( "unpause", false, "up", "unpause", ::cmd_unpause_f );
+	unpause_cmd = cmd_add( "unpause", ::cmd_unpause_f );
 	unpause_cmd arg_obj_add_cmd( "", 0, 0 );
 
-	giveperk_cmd = cmd_add( "giveperk", false, "gp", "giveperk <name|guid|clientnum|self> <perk|all>", ::cmd_giveperk_f, true );
-	giveperk_cmd arg_obj_add_cmd( "player perk", 2, 2 );
+	giveperk_cmd = cmd_add( "giveperk", ::cmd_giveperk_f, "giveperk {player} <perk|all>" );
+	giveperk_cmd arg_obj_add_cmd( "player perk", 1, 2 );
+	giveperk_cmd target_obj_add_cmd( "player" );
 
-	takeperk_cmd = cmd_add( "takeperk", false, "tp", "takeperk <name|guid|clientnum|self> <perk|all>", ::cmd_takeperk_f, true );
-	takeperk_cmd arg_obj_add_cmd( "player perk", 2, 2 );
+	takeperk_cmd = cmd_add( "takeperk", ::cmd_takeperk_f, "takeperk {player} <perk|all>" );
+	takeperk_cmd arg_obj_add_cmd( "player perk", 1, 2 );
+	takeperk_cmd target_obj_add_cmd( "player" );
 
-	givepermaperk_cmd = cmd_add( "givepermaperk", false, "gpp", "givepermaperk <name|guid|clientnum|self> <perk|all>", ::cmd_givepermaperk_f, true );
+	givepermaperk_cmd = cmd_add( "givepermaperk", ::cmd_givepermaperk_f, "givepermaperk {player} <permaperk|all>" );
 	//givepermaperk_cmd arg_obj_add_cmd( "player permaperk", 2, 2 );
-	givepermaperk_cmd arg_obj_add_cmd( "", 2, 2 );
+	givepermaperk_cmd arg_obj_add_cmd( "player permaperk", 1, 2 );
+	givepermaperk_cmd target_obj_add_cmd( "player" );
 
-	givepoints_cmd = cmd_add( "givepoints", false, "gpts", "givepoints <name|guid|clientnum|self> <amount>", ::cmd_givepoints_f );
-	givepoints_cmd arg_obj_add_cmd( "player int", 2, 2 );
+	givepoints_cmd = cmd_add( "points", ::cmd_givepoints_f, "points {player} <amount>" );
+	givepoints_cmd arg_obj_add_cmd( "player int", 1, 2 );
+	givepoints_cmd target_obj_add_cmd( "player" );
 
-	givepowerup_cmd = cmd_add( "givepowerup", false, "gpow", "givepowerup <name|guid|clientnum|self> <powerup>", ::cmd_givepowerup_f );
-	givepowerup_cmd arg_obj_add_cmd( "player powerup", 2, 2 );
+	givepowerup_cmd = cmd_add( "powerup", ::cmd_givepowerup_f, "powerup {player} <powerup>" );
+	givepowerup_cmd arg_obj_add_cmd( "player powerup", 1, 2 );
+	givepowerup_cmd target_obj_add_cmd( "player" );
 
-	giveweapon_cmd = cmd_add( "giveweapon", false, "gwep", "giveweapon <name|guid|clientnum|self> <weapon>", ::cmd_giveweapon_f, true );
-	giveweapon_cmd arg_obj_add_cmd( "player weapon", 2, 2 );
+	giveweapon_cmd = cmd_add( "weapon", ::cmd_giveweapon_f, "weapon {player} <weapon>" );
+	giveweapon_cmd arg_obj_add_cmd( "player weapon", 1, 2 );
+	giveweapon_cmd target_obj_add_cmd( "player" );
 
-	toggleperssystemforplayer_cmd = cmd_add( "toggleperssystemforplayer", false, "tpsfp", "toggleperssystemforplayer <name|guid|clientnum|self>", ::cmd_toggleperssystemforplayer_f );
-	toggleperssystemforplayer_cmd arg_obj_add_cmd( "player", 1, 1 );
+	toggleperssystemforplayer_cmd = cmd_add( "toggleperssystemforplayer", ::cmd_toggleperssystemforplayer_f, "toggleperssystemforplayer {player}" );
+	toggleperssystemforplayer_cmd target_obj_add_cmd( "player" );
 
-	toggleoutofplayableareamonitor_cmd = cmd_add( "toggleoutofplayableareamonitor", false, "togoopam", "toggleoutofplayableareamonitor", ::cmd_toggleoutofplayableareamonitor_f );
-	toggleoutofplayableareamonitor_cmd arg_obj_add_cmd( "", 0, 0 );
+	toggleoutofplayableareamonitor_cmd = cmd_add( "toggleoutofplayableareamonitor", ::cmd_toggleoutofplayableareamonitor_f );
 
-	openalldoors_cmd = cmd_add( "openalldoors", false, "openall", "openalldoors", ::cmd_openalldoors_f );
-	openalldoors_cmd arg_obj_add_cmd( "", 0, 0 );
+	openalldoors_cmd = cmd_add( "openalldoors", ::cmd_openalldoors_f );
 
-	setround_cmd = cmd_add( "setround", false, "sr", "setround <round_number>", ::cmd_setround_f );
+	setround_cmd = cmd_add( "setround", ::cmd_setround_f, "setround <round_number>" );
 	setround_cmd arg_obj_add_cmd( "round", 1, 1 );
 
-	nextround_cmd = cmd_add( "nextround", false, "nr", "nextround", ::cmd_nextround_f );
-	nextround_cmd arg_obj_add_cmd( "", 0, 0 );
+	nextround_cmd = cmd_add( "nextround", ::cmd_nextround_f );
 
-	prevround_cmd = cmd_add( "prevround", false, undefined, "prevround", ::cmd_prevround_f );
-	prevround_cmd arg_obj_add_cmd( "", 0, 0 );
+	prevround_cmd = cmd_add( "prevround", ::cmd_prevround_f );
 
-	setglobalzombiestat_cmd = cmd_add( "setglobalzombiestat", false, undefined, "setglobalzombiestat <statname> <value>", ::cmd_setglobalzombiestat_f );
+	setglobalzombiestat_cmd = cmd_add( "setglobalzombiestat", ::cmd_setglobalzombiestat_f, "setglobalzombiestat <statname> <value>" );
 	setglobalzombiestat_cmd arg_obj_add_cmd( "string string", 2, 2 );
 
-	listglobalzombiestats_cmd = cmd_add( "listglobalzombiestats", false, undefined, "listglobalzombiestats", ::cmd_listglobalzombiestats_f );
-	prevround_cmd arg_obj_add_cmd( "", 0, 0 );
+	listglobalzombiestats_cmd = cmd_add( "listglobalzombiestats", ::cmd_listglobalzombiestats_f );
 
-	setallphysparams_cmd = cmd_add( "setallphysparams", false, undefined, "setallphysparams <vector>", ::cmd_setallphysparams_f );
-	setallphysparams_cmd arg_obj_add_cmd( "vector", 1, 1 );
-	
-	perk_cmd = cmd_add( "perk", true, undefined, "perk <perk|all>", ::cmd_perk_f, true );
-	perk_cmd arg_obj_add_cmd( "perk", 1, 1 );
-
-	perkremove_cmd = cmd_add( "perkremove", true, "pr", "perk <perk|all>", ::cmd_perkremove_f, true );
-	perkremove_cmd arg_obj_add_cmd( "perk", 1, 1 );
-
-	permaperk_cmd = cmd_add( "permaperk", true, "pp", "permaperk <perk|all>", ::cmd_permaperk_f, true );
-	permaperk_cmd arg_obj_add_cmd( "", 1, 1 );
-
-	points_cmd = cmd_add( "points", true, "pts", "points <amount>", ::cmd_points_f );
-	points_cmd arg_obj_add_cmd( "int", 1, 1 );
-
-	powerup_cmd = cmd_add( "powerup", true, "pow", "powerup <powerup>", ::cmd_powerup_f );
-	powerup_cmd arg_obj_add_cmd( "powerup", 1, 1 );
-
-	weapon_cmd = cmd_add( "weapon", true, "wep", "weapon <weapon>", ::cmd_weapon_f, true );
-	weapon_cmd arg_obj_add_cmd( "weapon", 1, 1 );
-
-	toggleperssystem_cmd = cmd_add( "toggleperssystem", true, "tps", "toggleperssystem", ::cmd_toggleperssystem_f );
-	toggleperssystem_cmd arg_obj_add_cmd( "", 0, 0 );
+	setallphysparams_cmd = cmd_add( "setallphysparams", ::cmd_setallphysparams_f, "setallphysparams {actor} <vector>" );
+	setallphysparams_cmd arg_obj_add_cmd( "actor vector", 1, 2 );
 
 	cmd_block_set_rank_group( "none" );
-	weaponlist_cmd = cmd_add( "weaponlist", false, "wlist", "weaponlist", ::cmd_weaponlist_f );
-	weaponlist_cmd arg_obj_add_cmd( "", 0, 0 );
+	weaponlist_cmd = cmd_add( "weaponlist", ::cmd_weaponlist_f );
 
-	poweruplist_cmd = cmd_add( "poweruplist", false, "powlist", "poweruplist", ::cmd_poweruplist_f );
-	poweruplist_cmd arg_obj_add_cmd( "", 0, 0 );
+	poweruplist_cmd = cmd_add( "poweruplist", ::cmd_poweruplist_f );
 
-	perklist_cmd = cmd_add( "perklist", false, "plist", "perklist", ::cmd_perklist_f );
-	perklist_cmd arg_obj_add_cmd( "", 0, 0 );
+	perklist_cmd = cmd_add( "perklist", ::cmd_perklist_f );
 
 	arg_obj_register( "weapon", ::arg_obj_weapon_validate, ::arg_obj_weapon_generate, undefined, "not a valid weapon" );
 	arg_obj_register( "perk", ::arg_obj_perk_validate, ::arg_obj_perk_generate, undefined, "not a valid perk" );
@@ -189,7 +166,7 @@ on_unittest()
 	}
 }
 
-CMD_GIVEPOWERUP_f( arg_list )
+CMD_GIVEPOWERUP_f( target_obj, args )
 {
 	target = arg_list[ 0 ];
 	powerup_name = arg_list[ 1 ];
@@ -229,7 +206,7 @@ give_powerup_zm( powerup_name )
 	return true;
 }
 
-cmd_killactors_f( args )
+cmd_killactors_f( target_obj, args )
 {
 	ai = getaiarray( level.zombie_team );
 	for ( i = 0; i < ai.size; i++ )
@@ -244,7 +221,7 @@ cmd_killactors_f( args )
 	return result_cmdinfo( "Killed all zombies" );
 }
 
-cmd_giveperk_f( arg_list )
+cmd_giveperk_f( target_obj, args )
 {
 	target = arg_list[ 0 ];
 	perk_name = arg_list[ 1 ];
@@ -265,7 +242,7 @@ cmd_giveperk_f( arg_list )
 	}
 }
 
-cmd_takeperk_f( arg_list )
+cmd_takeperk_f( target_obj, args )
 {
 	target = arg_list[ 0 ];
 	perk_name = arg_list[ 1 ];
@@ -294,7 +271,7 @@ give_perk_zm( perkname, index )
 	}
 }
 
-cmd_pause_f( args )
+cmd_pause_f( target_obj, args )
 {
 	if ( isDefined( args[ 0 ] ) )
 	{
@@ -338,7 +315,7 @@ unpause_after_time( duration )
 	game_unpause();
 }
 
-cmd_unpause_f( args )
+cmd_unpause_f( target_obj, args )
 {
 	game_unpause();
 
@@ -357,7 +334,7 @@ game_unpause()
 	}
 }
 
-cmd_givepermaperk_f( args )
+cmd_givepermaperk_f( target_obj, args )
 {
 	result = [];
 	target = args[ 0 ];
@@ -387,7 +364,7 @@ give_all_perma_perks()
 	}
 }
 
-cmd_givepoints_f( args )
+cmd_givepoints_f( target_obj, args )
 {
 	target = args[ 0 ];
 	points = args[ 1 ];
@@ -396,7 +373,7 @@ cmd_givepoints_f( args )
 	return result_cmdinfo( "Gave " + target.name + " " + points + " points" );
 }
 
-cmd_spectator_f( args )
+cmd_spectator_f( target_obj, args )
 {
 	target = args[ 0 ];
 	target spawnspectator();
@@ -409,7 +386,7 @@ cmd_spectator_f( args )
 	return result_cmdinfo( "Successfully made " + target.name + " a spectator" );
 }
 
-cmd_togglerespawn_f( args )
+cmd_togglerespawn_f( target_obj, args )
 {
 	target = args[ 0 ];
 	should_respawn = args[ 1 ];
@@ -430,7 +407,7 @@ cmd_togglerespawn_f( args )
 	return result_cmdinfo( target.name + " has their respawn toggled" );
 }
 
-cmd_respawnspectators_f( args )
+cmd_respawnspectators_f( target_obj, args )
 {
 	players = getPlayers();
 	for ( i = 0; i < players.size; i++ )
@@ -455,7 +432,7 @@ cmd_respawnspectators_f( args )
 	return result_cmdinfo( "Successfully respawned all spectators" );
 }
 
-cmd_giveweapon_f( args )
+cmd_giveweapon_f( target_obj, args )
 {
 	target = args[ 0 ];
 	weapon = args[ 1 ];
@@ -469,7 +446,7 @@ unlimited_weapons( player )
 	return 5;
 }
 
-cmd_powerup_f( args )
+cmd_powerup_f( target_obj, args )
 {
 	powerup_name = args[ 0 ];
 	success = self give_powerup_zm( powerup_name );
@@ -479,7 +456,7 @@ cmd_powerup_f( args )
 	}	
 }
 
-cmd_weaponlist_f( args )
+cmd_weaponlist_f( target_obj, args )
 {
 	channel = self com_get_cmd_feedback_channel();
 	weapons = getArrayKeys( level.zombie_include_weapons );
@@ -502,7 +479,7 @@ list_weapons_throttled( channel, weapons )
 	}
 }
 
-cmd_perk_f( args )
+cmd_perk_f( target_obj, args )
 {
 	perk_name = args[ 0 ];
 	if ( perk_name != "all" )
@@ -522,7 +499,7 @@ cmd_perk_f( args )
 	}
 }
 
-cmd_perkremove_f( args )
+cmd_perkremove_f( target_obj, args )
 {
 	perk_name = args[ 0 ];
 	if ( perk_name != "all" )
@@ -542,7 +519,7 @@ cmd_perkremove_f( args )
 	}
 }
 
-cmd_points_f( args )
+cmd_points_f( target_obj, args )
 {
 	points = args[ 0 ];
 	self add_to_player_score( points );
@@ -550,7 +527,7 @@ cmd_points_f( args )
 	return result_cmdinfo( "Gave you " + points + " points" );
 }
 
-cmd_permaperk_f( args )
+cmd_permaperk_f( target_obj, args )
 {
 	result = [];
 	perma_perk_name = args[ 0 ];
@@ -566,7 +543,7 @@ cmd_permaperk_f( args )
 	}
 }
 
-cmd_weapon_f( args )
+cmd_weapon_f( target_obj, args )
 {
 	weapon = args[ 0 ];
 	self thread weapon_give_custom( weapon, weapon_is_upgrade( weapon ), true );
@@ -575,7 +552,7 @@ cmd_weapon_f( args )
 }
 
 
-cmd_toggleperssystemforplayer_f( args )
+cmd_toggleperssystemforplayer_f( target_obj, args )
 {
 	target = args[ 0 ];
 	on_off = scripts\cmd_system_modules\_cmd_arg::cast_bool_to_str( is_true( target.tcs_disable_pers_system ), "on off" );
@@ -584,7 +561,7 @@ cmd_toggleperssystemforplayer_f( args )
 	return result_cmdinfo( "Toggled pers system for " + target.name + " " + on_off );
 }
 
-cmd_toggleperssystem_f( args )
+cmd_toggleperssystem_f( target_obj, args )
 {
 	on_off = scripts\cmd_system_modules\_cmd_arg::cast_bool_to_str( !is_true( self.tcs_disable_pers_system ), "on off" );
 	self.tcs_disable_pers_system = !is_true( self.tcs_disable_pers_system );
@@ -592,7 +569,7 @@ cmd_toggleperssystem_f( args )
 	return result_cmdinfo( "Toggled your pers system " + on_off );
 }
 
-cmd_toggleoutofplayableareamonitor_f( args )
+cmd_toggleoutofplayableareamonitor_f( target_obj, args )
 {
 	on_off = scripts\cmd_system_modules\_cmd_arg::cast_bool_to_str( !is_true( level.player_out_of_playable_area_monitor ), "on off" );
 	level.player_out_of_playable_area_monitor = !level.player_out_of_playable_area_monitor;
@@ -614,7 +591,7 @@ cmd_toggleoutofplayableareamonitor_f( args )
 	return result_cmdinfo( "Out of playable area monitor " + on_off );
 }
 
-cmd_openalldoors_f( args )
+cmd_openalldoors_f( target_obj, args )
 {
 	if ( is_true( level.tcs_doors_all_opened ) )
 	{
@@ -657,7 +634,7 @@ open_seseme()
 	setdvar( "zombie_unlock_all", 0 );
 }
 
-cmd_poweruplist_f( args )
+cmd_poweruplist_f( target_obj, args )
 {
 	channel = self com_get_cmd_feedback_channel();
 	powerups = powerup_list_zm();
@@ -677,7 +654,7 @@ list_powerups_throttled( channel, powerups )
 	}
 }
 
-cmd_perklist_f( args )
+cmd_perklist_f( target_obj, args )
 {
 	channel = self com_get_cmd_feedback_channel();
 	perks = perk_list_zm();
@@ -697,7 +674,7 @@ list_perks_throttled( channel, perks )
 	}
 }
 
-cmd_setround_f( args )
+cmd_setround_f( target_obj, args )
 {
 	if ( args[ 0 ] > 255 || args[ 0 ] < 0 )
 	{
@@ -710,7 +687,7 @@ cmd_setround_f( args )
 	return result_cmdinfo( "Round set to " + args[ 0 ] );
 }
 
-cmd_nextround_f( args )
+cmd_nextround_f( target_obj, args )
 {
 	level.round_number++;
 	change_round( level.round_number );
@@ -718,7 +695,7 @@ cmd_nextround_f( args )
 	return result_cmdinfo( "Round set to " + level.round_number );
 }
 
-cmd_prevround_f( args )
+cmd_prevround_f( target_obj, args )
 {
 	level.round_number--;
 	change_round( level.round_number );
@@ -726,7 +703,7 @@ cmd_prevround_f( args )
 	return result_cmdinfo( "Round set to " + level.round_number );
 }
 
-cmd_setglobalzombiestat_f( args )
+cmd_setglobalzombiestat_f( target_obj, args )
 {
 	result = [];
 	stat_name = args[ 0 ];
@@ -782,7 +759,7 @@ set_global_zombie_stat( stat, stat_name, stat_value )
 	}
 }
 
-cmd_listglobalzombiestats_f( args )
+cmd_listglobalzombiestats_f( target_obj, args )
 {
 	channel = self com_get_cmd_feedback_channel();
 	self thread list_zombie_stats_throttled( channel );
@@ -810,7 +787,7 @@ list_zombie_stats_throttled( channel )
 	}	
 }
 
-cmd_setallphysparams_f( args )
+cmd_setallphysparams_f( target_obj, args )
 {
 	phys_params = args[ 0 ];
 
