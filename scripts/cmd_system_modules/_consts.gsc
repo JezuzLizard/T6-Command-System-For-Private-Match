@@ -55,8 +55,8 @@ build_contents_array()
 	level.tcs_contents[ "NONE" ] = 0;
 	level.tcs_contents[ "SOLID" ] = 1 << 0;
 	level.tcs_contents[ "FOILAGE" ] = 1 << 1;
-	level.tcs_contents[ "NONCOLLIDING" ] = 1 << 2;
-	level.tcs_contents[ "UNK1" ] = 1 << 3;
+	level.tcs_contents[ "NONCOLLIDING" ] = 1 << 2; // AI_AVOID
+	level.tcs_contents[ "VEHICLETRIGGER" ] = 1 << 3;
 	level.tcs_contents[ "GLASS" ] = 1 << 4;
 	level.tcs_contents[ "WATER" ] = 1 << 5;
 	level.tcs_contents[ "CANSHOOTCLIP" ] = 1 << 6;
@@ -67,16 +67,16 @@ build_contents_array()
 	level.tcs_contents[ "SKY" ] = 1 << 11;
 	level.tcs_contents[ "AI_NOSIGHT" ] = 1 << 12;
 	level.tcs_contents[ "CLIPSHOT" ] = 1 << 13;
-	level.tcs_contents[ "CORPSE_CLIPSHOT" ] = 1 << 14;
-	level.tcs_contents[ "ACTOR" ] = 1 << 15;
-	level.tcs_contents[ "FAKE_ACTOR" ] = level.tcs_contents[ "ACTOR" ];
+	level.tcs_contents[ "CORPSE_CLIPSHOT" ] = 0;
+	level.tcs_contents[ "ACTOR" ] = 1 << 14;
+	level.tcs_contents[ "FAKE_ACTOR" ] = 1 << 15;
 	level.tcs_contents[ "PLAYERCLIP" ] = 1 << 16;
 	level.tcs_contents[ "MONSTERCLIP" ] = 1 << 17;
-	level.tcs_contents[ "PLAYERVEHICLECLIP" ] = 1 << 18;
-	level.tcs_contents[ "UNK2" ] = 1 << 19;
-	level.tcs_contents[ "UNK3" ] = 1 << 20;
+	level.tcs_contents[ "AXISTRIGGER" ] = 1 << 18; // PLAYERVEHICLECLIP
+	level.tcs_contents[ "ALLIESTRIGGER" ] = 1 << 19;
+	level.tcs_contents[ "NEUTRALTRIGGER" ] = 1 << 20;
 	level.tcs_contents[ "USE" ] = 1 << 21;
-	level.tcs_contents[ "UTILITYCLIP" ] = 1 << 22;
+	level.tcs_contents[ "UTILITYCLIP" ] = 1 << 22; // NONSENTIENTTRIGGER
 	level.tcs_contents[ "VEHICLE" ] = 1 << 23;
 	level.tcs_contents[ "MANTLE" ] = 1 << 24;
 	level.tcs_contents[ "PLAYER" ] = 1 << 25;
@@ -84,8 +84,8 @@ build_contents_array()
 	level.tcs_contents[ "DETAIL" ] = 1 << 27;
 	level.tcs_contents[ "STRUCTURAL" ] = 1 << 28;
 	level.tcs_contents[ "LOOKAT" ] = level.tcs_contents[ "STRUCTURAL" ];
-	level.tcs_contents[ "UNK4" ] = 1 << 29;
-	level.tcs_contents[ "TRIGGER" ] = 1 << 30;
+	level.tcs_contents[ "UNK4" ] = 1 << 29; // LOOKAT?
+	level.tcs_contents[ "PLAYERTRIGGER" ] = 1 << 30; // TRIGGER
 	level.tcs_contents[ "NODROP" ] = 1 << 31;
 }
 

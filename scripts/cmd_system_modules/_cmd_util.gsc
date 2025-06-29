@@ -23,24 +23,76 @@ server_safe_notify_thread( notify_name, index )
 	level notify( notify_name );
 }
 
+/*generic_obj_t*/ generic_obj_t_new( obj_type )
+{
+	generic_obj = spawnstruct();
+	generic_obj.warning = false;
+	generic_obj.errored = false;
+	generic_obj.msg = "";
+	generic_obj.obj_type = obj_type;
+	return generic_obj;
+}
+
+/*generic_obj*/ check_script_error( obj, expected_type, force_error = false )
+{
+	if ( !isdefined( obj ) )
+	{
+		obj = generic_obj_t_new( "void" );
+		obj.msg = "Attempted to set cmd parse error for an undefined object";
+		obj.errored = true;
+	}
+	if ( obj.type != expected_type )
+	{
+		obj.msg = "Attempted to set obj type of '" + expected_type + "' error for " + obj.type;
+		obj.errored = true;
+	}
+
+	if ( ( obj.errored || force_error ) && getdvarint( "cmd_debug_debugbreak" ) )
+	{
+		// print state info
+		// block further execution with waited loop?
+		assert( false );
+		com_printerror( obj.msg );
+		for ( ;; )
+		{
+			should_continue = getdvarint( "cmd_debug_continue" );
+			should_retry = getdvarint( "cmd_debug_retry" );
+			if ( should_retry )
+			{
+				setdvar( "cmd_debug_retry", 0 );
+				level notify( "cmd_debug_retry" );
+			}
+
+			if ( should_continue )
+			{
+				setdvar( "cmd_debug_continue", 0 );
+				break;
+			}
+
+			wait 0.05;
+		}
+	}
+}
+
 /*result_t*/ result_new( msg, filter, channels = "" )
 {
-	result = spawnstruct();
+	result = generic_obj_t_new( "result" );
 	result.msg = msg;
 	result.filter = filter;
 	result.channels = channels;
-	result.errored = false;
 
 	return result;
 }
 
 /*result_t*/ result_copy( result )
 {
-	copy_result = spawnstruct();
+	copy_result = generic_obj_t_new( "result" );
 	copy_result.msg = result.msg;
 	copy_result.filter = result.filter;
 	copy_result.channels = result.channels;
 	copy_result.errored = result.errored;
+
+	return copy_result;
 }
 
 /*result_t*/ result_cmdinfo( msg )
@@ -60,20 +112,18 @@ server_safe_notify_thread( notify_name, index )
 
 /*result_obj_t*/ result_obj_new( expected_value_type, underlying_type, noprint = true )
 {
-	result_obj = spawnstruct();
-	result_obj.errored = false;
+	result_obj = generic_obj_t_new( "result_obj" );
 	result_obj.noprint = noprint;
 	result_obj.value = undefined;
 	result_obj.type = expected_value_type;
 	result_obj.underlying_type = underlying_type;
-	result_obj.msg = "";
 
 	return result_obj;
 }
 
 /*result_obj_t*/ result_obj_copy( result_obj )
 {
-	copy_result_obj = spawnstruct();
+	copy_result_obj = generic_obj_t_new( "result_obj" );
 	copy_result_obj.errored = result_obj.errored;
 	copy_result_obj.noprint = result_obj.noprint;
 	copy_result_obj.value = result_obj.value;
@@ -111,14 +161,12 @@ server_safe_notify_thread( notify_name, index )
 
 /*target_obj_t*/ target_obj_new( expected_value_type, underlying_type, max_targets = 64, error_if_not_found = true )
 {
-	target_obj = spawnstruct();
-	target_obj.errored = false;
+	target_obj = generic_obj_t_new( "target_obj" );
 	target_obj.error_if_not_found = error_if_not_found;
 	target_obj.targets = [];
 	target_obj.max_targets = max_targets;
 	target_obj.type = expected_value_type;
 	target_obj.underlying_type = underlying_type;
-	target_obj.msg = "";
 
 	return target_obj;
 }
