@@ -187,17 +187,6 @@ has_permission_for_cmd( cmd )
 			{
 				return false;
 			}
-			else if ( level.tcs_cmds[ cmd ].is_clientcmd )
-			{
-				if ( disallowed_cmd == "all_client_cmds" )
-				{
-					return false;
-				}
-			}
-			else if ( disallowed_cmd == "all_server_cmds" )
-			{
-				return false;
-			}
 			if ( cmd == disallowed_cmd )
 			{
 				return false;
@@ -215,17 +204,6 @@ has_permission_for_cmd( cmd )
 		{
 			allowed_cmd = level.tcs_perms.ranks[ self.tcs_rank ].allowed_cmds[ i ];
 			if ( allowed_cmd == "all_cmds" )
-			{
-				return true;
-			}
-			else if ( level.tcs_cmds[ cmd ].is_clientcmd )
-			{
-				if ( allowed_cmd == "all_client_cmds" )
-				{
-					return true;
-				}
-			}
-			else if ( allowed_cmd == "all_server_cmds" )
 			{
 				return true;
 			}

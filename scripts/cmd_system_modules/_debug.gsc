@@ -258,18 +258,12 @@ test_cmd_for_time( cmd, threadcount = 1, duration )
 	for ( i = 0; i < threadcount; i++ )
 	{
 		cmd_object = level.tcs_cmds[ cmd ];
-		if ( cmd_object.is_clientcmd )
+		if ( level.players.size < getDvarInt( "sv_maxclients" ) )
 		{
-			if ( level.players.size < getDvarInt( "sv_maxclients" ) )
-			{
-				break;
-			}
-			manage_unittest_bots( 1, cmd_object.cmd_name );
+			break;
 		}
-		else 
-		{
-			level thread testcmd_thread_server( cmd_object.cmd_name );
-		}
+		//manage_unittest_bots( 1, cmd_object.cmd_name );
+		level thread testcmd_thread_server( cmd_object.cmd_name );
 	}
 }
 

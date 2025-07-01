@@ -246,7 +246,7 @@ init()
 	{
 		args = [];
 		args[ 0 ] = getdvarInt( "tcs_unittest" );
-		cmd_unittest_validargs_f( target_obj, args );
+		cmd_unittest_validargs_f( args );
 	}
 }
 
@@ -259,7 +259,6 @@ end_cmds_on_end_game()
 
 tcs_on_connect()
 {
-	level endon( "end_cmds" );
 	while ( true )
 	{
 		level waittill( "connected", player );
@@ -277,6 +276,8 @@ tcs_p_obj_new()
 
 on_connect_internal()
 {
+	self endon( "disconnect" );
+
 	tcs_pl_obj = tcs_p_obj_new();
 	self.tcs_pl = tcs_pl_obj;
 	is_bot = is_true( self.pers[ "isBot" ] );

@@ -5,11 +5,10 @@
 
 cmd_buffer()
 {
-	level endon( "end_cmds" );
 	while ( true )
 	{
-		level waittill( "say", message, player, is_hidden, is_team_chat, from_rcon );
-		cmd_execute( message, player, is_hidden, is_team_chat, from_rcon );
+		level waittill( "say", message, player, is_hidden, is_team_chat );
+		player thread cmd_execute( message, player, is_hidden, is_team_chat ); // the default caller of a non threaded function is the caller of the parent thread
 	}
 }
 
@@ -53,30 +52,30 @@ pop_back( arr_obj )
 	pop( arr_obj, ( arr_obj.array.size - 1 ) );
 }
 
-/*target_parse_obj_t*/ set_parse_error( target_parse_obj, error_msg )
+/*generic_obj_t*/ set_parse_error( generic_obj, error_msg )
 {
-	target_parse_obj.errored = true;
-	target_parse_obj.msg = error_msg;
+	generic_obj.errored = true;
+	generic_obj.msg = error_msg;
 
-	return target_parse_obj;
+	return generic_obj;
 }
 
-/*target_parse_obj_t*/ set_parse_success( target_parse_obj, success_msg )
+/*generic_obj_t*/ set_parse_success( generic_obj, success_msg )
 {
-	target_parse_obj.msg = success_msg;
+	generic_obj.msg = success_msg;
 
-	return target_parse_obj;
+	return generic_obj;
 }
 
-set_parse_warning( obj, msg = undefined )
+set_parse_warning( generic_obj, msg = undefined )
 {
-	obj.warning = true;
+	generic_obj.warning = true;
 	if ( isdefined( msg ) )
 	{
-		obj.msg = msg;
+		generic_obj.msg = msg;
 	}
 	
-	return obj;
+	return generic_obj;
 }
 
 reset_parse_warning( obj )
@@ -155,14 +154,14 @@ parse_array( string, generic_obj )
 
 set_parse_random_limit( target_parse_obj, new_value )
 {
-	target_parse_obj.random_limit = int( new_value );
+	target_parse_obj.target_values[ 0 ] = new_value;
 
-	if ( target_parse_obj.random_limit <= 0 )
+	if ( int( target_parse_obj.target_values[ 0 ] ) <= 0 )
 	{
-		return set_parse_error( target_parse_obj, "Random target pool limit must be greater than 0" );
+		return set_target_parse_success( target_parse_obj, "Random target pool limit must be greater than 0" );
 	}
 
-	return set_parse_success( target_parse_obj, "random_limit=" + new_value );
+	return set_target_parse_success( target_parse_obj, "random_limit=" + new_value );
 }
 
 /*func_call_parse_obj_t*/ set_func_call_parse_error( func_call_parse_obj, error_msg )
@@ -209,7 +208,7 @@ parse_function( function_name, call_value )
 	if ( call_value[ str_end ] != ")" )
 	{
 		// error
-		return set_parse_error( target_parse_obj, "Last character of function wasn't terminated with ')'" );
+		return set_parse_error( func_call_parse_obj, "Last character of function wasn't terminated with ')'" );
 	}
 
 	in_comma = false;
@@ -219,9 +218,9 @@ parse_function( function_name, call_value )
 		{
 			case "$":
 				add_func_arg_directive( func_call_parse_obj, "$" );
-				if ( call_value[ i + 1 ] != "," );
+				if ( call_value[ i + 1 ] != "," )
 				{
-					return set_parse_error( target_parse_obj, "$ is a single token arg directive" );
+					return set_parse_error( func_call_parse_obj, "$ is a single token arg directive" );
 				}
 
 				in_comma = false;
@@ -234,9 +233,9 @@ parse_function( function_name, call_value )
 		else if ( call_value[ i ] == "!" ) // undefined
 		{
 			add_func_arg_directive( func_call_parse_obj, "!" );
-			if ( call_value[ i + 1 ] != "," );
+			if ( call_value[ i + 1 ] != "," )
 			{
-				return set_parse_error( target_parse_obj, "! is a single token arg directive" );
+				return set_parse_error( func_call_parse_obj, "! is a single token arg directive" );
 			}
 
 			in_comma = false;
@@ -244,9 +243,9 @@ parse_function( function_name, call_value )
 		else if ( call_value[ i ] == "&" ) // the executor, aka self
 		{
 			add_func_arg_directive( func_call_parse_obj, "&" );
-			if ( call_value[ i + 1 ] != "," );
+			if ( call_value[ i + 1 ] != "," )
 			{
-				return set_parse_error( target_parse_obj, "& is a single token arg directive" );
+				return set_parse_error( func_call_parse_obj, "& is a single token arg directive" );
 			}
 
 			in_comma = false;
@@ -254,9 +253,9 @@ parse_function( function_name, call_value )
 		else if ( call_value[ i ] == "#" ) // the default target, configureable by commands
 		{
 			add_func_arg_directive( func_call_parse_obj, "#" );
-			if ( call_value[ i + 1 ] != "," );
+			if ( call_value[ i + 1 ] != "," )
 			{
-				return set_parse_error( target_parse_obj, "# is a single token arg directive" );
+				return set_parse_error( func_call_parse_obj, "# is a single token arg directive" );
 			}
 
 			in_comma = false;
@@ -265,7 +264,7 @@ parse_function( function_name, call_value )
 		{
 			if ( call_value[ i + 1 ] == "," )
 			{
-				return set_parse_error( target_parse_obj, "Arg directive cannot be empty" );
+				return set_parse_error( func_call_parse_obj, "Arg directive cannot be empty" );
 			}
 
 			if ( in_comma )
@@ -289,11 +288,11 @@ parse_function( function_name, call_value )
 		else
 		{
 			// error
-			return set_parse_error( target_parse_obj, "Cannot use characters other than alnum, '_', ',', '$', '!' in an function call" );
+			return set_parse_error( func_call_parse_obj, "Cannot use characters other than alnum, '_', ',', '$', '!' in an function call" );
 		}
 	}
 
-	return set_parse_array( target_parse_obj, tokens );
+	return set_parse_array( func_call_parse_obj, tokens );
 }
 
 parse_target_random( target_string, target_parse_obj )
@@ -376,7 +375,7 @@ try_parse_name( string, generic_obj, str_start = 0, str_end = undefined )
 	{
 		name = getsubstr( string, str_start, str_end );
 		add_parse_array( generic_obj, name );
-		return set_parse_success( generic_obj )
+		return set_parse_success( generic_obj );
 	}
 	else
 	{
@@ -384,55 +383,68 @@ try_parse_name( string, generic_obj, str_start = 0, str_end = undefined )
 	}
 }
 
-// target_value is =target_value}
-parse_target_value( target_string, target_parse_obj = undefined, target_type = undefined )
+set_target_parse_success( target_parse_obj, success_msg )
 {
-	target_parse_obj = _DEFAULT( target_parse_obj, target_parse_obj_t_new() );
-	target_type = _DEFAULT( target_type, "self" );
-	//target_func = ::cast_target_to_self;
-	// first character logic
+	check_script_error( target_parse_obj, "target_parse" );
+
+	return set_parse_success( target_parse_obj, success_msg );
+}
+
+set_target_parse_error( target_parse_obj, error_msg )
+{
+	check_script_error( target_parse_obj, "target_parse" );
+
+	return set_parse_error( target_parse_obj, error_msg );
+}
+
+// target_value is =target_value}
+parse_target_value( directive_parse, target_string )
+{
+	target_parse_obj = target_parse_obj_t_new( "self" );
+	directive_parse.directive_value = target_parse_obj;
 	first = target_string[ 0 ];
-	if ( first == "*" )
+
+	switch ( first )
 	{
-		target_type = "all";
-		if ( target_string.size > 1 )
-		{
-			return set_parse_error( target_parse_obj, "The 'all' valid targets syntax '*' cannot be used with any other syntax" );
-		}
+		case "*":
+			target_parse_obj.target_type = "all";
+			if ( target_string.size > 1 )
+			{
+				return set_parse_error( target_parse_obj, "The 'all' valid targets syntax '*' cannot be used with any other syntax" );
+			}
+
+			return set_target_parse_success( target_parse_obj, "target=all" );
+		case "!":
+			target_parse_obj.target_type = "undefined";
+			if ( target_string.size > 1 )
+			{
+				return set_target_parse_error( target_parse_obj, "The 'undefined' target syntax '!' cannot be used with any other syntax" );
+			}
+
+			return set_target_parse_success( target_parse_obj, "target=none" );
+		case "$":
+			return parse_target_random( target_string, target_parse_obj );
+		case "[":
+			return parse_array( target_string, target_parse_obj );
+		case "&":
+			target_parse_obj.target_type = "self"; // explicit self
+			if ( target_string.size > 1 )
+			{
+				return set_parse_error( target_parse_obj, "The 'self' target syntax '&' cannot be used with any other syntax, except as an argument or a member of an array" );
+			}
+
+			return set_target_parse_success( target_parse_obj, "target=self" );
+		case "#":
+			target_parse_obj.target_type = "default"; // the default, and configureable target explicitly specified
+			if ( target_string.size > 1 )
+			{
+				return set_parse_error( target_parse_obj, "The 'default' target syntax '#' cannot be used with any other syntax, except as an argument or a member of an array" );
+			}
+
+			return set_target_parse_success( target_parse_obj, "target=default" );
 	}
-	else if ( first == "!" )
-	{
-		target_type = "undefined";
-		if ( target_string.size > 1 )
-		{
-			return set_parse_error( target_parse_obj, "The 'undefined' target syntax '!' cannot be used with any other syntax" );
-		}
-	}
-	else if ( first == "$" )
-	{
-		return parse_target_random( target_string, target_parse_obj );
-	}
-	else if ( first == "[" )
-	{
-		return parse_array( target_string, target_parse_obj );
-	}
-	else if ( first == "&" )
-	{
-		target_type = "self"; // explicit self
-		if ( target_string.size > 1 )
-		{
-			return set_parse_error( target_parse_obj, "The 'self' target syntax '&' cannot be used with any other syntax, except as an argument or a member of an array" );
-		}
-	}
-	else if ( first == "#" )
-	{
-		target_type = "default"; // the default, and configureable target explicitly specified
-		if ( target_string.size > 1 )
-		{
-			return set_parse_error( target_parse_obj, "The 'default' target syntax '#' cannot be used with any other syntax, except as an argument or a member of an array" );
-		}
-	}
-	else if ( is_alpha_numeric( first ) )
+
+	if ( is_alpha_numeric( first ) )
 	{
 		// ambiguous, could be function start or a name
 		function_call_obj = try_parse_function( target_string, target_parse_obj );
@@ -446,33 +458,31 @@ parse_target_value( target_string, target_parse_obj = undefined, target_type = u
 		// not a function, no '(' token
 		// names can contain a lot of weird characters, but you are better off using the guid/clientnum syntax anyway
 		name_token_obj = try_parse_name( target_string, target_parse_obj );
+		if ( !name_token_obj.warning && !name_token_obj.errored )
+		{
+			return name_token_obj;
+		}
 	}
 
-	target_parse_obj.target_type = target_type;
-
-	tokens = [];
-	str_pos = 0;
-	switch ( target_type )
-	{
-		case "random":
-			return parse_target_value( getsubstr( target_value, 1 ), target_parse_obj, target_type );
-	}
-
-	return target_parse_obj;
+	return set_parse_error( target_parse_obj, "Unsupported target directive value" );
 }
 
 parse_directive( directive_parse, key, value )
 {
 	switch ( key )
 	{
+		case "c":
 		case "call":
 			//parse_call_value( directive_parse, value );
 			break;
+		case "t":
 		case "target":
+			directive_parse.directive_type = "target";
 			return parse_target_value( directive_parse, value );
-		case "executor":
-			//parse_executor_value( directive_parse, value );
-			break;
+		case "e":
+		case "executor": // allows you to specify the 'executor' or who
+			directive_parse.directive_type = "executor";
+			return parse_target_value( directive_parse, value );
 		case "script":
 			//parse_script_value( directive_parse, value );
 			break;
@@ -483,17 +493,21 @@ parse_directive( directive_parse, key, value )
 			break;
 		case "types":
 			break;
-		case "name":
+		case "name": // a component of a function; functions contain: a name, a script, and types
 			break;
-		case "unhook":
+		case "unhook": // remove a hook from a function
 			break;
-		case "print_args":
+		case "print_args": // the redirected function will also print its arguments based on the specified types
 			break;
-		case "nullsub":
+		case "nullsub": // redirect function to a do nothing or nullsub function; boolean
 			break;
-		case "persist";
+		case "persist": // persist the hook by committing it to the filesystem; boolean
+			break;
+		case "cmd_arg": // this allows manually specifying more data about the arguments if needed; syntax is arg1 or arg followed by the argument ordinal
 			break;
 	}
+
+	return set_cmd_parse_error( directive_parse, "Unsupported directive key '" + key + "'" );
 }
 
 parse_directives( cmd_parse, token_str )
@@ -542,17 +556,15 @@ parse_directives( cmd_parse, token_str )
 
 	// got past the preparser so we already know it's a little valid
 
-	in_directive = true; // directives cannot be nested
+	key_start = 2;
 	for ( ;; )
 	{
 		// parse key
-		key_start = 2;
 		key_end = key_start;
 		while ( key_end < token_str.size )
 		{
 			if ( token_str[ key_end ] == "=" )
 			{
-				key_end++;
 				break;
 			}
 			if ( !is_alpha_numeric( token_str[ key_end ] ) )
@@ -571,9 +583,23 @@ parse_directives( cmd_parse, token_str )
 		key = getsubstr( token_str, key_start, key_end );
 
 		// parse value
-		value_start = key_end;
+		value_start = key_end + 1; // start after the '=' token
 		value_end = value_start;
-		while ( value_end < token_str.size )
+		if ( token_str[ value_start ] == "[" ) // start of array
+		{
+			value_end++;
+			while ( token_str[ value_end ] != "]" )
+			{
+				if ( value_end >= token_str.size )
+				{
+					return set_cmd_parse_error( cmd_parse, "Missing terminating array ']' token" );
+				}
+
+				value_end++; 
+			}
+		}
+
+		for ( ;; )
 		{
 			value_end++;
 
@@ -581,13 +607,28 @@ parse_directives( cmd_parse, token_str )
 			{
 				break; // we don't need to send the closing brace
 			}
+
+			if ( token_str[ value_end ] == "," )
+			{
+				break; // we don't need to send the separating comma
+			}
+
+			if ( value_end >= token_str.size )
+			{
+				return set_cmd_parse_error( cmd_parse, "Missing key value pair terminator '}' or separator ','" );
+			}
 		}
 
 		value = getsubstr( token_str, value_start, value_end );
 
 		new_directive_parse = directive_parse_obj_t_new();
 
+		new_directive_parse_child = parse_directive( new_directive_parse, key, value );
 
+		if ( new_directive_parse_child.errored )
+		{
+			return set_cmd_parse_error( cmd_parse, new_directive_parse_child.msg );
+		}
 	}
 		// so everything is a key value pair, or key=<val>, where key is a primitive string followed by exactly "=" and then a formatted value
 		// values will only be alphanumeric, "_", "[,]", "(,)"
@@ -630,7 +671,7 @@ parse_directives( cmd_parse, token_str )
 		// [] is evaluated as the arguments for a directive
 }
 
-parse_arg( arg_parse_obj, token_str )
+parse_arg( arg_parse_obj, token_str, cmd_parse )
 {
 	arg_parse_obj.arg = token_str;
 }
@@ -745,7 +786,68 @@ parse_arg( arg_parse_obj, token_str )
 	return cmd_parse_obj;
 }
 
+// by convention the following are true:
+// the command to be executed is the first alnum + '_' string encountered; therefore it can be before or after any '@' directives
+// directives '@' can appear in any order in the string
+// spaces can now be used within directives, functions and arrays; otherwise it would not be possible to 
+custom_split( str )
+{
+	tokens = [];
+
+	in_array = 0;
+	in_directive = 0;
+	in_func_call = 0;
+
+	split_start = 0;
+	split_end = split_start;
+	for ( i = 0; i < str.size; i++ )
+	{
+		if ( str[ i ] == "[" )
+		{
+			in_array++;
+		}
+		else if ( str[ i ] == "{" )
+		{
+			in_directive++;
+		}
+		else if ( str[ i ] == "(" )
+		{
+			in_func_call++;
+		}
+		else if ( str[ i ] == "]" )
+		{
+			in_array--;
+		}
+		else if ( str[ i ] == "}" )
+		{
+			in_directive--;
+		}
+		else if ( str[ i ] == ")" )
+		{
+			in_func_call--;
+		}
+		else if ( str[ i ] == " " )
+		{
+			if ( in_array == 0 && in_directive == 0 && in_func_call == 0 )
+			{
+				tokens[ tokens.size ] = getsubstr( str, split_start, split_end );
+				split_start = split_end;
+			}
+		}
+
+		split_end++;
+	}
+
+	if ( tokens.size == 0 )
+	{
+		tokens[ 0 ] = str;
+	}
+
+	return tokens;
+}
+
 // Last command token to execute the last command implicitly
+// this function is threaded, but threading is not allowed inside of it
 /*cmd_parse_obj_array_t*/ parse_cmd_message( message )
 {
 	cmd_parse_array = cmd_parse_obj_array_t_new();
@@ -769,11 +871,11 @@ parse_arg( arg_parse_obj, token_str )
 	multiple_cmds_keys = strtok( stripped_message, "^" );
 	for ( i = 0; i < multiple_cmds_keys.size; i++ )
 	{
-		cmd_string = strtok( multiple_cmds_keys[ i ], " " );
+		cmd_string = custom_split( multiple_cmds_keys[ i ] );
 		cmd_find_result = scripts\cmd_system_modules\_cmd_arg::get_cmd_from_alias( cmd_string[ 0 ] );
 		if ( cmd_find_result.errored )
 		{
-			return set_cmd_parse_error( cmd_parse, "Command: '" + cmd_find_result.value + " doesn't exist" );
+			return set_cmd_parse_error( cmd_parse_array, "Command: '" + cmd_find_result.value + " doesn't exist" );
 		}
 
 		new_cmd_parse = cmd_parse_obj_t_new();
@@ -789,17 +891,25 @@ parse_arg( arg_parse_obj, token_str )
 				if ( cmd_string[ j ].size < 3 )
 				{
 					//fail, must be at least 3 characters to be at least somewhat valid "@{}"
-					return set_cmd_parse_error( cmd_parse, "Directive must be at least '@{}'" );
+					return set_cmd_parse_error( cmd_parse_array, "Directive must be at least '@{}'" );
 				}
-				
 
-				parse_directives( new_cmd_parse, cmd_string[ j ] );
+				parse_check_obj = parse_directives( new_cmd_parse, cmd_string[ j ] );
+				if ( parse_check_obj.errored )
+				{
+					return set_cmd_parse_error( cmd_parse_array, parse_check_obj.msg );
+				}
 			}
 			else
 			{
 				new_arg_parse = arg_parse_obj_t_new();
 
-				parse_arg( new_arg_parse, cmd_string[ j ], new_cmd_parse );
+				parse_check_obj = parse_arg( new_arg_parse, cmd_string[ j ], new_cmd_parse );
+				if ( parse_check_obj.errored )
+				{
+					return set_cmd_parse_error( cmd_parse_array, parse_check_obj.msg );
+				}
+
 				new_cmd_parse.args[ new_cmd_parse.args.size ] = new_arg_parse;
 			}
 
@@ -810,59 +920,222 @@ parse_arg( arg_parse_obj, token_str )
 		cmd_parse_array.cmds[ cmd_find_result.value ] = new_cmd_parse;
 	}
 
-	return cmd_parse_array;
+	return set_cmd_parse_success( cmd_parse_array, "" );
+}
+
+script_breakpoint( display_callstack = true, should_print = true )
+{
+	if ( !isdefined( level.script_breakpoints ) )
+	{
+		level.script_breakpoints = [];
+	}
+
+	if ( display_callstack )
+	{
+		assert( false );
+	}
+
+	if ( should_print )
+	{
+		self print_obj();
+	}
+
+	while ( isdefined( level.script_breakpoints[ self.name ] ) && is_true( level.script_breakpoints[ self.name ].enabled ) )
+	{
+		evt = self waittill_any_return( "debug_continue", "debug_abort" );
+
+		if ( evt == "debug_continue" )
+		{
+			break;
+		}
+		else if ( evt == "debug_abort" )
+		{
+			self notify( self.name + "_" + self.id + "_abort" );
+		}
+	}
+}
+
+/*target_parse_obj_t*/ target_parse_obj_t_new( target_type )
+{
+	target_parse_obj = generic_obj_t_new( "target_parse" );
+	target_parse_obj.target_type = target_type;
+	target_parse_obj.target_values = []; // if type is array, index > 0 is used, otherwise only index 0 is
+	return target_parse_obj;
+}
+
+print_obj()
+{
+	if ( !isdefined( self ) || !isdefined( self.obj_type ) )
+	{
+		str = 5;
+		str *= undefined;
+		return;
+	}
+	// print relevant data
+
+	print_entity = self.owner;
+	// common fields
+	print_entity com_printinfo( "Printing " + self.obj_type + " fields: " );
+	print_entity com_printinfo( self.obj_type );
+	print_entity com_printinfo( self.warning );
+	print_entity com_printinfo( self.errored );
+	print_entity com_printinfo( self.msg );
+
+	if ( self.obj_type == "cmd_execute" )
+	{
+		print_entity com_printinfo( self.owner.name );
+		print_entity com_printinfo( self.id );
+		if ( isdefined( self.objects ) )
+		{
+			foreach ( key, object in self.objects )
+			{
+				print_entity com_printinfo( "Printing child fields: " + key );
+				object print_obj();
+			}
+		}
+	}
+	else if ( self.obj_type == "cmd_parse_array" )
+	{
+		foreach ( key, object in self.cmds )
+		{
+			print_entity com_printinfo( "Printing cmd fields: " + key );
+			object print_obj();
+		}
+	}
+	else if ( self.obj_type == "cmd_parse" )
+	{
+		print_entity com_printinfo( self.cmd_name );
+		print_entity com_printinfo( self.start_pos );
+		print_entity com_printinfo( self.end_pos );
+		foreach ( key, object in self.args )
+		{
+			print_entity com_printinfo( "Printing arg fields: " + key );
+			object print_obj();
+		}
+	}
+	else if ( self.obj_type == "arg_parse" )
+	{
+		print_entity com_printinfo( self.arg );
+	}
+	else if ( self.obj_type == "directive_parse" )
+	{
+		print_entity com_printinfo( self.directive_type );
+		self.directive_value print_obj();
+	}
+	else if ( self.obj_type == "target_parse" )
+	{
+		print_entity com_printinfo( self.target_type );
+		foreach ( key, value in self.target_values )
+		{
+			print_entity com_printinfo( value );
+		}
+	}
+	else if ( self.obj_type == "player" )
+	{
+		print_entity com_printinfo( self.name );
+		print_entity com_printinfo( self.clientnum );
+		print_entity com_printinfo( self.guid );
+		print_entity com_printinfo( self.origin );
+		print_entity com_printinfo( self.angles );
+	}
+}
+
+set_execute_error()
+{
+
+}
+
+set_execute_success()
+{
+
+}
+
+check_command_syntax_used( local_id, message, is_hidden )
+{
+	if ( !level.tcs_glob.bhidden_cmds && is_hidden )
+	{
+		self com_printerror( "Hidden cmds are not allowed" );
+		self notify( "cmd_execute_" + local_id );
+	}
+	else if ( !is_hidden && !is_cmd_token( message[ 0 ] ) )
+	{
+		self notify( "cmd_execute_" + local_id );
+	}
+}
+
+check_command_cooldown()
+{
+	channel = self com_get_cmd_feedback_channel();
+	if ( isDefined( self.cmd_cooldown ) && self.cmd_cooldown > 0 )
+	{
+		self com_printerror( "You cannot use another cmd for " + self.cmd_cooldown + " seconds" );
+		self notify( "cmd_execute_" + local_id );
+	}
+}
+
+check_multi_commands( local_id, cmd_parse_obj )
+{
+	if ( cmd_parse_obj.cmds.size > 1 && !self scripts\cmd_system_modules\_perms::can_use_multi_cmds() )
+	{
+		self com_printwarning( "You do not have permission to use multi cmds" );
+		self notify( "cmd_execute_" + local_id );
+	}
+}
+
+handle_feedback()
+{
+	while ( isdefined( self ) && isdefined( self.initiator ) && !self.errored )
+	{
+		self waittill_any_return( "" );
+	}
 }
 
 cmd_execute( message, initiator, is_hidden, is_team_chat, from_rcon )
 {
-	if ( isdefined( initiator ) && !is_true( from_rcon ) )
+	if ( !isdefined( intiator.cmd_execute_id ) )
 	{
-		if ( !level.tcs_glob.bhidden_cmds && is_hidden )
-		{
-			initiator com_printerror( "Hidden cmds are not allowed" );
-			return;
-		}
-		else if ( !is_hidden && !is_cmd_token( message[ 0 ] ) )
-		{
-			return;
-		}
+		initiator.cmd_execute_id = 0;
 	}
-	else
+	if ( isplayer( initiator ) )
 	{
-		if ( isdedicated() )
-		{
-			initiator = level.server;
-		}
-		else 
-		{
-			initiator = level.host;
-		}
+		initiator endon( "disconnect" );
 	}
 
-	channel = initiator com_get_cmd_feedback_channel();
-	if ( !is_true( from_rcon ) && isDefined( initiator.cmd_cooldown ) && initiator.cmd_cooldown > 0 )
+	cmd_execute_thread = generic_obj_t_new( "cmd_execute" );
+	cmd_execute_thread.id = initiator.cmd_execute_id;
+	cmd_execute_thread.owner = initiator;
+	cmd_execute_thread.name = "cmd_execute";
+	cmd_execute_thread thread handle_feedback();
+
+	local_id = initiator.cmd_execute_id;
+	cmd_execute_thread endon( "cmd_execute_" + local_id + "_abort" );
+	initiator.cmd_execute_id++;
+
+	from_rcon = message[ 0 ] == "~" && ( initiator == level.server || initiator == level.host );
+	has_all_perms = from_rcon || ( initiator == level.server || initiator == level.host );
+	message = getsubstr( message, 1 ); // remove '~' character which indicates rcon
+
+	if ( !has_all_perms )
 	{
-		initiator com_printerror( "You cannot use another cmd for " + initiator.cmd_cooldown + " seconds" );
-		return;
+		cmd_execute_thread check_command_syntax_used( local_id, message, is_hidden );
+		cmd_execute_thread check_command_cooldown( local_id );
 	}
 
 	message = tolower( message );
 	cmd_parse_obj = parse_cmd_message( message );
+	add_obj_ref( cmd_execute_thread, cmd_parse_obj );
 	if ( cmd_parse_obj.errored )
 	{
 		initiator com_printerror( cmd_parse_obj.msg );
 		return;
 	}
 
-	if ( multi_cmds.size > 1 && !initiator scripts\cmd_system_modules\_perms::can_use_multi_cmds() && !is_true( from_rcon ) )
+	if ( !has_all_perms )
 	{
-		temp_array_index = multi_cmds[ 0 ];
-		multi_cmds = [];
-		multi_cmds[ 0 ] = temp_array_index;
-		initiator com_printwarning( "You do not have permission to use multi cmds; only executing the first cmd" );
+		cmd_execute_thread check_multi_commands( )
 	}
 
-	for ( cmd_index = 0; cmd_index < multi_cmds.size; cmd_index++ )
+	for ( cmd_index = 0; cmd_index < cmd_parse_obj.size; cmd_index++ )
 	{
 		cmd_obj = multi_cmds[ cmd_index ][ "cmd_obj" ]; // The command definition
 		arg_obj = multi_cmds[ cmd_index ][ "args_obj" ]; // Plain arguments
@@ -902,7 +1175,10 @@ cmd_execute( message, initiator, is_hidden, is_team_chat, from_rcon )
 		}
 	}
 
-	initiator thread cmd_cooldown();
+	if ( !has_all_perms )
+	{
+		initiator thread cmd_cooldown();
+	}
 }
 
 cmd_execute_internal( initiator, cmd_obj, arg_obj, target_obj )
@@ -954,7 +1230,7 @@ cmd_execute_internal( initiator, cmd_obj, arg_obj, target_obj )
 		}
 	}
 
-	result = self [[ cmd_obj.func ]]( casted_args );
+	result = self [[ cmd_obj.func ]]( arg_obj );
 
 	self handle_result_feedback( initiator, result, cmd_obj.cmd_name, arg_obj );
 }
@@ -1027,10 +1303,7 @@ handle_result_feedback( initiator, result, cmd_name, arg_obj )
 
 scr_dvar_cmd_watcher()
 {
-	level endon( "end_cmds" );
-	wait 1;
 	setDvar( "tcscmd", "" );
-	setDvar( "sv_tcscmd", "" );
 	while ( true )
 	{
 		parse_cmd_dvar();
@@ -1043,29 +1316,17 @@ parse_cmd_dvar()
 	dvar_value = getdvar( "tcscmd" );
 	if ( dvar_value != "" )
 	{
-		tokens = strtok( dvar_value, " " );
-		new_tokens = [];
-		for ( i = 1; i < tokens.size; i++ )
-		{
-			new_tokens[ new_tokens.size ] = tokens[ i ];
-		}
-
-		repackaged_args = repackage_args( new_tokens );
-
-		player = result_obj_new( "player", "entity" );
-		if ( tokens.size > 0 )
-		{
-			player = scripts\cmd_system_modules\_cmd_arg::cast_str_to_player( tokens[ 0 ] );
-		}
-		level notify( "say", repackaged_args, player.value, false, true );
 		setDvar( "tcscmd", "" );
+		dvar_value = "~" + dvar_value; // special token to indicate that it's from the dvar
+		waittillframeend; // prevents notifies from being dropped if they happen in the same frame
+		if ( isdedicated() )
+		{
+			// there is no local client, so the server will always need to specify an executor/target, unless they specify the default_target and default_executor
+			level notify( "say", dvar_value, level.server, true, false );
+		}
+		else
+		{
+			level notify( "say", dvar_value, level.host, true, false );
+		}
 	}
-
-	dvar_value = getdvar( "sv_tcscmd" );
-	if ( dvar_value != "" )
-	{
-		level notify( "say", dvar_value, undefined, false, true );
-		setDvar( "sv_tcscmd", "" );
-	}
-	dvar_value = undefined;
 }

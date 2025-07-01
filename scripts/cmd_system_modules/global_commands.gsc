@@ -116,10 +116,6 @@ cmd_execonallplayers_f( target_obj, args )
 	}
 
 	cmd_object = cmd_find_result.value;
-	if ( !cmd_object.is_clientcmd )
-	{
-		return result_cmderror( "You cannot call a server cmd with execonallplayers" );
-	}
 	var_args = [];
 	for ( i = 1; i < args.size; i++ )
 	{
@@ -153,10 +149,6 @@ cmd_execonteam_f( target_obj, args )
 	}
 
 	cmd_object = cmd_find_result.value;
-	if ( !cmd_object.is_clientcmd )
-	{
-		return result_cmderror( "You cannot call a server cmd with execonteam" );
-	}
 
 	var_args = [];
 	for ( i = 2; i < args.size; i++ )

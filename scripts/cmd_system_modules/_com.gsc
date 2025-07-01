@@ -204,7 +204,6 @@ com_printcmd( cmd_object )
 {
 	channels = self com_get_cmd_feedback_channel();
 	level com_printf( channels, "notitle", "cmd_name: " + cmd_object.cmd_name, self );
-	level com_printf( channels, "notitle", "is_clientcmd: " + cmd_object.is_clientcmd, self );
 	level com_printf( channels, "notitle", "usage: " + cmd_object.usage, self );
 	level com_printf( channels, "notitle", "func: " + getfunctionname( cmd_object.func ), self );
 	level com_printf( channels, "notitle", "aliases: " + repackage_args( cmd_object.aliases ), self );

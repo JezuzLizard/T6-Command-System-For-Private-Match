@@ -30,7 +30,34 @@ server_safe_notify_thread( notify_name, index )
 	generic_obj.errored = false;
 	generic_obj.msg = "";
 	generic_obj.obj_type = obj_type;
+	generic_obj.objects = []; // kvp array of obj_type to easily add references to other obj types for debugging
 	return generic_obj;
+}
+
+/*void*/ add_obj_ref( parent_obj, child_obj )
+{
+	if ( isdefined( parent_obj.objects[ child_obj.obj_type ] ) || isdefined( child_obj.objects[ parent_obj.obj_type ] ) )
+	{
+		// force a script error which prints a callstack, regardless of dev script
+		str = 5;
+		str *= undefined;
+		return;
+	}
+
+	parent_obj.objects[ child_obj.obj_type ] = child_obj;
+}
+
+/*void*/ remove_obj_ref( parent_obj, obj_type )
+{
+	if ( !isdefined( parent_obj.objects[ child_obj.obj_type ] ) )
+	{
+		// force a script error which prints a callstack, regardless of dev script
+		str = 5;
+		str *= undefined;
+		return;
+	}
+
+	parent_obj.objects[ obj_type ] = undefined;
 }
 
 /*generic_obj*/ check_script_error( obj, expected_type, force_error = false )
@@ -41,9 +68,10 @@ server_safe_notify_thread( notify_name, index )
 		obj.msg = "Attempted to set cmd parse error for an undefined object";
 		obj.errored = true;
 	}
+
 	if ( obj.type != expected_type )
 	{
-		obj.msg = "Attempted to set obj type of '" + expected_type + "' error for " + obj.type;
+		obj.msg = "Attempted to set obj type of '" + expected_type + "' for '" + obj.type + "'";
 		obj.errored = true;
 	}
 
@@ -56,12 +84,6 @@ server_safe_notify_thread( notify_name, index )
 		for ( ;; )
 		{
 			should_continue = getdvarint( "cmd_debug_continue" );
-			should_retry = getdvarint( "cmd_debug_retry" );
-			if ( should_retry )
-			{
-				setdvar( "cmd_debug_retry", 0 );
-				level notify( "cmd_debug_retry" );
-			}
 
 			if ( should_continue )
 			{
@@ -245,7 +267,6 @@ cmd_add( cmd_name, cmdfunc, cmd_usage )
 
 	level.tcs_cmds[ cmd_name ] = spawnstruct();
 	level.tcs_cmds[ cmd_name ].cmd_name = cmd_name;
-	level.tcs_cmds[ cmd_name ].is_clientcmd = is_clientcmd;
 	level.tcs_cmds[ cmd_name ].usage = cmd_usage;
 	level.tcs_cmds[ cmd_name ].func = cmdfunc;
 	level.tcs_cmds[ cmd_name ].aliases = aliases;
