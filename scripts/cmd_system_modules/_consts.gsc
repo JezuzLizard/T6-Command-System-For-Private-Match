@@ -9,6 +9,336 @@ init_consts()
 	build_dynamic_spawnable_classname_array();
 	build_dynamic_spawnable_function_array();
 	build_bsp_spawnable_classname_array();
+
+	level._number_strings = [];
+	level._number_strings[ "float" ] = "-.0123456789";
+	level._number_strings[ "positive_float" ] = ".0123456789";
+	level._number_strings[ "int" ] = "-0123456789";
+	level._number_strings[ "positive_int" ] = "0123456789";
+	level._number_strings[ "natural_int" ] = "123456789";
+
+	level._boolean_strings = [];
+	level._boolean_strings[ "true" ] = [];
+	level._boolean_strings[ "true" ][0] = "1";
+	level._boolean_strings[ "true" ][1] = "true";
+	level._boolean_strings[ "false" ] = [];
+	level._boolean_strings[ "false" ][0] = "0";
+	level._boolean_strings[ "false" ][1] = "false";
+
+	/*
+		ET_GENERAL = 0x0,
+		ET_PLAYER = 0x1,
+		ET_PLAYER_CORPSE = 0x2,
+		ET_ITEM = 0x3,
+		ET_MISSILE = 0x4,
+		ET_INVISIBLE = 0x5,
+		ET_SCRIPTMOVER = 0x6,
+		ET_SOUND_BLEND = 0x7,
+		ET_FX = 0x8,
+		ET_LOOP_FX = 0x9,
+		ET_PRIMARY_LIGHT = 0xA,
+		ET_TURRET = 0xB,
+		ET_HELICOPTER = 0xC,
+		ET_PLANE = 0xD,
+		ET_VEHICLE = 0xE,
+		ET_VEHICLE_CORPSE = 0xF,
+		ET_ACTOR = 0x10,
+		ET_ACTOR_SPAWNER = 0x11,
+		ET_ACTOR_CORPSE = 0x12,
+		ET_STREAMER_HINT = 0x13,
+		ET_ZBARRIER = 0x14,
+		ET_EVENTS = 0x15,
+	*/
+	level._entity_types = [];
+	level._entity_types[ "undefined" ] = -2;
+	level._entity_types[ "world" ] = -1;
+	level._entity_types[ "general" ] = 0;
+	level._entity_types[ "player" ] = 1;
+	level._entity_types[ "player_corpse" ] = 2;
+	level._entity_types[ "item" ] = 3;
+	level._entity_types[ "missile" ] = 4;
+	level._entity_types[ "invisible" ] = 5;
+	level._entity_types[ "scriptmover" ] = 6;
+	level._entity_types[ "sound_blend" ] = 7;
+	level._entity_types[ "fx" ] = 8;
+	level._entity_types[ "loop_fx" ] = 9;
+	level._entity_types[ "primary_light" ] = 10;
+	level._entity_types[ "turret" ] = 11;
+	level._entity_types[ "helicopter" ] = 12;
+	level._entity_types[ "plane" ] = 13;
+	level._entity_types[ "vehicle" ] = 14;
+	level._entity_types[ "vehicle_corpse" ] = 15;
+	level._entity_types[ "actor" ] = 16;
+	level._entity_types[ "actor_spawner" ] = 17;
+	level._entity_types[ "actor_corpse" ] = 18;
+	level._entity_types[ "streamer_hint" ] = 19;
+	level._entity_types[ "zbarrier" ] = 20;
+	level._entity_types[ "temp_entity" ] = 21;
+
+	register_entity_type( "undefined", ::get_null_entity_array );
+	register_entity_type( "world", ::get_world_entity_array );
+	register_entity_type( "general", ::get_ent_array );
+	register_entity_type( "player", ::get_player_array );
+	register_entity_type( "player_corpse", ::get_player_corpse_array ); // getcorpsearray only returns player_corpse on MP
+	register_entity_type( "item", ::get_item_array );
+	register_entity_type( "missile", ::get_missile_array );
+	register_entity_type( "invisible", ::get_invisible_array );
+	register_entity_type( "scriptmover", ::get_scriptmover_array );
+	register_entity_type( "sound_blend", ::get_sound_blend_array );
+	register_entity_type( "fx", ::get_fx_array );
+	register_entity_type( "loop_fx", ::get_loop_fx_array );
+	register_entity_type( "primary_light", ::get_primary_light_array );
+	register_entity_type( "turret", ::get_turret_array );
+	register_entity_type( "helicopter", ::get_helicopter_array );
+	register_entity_type( "plane", ::get_plane_array );
+	register_entity_type( "vehicle", ::get_vehicle_array );
+	register_entity_type( "vehicle_corpse", ::get_vehicle_corpse_array );
+	register_entity_type( "actor", ::get_actor_array );
+	register_entity_type( "actor_spawner", ::get_actor_spawner_array );
+	register_entity_type( "actor_corpse", ::get_actor_corpse_array );
+	register_entity_type( "streamer_hint", ::get_streamer_hint_array );
+	register_entity_type( "zbarrier", ::get_zbarrier_array );
+	register_entity_type( "temp_entity", ::get_temp_entity_array );
+
+	register_entnum_range( "player", 0, 17, 18 );
+	register_entnum_range( "player_corpse", 18, 21, 4 );
+	register_entnum_range( "actor", 22, 53, 32 );
+	register_entnum_range( "actor_corpse", 54, 61, 8 );
+	register_entnum_range( "vehicle", 62, 77, 16 );
+	register_entnum_range( "turret", 78, 109, 32 );
+	register_entnum_range( "any", 110, 1021, 910 );
+	register_entnum_range( "world", 1022, 1022, 1 );
+	register_entnum_range( "undefined", 1023, 1023, 1 );
+}
+
+get_entities_by_etype( etype, start = 0, end = 1024 )
+{
+	ents = [];
+
+	if ( !isdefined( etype ) || !isdefined( level._entity_types[ etype ] ) )
+	{
+		return ents;
+	}
+	for ( i = start; i < end; i++ )
+	{
+		ent = getentbynum( i );
+
+		if ( !isdefined( ent ) )
+		{
+			continue;
+		}
+
+		if ( ent getentitytype() != level._entity_types[ etype ] )
+		{
+			continue;
+		}
+
+		ents[ ents.size ] = ent;
+	}
+
+	return ents;
+}
+
+get_entities_by_static_range( static_type )
+{
+	start = level._ent_num_ranges[ static_type ].first_entnum;
+	end = level._ent_num_ranges[ static_type ].last_entnum;
+
+	entities = [];
+	for ( i = start; i <= end; i++ )
+	{
+		ent = getentbynum( i );
+		if ( !isdefined( ent ) )
+		{
+			continue;
+		}
+
+		entities[ entities.size ] = ent;
+	}
+
+	return entities;
+}
+
+get_null_entity_array()
+{
+	return [];
+}
+
+get_world_entity_array()
+{
+	entities = [];
+	entities[ 0 ] = getentbynum( 1022 );
+	return entities;
+}
+
+get_ent_array( value = "", key = "" )
+{
+	if ( value != "" && key != "" )
+	{
+		return getentarray( value, key );
+	}
+
+	return getentarray();
+}
+
+get_player_array()
+{
+	return level.players;
+}
+
+get_player_corpse_array()
+{
+	return get_entities_by_static_range( "player_corpse" );
+}
+
+get_item_array()
+{
+	return getitemarray();
+}
+
+/*
+	classnames:
+	"rocket"
+	"grenade"
+*/
+get_missile_array( classnames_str )
+{
+	classnames = strtok( classnames_str, " " );
+
+	entities = [];
+	for ( i = 0; i < classnames.size; i++ )
+	{
+		missile_entities = getentarray( classnames[ i ], "classname" );
+
+		entities = arraycombine( entities, missile_entities, false, false );
+	}
+
+	return entities;
+}
+
+get_invisible_array()
+{
+	return get_entities_by_etype( "invisible" );
+}
+
+get_sound_blend_array()
+{
+	return get_entities_by_etype( "sound_blend" );
+}
+
+get_fx_array()
+{
+	return get_entities_by_etype( "fx" );
+}
+
+get_loop_fx_array()
+{
+	return get_entities_by_etype( "loop_fx" );
+}
+
+get_scriptmover_array()
+{
+	return getscriptmoverarray();
+}
+
+get_primary_light_array()
+{
+	return getentarray( "light", "classname" );
+}
+
+get_turret_array()
+{
+	return get_entities_by_static_range( "turret" );
+}
+get_helicopter_array()
+{
+	vehicles = get_entities_by_static_range( "vehicle" );
+
+	helicopters = [];
+	for ( i = 0; i < vehicles.size; i++ )
+	{
+		if ( vehicles[ i ] getentitytype() == level._entity_types[ "helicopter" ] )
+		{
+			helicopters[ helicopters.size ] = vehicles[ i ];
+		}
+	}
+	return helicopters;
+}
+
+get_plane_array()
+{
+	return get_entities_by_etype( "plane" );
+}
+
+get_vehicle_array()
+{
+	start = level._ent_num_ranges[ "vehicle" ].first_entnum;
+	end = level._ent_num_ranges[ "vehicle" ].last_entnum;
+	return get_entities_by_etype( "vehicle", start, end + 1 );
+}
+
+get_vehicle_corpse_array()
+{
+	start = level._ent_num_ranges[ "vehicle_corpse" ].first_entnum;
+	end = level._ent_num_ranges[ "vehicle_corpse" ].last_entnum;
+	return get_entities_by_etype( "vehicle_corpse", start, end + 1 );
+}
+
+get_actor_array()
+{
+	return get_entities_by_static_range( "actor" );
+}
+
+get_actor_spawner_array()
+{
+	return getspawnerarray();
+}
+
+get_actor_corpse_array()
+{
+	return get_entities_by_static_range( "actor_corpse" );
+}
+
+get_streamer_hint_array()
+{
+	return get_entities_by_etype( "streamer_hint", 109 );
+}
+
+get_zbarrier_array()
+{
+	return getzbarrierarray();
+}
+
+get_temp_entity_array()
+{
+	return get_entities_by_etype( "temp_entity", 109 );
+}
+
+register_entity_type( type, getter_func )
+{
+	if ( !isdefined( level._entity_type_funcs ) )
+	{
+		level._entity_type_funcs = [];
+	}
+
+	level._entity_type_funcs[ type ] = spawnstruct();
+	level._entity_type_funcs[ type ].getter = getter_func;
+}
+
+register_entnum_range( type, first_entnum, last_entnum, count )
+{
+	if ( !isdefined( level._ent_num_ranges ) )
+	{
+		level._ent_num_ranges = [];
+	}
+
+	if ( !isdefined( level._ent_num_ranges[ type ] ) )
+	{
+		level._ent_num_ranges[ type ] = spawnstruct();
+		level._ent_num_ranges[ type ].first_entnum = first_entnum;
+		level._ent_num_ranges[ type ].last_entnum = last_entnum;
+		level._ent_num_ranges[ type ].count = count;
+	}
 }
 
 build_tcs_consts()

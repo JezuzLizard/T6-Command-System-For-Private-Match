@@ -49,7 +49,7 @@ server_safe_notify_thread( notify_name, index )
 
 /*void*/ remove_obj_ref( parent_obj, obj_type )
 {
-	if ( !isdefined( parent_obj.objects[ child_obj.obj_type ] ) )
+	if ( !isdefined( parent_obj.objects[ obj_type ] ) )
 	{
 		// force a script error which prints a callstack, regardless of dev script
 		str = 5;
@@ -58,42 +58,6 @@ server_safe_notify_thread( notify_name, index )
 	}
 
 	parent_obj.objects[ obj_type ] = undefined;
-}
-
-/*generic_obj*/ check_script_error( obj, expected_type, force_error = false )
-{
-	if ( !isdefined( obj ) )
-	{
-		obj = generic_obj_t_new( "void" );
-		obj.msg = "Attempted to set cmd parse error for an undefined object";
-		obj.errored = true;
-	}
-
-	if ( obj.type != expected_type )
-	{
-		obj.msg = "Attempted to set obj type of '" + expected_type + "' for '" + obj.type + "'";
-		obj.errored = true;
-	}
-
-	if ( ( obj.errored || force_error ) && getdvarint( "cmd_debug_debugbreak" ) )
-	{
-		// print state info
-		// block further execution with waited loop?
-		assert( false );
-		com_printerror( obj.msg );
-		for ( ;; )
-		{
-			should_continue = getdvarint( "cmd_debug_continue" );
-
-			if ( should_continue )
-			{
-				setdvar( "cmd_debug_continue", 0 );
-				break;
-			}
-
-			wait 0.05;
-		}
-	}
 }
 
 /*result_t*/ result_new( msg, filter, channels = "" )
@@ -376,26 +340,6 @@ arg_obj_add_cmd( arg_types, min_args, max_args )
 	self.arg_types = strTok( arg_types, " " );
 }
 
-target_obj_add_cmd( target_type_name, is_required_target, max_targets = 64 )
-{
-	if ( !is_true( self.is_cmd_object ) )
-	{
-		assert( false );
-		return;
-	}
-
-	if ( !isdefined( target_type_name ) || target_type_name == "" )
-	{
-		return;
-	}
-
-	self.target_types[ self.target_types.size ] = spawnstruct();
-	target_type = self.target_types[ self.target_types.size - 1 ];
-	target_type.type = target_type_name;
-	target_type.is_required = is_required_target;
-	target_type.max_targets = max_targets;
-}
-
 alias_obj_add_cmd( cmd_aliases )
 {
 	if ( isdefined( cmd_aliases ) && cmd_aliases != "" )
@@ -536,4 +480,19 @@ remove_notify_callback( notify_name, ent = undefined )
 
 	ent notify( notify_name + "_death" );
 	ent._notify_callbacks[ notify_name ] = undefined;
+}
+
+pop( arr_obj, index )
+{
+	arrayremoveindex( arr_obj.array, index );
+}
+
+pop_front( arr_obj )
+{
+	pop( arr_obj, 0 );
+}
+
+pop_back( arr_obj )
+{
+	pop( arr_obj, ( arr_obj.array.size - 1 ) );
 }

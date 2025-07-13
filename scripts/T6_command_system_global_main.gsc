@@ -111,23 +111,23 @@ main()
 	cmd_block_set_rank_group( "cheat" );
 	setcvar_cmd = cmd_add( "cvar", ::cmd_setcvar_f, "cvar {player} <cvarname> <newval>" );
 	setcvar_cmd arg_obj_add_cmd( "string string", 2, 2 );
-	setcvar_cmd target_obj_add_cmd( "player" );
+	setcvar_cmd target_obj_add_cmd( "player", false, "Player whos <cvarname> will be set to <newval>" );
 
 	dvar_cmd = cmd_add( "dvar", ::cmd_server_dvar_f, "dvar <dvarname> <newval>" );
 	dvar_cmd arg_obj_add_cmd( "string string", 2, 2 );
 
 	givegod_cmd = cmd_add( "god", ::cmd_givegod_f, "god {player}" );
-	givegod_cmd target_obj_add_cmd( "player" );
+	givegod_cmd target_obj_add_cmd( "player", false, "Player who will receive god status" );
 
 	givenotarget_cmd = cmd_add( "notarget", ::cmd_givenotarget_f, "notarget {player}" );
-	givenotarget_cmd target_obj_add_cmd( "player" );
+	givenotarget_cmd target_obj_add_cmd( "player", false, "Player who will receive notarget status" );
 
 	giveinvisible_cmd = cmd_add( "invisible", ::cmd_giveinvisible_f, "invisible {player}" );
-	giveinvisible_cmd target_obj_add_cmd( "player" );
+	giveinvisible_cmd target_obj_add_cmd( "player", false, "Player who will be hidden" );
 
 	setrank_cmd = cmd_add( "setrank", ::cmd_setrank_f, "setrank {player} <rank>" );
 	setrank_cmd arg_obj_add_cmd( "rank", 1, 1 );
-	setrank_cmd target_obj_add_cmd( "player" );
+	setrank_cmd target_obj_add_cmd( "player", true, "Player whos rank will be modified to be <rank>" );
 
 	entitylist_cmd = cmd_add( "entitylist", ::cmd_entitylist_f, "entitylist [targetname]" );
 	entitylist_cmd arg_obj_add_cmd( "string", 0, 1 );
@@ -138,12 +138,15 @@ main()
 	testcmd_cmd = cmd_add( "testcmd", ::cmd_testcmd_f, "testcmd <cmdalias> [threadcount] [duration]" );
 	testcmd_cmd arg_obj_add_cmd( "cmdalias wholenum wholenum", 1, 3 );
 
-	dodamage_cmd = cmd_add( "dodamage", ::cmd_dodamage_f, "dodamage {entity} <damage> <origin> [entitynum|classname|targetname|self] [entitynum|classname|targetname|self] [hitloc] [MOD] [idflags] [weapon]" );
-	dodamage_cmd arg_obj_add_cmd( "float vector entity entity hitloc MOD idflags weapon", 2, 8 );
-	dodamage_cmd target_obj_add_cmd( "entity" );
+	dodamage_cmd = cmd_add( "dodamage", ::cmd_dodamage_f, "dodamage {entity_to_be_damaged} <damage> <origin> {entity_who_is_attacker} {entity_who_is_inflictor} [hitloc] [MOD] [idflags] [weapon]" );
+	dodamage_cmd arg_obj_add_cmd( "float vector hitloc MOD idflags weapon", 2, 6 );
+	dodamage_cmd target_obj_add_cmd( "entity", true, "Entity who will receive <damage> from <origin>" );
+	dodamage_cmd target_obj_add_cmd( "entity", false, "Entity who will be set as the <attacker>" );
+	dodamage_cmd target_obj_add_cmd( "entity", false, "Entity who will be set as the <inflictor>" );
 
 	teleportplayer_cmd = cmd_add( "teleporttoplayer", ::cmd_teleportplayer_f, "teleporttoplayer {player_from} {player_to}" );
-	teleportplayer_cmd target_obj_add_cmd( "player player" );
+	teleportplayer_cmd target_obj_add_cmd( "player", false, "Player who will be teleported" );
+	teleportplayer_cmd target_obj_add_cmd( "player", true, "Player who will be teleported" );
 
 	bottomlessclip_cmd = cmd_add( "bottomlessclip", ::cmd_bottomlessclip_f, "bottomlessclip {player}" );
 	bottomlessclip_cmd target_obj_add_cmd( "player" );
@@ -175,11 +178,11 @@ main()
 	togglehud_cmd target_obj_add_cmd( "player" );
 
 	// Sets the default cmd target for the executor(normally 'self'); this allows the server through rcon or otherwise to still use the default target functionality that makes the default target 'self' or another entity.
-	setdefaultcmdtarget_cmd = cmd_add( "setdefaultcmdtarget", ::cmd_setdefaultcmdtarget_f, "setdefaultcmdtarget <player>" );
-	setdefaultcmdtarget_cmd arg_obj_add_cmd( "player", 1, 1 );
+	setdefaultcmdtarget_cmd = cmd_add( "setdefaultcmdtarget", ::cmd_setdefaultcmdtarget_f, "setdefaultcmdtarget {player}" );
+	setdefaultcmdtarget_cmd target_obj_add_cmd( "player", true );
 
-	setdefaultcmdexecutor_cmd = cmd_add( "setdefaultcmdexecutor", ::cmd_setdefaultcmdexecutor_f, "setdefaultcmdexecutor <player>" );
-	setdefaultcmdexecutor_cmd arg_obj_add_cmd( "player", 1, 1 );
+	setdefaultcmdexecutor_cmd = cmd_add( "setdefaultcmdexecutor", ::cmd_setdefaultcmdexecutor_f, "setdefaultcmdexecutor {player}" );
+	setdefaultcmdexecutor_cmd target_obj_add_cmd( "player", true );
 
 	arg_obj_register( "player", ::arg_obj_player_validate, ::arg_obj_player_generate, ::arg_obj_player_cast, "not a valid player", true );
 	arg_obj_register( "wholenum", ::arg_obj_wholenum_validate, ::arg_obj_wholenum_generate, ::arg_obj_int_cast, "not a whole number" );

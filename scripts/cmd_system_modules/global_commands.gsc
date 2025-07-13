@@ -109,7 +109,7 @@ cmd_setrank_f( target_obj, args )
 cmd_execonallplayers_f( target_obj, args )
 {
 	cmd = args[ 0 ];
-	cmd_find_result = scripts\cmd_system_modules\_cmd_arg::get_cmd_from_alias( cmd );
+	cmd_find_result = scripts\cmd_system_modules\_cmd_arg::cast_str_to_cmd( cmd );
 	if ( cmd_find_result.errored )
 	{
 		return result_cmderror( cmd_find_result.msg );
@@ -142,7 +142,7 @@ cmd_execonteam_f( target_obj, args )
 {
 	team = args[ 0 ];
 	cmd = args[ 1 ];
-	cmd_find_result = scripts\cmd_system_modules\_cmd_arg::get_cmd_from_alias( cmd );
+	cmd_find_result = scripts\cmd_system_modules\_cmd_arg::cast_str_to_cmd( cmd );
 	if ( cmd_find_result.errored )
 	{
 		return result_cmderror( cmd_find_result.msg );
