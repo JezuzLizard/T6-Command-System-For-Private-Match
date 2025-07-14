@@ -888,7 +888,8 @@ main()
 	level.physicstracecontentsvehicleclip = 16;
 	level._editor_ent_mask = level.physicstracemaskphysics | level.physicstracemaskvehicle | level.physicstracemaskwater | level.physicstracemaskclip;
 
+	cmd_block_set_module_group( "addon_entity_tools" );
 	cmd_block_set_rank_group( "cheat" );
-	dumpent_cmd = level [[ level.tcs_add_cmd_func ]]( "spawn", "spawn <classname> <origin> [spawnflags] [contextual1] [contextual2] [contextual3]", ::cmd_spawn_f );
+	dumpent_cmd = cmd_add( "spawn", "spawn <classname> <origin> [spawnflags] [contextual1] [contextual2] [contextual3]", ::cmd_spawn_f );
 	dumpent_cmd arg_obj_add_cmd( "classname vector spawnflags string string string", 2, 6 );
 }

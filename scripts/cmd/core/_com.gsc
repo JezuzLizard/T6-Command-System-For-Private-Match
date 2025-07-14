@@ -2,7 +2,9 @@
 #include maps\mp\_utility;
 #include scripts\cmd_system_modules\_cmd_util;
 
-com_init()
+#include scripts\cmd_system_modules\_utility;
+
+autoexec com_init()
 {
 	com_filter_add( "cominfo", 1 );
 	com_filter_add( "comwarning", 1 );
@@ -27,41 +29,17 @@ com_init()
 	com_channel_add( "iprint_array", ::com_iprintln_array );
 }
 
-com_filter_add( filter, default_value )
-{
-	if ( !isDefined( level.com_filters ) )
-	{
-		level.com_filters = [];
-	}
-	if ( !isDefined( level.com_filters[ filter ] ) )
-	{
-		level.com_filters[ filter ] = getDvarIntDefault( "com_script_filter_" + filter, default_value );
-	}
-}
-
-com_channel_add( channel, func )
-{
-	if ( !isDefined( level.com_channels ) )
-	{
-		level.com_channels = [];
-	}
-	if ( !isDefined( level.com_channels[ channel ] ) )
-	{
-		level.com_channels[ channel ] = func;
-	}
-}
-
-com_filter_is_active( filter )
+private com_filter_is_active( filter )
 {
 	return is_true( level.com_filters[ filter ] );
 }
 
-com_channel_is_active( channel )
+private com_channel_is_active( channel )
 {
 	return isDefined( level.com_channels[ channel ] );
 }
 
-com_caps_msg_title( channel, filter )
+private com_caps_msg_title( channel, filter )
 {
 	if ( filter == "notitle" || channel == "con" )
 	{
@@ -90,20 +68,20 @@ com_caps_msg_title( channel, filter )
 	return color_code + toUpper( filter ) + ":";
 }
 
-com_print( message, players )
+private com_print( message, players )
 {
 	printf( message );
 	message = undefined;
 }
 
-com_logprint( message, players )
+private com_logprint( message, players )
 {
 	players = undefined;
 	logPrint( message + "\n" );
 	message = undefined;
 }
 
-com_iprintln( message, player )
+private com_iprintln( message, player )
 {
 	if ( is_true( level.doing_cmd_system_unittest ) )
 	{
@@ -115,7 +93,7 @@ com_iprintln( message, player )
 	}	
 }
 
-com_iprintln_array( message, players )
+private com_iprintln_array( message, players )
 {
 	if ( is_true( level.doing_cmd_system_unittest ) )
 	{
@@ -127,7 +105,7 @@ com_iprintln_array( message, players )
 	}
 }
 
-com_iprintlnbold( message, players )
+private com_iprintlnbold( message, players )
 {
 	if ( is_true( level.doing_cmd_system_unittest ) )
 	{
@@ -175,29 +153,6 @@ com_printf( channels, filter, message, players )
 			[[ level.com_channels[ channel ] ]]( message_modified, players );
 		}
 	}
-}
-
-com_printannouncment( message, players )
-{
-	level com_printf( "iprintbold", "notitle", message, players );
-}
-
-com_printinfo( message )
-{
-	channels = self com_get_cmd_feedback_channel();
-	level com_printf( channels, "cmdinfo", message, self );
-}
-
-com_printwarning( message )
-{
-	channels = self com_get_cmd_feedback_channel();
-	level com_printf( channels, "cmdwarning", message, self );
-}
-
-com_printerror( message )
-{
-	channels = self com_get_cmd_feedback_channel();
-	level com_printf( channels, "cmderror", message, self );
 }
 
 com_get_cmd_feedback_channel()

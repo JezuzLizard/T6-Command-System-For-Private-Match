@@ -6,32 +6,35 @@
 #include maps\mp\zombies\_zm_score;
 #include maps\mp\zombies\_zm_weapons;
 
-#include scripts\cmd_system_modules\_cmd_util;
-#include scripts\cmd_system_modules\_com;
-#include scripts\cmd_system_modules\_perms;
+#include scripts\cmd\core\_utility;
 #include scripts\zm\cmd_system_modules_zm\_overrides;
 #include scripts\zm\cmd_system_modules_zm\_zm_cmd_util;
 
 #include maps\mp\bots\_bot_api;
 
-main()
+autoexec add_cmds()
 {
 	while ( !is_true( level.command_init_done ) )
 	{
 		wait 0.05;
 	}
 
-	cmd_add( "setscriptgoal", true, "ssg", "scriptgoal <bot> [goal|entity] [dist]", ::cmd_setscriptgoal_f, "cheat", 1, false );
-	arg_obj_add_cmd( "setscriptgoal", "bot" );
-	cmd_add( "clearscriptgoal", true, "csg", "clearscriptgoal <bot>", ::cmd_clearscriptgoal_f, "cheat", 1, false );
-	arg_obj_add_cmd( "clearscriptgoal", "bot" );
-	cmd_add( "hasscriptgoal", true, "hsg", "hasscriptgoal <bot>", ::cmd_hasscriptgoal_f, "cheat", 1, false );
-	arg_obj_add_cmd( "hasscriptgoal", "bot" );
+	cmd_block_set_module_group( "core_common" );
+	cmd_block_set_rank_group( "cheat" );
+	setscriptgoal = cmd_add( "setscriptgoal", "scriptgoal {bot} <goal|entity> [dist]", ::cmd_setscriptgoal_f );
+	setscriptgoal arg_obj_add_cmd( "goal", 1, 2 );
+	setscriptgoal target_obj_add_cmd( "bot", true, "Bot to set goal for" );
 
-	level thread check_for_cmd_alias_collisions();
+	clearscriptgoal = cmd_add( "clearscriptgoal", "clearscriptgoal {bot}", ::cmd_clearscriptgoal_f );
+	clearscriptgoal arg_obj_add_cmd( "", 0, 0 );
+	setscriptgoal target_obj_add_cmd( "bot", true, "Bot to clear goal for" );
+
+	hasscriptgoal = cmd_add( "hasscriptgoal", "hasscriptgoal {bot}", ::cmd_hasscriptgoal_f );
+	hasscriptgoal arg_obj_add_cmd( "", 0, 0 );
+	hasscriptgoal target_obj_add_cmd( "bot", true, "Bot to print goal for" );
 }
 
-cmd_setscriptgoal_f( args )
+private cmd_setscriptgoal_f( args )
 {
 	result = [];
 	bot = args[ 0 ];
@@ -80,14 +83,14 @@ cmd_setscriptgoal_f( args )
 	return result_cmdinfo( "Set " + bot.name + " goal to " + goal );
 }
 
-cmd_clearscriptgoal_f( args )
+private cmd_clearscriptgoal_f( args )
 {
 	bot = args[ 0 ];
 	bot ClearScriptGoal();
 	return result_cmdinfo( "Cleared " + bot.name + " goal" );
 }
 
-cmd_hasscriptgoal_f( args )
+private cmd_hasscriptgoal_f( args )
 {
 	bot = args[ 0 ];
 	bot ClearScriptGoal();

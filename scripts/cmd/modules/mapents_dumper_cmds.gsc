@@ -598,58 +598,59 @@ main()
 	level.physicstracecontentsvehicleclip = 16;
 	level._editor_ent_mask = level.physicstracemaskphysics | level.physicstracemaskvehicle | level.physicstracemaskwater | level.physicstracemaskclip;
 
+	cmd_block_set_module_group( "addon_entity_tools" );
 	cmd_block_set_rank_group( "cheat" );
 
 	// camera commands
-	createcamera_cmd = level [[ level.tcs_add_cmd_func ]]( "createcamera", ::cmd_createcamera_f, "createcamera <camera_name>" );
+	createcamera_cmd = cmd_add( "createcamera", ::cmd_createcamera_f, "createcamera <camera_name>" );
 	createcamera_cmd arg_obj_add_cmd( "string", 1, 1 );
 
-	setcamera_cmd = level [[ level.tcs_add_cmd_func ]]( "setcamera", ::cmd_setcamera_f, "setcamera <camera_name> [flags]" );
+	setcamera_cmd = cmd_add( "setcamera", ::cmd_setcamera_f, "setcamera <camera_name> [flags]" );
 	setcamera_cmd arg_obj_add_cmd( "string cameraflags", 1, 2 );
 
-	unsetcamera_cmd = level [[ level.tcs_add_cmd_func ]]( "unsetcamera", ::cmd_unsetcamera_f, "unsetcamera <camera_name>" );
+	unsetcamera_cmd = cmd_add( "unsetcamera", ::cmd_unsetcamera_f, "unsetcamera <camera_name>" );
 	unsetcamera_cmd arg_obj_add_cmd( "string", 1, 1 );
 
-	deletecamera_cmd = level [[ level.tcs_add_cmd_func ]]( "deletecamera", ::cmd_deletecamera_f, "deletecamera <camera_name>" );
+	deletecamera_cmd = cmd_add( "deletecamera", ::cmd_deletecamera_f, "deletecamera <camera_name>" );
 	deletecamera_cmd arg_obj_add_cmd( "string", 1, 1 );
 
-	linkcameratoent_cmd = level [[ level.tcs_add_cmd_func ]]( "linkcameratoent", ::cmd_linkcameratoent_f, "linkcameratoent {entity} <camera_name> [tagname] [origin_offset] [angles_offset]" );
+	linkcameratoent_cmd = cmd_add( "linkcameratoent", ::cmd_linkcameratoent_f, "linkcameratoent {entity} <camera_name> [tagname] [origin_offset] [angles_offset]" );
 	linkcameratoent_cmd arg_obj_add_cmd( "string string_allow_null vector vector", 1, 4 );
 	linkcameratoent_cmd target_obj_add_cmd( "entity" );
 
-	linkcameratoent_cmd = level [[ level.tcs_add_cmd_func ]]( "unlinkcamera", ::cmd_unlinkcamera_f, "unlinkcamera <camera_name>" );
+	linkcameratoent_cmd = cmd_add( "unlinkcamera", ::cmd_unlinkcamera_f, "unlinkcamera <camera_name>" );
 	linkcameratoent_cmd arg_obj_add_cmd( "string", 1, 1 );
 
-	spectateactor_cmd = level [[ level.tcs_add_cmd_func ]]( "spectateactor", ::cmd_spectateactor_f, "spectateactor {actor} <tagname>" );
+	spectateactor_cmd = cmd_add( "spectateactor", ::cmd_spectateactor_f, "spectateactor {actor} <tagname>" );
 	spectateactor_cmd arg_obj_add_cmd( "string_allow_null", 1, 1 );
 	spectateactor_cmd target_obj_add_cmd( "actor" );
 
 	// entity manipulation
-	seteditortargetent_cmd = level [[ level.tcs_add_cmd_func ]]( "seteditortargetent", ::cmd_seteditortargetent_f, "seteditortargetent [entnum]" );
+	seteditortargetent_cmd = cmd_add( "seteditortargetent", ::cmd_seteditortargetent_f, "seteditortargetent [entnum]" );
 	seteditortargetent_cmd arg_obj_add_cmd( "entity", 0, 1 );
 
-	seteditortargetangles_cmd = level [[ level.tcs_add_cmd_func ]]( "seteditortargetangles", ::cmd_seteditortargetangles_f, "seteditortargetangles <angles> [relative]" );
+	seteditortargetangles_cmd = cmd_add( "seteditortargetangles", ::cmd_seteditortargetangles_f, "seteditortargetangles <angles> [relative]" );
 	seteditortargetangles_cmd arg_obj_add_cmd( "vector boolean", 1, 2 );
 
-	seteditortargetorigin_cmd = level [[ level.tcs_add_cmd_func ]]( "seteditortargetorigin", ::cmd_seteditortargetorigin_f, "seteditortargetorigin <pos> [relative]" );
+	seteditortargetorigin_cmd = cmd_add( "seteditortargetorigin", ::cmd_seteditortargetorigin_f, "seteditortargetorigin <pos> [relative]" );
 	seteditortargetorigin_cmd arg_obj_add_cmd( "vector boolean", 1, 2 );
 
-	editheldmodel_cmd = level [[ level.tcs_add_cmd_func ]]( "editheldmodel", ::cmd_editheldmodel_f, "editheldmodel [model] [carry_origin_offset] [carry_angles_offset]" );
+	editheldmodel_cmd = cmd_add( "editheldmodel", ::cmd_editheldmodel_f, "editheldmodel [model] [carry_origin_offset] [carry_angles_offset]" );
 	editheldmodel_cmd arg_obj_add_cmd( "model vector vector", 0, 3 );
 
-	editorspawnheldmodel_cmd = level [[ level.tcs_add_cmd_func ]]( "editorspawnheldmodel", ::cmd_editorspawnheldmodel_f, "editorspawnheldmodel <ent_name> <model> [carry_origin_offset] [carry_angles_offset]" );
+	editorspawnheldmodel_cmd = cmd_add( "editorspawnheldmodel", ::cmd_editorspawnheldmodel_f, "editorspawnheldmodel <ent_name> <model> [carry_origin_offset] [carry_angles_offset]" );
 	editorspawnheldmodel_cmd arg_obj_add_cmd( "string model vector vector", 2, 4 );
 
-	editorpickup_cmd = level [[ level.tcs_add_cmd_func ]]( "editorpickup", ::cmd_editorpickup_f, "editorpickup [entnum] [carry_origin_offset] [carry_angles_offset]" );
+	editorpickup_cmd = cmd_add( "editorpickup", ::cmd_editorpickup_f, "editorpickup [entnum] [carry_origin_offset] [carry_angles_offset]" );
 	editorpickup_cmd arg_obj_add_cmd( "entity vector vector", 0, 3 );
 
-	editorsetcontext_cmd = level [[ level.tcs_add_cmd_func ]]( "editorsetcontext", ::cmd_editorsetcontext_f, "editorsetcontext <context_mode> [context_scale]" );
+	editorsetcontext_cmd = cmd_add( "editorsetcontext", ::cmd_editorsetcontext_f, "editorsetcontext <context_mode> [context_scale]" );
 	editorsetcontext_cmd arg_obj_add_cmd( "string", 1, 1 );
 
-	editorcontextmodifyentity_cmd = level [[ level.tcs_add_cmd_func ]]( "editorcontextmodifyentity", ::cmd_editorcontextmodifyentity_f, "editorcontextmodifyentity <scale> [total_time] [accel_time] [decel_time]" );
+	editorcontextmodifyentity_cmd = cmd_add( "editorcontextmodifyentity", ::cmd_editorcontextmodifyentity_f, "editorcontextmodifyentity <scale> [total_time] [accel_time] [decel_time]" );
 	editorcontextmodifyentity_cmd arg_obj_add_cmd( "float float float float", 1, 4 );
 
-	editorsave_cmd = level [[ level.tcs_add_cmd_func ]]( "editorsave", ::cmd_editorsave_f );
+	editorsave_cmd = cmd_add( "editorsave", ::cmd_editorsave_f );
 	// TODO:
 	//setmins
 	//setmaxs
@@ -720,6 +721,6 @@ main()
 	*/
 
 	// debugging
-	setviewpos_cmd = level [[ level.tcs_add_cmd_func ]]( "setviewpos", "setviewpos", "setviewpos <origin> [angles]", ::cmd_setviewpos_f );
+	setviewpos_cmd = cmd_add( "setviewpos", "setviewpos", "setviewpos <origin> [angles]", ::cmd_setviewpos_f );
 	setviewpos_cmd arg_obj_add_cmd( "vector vector", 1, 2 );
 }

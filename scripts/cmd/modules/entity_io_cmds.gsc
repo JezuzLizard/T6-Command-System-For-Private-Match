@@ -347,8 +347,9 @@ cmd_dumpent_f( target_obj, args )
 
 main()
 {
+	cmd_block_set_module_group( "addon_entity_tools" );
 	cmd_block_set_rank_group( "cheat" );
-	dumpent_cmd = level [[ level.tcs_add_cmd_func ]]( "saveent", "saveent", "saveent <type> [classname]", ::cmd_dumpent_f );
+	dumpent_cmd = cmd_add( "saveent", "saveent", "saveent <type> [classname]", ::cmd_dumpent_f );
 	dumpent_cmd arg_obj_add_cmd( "string string", 1, 2 );
 }
 

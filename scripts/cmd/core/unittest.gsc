@@ -1,9 +1,44 @@
 #include common_scripts\utility;
 #include maps\mp\_utility;
-#include scripts\cmd_system_modules\_cmd_util;
-#include scripts\cmd_system_modules\_com;
+#include scripts\cmd\core\_utility;
 
-cmd_unittest_validargs_f( args )
+autoexec start_unittest()
+{
+	do_it = getdvarint( "tcs_unittest_enabled" );
+
+	if ( !do_it )
+	{
+		return;
+	}
+
+	addcallback( "on_player_connect", ::unittest_connect );
+
+	unittest_cmd = cmd_add( "unittest", ::cmd_unittest_validargs_f, "unittest [botcount] [duration]" );
+	unittest_cmd arg_obj_add_cmd( "positive_int positive_int", 0, 2 );
+
+	testcmd_cmd = cmd_add( "testcmd", ::cmd_testcmd_f, "testcmd <cmdalias> [threadcount] [duration]" );
+	testcmd_cmd arg_obj_add_cmd( "cmdalias positive_int positive_int", 1, 3 );
+}
+
+private unittest_connect()
+{
+	if ( self istestclient() )
+	{
+		if ( is_true( level.doing_cmd_system_testcmd ) )
+		{
+			if ( isdefined( self.specific_cmd ) )
+			{
+				self thread activate_specific_cmd();
+			}
+		}
+		else if ( is_true( level.doing_cmd_system_unittest ) )
+		{
+			self thread activate_random_cmds();
+		}
+	}
+}
+
+private cmd_unittest_validargs_f( args )
 {
 	result = [];
 	level.doing_cmd_system_unittest = !is_true( level.doing_cmd_system_unittest );
@@ -12,7 +47,6 @@ cmd_unittest_validargs_f( args )
 		if ( !is_true( level.cmd_system_unittest_first_run ) )
 		{
 			level.cmd_system_unittest_first_run = true;
-			add_unittest_cmd_exclusions();
 		}
 		required_bots = isDefined( args[ 0 ] ) ? args[ 0 ] : 1;
 		if ( isDefined( args[ 1 ] ) )
@@ -32,12 +66,33 @@ cmd_unittest_validargs_f( args )
 	return result;
 }
 
-set_cmd_rate()
+private cmd_testcmd_f( args )
+{
+	result = [];
+	level.doing_cmd_system_unittest = !is_true( level.doing_cmd_system_unittest );
+	level.doing_cmd_system_testcmd = !is_true( level.doing_cmd_system_testcmd );
+	if ( level.doing_cmd_system_testcmd )
+	{
+		level.unittest_total_cmds_used = 0;
+		level thread test_cmd_for_time( args[ 0 ], args[ 1 ], args[ 2 ] );
+		level thread test_cmd_kick_bots_at_end();
+	}
+	else 
+	{
+		level notify( "stop_testcmd" );
+	}
+
+	result[ "filter" ] = "cmdinfo";
+	result[ "message" ] = "Testcmd " + scripts\cmd_system_modules\_cmd_arg::cast_bool_to_str( level.doing_cmd_system_testcmd, "activated deactivated" ) + " for cmd " + args[ 0 ];
+	return result;
+}
+
+private set_cmd_rate()
 {
 	level.unittest_cmd_rate = 0.05;
 	while ( true )
 	{
-		if ( !sessionModeIsZombiesGame() && level.players.size > 12 )
+		if ( level.players.size > 12 )
 		{
 			level.unittest_cmd_rate = 0.1;
 		}
@@ -49,7 +104,7 @@ set_cmd_rate()
 	}
 }
 
-do_unit_test()
+private do_unit_test()
 {
 	if ( isDefined( level.custom_unittest_bot_manager_func ) )
 	{
@@ -76,7 +131,7 @@ do_unit_test()
 	level.doing_cmd_system_unittest = false;
 }
 
-manage_unittest_bots( required_bots, cmd )
+private manage_unittest_bots( required_bots, cmd )
 {
 	bot_count = 0;
 	for ( i = 0; i < level.players.size; i++ )
@@ -99,10 +154,7 @@ manage_unittest_bots( required_bots, cmd )
 			return;
 		}
 		bot.pers[ "isBot" ] = true;
-		if ( isDefined( level.bot_cmd_system_unittest_func ) )
-		{
-			bot thread [[ level.bot_cmd_system_unittest_func ]]();
-		}
+		bot maps\mp\zombies\_zm::reset_rampage_bookmark_kill_times();
 		if ( isDefined( cmd ) )
 		{
 			bot.specific_cmd = cmd;
@@ -110,7 +162,7 @@ manage_unittest_bots( required_bots, cmd )
 	}
 }
 
-activate_random_cmds()
+private activate_random_cmds()
 {
 	self endon( "disconnect" );
 	self.health = 2100000000;
@@ -130,10 +182,9 @@ activate_random_cmds()
 	}
 }
 
-construct_chat_message_for_unittest()
+private construct_chat_message_for_unittest()
 {
 	cmdalias = arg_obj_cmdalias_generate();
-	//logprint( "random cmdalias: " + cmdalias + "\n" );
 	cmd_find_result = scripts\cmd_system_modules\_cmd_arg::cast_str_to_cmd( cmdalias );
 	if ( cmd_find_result.errored )
 	{
@@ -141,7 +192,6 @@ construct_chat_message_for_unittest()
 	}
 
 	cmd_object = cmd_find_result.value;
-	//logprint( "random cmd: " + cmd + "\n" );
 	cmdargs = self create_random_valid_args2( cmd_find_result.value );
 	if ( cmdargs.size == 0 )
 	{
@@ -159,10 +209,8 @@ construct_chat_message_for_unittest()
 	level.unittest_total_cmds_used++;
 }
 
-create_random_valid_args2( cmd_object )
+private create_random_valid_args2( cmd_object )
 {
-	//message = "cmd: " + cmd;
-	//logprint( message + "\n" );
 	args = [];
 	types = cmd_object.arg_types;
 
@@ -171,31 +219,21 @@ create_random_valid_args2( cmd_object )
 		return args;
 	}
 	min_args = cmd_object.min_args;
-	//message = "min_args: " + min_args;
-	//logprint( message + "\n" );
 	for ( i = 0; i < min_args; i++ )
 	{
 		args[ i ] = self generate_args_from_type( types[ i ] );
-		//message1 = "types defined: " + isDefined( types[ i ] ) + " args defined: " + isDefined( args[ i ] );
-		//logprint( message1 + "\n" );
-		//message = "min_args: " + min_args +  " types[" + i + "]: " + types[ i ] + " args[" + i + "]: " + args[ i ];
-		//logprint( message + "\n" );
 	}
 
 	max_optional_args = randomInt( types.size );
 
-	//message = "max_optional_args: " + max_optional_args;
-	//logprint( message + "\n" );
 	for ( i = min_args; i < max_optional_args; i++ )
 	{
 		args[ i ] = self generate_args_from_type( types[ i ] );
-		//message = "max_optional_args: " + max_optional_args + " types[" + i + "]: " + types[ i ] + " args[" + i + "]: " + args[ i ];
-		//logprint( message + "\n" );
 	}
 	return args;
 }
 
-generate_args_from_type( type )
+private generate_args_from_type( type )
 {
 	if ( isDefined( level.tcs_arg_type_handlers[ type ] ) )
 	{
@@ -205,13 +243,7 @@ generate_args_from_type( type )
 	return "";
 }
 
-cmd_unittest_invalidargs_f( args )
-{
-	result = [];
-	return result;
-}
-
-end_unittest_after_time( time_in_minutes )
+private end_unittest_after_time( time_in_minutes )
 {
 	time_passed_in_seconds = 0;
 	time_required_in_seconds = time_in_minutes * 60;
@@ -223,28 +255,7 @@ end_unittest_after_time( time_in_minutes )
 	setDvar( "tcs_unittest", 0 );
 }
 
-cmd_testcmd_f( args )
-{
-	result = [];
-	level.doing_cmd_system_unittest = !is_true( level.doing_cmd_system_unittest );
-	level.doing_cmd_system_testcmd = !is_true( level.doing_cmd_system_testcmd );
-	if ( level.doing_cmd_system_testcmd )
-	{
-		level.unittest_total_cmds_used = 0;
-		level thread test_cmd_for_time( args[ 0 ], args[ 1 ], args[ 2 ] );
-		level thread test_cmd_kick_bots_at_end();
-	}
-	else 
-	{
-		level notify( "stop_testcmd" );
-	}
-
-	result[ "filter" ] = "cmdinfo";
-	result[ "message" ] = "Testcmd " + scripts\cmd_system_modules\_cmd_arg::cast_bool_to_str( level.doing_cmd_system_testcmd, "activated deactivated" ) + " for cmd " + args[ 0 ];
-	return result;
-}
-
-test_cmd_for_time( cmd, threadcount = 1, duration )
+private test_cmd_for_time( cmd, threadcount = 1, duration )
 {
 	if ( isDefined( duration ) )
 	{
@@ -267,7 +278,7 @@ test_cmd_for_time( cmd, threadcount = 1, duration )
 	}
 }
 
-end_testcmd_after_time( time_in_minutes )
+private end_testcmd_after_time( time_in_minutes )
 {
 	level endon( "stop_testcmd" );
 	for ( i = 0; i < ( time_in_minutes * 60 ); i++ )
@@ -277,7 +288,7 @@ end_testcmd_after_time( time_in_minutes )
 	level notify( "stop_testcmd" );
 }
 
-testcmd_thread_server( cmd )
+private testcmd_thread_server( cmd )
 {
 	level endon( "stop_testcmd" );
 	while ( true )
@@ -287,7 +298,7 @@ testcmd_thread_server( cmd )
 	}
 }
 
-construct_chat_message_for_testcmd( cmd )
+private construct_chat_message_for_testcmd( cmd )
 {
 	cmdargs = self create_random_valid_args2( cmd );
 	if ( cmdargs.size == 0 )
@@ -306,7 +317,7 @@ construct_chat_message_for_testcmd( cmd )
 	level.unittest_total_cmds_used++;
 }
 
-activate_specific_cmd()
+private activate_specific_cmd()
 {
 	level endon( "stop_testcmd" );
 	self endon( "disconnect" );
@@ -317,7 +328,7 @@ activate_specific_cmd()
 	}
 }
 
-test_cmd_kick_bots_at_end()
+private test_cmd_kick_bots_at_end()
 {
 	level waittill( "stop_testcmd" );
 	for ( i = 0; i < level.players.size; i++ )
@@ -327,29 +338,4 @@ test_cmd_kick_bots_at_end()
 			kick( level.players[ i ] getEntityNumber() );
 		}
 	}
-}
-
-add_unittest_cmd_exclusions()
-{
-	cmd_add_unittest_exclusion( "rotate" );
-	cmd_add_unittest_exclusion( "restart" );
-	cmd_add_unittest_exclusion( "changemap" );
-	cmd_add_unittest_exclusion( "unittest" );
-	cmd_add_unittest_exclusion( "unittestinvalidargs" );
-	cmd_add_unittest_exclusion( "setcvar" );
-	cmd_add_unittest_exclusion( "dvar" );
-	cmd_add_unittest_exclusion( "cvarall" );
-	cmd_add_unittest_exclusion( "givepermaperk" );
-	cmd_add_unittest_exclusion( "toggleoutofplayableareamonitor" );
-	cmd_add_unittest_exclusion( "spectator" );
-	cmd_add_unittest_exclusion( "execonteam" );
-	cmd_add_unittest_exclusion( "execonallplayers" );
-	cmd_add_unittest_exclusion( "testcmd" );
-	cmd_add_unittest_exclusion( "entitylist" );
-	cmd_add_unittest_exclusion( "weaponlist" );
-	cmd_add_unittest_exclusion( "poweruplist" );
-	cmd_add_unittest_exclusion( "perklist" );
-	cmd_add_unittest_exclusion( "cvar" );
-	cmd_add_unittest_exclusion( "permaperk" );
-	cmd_add_unittest_exclusion( "setglobalzombiestat" );
 }

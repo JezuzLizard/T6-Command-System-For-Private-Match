@@ -1,11 +1,45 @@
 #include common_scripts\utility;
 #include maps\mp\_utility;
-#include scripts\cmd_system_modules\_cmd_util;
-#include scripts\cmd_system_modules\_com;
+#include scripts\cmd\core\_utility;
 
-cmd_init_perms()
+autoexec cmd_init_perms()
 {
 	level.tcs_player_entries = [];
+
+	tcs_default_ranks = array( "none", "user", "trusted", "elevated", "moderator", "cheat", "host", "owner" );
+	tcs_default_ranks_cmdpower = array( 0, 1, 20, 40, 60, 80, 100, 100 );
+	tcs_perms = spawnstruct();
+	tcs_perms.ranks = [];
+	for ( i = 0; i < tcs_default_ranks.size; i++ )
+	{
+		rank = tcs_default_ranks[ i ];
+		allowedcmds_dvar = getdvarstringdefault( "tcs_rank_" + rank + "_allowedcmds", "" );
+		disallowedcmds_dvar = getdvarstringdefault( "tcs_rank_" + rank + "_disallowedcmds", "" );
+		cmdpower_dvar = getdvarintdefault( "tcs_rank_" + rank + "_cmdpower", tcs_default_ranks_cmdpower[ i ] );
+		tcs_perms.ranks[ rank ] = spawnStruct();
+		tcs_perms.ranks[ rank ].allowedcmds = allowedcmds_dvar != "" ? strtok( allowedcmds_dvar, " " ) : undefined;
+		tcs_perms.ranks[ rank ].disallowedcmds = disallowedcmds_dvar != "" ? strtok( disallowedcmds_dvar, " " ) : undefined;
+		tcs_perms.ranks[ rank ].cmdpower = cmdpower_dvar;
+	}
+
+	custom_ranks_str = getdvarstringdefault( "tcs_custom_rank_names", "" );
+	custom_ranks = custom_ranks_str != "" ? strtok( custom_ranks_str, " " ) : undefined;
+	if ( isdefined( custom_ranks ) )
+	{
+		for ( i = 0; i < custom_ranks.size; i++ )
+		{
+			rank = custom_ranks[ i ];
+			allowedcmds_dvar = getdvarstringdefault( "tcs_rank_" + rank + "_allowedcmds", "" );
+			disallowedcmds_dvar = getdvarstringdefault( "tcs_rank_" + rank + "_disallowedcmds", "" );
+			cmdpower_dvar = getdvarintdefault( "tcs_rank_" + rank + "_cmdpower", 0 );
+			tcs_perms.ranks[ rank ] = spawnstruct();
+			tcs_perms.ranks[ rank ].allowedcmds = allowedcmds_dvar != "" ? strtok( allowedcmds_dvar, " " ) : undefined;
+			tcs_perms.ranks[ rank ].disallowedcmds = disallowedcmds_dvar != "" ? strtok( disallowedcmds_dvar, " " ) : undefined;
+			tcs_perms.ranks[ rank ].cmdpower = cmdpower_dvar;
+		}
+	}
+	level.tcs_perms = tcs_perms;
+
 	player_perm_list = getDvar( "tcs_player_cmd_perms" );
 	if ( player_perm_list != "" )
 	{
@@ -32,7 +66,7 @@ cmd_init_perms()
 	}
 }
 
-add_player_perms_entry( player )
+private add_player_perms_entry( player )
 {
 	if ( player_exists_in_perms_system( player ) )
 	{
@@ -59,7 +93,7 @@ add_player_perms_entry( player )
 	cmd_init_perms();
 }
 
-set_player_perms_entry( player )
+private set_player_perms_entry( player )
 {
 	player_perm_list = getDvar( "tcs_player_cmd_perms" );
 	if ( player_perm_list != "" )
@@ -72,7 +106,7 @@ set_player_perms_entry( player )
 		{
 			player_entry = player_entries[ i ];
 			player_entry_array = strTok( player_entry, " " );
-			player_in_server = level.server scripts\cmd_system_modules\_cmd_arg::cast_str_to_player( player_entry_array[ 0 ], true );
+			player_in_server = level.server scripts\cmd_system_modules\_cmd_arg::cast_str_to_entity( player_entry_array[ 0 ], "player" );
 			if ( !player_in_server.errored && player_in_server.value == player )
 			{
 				player_entry_array[ 1 ] = player.tcs_rank;
@@ -104,123 +138,15 @@ set_player_perms_entry( player )
 	}
 }
 
-player_exists_in_perms_system( player )
+private player_exists_in_perms_system( player )
 {
 	for ( i = 0; i < level.tcs_player_entries.size; i++ )
 	{
-		player_in_server = level.server scripts\cmd_system_modules\_cmd_arg::cast_str_to_player( level.tcs_player_entries[ i ].player_entry, true );
+		player_in_server = level.server scripts\cmd_system_modules\_cmd_arg::cast_str_to_entity( level.tcs_player_entries[ i ].player_entry, "player" );
 		if ( !player_in_server.errored && player_in_server.value == player )
 		{
 			return true;
 		}
-	}
-	return false;
-}
-
-cmd_cooldown()
-{
-	if ( is_true( level.doing_cmd_system_unittest ) )
-	{
-		return;
-	}
-	if ( is_true( self.is_server ) )
-	{
-		return;
-	}
-	if ( isDefined( level.host ) && self == level.host )
-	{
-		return;
-	}
-	if ( self.cmdpower >= level.cmd_power_trusted_user )
-	{
-		return;
-	}
-	self.cmd_cooldown = level.custom_cmds_cooldown_time;
-	while ( self.cmd_cooldown > 0 )
-	{
-		self.cmd_cooldown--;
-		wait 1;
-	}
-}
-
-can_use_multi_cmds()
-{
-	if ( is_true( level.doing_cmd_system_unittest ) )
-	{
-		return true;
-	}
-	if ( is_true( self.is_server ) )
-	{
-		return true;
-	}
-	if (isDefined( level.host ) && self == level.host )
-	{
-		return true;
-	}
-	if ( self.cmdpower >= level.cmd_power_cheat )
-	{
-		return true;
-	}
-	return false;
-}
-
-has_permission_for_cmd( cmd )
-{
-	if ( is_true( level.doing_cmd_system_unittest ) )
-	{
-		return true;
-	}
-	if ( is_true( self.is_server ) )
-	{
-		return true;
-	}
-	if ( isDefined( level.host ) && self == level.host )
-	{
-		return true;
-	}
-	if ( isDefined( level.tcs_perms.ranks[ self.tcs_rank ] ) && isDefined( level.tcs_perms.ranks[ self.tcs_rank ].disallowed_cmds ) )
-	{
-		for ( i = 0; i < level.tcs_perms.ranks[ self.tcs_rank ].disallowed_cmds.size; i++ )
-		{
-			disallowed_cmd = level.tcs_perms.ranks[ self.tcs_rank ].disallowed_cmds[ i ];
-			if ( disallowed_cmd == "all_cmds" )
-			{
-				return false;
-			}
-			if ( cmd == disallowed_cmd )
-			{
-				return false;
-			}
-			// In this case the token must be a rank name
-			else if ( isDefined( level.cmd_groups[ disallowed_cmd ] ) && isDefined( level.cmd_groups[ disallowed_cmd ][ cmd ] ) )
-			{
-				return false;
-			}
-		}
-	}
-	if ( isDefined( level.tcs_perms.ranks[ self.tcs_rank ] ) && isDefined( level.tcs_perms.ranks[ self.tcs_rank ].allowed_cmds ) )
-	{
-		for ( i = 0; i < level.tcs_perms.ranks[ self.tcs_rank ].allowed_cmds.size; i++ )
-		{
-			allowed_cmd = level.tcs_perms.ranks[ self.tcs_rank ].allowed_cmds[ i ];
-			if ( allowed_cmd == "all_cmds" )
-			{
-				return true;
-			}
-			if ( cmd == allowed_cmd )
-			{
-				return true;
-			}
-			// In this case the token must be a rank name
-			else if ( isDefined( level.cmd_groups[ allowed_cmd ] ) && isDefined( level.cmd_groups[ allowed_cmd ][ cmd ] ) )
-			{
-				return true;
-			}
-		}
-	}
-	if ( self.cmdpower >= level.tcs_cmds[ cmd ].power )
-	{
-		return true;
 	}
 	return false;
 }

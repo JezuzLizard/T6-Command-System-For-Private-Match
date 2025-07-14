@@ -1,4 +1,9 @@
-init_consts()
+#include common_scripts\utility;
+#include maps\mp\_utility;
+
+#include scripts\cmd\core\_utility;
+
+autoexec init_consts()
 {
 	build_tcs_consts();
 	build_contents_array();
@@ -100,6 +105,8 @@ init_consts()
 	register_entity_type( "zbarrier", ::get_zbarrier_array );
 	register_entity_type( "temp_entity", ::get_temp_entity_array );
 
+	register_custom_entity_getter( "bot", ::get_bots_array );
+
 	register_entnum_range( "player", 0, 17, 18 );
 	register_entnum_range( "player_corpse", 18, 21, 4 );
 	register_entnum_range( "actor", 22, 53, 32 );
@@ -109,6 +116,24 @@ init_consts()
 	register_entnum_range( "any", 110, 1021, 910 );
 	register_entnum_range( "world", 1022, 1022, 1 );
 	register_entnum_range( "undefined", 1023, 1023, 1 );
+
+	arg_obj_register( "player", ::arg_obj_player_generate, ::arg_obj_player_cast );
+	arg_obj_register( "positive_int", ::arg_obj_positive_int_generate, ::arg_obj_positive_int_cast );
+	arg_obj_register( "boolean", ::arg_obj_boolean_generate, ::arg_obj_boolean_cast );
+	arg_obj_register( "int", ::arg_obj_int_generate, ::arg_obj_int_cast );
+	arg_obj_register( "float", ::arg_obj_float_generate, ::arg_obj_float_cast );
+	arg_obj_register( "positive_float", ::arg_obj_positive_float_generate, ::arg_obj_positive_float_cast );
+	arg_obj_register( "vector", ::arg_obj_vector_generate, ::arg_obj_vector_cast );
+	arg_obj_register( "team", ::arg_obj_team_generate, ::arg_obj_team_cast );
+	arg_obj_register( "cmdalias", ::arg_obj_cmdalias_generate, ::arg_obj_cmdalias_cast );
+	arg_obj_register( "rank", ::arg_obj_rank_generate, ::arg_obj_rank_cast );
+	arg_obj_register( "hitloc", ::arg_obj_hitloc_generate, ::arg_obj_hitloc_cast );
+	arg_obj_register( "MOD", ::arg_obj_mod_generate, ::arg_obj_mod_cast );
+	arg_obj_register( "idflags", ::arg_obj_idflags_generate, ::arg_obj_idflags_cast );
+	arg_obj_register( "string", ::arg_obj_string_generate, ::arg_obj_string_cast );
+	arg_obj_register( "string_allow_null", ::arg_obj_string_allow_null_generate, ::arg_obj_string_allow_null_cast );
+	arg_obj_register( "model", ::arg_obj_model_generate, ::arg_obj_model_cast );
+	arg_obj_register( "spawnable_classname", ::arg_obj_spawnable_classname_generate, ::arg_obj_spawnable_classname_cast );
 }
 
 get_entities_by_etype( etype, start = 0, end = 1024 )
@@ -128,6 +153,14 @@ get_entities_by_etype( etype, start = 0, end = 1024 )
 			continue;
 		}
 
+		if ( etype == "temp_entity" )
+		{
+			if ( ent getentitytype() >= level._entity_types[ "temp_entity" ] )
+			{
+				ents[ ents.size ] = ent
+				continue;
+			}
+		}
 		if ( ent getentitytype() != level._entity_types[ etype ] )
 		{
 			continue;
@@ -314,7 +347,7 @@ get_temp_entity_array()
 	return get_entities_by_etype( "temp_entity", 109 );
 }
 
-register_entity_type( type, getter_func )
+private register_entity_type( type, getter_func )
 {
 	if ( !isdefined( level._entity_type_funcs ) )
 	{
@@ -325,7 +358,18 @@ register_entity_type( type, getter_func )
 	level._entity_type_funcs[ type ].getter = getter_func;
 }
 
-register_entnum_range( type, first_entnum, last_entnum, count )
+private register_entity_type( type, getter_func )
+{
+	if ( !isdefined( level._entity_custom_getter_funcs ) )
+	{
+		level._entity_custom_getter_funcs = [];
+	}
+
+	level._entity_custom_getter_funcs[ type ] = spawnstruct();
+	level._entity_custom_getter_funcs[ type ].getter = getter_func;
+}
+
+private register_entnum_range( type, first_entnum, last_entnum, count )
 {
 	if ( !isdefined( level._ent_num_ranges ) )
 	{
@@ -339,12 +383,6 @@ register_entnum_range( type, first_entnum, last_entnum, count )
 		level._ent_num_ranges[ type ].last_entnum = last_entnum;
 		level._ent_num_ranges[ type ].count = count;
 	}
-}
-
-build_tcs_consts()
-{
-	level._is_required_target = true;
-	level._is_optional_target = false;
 }
 
 /*
@@ -379,7 +417,7 @@ build_tcs_consts()
 	CONTENTS_TRIGGER = 0x40000000,
 	CONTENTS_NODROP = 0x80000000,
 */
-build_contents_array()
+private build_contents_array()
 {
 	level.tcs_contents = [];
 	level.tcs_contents[ "NONE" ] = 0;
@@ -419,7 +457,7 @@ build_contents_array()
 	level.tcs_contents[ "NODROP" ] = 1 << 31;
 }
 
-build_hitlocs_array()
+private build_hitlocs_array()
 {
 	level.tcs_hitlocs = [];
 	level.tcs_hitlocs[ "none" ] = 0;
@@ -444,7 +482,7 @@ build_hitlocs_array()
 	level.tcs_hitlocs[ "right_foot" ] = 19;
 }
 
-build_mods_array()
+private build_mods_array()
 {
 	level.tcs_mods = [];
 	level.tcs_mods[ "MOD_UNKNOWN" ] = 0;
@@ -470,7 +508,7 @@ build_mods_array()
 	level.tcs_mods[ "MOD_GAS" ] = 20;
 }
 
-build_idflags_array()
+private build_idflags_array()
 {
 	level.tcs_idflags = [];
 	level.tcs_idflags[ "radius" ] = 1 << 0;
@@ -486,7 +524,7 @@ build_idflags_array()
 	level.tcs_idflags[ "passthru" ] = 1 << 10;
 }
 
-build_sessionstate_array()
+private build_sessionstate_array()
 {
 	level.tcs_sessstates = [];
 	level.tcs_sessstates[ "playing" ] = 0;
@@ -495,7 +533,7 @@ build_sessionstate_array()
 	level.tcs_sessstates[ "intermission" ] = 3;
 }
 
-build_dynamic_spawnable_classname_array()
+private build_dynamic_spawnable_classname_array()
 {
 	level.tcs_dynamic_spawns = [];
 	level.tcs_dynamic_spawns[ "info_notnull" ] = 0;
@@ -512,7 +550,7 @@ build_dynamic_spawnable_classname_array()
 	level.tcs_dynamic_spawns[ "_spawn" ] = 11;
 }
 
-build_dynamic_spawnable_function_array()
+private build_dynamic_spawnable_function_array()
 {
 	level.tcs_dynamic_function_spawns = [];
 	level.tcs_dynamic_function_spawns[ "spawn" ] = 0;
@@ -529,7 +567,7 @@ build_dynamic_spawnable_function_array()
 	level.tcs_dynamic_function_spawns[ "cloneplayer" ] = 11;
 }
 
-build_bsp_spawnable_classname_array()
+private build_bsp_spawnable_classname_array()
 {
 	level.tcs_bsp_spawns = [];
 	level.tcs_bsp_spawns[ "trigger_use" ] = 0;
@@ -552,150 +590,394 @@ build_bsp_spawnable_classname_array()
 	level.tcs_bsp_spawns[ "heli_height_lock" ] = 17;
 }
 
-get_perk_from_alias_zm( alias )
+arg_obj_positive_int_cast( arg )
 {
-	switch ( alias )
+	return cast_str_to_number( arg, "positive_int" );
+}
+
+arg_obj_positive_int_generate()
+{
+	return randomint( 1000000 );
+}
+
+arg_obj_boolean_generate()
+{
+	return cointoss();
+}
+
+arg_obj_boolean_cast( arg )
+{
+	return cast_str_to_bool( arg );
+}
+
+arg_obj_int_generate()
+{
+	return cointoss() ? randomint( 1000000 ) : randomint( 1000000 ) * -1;
+}
+
+arg_obj_int_cast( arg )
+{
+	return cast_str_to_number( arg, "int" );
+}
+
+arg_obj_float_generate()
+{
+	return cointoss() ? randomFloat( 1000000 ) : randomFloat( 1000000 ) * -1;
+}
+
+arg_obj_float_cast( arg )
+{
+	return cast_str_to_number( arg, "float" );
+}
+
+arg_obj_positive_float_generate()
+{
+	return randomfloat( 1000000 );
+}
+
+arg_obj_positive_float_cast( arg )
+{
+	return cast_str_to_number( arg, "positive_float" );
+}
+
+arg_obj_vector_generate()
+{
+	x = cointoss() ? randomfloat( 1000 ) : randomfloat( 1000 ) * -1;
+	y = cointoss() ? randomfloat( 1000 ) : randomfloat( 1000 ) * -1;
+	z = cointoss() ? randomfloat( 1000 ) : randomfloat( 1000 ) * -1;
+	return x + "," + y + "," + z;
+}
+
+arg_obj_vector_cast( arg )
+{
+	return cast_str_to_vector( arg );
+}
+
+arg_obj_string_validate( arg )
+{
+	compare_str = "01234567890_abcdefghijklmnopqrstuvwxyz";
+
+	for ( i = 0; i < arg.size; i++ )
 	{
-		case "ju":
-		case "jug":
-		case "jugg":
-		case "juggernog":
-			return "specialty_armorvest";
-		case "ro":
-		case "rof":
-		case "double":
-		case "doubletap":
-			return "specialty_rof";
-		case "qq":
-		case "quick":
-		case "revive":
-		case "quickrevive":
-			return "specialty_quickrevive";
-		case "sp":
-		case "speed":
-		case "fastreload":
-		case "speedcola":
-			return "specialty_fastreload";
-		case "st":
-		case "staminup":
-		case "longersprint":
-			return "specialty_longersprint";
-		case "fl":
-		case "flakjacket":
-		case "flopper":
-			return "specialty_flakjacket";
-		case "ds":
-		case "deadshot":
-			return "specialty_deadshot";
-		case "mk":
-		case "mulekick":
-			return "specialty_additionalprimaryweapon";
-		case "tm":
-		case "tombstone":
-			return "specialty_scavenger";
-		case "ww":
-		case "whoswho":
-			return "specialty_finalstand";
-		case "ec":
-		case "electriccherry":
-			return "specialty_grenadepulldeath";
-		case "va":
-		case "vultureaid":
-			return "specialty_nomotionsensor";
-		case "all":
-			return "all";
-		default:
-			return alias;
+		if ( !isdefined( list[ arg[ i ] ] ) )
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
+arg_obj_string_generate( arg )
+{
+	return "null";
+}
+
+arg_obj_string_allow_null_validate( arg )
+{
+	if ( arg == "" )
+	{
+		return true;
+	}
+
+	return arg_obj_string_validate( arg );
+}
+
+arg_obj_string_allow_null_generate()
+{
+	return "null";
+}
+
+arg_obj_team_cast( arg )
+{
+	find = generic_obj_t_new();
+	if ( isdefined( level.teams[ arg ] ) )
+	{
+		find.value = arg;
+		return set_cast_success( find );
+	}
+
+	msg = "";
+	foreach ( team, key in level.teams )
+	{
+		msg += "'" + key + "' ";
+	}
+
+	return set_cast_error( find, "Invalid team: '" + arg + "' valid teams are: " + msg );
+}
+
+arg_obj_team_generate()
+{
+	return random( level.teams );
+}
+
+arg_obj_cmdalias_generate()
+{
+	cmd_keys = getarraykeys( level.tcs_cmds );
+	aliases = [];
+	for ( i = 0; i < cmd_keys.size; i++ )
+	{
+		if ( is_true( level.cmd_system_unittest_cmd_exclusions[ cmd_keys[ i ] ] ) )
+		{
+			continue;
+		}
+		for ( j = 0; j < level.tcs_cmds[ cmd_keys[ i ] ].aliases.size; j++ )
+		{
+			aliases[ aliases.size ] = level.tcs_cmds[ cmd_keys[ i ] ].aliases[ j ];
+		}
+	}
+
+	return aliases[ randomInt( aliases.size ) ];
+}
+
+arg_obj_cmdalias_cast( arg )
+{
+	cmd_find_result = cast_str_to_cmd( arg );
+	return cmd_find_result;	
+}
+
+arg_obj_rank_generate()
+{
+	ranks = getarraykeys( level.tcs_perms.ranks );
+	return ranks[ randomInt( ranks.size ) ]; 
+}
+
+arg_obj_hitloc_cast( arg )
+{
+	find = generic_obj_t_new();
+	if ( isdefined( level.tcs_hitlocs[ arg ] ) )
+	{
+		find.value = arg;
+		return set_cast_success( find );
+	}
+
+	msg = "";
+	foreach ( team, key in level.tcs_hitlocs )
+	{
+		msg += "'" + key + "' ";
+	}
+
+	return set_cast_error( find, "Invalid hitloc: '" + arg + "' valid hitlocs are: " + msg );
+}
+
+arg_obj_hitloc_generate()
+{
+	hitlocs = getarraykeys( level.tcs_hitlocs );
+	return hitlocs[ randomint( hitlocs.size ) ];
+}
+
+arg_obj_mod_generate()
+{
+	mods = getarraykeys( level.tcs_mods );
+	return mods[ randomInt( mods.size ) ];
+}
+
+arg_obj_mod_cast( arg )
+{
+	find = generic_obj_t_new();
+	if ( isdefined( level.tcs_mods[ arg ] ) )
+	{
+		find.value = toupper( arg );
+		return set_cast_success( find );
+	}
+
+	msg = "";
+	foreach ( team, key in level.tcs_mods )
+	{
+		msg += "'" + key + "' ";
+	}
+
+	return set_cast_error( find, "Invalid means of death: '" + arg + "' valid means of death are: " + msg );
+}
+
+arg_obj_idflags_generate()
+{
+	flags = 0;
+	idflags_array = level.tcs_idflags;
+	max_flags_to_add = randomint( level.tcs_idflags.size );
+	for ( i = 0; i < max_flags_to_add && ( idflags_array.size > 0 ); i++ )
+	{
+		random_flag_index = randomint( idflags_array.size );
+		flags |= idflags_array[ random_flag_index ];
+		arrayremoveindex( idflags_array, random_flag_index );
+	}
+
+	return flags;
+}
+
+// unimplmented
+arg_obj_idflags_cast( arg )
+{
+
+}
+
+arg_obj_model_generate()
+{
+	return "null";
+}
+
+// unimplmented
+arg_obj_model_cast( arg )
+{
+	result_obj = result_obj_new( "model", "string" );
+	return set_cast_success( result_obj, arg, "model==" + arg );
+}
+
+arg_obj_player_generate()
+{
+	if ( is_true( self.is_server ) )
+	{
+		randomint = randomint( 3 );
+	}
+	else 
+	{
+		randomint = randomint( 4 );
+	}
+	players = getplayers();
+
+	if ( players.size <= 0 )
+	{
+		return -1;
+	}
+
+	random_player = players[ randomint( players.size ) ];
+	switch ( randomint )
+	{
+		case 0:
+			return random_player getentitynumber();
+		case 1:
+			return random_player getguid();
+		case 2:
+			return random_player.name;
+		case 3:
+			return "self";
 	}
 }
 
-get_powerup_from_alias_zm( alias )
+arg_obj_player_cast( arg )
 {
-	switch ( alias )
+	return self cast_str_to_entity( arg, "player" );
+}
+
+arg_obj_entity_generate()
+{
+	randomint = randomint( 4 );
+	entities = getentarray();
+	if ( entities.size <= 0 )
 	{
-		case "nuke":
-			return "nuke";
-		case "insta":
-		case "instakill":
-			return "insta_kill";
-		case "double":
-		case "doublepoints":
-			return "double_points";
-		case "max":
-		case "ammo":
-		case "maxammo":
-			return "full_ammo";
-		case "carp":
-			return "carpenter";
-		case "sale":
-		case "firesale":
-			return "fire_sale";
-		case "perk":
-		case "freeperk":
-			return "free_perk";
-		case "blood":
-		case "zombieblood":
-			return "zombie_blood";
-		case "points":
-			return "bonus_points";
-		case "teampoints":
-			return "bonus_points_team";
-		default:
-			return alias;
+		return 1023;
+	}
+	random_entity = entities[ randomint( entities.size ) ];
+	switch ( randomint )
+	{
+		case 0:
+			return random_entity getentitynumber();
+		case 1:
+			if ( is_true( self.is_server ) )
+			{
+				return random_entity getentitynumber();
+			}
+			else
+			{
+				return "self";
+			}
+		case 2:
+			return 1022;
+		case 3:
+			return 1023;
 	}
 }
 
-powerup_list_zm()
+arg_obj_entity_cast( arg )
 {
-	return getarraykeys( level.zombie_include_powerups );
+	return self cast_str_to_entity( arg, "general" );
 }
 
-get_perma_perk_from_alias( alias )
+arg_obj_entity_allow_null_generate()
 {
-	switch ( alias )
+	return arg_obj_entity_generate();
+}
+
+arg_obj_entity_allow_null_cast( arg )
+{
+	find = self cast_str_to_entity( arg, "general", true );
+	return ;
+}
+
+arg_obj_bot_generate()
+{
+	if ( is_true( self.is_server ) )
 	{
-		case "bo":
-		case "boards":
-			return "pers_boarding";
-		case "re":
-		case "revive":
-			return "pers_reviveonperk";
-		case "he":
-		case "headshots":
-			return "pers_multikill_headshots";
-		case "ca":
-		case "cashback":
-			return "pers_cash_back_prone";
-		case "in":
-		case "instakill":
-			return "pers_insta_kill";
-		case "ju":
-		case "jugg":
-			return "pers_jugg";
-		case "cr":
-		case "carpenter":
-			return "pers_carpenter";
-		case "fl":
-		case "flopper":
-			return "pers_flopper_counter";
-		case "pe":
-		case "perklose":
-			return "pers_perk_lose_counter";
-		case "pp":
-		case "pistolpoints":
-			return "pers_double_points_counter";
-		case "sn":
-		case "sniperpoints":
-			return "pers_sniper_counter";
-		case "bx":
-		case "boxweapon":
-			return "pers_box_weapon_counter";
-		case "nu":
-		case "nube":
-			return "pers_nube_counter";
-		case "all":
-			return "all";
-		default: 
-			return alias;
+		randomint = randomInt( 3 );
 	}
+	else 
+	{
+		randomint = randomInt( 4 );
+	}
+
+	bots = [];
+	for ( i = 0; i < level.players.size; i++ )
+	{
+		if ( !level.players[ i ] istestclient() )
+		{
+			continue;
+		}
+		bots[ bots.size ] = level.players[ i ];
+	}
+
+	if ( bots.size <= 0 )
+	{
+		return -1;
+	}
+
+	random_bot = bots[ randomInt( bots.size ) ];
+	switch ( randomint )
+	{
+		case 0:
+			return random_bot getEntityNumber();
+		case 1:
+			return random_bot getGuid();
+		case 2:
+			return random_bot.name;
+		case 3:
+			return "self";
+	}
+}
+
+arg_obj_bot_cast( arg )
+{
+	find = self cast_str_to_entity( arg, "player" );
+	if ( !find.errored && !find.ent istestclient() )
+	{
+		return set_cast_error( find, find.ent.name + " is not a bot" );
+	}
+	return find;
+}
+
+arg_obj_actor_generate()
+{
+	return undefined;
+}
+
+// unimplmented
+arg_obj_actor_cast( arg )
+{
+	return self cast_str_to_entity( arg );
+}
+
+arg_obj_spawnable_classname_generate()
+{
+	return undefined;
+}
+
+arg_obj_spawnable_classname_cast( arg )
+{
+	result_obj = result_obj_new( "spawnable_classname", "string" );
+
+	if ( !isdefined( level.tcs_dynamic_spawns[ arg ] ) )
+	{
+		return set_cast_error( result_obj, "arg!=classname" );
+	}
+
+	return set_cast_success( result_obj, arg, "classname==" + arg );
 }

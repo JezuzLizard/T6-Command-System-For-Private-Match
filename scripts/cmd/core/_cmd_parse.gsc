@@ -1,29 +1,8 @@
-is_alpha( chr )
-{
-	abc = "abcdefghijklmnopqrstuvwxyz";
+#include common_scripts\utility;
+#include maps\mp\_utility;
+#include scripts\cmd_system_modules\_utility;
 
-	return isdefined( abc[ tolower( chr ) ] );
-}
-
-is_alpha_numeric( chr, check_underscore = false )
-{
-	abc = "0123456789abcdefghijklmnopqrstuvwxyz";
-
-	if ( check_underscore )
-	{
-		abc += "_";
-	}
-	return isdefined( abc[ tolower( chr ) ] );
-}
-
-is_numeric( chr )
-{
-	abc = "0123456789";
-
-	return isdefined( abc[ tolower( chr ) ] );
-}
-
-/*noreturn*/ throw_parse_exception( generic_obj, error_msg )
+/*noreturn*/ private throw_parse_exception( generic_obj, error_msg )
 {
 	generic_obj.errored = true;
 	generic_obj.msg = error_msg;
@@ -36,14 +15,14 @@ is_numeric( chr )
 	self notify( "cmd_parse_exception", generic_obj );
 }
 
-/*generic_obj_t*/ set_parse_success( generic_obj, success_msg = "" )
+/*generic_obj_t*/ private set_parse_success( generic_obj, success_msg = "" )
 {
 	generic_obj.msg = success_msg;
 
 	return generic_obj;
 }
 
-set_parse_warning( generic_obj, msg = undefined )
+private set_parse_warning( generic_obj, msg = undefined )
 {
 	generic_obj.warning = true;
 	if ( isdefined( msg ) )
@@ -54,14 +33,14 @@ set_parse_warning( generic_obj, msg = undefined )
 	return generic_obj;
 }
 
-reset_parse_warning( obj )
+private reset_parse_warning( obj )
 {
 	obj.warning = false;
 
 	return obj;
 }
 
-parse_array( string, generic_obj )
+private parse_array( string, generic_obj )
 {
 	// basic checks
 	square_bracket_count = 0;
@@ -122,7 +101,7 @@ parse_array( string, generic_obj )
 	return set_parse_success( generic_obj, "token_values.size=" + generic_obj.token_values.size );
 }
 
-set_parse_random_limit( token_parse_obj, new_value )
+private set_parse_random_limit( token_parse_obj, new_value )
 {
 	token_parse_obj.target_values[ 0 ] = new_value;
 
@@ -134,7 +113,7 @@ set_parse_random_limit( token_parse_obj, new_value )
 	return set_parse_success( token_parse_obj, "random_limit=" + new_value );
 }
 
-/*func_call_parse_obj_t*/ func_call_parse_obj_t_new( function_name )
+/*func_call_parse_obj_t*/ private func_call_parse_obj_t_new( function_name )
 {
 	func_call_parse_obj = spawnstruct();
 	func_call_parse_obj.arg_directives = [];
@@ -147,7 +126,7 @@ set_parse_random_limit( token_parse_obj, new_value )
 // 0 - function_name
 // 1 - function caller, use undefined for no caller
 // >1 - arguments
-parse_function( generic_obj, call_value )
+private parse_function( generic_obj, call_value )
 {
 	// basic checks
 	str_start = 0;
@@ -238,7 +217,7 @@ parse_function( generic_obj, call_value )
 	return set_parse_success( generic_obj );
 }
 
-parse_target_random( target_string, token_parse_obj )
+private parse_target_random( target_string, token_parse_obj )
 {
 	token_parse_obj.token_type = "random";
 
@@ -267,7 +246,7 @@ parse_target_random( target_string, token_parse_obj )
 	return set_parse_random_limit( token_parse_obj, random_limit );
 }
 
-try_parse_function( string, generic_obj )
+private try_parse_function( string, generic_obj )
 {
 	str_start = 0;
 	function_name = "";
@@ -301,7 +280,7 @@ try_parse_function( string, generic_obj )
 	return set_parse_warning( generic_obj );
 }
 
-try_parse_name( string, generic_obj, str_start = 0, str_end = undefined )
+private try_parse_name( string, generic_obj, str_start = 0, str_end = undefined )
 {
 	str_start = _DEFAULT( str_start, 0 );
 	std_end = _DEFAULT( str_end, string.size );
@@ -329,7 +308,7 @@ try_parse_name( string, generic_obj, str_start = 0, str_end = undefined )
 	}
 }
 
-parse_target_value( target_string )
+private parse_target_value( target_string )
 {
 	token_parse_obj = token_parse_obj_t_new( "unassigned" );
 	first = target_string[ 0 ];
@@ -392,7 +371,7 @@ parse_target_value( target_string )
 	throw_parse_exception( token_parse_obj, "Unsupported target directive value" );
 }
 
-parse_directive( key_type, ordinal_argument, value )
+private parse_directive( key_type, ordinal_argument, value )
 {
 	if ( key_type[ 0 ] == "t" || issubstr( key_type, "target" ) )
 	{
@@ -438,7 +417,7 @@ parse_directive( key_type, ordinal_argument, value )
 	throw_parse_exception( directive_parse, "Unsupported directive key '" + key + "'" );
 }
 
-parse_directives( cmd_parse, token_str )
+private parse_directives( cmd_parse, token_str )
 {
 	// parse directives
 	if ( token_str[ 1 ] != "{" )
@@ -634,12 +613,12 @@ parse_directives( cmd_parse, token_str )
 // ? - wildcard token for vectors
 // since we must define all keys explicitly we don't need to worry about user defined keys, which means certain kinds of syntax can be simplified to be implicit(vector parsing)
 
-add_token( value )
+private add_token( value )
 {
 	self.token_values[ self.token_values.size ] = value;
 }
 
-/*token_parse_obj_t*/ token_parse_obj_t_new( token_type )
+/*token_parse_obj_t*/ private token_parse_obj_t_new( token_type )
 {
 	token_parse_obj = generic_obj_t_new( "token_parse" );
 	token_parse_obj.token_type = token_type;
@@ -647,7 +626,7 @@ add_token( value )
 	return token_parse_obj;
 }
 
-/*directive_parse_obj_t*/ directive_parse_obj_t_new( directive_type, directive_value, directive_ordinal )
+/*directive_parse_obj_t*/ private directive_parse_obj_t_new( directive_type, directive_value, directive_ordinal )
 {
 	directive_parse_obj = generic_obj_t_new( "directive_parse" );
 	directive_parse_obj.directive_type = directive_type;
@@ -657,7 +636,7 @@ add_token( value )
 	return directive_parse_obj;
 }
 
-/*cmd_parse_obj_t*/ cmd_parse_obj_t_new()
+/*cmd_parse_obj_t*/ private cmd_parse_obj_t_new()
 {
 	cmd_parse_obj = generic_obj_t_new( "cmd_parse" );
 	cmd_parse_obj.directive_kvps = []; // string -> array[ directive_parse_obj_t ]
@@ -668,7 +647,7 @@ add_token( value )
 	return cmd_parse_obj;
 }
 
-/*cmd_parse_obj_array_t*/ cmd_parse_obj_array_t_new()
+/*cmd_parse_obj_array_t*/ private cmd_parse_obj_array_t_new()
 {
 	cmd_parse_obj = generic_obj_t_new( "cmd_parse_array" );
 	cmd_parse_obj.cmds = []; // string -> cmd_parse_obj_t
@@ -679,7 +658,7 @@ add_token( value )
 // the command to be executed is the first alnum + '_' string encountered; therefore it can be before or after any '@' directives
 // directives '@' can appear in any order in the string
 // spaces can now be used within directives, functions and arrays; otherwise it would not be possible to 
-custom_split( str )
+private custom_split( str )
 {
 	tokens = [];
 
@@ -736,7 +715,7 @@ custom_split( str )
 }
 
 // Last command token to execute the last command implicitly
-/*cmd_parse_obj_array_t*/ parse_cmd_message( message )
+/*cmd_parse_obj_array_t export*/ parse_cmd_message( message )
 {
 	cmd_parse_array = cmd_parse_obj_array_t_new();
 	if ( message == "" )

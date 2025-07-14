@@ -3,8 +3,9 @@
 #include scripts\cmd_system_modules\_com;
 #include scripts\cmd_system_modules\_cmd_util;
 
-cmd_buffer()
+autoexec cmd_buffer()
 {
+	level thread scr_dvar_cmd_watcher();
 	while ( true )
 	{
 		level waittill( "say", message, user, is_hidden, is_team_chat );
@@ -17,7 +18,7 @@ cmd_buffer()
 	}
 }
 
-handle_parse_exception_feedback( user )
+private handle_parse_exception_feedback( user )
 {
 	if ( isplayer( user ) )
 	{
@@ -35,30 +36,7 @@ handle_parse_exception_feedback( user )
 	}
 }
 
-/*noreturn*/ throw_execute_exception( error_msg, print = true, generic_obj = undefined )
-{
-	generic_obj = _DEFAULT( generic_obj, generic_obj_t_new() );
-	generic_obj.errored = true;
-	generic_obj.msg = error_msg;
-	generic_obj.do_print = print;
-
-	if ( getdvarint( "script_breakpoint" ) )
-	{
-		generic_obj script_breakpoint();
-	}
-
-	self notify( "cmd_parse_exception", generic_obj );
-	return;
-}
-
-/*generic_obj_t*/ set_execute_success( generic_obj, success_msg )
-{
-	generic_obj.msg = success_msg;
-
-	return generic_obj;
-}
-
-check_command_syntax_used( message, is_hidden )
+private check_command_syntax_used( message, is_hidden )
 {
 	if ( !level.tcs_glob.bhidden_cmds && is_hidden )
 	{
@@ -70,7 +48,7 @@ check_command_syntax_used( message, is_hidden )
 	}
 }
 
-check_command_cooldown()
+private check_command_cooldown()
 {
 	if ( isDefined( self.cmd_cooldown ) && self.cmd_cooldown > 0 )
 	{
@@ -78,7 +56,7 @@ check_command_cooldown()
 	}
 }
 
-check_multi_commands( cmd_parse_obj )
+private check_multi_commands( cmd_parse_obj )
 {
 	if ( cmd_parse_obj.cmds.size > 1 && !self scripts\cmd_system_modules\_perms::can_use_multi_cmds() )
 	{
@@ -87,13 +65,13 @@ check_multi_commands( cmd_parse_obj )
 }
 
 // just in case the thread would end before reseting it
-reset_in_command()
+private reset_in_command()
 {
 	wait 0.05;
 	self.in_command_frame = false;
 }
 
-cmd_execute( message, initiator, is_hidden, is_team_chat, from_rcon )
+private cmd_execute( message, initiator, is_hidden, is_team_chat, from_rcon )
 {
 	if ( !isdefined( initiator.cmd_execute_id ) )
 	{
@@ -126,7 +104,7 @@ cmd_execute( message, initiator, is_hidden, is_team_chat, from_rcon )
 	}
 
 	message = tolower( message );
-	cmd_parse_obj = parse_cmd_message( message );
+	cmd_parse_obj = scripts\cmd_system_modules\_cmd_parse::parse_cmd_message( message );
 	//add_obj_ref( cmd_execute_thread, cmd_parse_obj );
 
 	if ( !has_all_perms )
@@ -169,7 +147,169 @@ cmd_execute( message, initiator, is_hidden, is_team_chat, from_rcon )
 	}
 }
 
-cmd_execute_internal( initiator, cmd_obj )
+private test_cmd_is_valid( cmd_object, args )
+{
+	//self com_printcmd( cmd_object );
+	if ( args.size < cmd_object.min_args )
+	{
+		self throw_execute_exception( "Too few args: usage: " + cmd_object.usage );
+	}
+	if ( args.size > cmd_object.max_args )
+	{
+		self throw_execute_exception( "Too many args: usage: " + cmd_object.usage );
+	}
+
+	return true;
+}
+
+private arg_cast( arg_type, arg, arg_index )
+{
+	cast_result = result_obj_new( "argtype", "struct" );
+	if ( isDefined( level.tcs_arg_type_handlers[ arg_type ] ) && isDefined( level.tcs_arg_type_handlers[ arg_type ].cast_func ) )
+	{
+		cast_result = self [[ level.tcs_arg_type_handlers[ arg_type ].cast_func ]]( arg );
+			
+		return cast_result;
+	}
+
+	return set_cast_success( cast_result, arg, "no argtype defined" );
+}
+
+private target_cast( etype, directive_type, directive_args )
+{
+	obj = generic_obj_t_new( "target_cast" );
+
+	obj.value = get_entity_targets( etype, directive_type, directive_args );
+	if ( !isdefined( obj.value ) || obj.value.size == 0 )
+	{
+		obj.errored = true;
+		obj.msg = "Failed to find any compatible entities";
+	}
+
+	return obj;
+}
+
+private cast_to_array( item )
+{
+	new_array = [];
+	new_array[ new_array.size ] = item;
+	return new_array;
+}
+
+private get_random_limited_array( array, limit )
+{
+	new_array = [];
+	array = array_randomize( array );
+	for ( i = 0; i < limit; i++ )
+	{
+		new_array = add_to_array( new_array, array[ i ] );
+	}
+
+	return new_array;
+}
+
+private get_executors( executor_type, directive_args )
+{
+	executors = [];
+	switch ( executor_type )
+	{
+		case "all":
+			executors = level.players;
+			return executors;
+		case "undefined": // error
+			return [];
+		case "random":
+			limit = 1;
+			if ( isdefined( directive_args[ 0 ] ) )
+			{
+				limit = int( directive_args[ 0 ] );
+			}
+			
+			return get_random_limited_array( level.players, limit );
+		case "array":
+			players = [];
+			foreach ( presumed_player in directive_args )
+			{
+				players[ players.size ] = cast_str_to_entity( presumed_player, "player" );
+			}
+
+			return players;
+		case "array_random":
+			players = [];
+			foreach ( presumed_player in directive_args )
+			{
+				players[ players.size ] = cast_str_to_entity( presumed_player, "player" );
+			}
+
+			return add_to_array( undefined, random( players ) );
+		case "self":
+			return add_to_array( undefined, self );
+		case "default":
+			return add_to_array( undefined, self.default_executor );
+	}
+}
+
+private get_entity_targets( etype, directive_type, directive_args )
+{
+	assert( isplayer( self ) );
+
+	getter_func = undefined;
+	if ( isdefined( level._entity_type_funcs[ etype ] ) )
+	{
+		getter_func = level._entity_type_funcs[ etype ].getter;
+	}
+	else if ( isdefined( level._entity_custom_getter_funcs[ etype ] ) )
+	{
+		getter_func = level._entity_custom_getter_funcs[ etype ].getter;
+	}
+	else
+	{
+		assert( false );
+		return [];
+	}
+
+	ents = undefined;
+	switch ( directive_type )
+	{
+		case "all":
+			ents = [[ getter_func ]]();
+			return ents;
+		case "undefined":
+			return [];
+		case "random":
+			ents = [[ getter_func ]]();
+			limit = 1;
+			if ( isdefined( directive_args[ 0 ] ) )
+			{
+				limit = int( directive_args[ 0 ] );
+			}
+			
+			return get_random_limited_array( ents, limit );
+		case "array":
+		case "array_random":
+			ents = [];
+			foreach ( presumed_ent in directive_args )
+			{
+				ents[ ents.size ] = cast_str_to_entity( presumed_ent, etype );
+			}
+
+			if ( directive_type == "array" )
+			{
+				return ents;
+			}
+			else
+			{
+				return add_to_array( undefined, random( ents ) );
+			}
+			
+		case "self":
+			return add_to_array( undefined, self );
+		case "default":
+			return add_to_array( undefined, self.default_target );
+	}
+}
+
+private cmd_execute_internal( initiator, cmd_obj )
 {
 	cmd_data_obj = level.tcs_cmds[ cmd_obj.cmd_name ];
 
@@ -226,7 +366,7 @@ cmd_execute_internal( initiator, cmd_obj )
 	self handle_result_feedback( initiator, result, cmd_obj.cmd_name, arg_obj );
 }
 
-handle_result_feedback( initiator, result, cmd_name, arg_obj )
+private handle_result_feedback( initiator, result, cmd_name, arg_obj )
 {
 	if ( is_true( initiator.tcs_logprint_cmd_usage ) && !is_true( level.doing_cmd_system_unittest ) )
 	{
@@ -292,7 +432,7 @@ handle_result_feedback( initiator, result, cmd_name, arg_obj )
 	}
 }
 
-scr_dvar_cmd_watcher()
+private scr_dvar_cmd_watcher()
 {
 	setDvar( "tcscmd", "" );
 	while ( true )
@@ -302,7 +442,7 @@ scr_dvar_cmd_watcher()
 	}
 }
 
-parse_cmd_dvar()
+private parse_cmd_dvar()
 {
 	dvar_value = getdvar( "tcscmd" );
 	if ( dvar_value != "" )
@@ -320,4 +460,27 @@ parse_cmd_dvar()
 			level notify( "say", dvar_value, level.host, true, false );
 		}
 	}
+}
+
+/*noreturn*/ private throw_execute_exception( error_msg, print = true, generic_obj = undefined )
+{
+	generic_obj = _DEFAULT( generic_obj, generic_obj_t_new() );
+	generic_obj.errored = true;
+	generic_obj.msg = error_msg;
+	generic_obj.do_print = print;
+
+	if ( getdvarint( "script_breakpoint" ) )
+	{
+		generic_obj script_breakpoint();
+	}
+
+	self notify( "cmd_parse_exception", generic_obj );
+	return;
+}
+
+/*generic_obj_t*/ private set_execute_success( generic_obj, success_msg )
+{
+	generic_obj.msg = success_msg;
+
+	return generic_obj;
 }
