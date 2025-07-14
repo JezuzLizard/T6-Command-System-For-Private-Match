@@ -1,6 +1,7 @@
 #include common_scripts\utility;
 #include maps\mp\_utility;
-#include scripts\cmd_system_modules\_utility;
+
+#include scripts\cmd\core\_utility;
 
 list_players_throttled( channel, players )
 {
@@ -55,7 +56,7 @@ list_entities_throttled( channel, str, entities )
 		for ( i = 0; i < entities.size; i++ )
 		{
 			ent = entities[ i ];
-			if ( !is_entity_valid( ent ) )
+			if ( !isdefined( ent ) )
 			{
 				continue;
 			}
@@ -85,7 +86,7 @@ list_entities_throttled( channel, str, entities )
 		for ( i = 0; i < entities.size; i++ )
 		{
 			ent = entities[ i ];
-			if ( !is_entity_valid( ent ) )
+			if ( !isdefined( ent ) )
 			{
 				continue;
 			}

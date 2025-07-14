@@ -1,8 +1,7 @@
 #include common_scripts\utility;
 #include maps\mp\_utility;
-#include scripts\cmd_system_modules\_cmd_util;
 
-#include scripts\cmd_system_modules\_utility;
+#include scripts\cmd\core\_utility;
 
 autoexec com_init()
 {
@@ -117,7 +116,7 @@ private com_iprintlnbold( message, players )
 	}
 }
 
-com_printf( channels, filter, message, players )
+com_printf_internal( channels, filter, message, players )
 {
 	if ( !isDefined( channels ) )
 	{
@@ -155,11 +154,11 @@ com_printf( channels, filter, message, players )
 	}
 }
 
-com_get_cmd_feedback_channel()
+com_get_cmd_feedback_channel_internal()
 {
 	if ( is_true( self.is_server ) )
 	{
-		return "con";
+		return "con|g_log";
 	}
 	else if ( is_true( level.doing_cmd_system_unittest ) )
 	{

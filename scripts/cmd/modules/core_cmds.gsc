@@ -1,28 +1,34 @@
 #include common_scripts\utility;
 #include maps\mp\_utility;
-#include scripts\cmd_system_modules\_utility;
 
-#include scripts\cmd\core_command_helpers;
+#include scripts\cmd\core\_utility;
+#include scripts\cmd\modules\core_helpers;
 
 autoexec add_cmds()
 {
 	cmd_block_set_module_group( "core_common" );
 	cmd_block_set_rank_group( "cheat" );
-	setcvar_cmd = cmd_add( "cvar", ::cmd_setcvar_f, "cvar {player} <cvarname> <newval>" );
+	setcvar_cmd = cmd_add( "cvar", ::cmd_setcvar_f, "cvar <cvarname> <newval>" );
 	setcvar_cmd arg_obj_add_cmd( "string string", 2, 2 );
-	setcvar_cmd target_obj_add_cmd( "player", false, "Player whos <cvarname> will be set to <newval>" );
+	setcvar_cmd executor_obj_add_cmd( "Player whos <cvarname> will be set to <newval>" );
+
+	givegod_cmd = cmd_add( "god", ::cmd_god_f, "god" );
+	givegod_cmd executor_obj_add_cmd( "Player who will receive god status" );
+
+	givenotarget_cmd = cmd_add( "notarget", ::cmd_notarget_f, "notarget" );
+	givenotarget_cmd executor_obj_add_cmd( "Player who will receive notarget status" );
+
+	giveinvisible_cmd = cmd_add( "invisible", ::cmd_invisible_f, "invisible" );
+	giveinvisible_cmd executor_obj_add_cmd( "Player who will be hidden" );
+
+	togglehud_cmd = cmd_add( "togglehud", ::cmd_togglehud_f, "togglehud" );
+	togglehud_cmd executor_obj_add_cmd( "Player who's hud will be toggled" );
+
+	bottomlessclip_cmd = cmd_add( "bottomlessclip", ::cmd_bottomlessclip_f, "bottomlessclip" );
+	bottomlessclip_cmd target_obj_add_cmd( "Player who will receive bottomless clip" );
 
 	dvar_cmd = cmd_add( "dvar", ::cmd_server_dvar_f, "dvar <dvarname> <newval>" );
 	dvar_cmd arg_obj_add_cmd( "string string", 2, 2 );
-
-	givegod_cmd = cmd_add( "god", ::cmd_givegod_f, "god {player}" );
-	givegod_cmd target_obj_add_cmd( "player", false, "Player who will receive god status" );
-
-	givenotarget_cmd = cmd_add( "notarget", ::cmd_givenotarget_f, "notarget {player}" );
-	givenotarget_cmd target_obj_add_cmd( "player", false, "Player who will receive notarget status" );
-
-	giveinvisible_cmd = cmd_add( "invisible", ::cmd_giveinvisible_f, "invisible {player}" );
-	giveinvisible_cmd target_obj_add_cmd( "player", false, "Player who will be hidden" );
 
 	setrank_cmd = cmd_add( "setrank", ::cmd_setrank_f, "setrank {player} <rank>" );
 	setrank_cmd arg_obj_add_cmd( "rank", 1, 1 );
@@ -37,49 +43,140 @@ autoexec add_cmds()
 	dodamage_cmd target_obj_add_cmd( "entity", false, "Entity who will be set as the <attacker>" );
 	dodamage_cmd target_obj_add_cmd( "entity", false, "Entity who will be set as the <inflictor>" );
 
-	teleportplayer_cmd = cmd_add( "teleporttoplayer", ::cmd_teleportplayer_f, "teleporttoplayer {player_from} {player_to}" );
-	teleportplayer_cmd target_obj_add_cmd( "player", false, "Player who will be teleported" );
-	teleportplayer_cmd target_obj_add_cmd( "player", true, "Player who will be teleported" );
+	teleportplayer_cmd = cmd_add( "teleportentity", ::cmd_teleportentity_f, "teleporttoplayer {entity_from} {entity_to}" );
+	teleportplayer_cmd target_obj_add_cmd( "entity", false, "Player who will be teleported from" );
+	teleportplayer_cmd target_obj_add_cmd( "entity", true, "Player who will be teleported to" );
 
-	bottomlessclip_cmd = cmd_add( "bottomlessclip", ::cmd_bottomlessclip_f, "bottomlessclip {player}" );
-	bottomlessclip_cmd target_obj_add_cmd( "player" );
+	// very nice builtin which allows get entities in an arbitrary abstract volume
+	// GetTouchingVolume( vec, vec, vec );
+	// printentitiesinradius_cmd = cmd_add( "printentitiesinradius", ::cmd_printentitiesinradius_f, "printentitiesinradius {entity_anchor} {entity_filter} [radius=1000]" );
+	// printentitiesinradius_cmd arg_obj_add_cmd( "float", 0, 1 );
+	// printentitiesinradius_cmd target_obj_add_cmd( "entity entity" );
 
-	printentitiesinradius_cmd = cmd_add( "printentitiesinradius", ::cmd_printentitiesinradius_f, "printentitiesinradius {entity_anchor} {entity_filter} [radius=1000]" );
-	printentitiesinradius_cmd arg_obj_add_cmd( "float", 0, 1 );
-	printentitiesinradius_cmd target_obj_add_cmd( "entity entity" );
-
-	togglehud_cmd = cmd_add( "scrnotify", ::cmd_scrnotify_f, "scrnotify {entity} <notifyent> <notifyname> [notifyargs] ..." );
-	togglehud_cmd arg_obj_add_cmd( "string string ...", 2, 255 );
-	togglehud_cmd target_obj_add_cmd( "entity" );
+	scrnotify_cmd = cmd_add( "scrnotify", ::cmd_scrnotify_f, "scrnotify {entity} <notifyname> [notifyargs] ..." );
+	scrnotify_cmd arg_obj_add_cmd( "string string ...", 2, 255 );
+	scrnotify_cmd target_obj_add_cmd( "entity", false, "Entity who will be notified" );
 
 	cmd_block_set_rank_group( "none" );
 	cmdlist_cmd = cmd_add( "cmdlist", ::cmd_cmdlist_f );
 
-	playerlist_cmd = cmd_add( "playerlist", ::cmd_playerlist_f, "playerlist {team}" );
-	playerlist_cmd target_obj_add_cmd( "team" );
+	playerlist_cmd = cmd_add( "playerlist", ::cmd_playerlist_f, "playerlist [team}]" );
+	playerlist_cmd arg_obj_add_cmd( "team", 0, 1 );
 
 	printorigin_cmd = cmd_add( "printorigin", ::cmd_printorigin_f, "printorigin {entity}" );
-	printorigin_cmd target_obj_add_cmd( "entity" );
+	printorigin_cmd target_obj_add_cmd( "entity", false, "Entity who's origin will be printed" );
 
 	printangles_cmd = cmd_add( "printangles", ::cmd_printangles_f, "printangles {entity}" );
-	printangles_cmd target_obj_add_cmd( "entity" );
+	printangles_cmd target_obj_add_cmd( "entity", false, "Entity who's angles will be printed" );
 
 	help_cmd = cmd_add( "help", ::cmd_help_f, "help [cmdalias]" );
 	help_cmd arg_obj_add_cmd( "cmdalias", 0, 1 );
 
-	togglehud_cmd = cmd_add( "togglehud", ::cmd_togglehud_f, "togglehud {player}" );
-	togglehud_cmd target_obj_add_cmd( "player" );
-
 	// Sets the default cmd target for the executor(normally 'self'); this allows the server through rcon or otherwise to still use the default target functionality that makes the default target 'self' or another entity.
-	setdefaultcmdtarget_cmd = cmd_add( "setdefaultcmdtarget", ::cmd_setdefaultcmdtarget_f, "setdefaultcmdtarget {player}" );
-	setdefaultcmdtarget_cmd target_obj_add_cmd( "player", true );
+	setdefaultcmdtarget_cmd = cmd_add( "setdefaultcmdtarget", ::cmd_setdefaultcmdtarget_f, "setdefaultcmdtarget {entity}" );
+	setdefaultcmdtarget_cmd target_obj_add_cmd( "entity", true, "Entity set as the default target for commands with optional targets" );
 
 	setdefaultcmdexecutor_cmd = cmd_add( "setdefaultcmdexecutor", ::cmd_setdefaultcmdexecutor_f, "setdefaultcmdexecutor {player}" );
 	setdefaultcmdexecutor_cmd target_obj_add_cmd( "player", true );
 
+	setdefaultcmdtarget_cmd = cmd_add( "setdefaultcmdtarget", ::cmd_setdefaultcmdtarget_f, "setdefaultcmdtarget {player}" );
+	setdefaultcmdtarget_cmd target_obj_add_cmd( "player", true );
+
 	// entities are no longer used in plain argument syntax, use the target syntax instead
 
 	// executor argtype/target for level.server and player commands
+}
+
+private cmd_setcvar_f( target_obj, args )
+{
+	dvarname = args[ 0 ];
+	dvarvalue = args[ 1 ];
+	self setClientDvar( dvarname, dvarvalue );
+
+	return result_cmdinfo( "Successfully set " + dvarname + " to " + dvarvalue );
+}
+
+private cmd_god_f( target_obj, args )
+{
+	on_off = cast_bool_to_str( !is_true( self.tcs_is_invulnerable ), "on off" );
+	if ( on_off == "on" )
+	{
+		self enableInvulnerability();
+		self.tcs_is_invulnerable = true;
+	}
+	else
+	{
+		self disableInvulnerability();
+		self.tcs_is_invulnerable = false;
+	}
+
+	return result_cmdinfo( "God " + on_off );
+}
+
+private cmd_notarget_f( target_obj, args )
+{
+	on_off = cast_bool_to_str( !is_true( self.ignoreme ), "on off" );
+	if ( on_off == "on" )
+	{
+		self.ignoreme = true;
+	}
+	else 
+	{
+		self.ignoreme = false;
+	}
+	
+	return result_cmdinfo( "Notarget " + on_off );
+}
+
+private cmd_invisible_f( target_obj, args )
+{
+	on_off = cast_bool_to_str( !is_true( self.tcs_is_invisible ), "on off" );
+	if ( on_off == "on" )
+	{
+		self hide();
+		self.tcs_is_invisible = true;
+	}
+	else 
+	{
+		self show();
+		self.tcs_is_invisible = false;
+	}
+
+	return result_cmdinfo( "Invisible " + on_off );
+}
+
+private cmd_togglehud_f( target_obj, args )
+{
+	on_off = cast_bool_to_str( is_true( self.tcs_hud_toggled ), "on off" );
+	if ( on_off == "off" )
+	{
+		self setclientuivisibilityflag( "hud_visible", 0 );
+		self.tcs_hud_toggled = true;
+	}
+	else
+	{
+		self setclientuivisibilityflag( "hud_visible", 1 );
+		self.tcs_hud_toggled = false;
+	}
+
+	return result_cmdinfo( "Your hud has been toggled " + on_off );
+}
+
+private cmd_bottomlessclip_f( target_obj, args )
+{
+	on_off = cast_bool_to_str( !is_true( self.tcs_bottomless_clip ), "on off" );
+	if ( on_off == "on" )
+	{
+		self thread bottomless_clip();
+		self.tcs_bottomless_clip = true;
+	}
+	else 
+	{
+		self notify( "stop_bottomless_clip" );
+		self.tcs_bottomless_clip = false;
+	}
+
+	return result_cmdinfo( "Bottomless Clip " + on_off );
 }
 
 private cmd_server_dvar_f( target_obj, args )
@@ -89,75 +186,6 @@ private cmd_server_dvar_f( target_obj, args )
 	setDvar( dvarname, dvarvalue );
 
 	return result_cmdinfo( "Successfully set " + dvarname + " to " + dvarvalue );
-}
-
-private cmd_cvarall_f( target_obj, args )
-{
-	dvarname = args[ 0 ];
-	dvarvalue = args[ 1 ];
-	players = getPlayers();
-	for ( i = 0; i < players.size; i++ )
-	{
-		players[ i ] setClientDvar( dvarname, dvarvalue );
-	}
-	new_dvar = [];
-	new_dvar[ "name" ] = dvarname;
-	new_dvar[ "value" ] = dvarvalue; 
-	level.clientdvars[ level.clientdvars.size ] = new_dvar;
-
-	return result_cmdinfo( "Successfully set " + dvarname + " to " + dvarvalue + " for all players" );
-}
-
-private cmd_setcvar_f( target_obj, args )
-{
-	target = args[ 0 ];
-	dvarname = args[ 1 ];
-	dvarvalue = args[ 2 ];
-	target setClientDvar( dvarname, dvarvalue );
-
-	return result_cmdinfo( "Successfully set " + target.name + "'s " + dvarname + " to " + dvarvalue );
-}
-
-private cmd_givegod_f( target_obj, args )
-{
-	target = args[ 0 ];
-	if ( !is_true( target.tcs_is_invulnerable ) )
-	{
-		target enableInvulnerability();
-		target.tcs_is_invulnerable = true;
-	}
-	else 
-	{
-		target disableInvulnerability();
-		target.tcs_is_invulnerable = false;
-	}
-
-	return result_cmdinfo( "Toggled god for " + target.name );
-}
-
-private cmd_givenotarget_f( target_obj, args )
-{
-	target = args[ 0 ];
-	target.ignoreme = !target.ignoreme;
-
-	return result_cmdinfo( "Toggled notarget for " + target.name );
-}
-
-private cmd_giveinvisible_f( target_obj, args )
-{
-	target = args[ 0 ];
-	if ( !is_true( target.tcs_is_invisible ) )
-	{
-		target hide();
-		target.tcs_is_invisible = true;
-	}
-	else 
-	{
-		target show();
-		target.tcs_is_invisible = false;
-	}
-
-	return result_cmdinfo( "Toggled invisibility for " + target.name );
 }
 
 private cmd_setrank_f( target_obj, args )
@@ -241,7 +269,7 @@ private cmd_help_f( target_obj, args )
 private cmd_dodamage_f( target_obj, args )
 {
 	result = [];
-	target = args[ 0 ];
+	target = target_obj.t[ 0 ];
 	damage = args[ 1 ];
 	pos = args[ 2 ];
 	attacker = args[ 3 ];
@@ -293,46 +321,12 @@ private cmd_entitylist_f( target_obj, args )
 	return result_cmdinfo( "" );
 }
 
-private cmd_teleportplayer_f( target_obj, args )
-{
-	target1 = args[ 0 ];
-	target2 = args[ 1 ];
-	if ( target1 == self && target2 == self )
-	{
-		return result_cmderror( "You cannot teleport to yourself" );
-	}
-	target1 setOrigin( target2.origin + anglesToForward( target2.angles ) * 64 + anglesToRight( target2.angles ) * 64 );
-
-	return result_cmdinfo( "Successfully teleported " + target1.name + " to " + target2.name + "'s position" );
-}
-
 private cmd_scrnotify_f( target_obj, args )
 {
-	notify_ent_str = args[ 0 ];
-	notify_name = args[ 1 ];
+	notify_ent = target_obj.t[ 0 ];
+	notify_name = args[ 0 ];
 
 	arg_count = args.size - 2;
-
-	notify_ent = undefined;
-	if ( notify_ent_str == "level" )
-	{
-		notify_ent = level;
-	}
-	else if ( notify_ent_str == "self" )
-	{
-		notify_ent = self;
-	}
-	else
-	{
-		ent_find = self scripts\zm\cmd_system_modules\_cmd_arg::cast_str_to_entity( notify_ent_str );
-
-		if ( ent_find.errored )
-		{
-			return result_cmderror( ent_find.msg );
-		}
-
-		notify_ent = ent_find.value;
-	}
 
 	switch ( arg_count )
 	{
@@ -355,121 +349,42 @@ private cmd_scrnotify_f( target_obj, args )
 	return result_cmdinfo( "Successfully delivered notify " + notify_name );
 }
 
-private cmd_setdefaultcmdtarget_f( target_obj, args )
-{
-	
-}
-
-private cmd_togglehud_f( target_obj, args )
-{
-	on_off = cast_bool_to_str( is_true( self.tcs_hud_toggled ), "on off" );
-	if ( on_off == "off" )
-	{
-		self setclientuivisibilityflag( "hud_visible", 0 );
-		self.tcs_hud_toggled = true;
-	}
-	else
-	{
-		self setclientuivisibilityflag( "hud_visible", 1 );
-		self.tcs_hud_toggled = false;
-	}
-
-	return result_cmdinfo( "Your hud has been toggled " + on_off );
-}
-
-private cmd_god_f( target_obj, args )
-{
-	on_off = scripts\cmd_system_modules\_cmd_arg::cast_bool_to_str( !is_true( self.tcs_is_invulnerable ), "on off" );
-	if ( on_off == "on" )
-	{
-		self enableInvulnerability();
-		self.tcs_is_invulnerable = true;
-	}
-	else
-	{
-		self disableInvulnerability();
-		self.tcs_is_invulnerable = false;
-	}
-
-	return result_cmdinfo( "God " + on_off );
-}
-
-private cmd_notarget_f( target_obj, args )
-{
-	on_off = scripts\cmd_system_modules\_cmd_arg::cast_bool_to_str( !is_true( self.ignoreme ), "on off" );
-	if ( on_off == "on" )
-	{
-		self.ignoreme = true;
-	}
-	else 
-	{
-		self.ignoreme = false;
-	}
-	
-	return result_cmdinfo( "Notarget " + on_off );
-}
-
-private cmd_invisible_f( target_obj, args )
-{
-	on_off = scripts\cmd_system_modules\_cmd_arg::cast_bool_to_str( !is_true( self.tcs_is_invisible ), "on off" );
-	if ( on_off == "on" )
-	{
-		self hide();
-		self.tcs_is_invisible = true;
-	}
-	else 
-	{
-		self show();
-		self.tcs_is_invisible = false;
-	}
-
-	return result_cmdinfo( "Invisible " + on_off );
-}
-
 private cmd_printorigin_f( target_obj, args )
 {
-	return result_cmdinfo( "Your origin is " + self.origin );
+	target = target_obj.t[ 0 ];
+
+	return result_cmdinfo( "Entity origin is: '" + target.origin + "'" );
 }
 
 private cmd_printangles_f( target_obj, args )
 {
-	return result_cmdinfo( "Your angles are " + self.angles );
+	target = target_obj.t[ 0 ];
+
+	return result_cmdinfo( "Entity angles are: '" + target.angles + "'" );
 }
 
-private cmd_bottomlessclip_f( target_obj, args )
+private cmd_teleportentity_f( target_obj, args )
 {
-	on_off = scripts\cmd_system_modules\_cmd_arg::cast_bool_to_str( !is_true( self.tcs_bottomless_clip ), "on off" );
-	if ( on_off == "on" )
-	{
-		self thread bottomless_clip();
-		self.tcs_bottomless_clip = true;
-	}
-	else 
-	{
-		self notify( "stop_bottomless_clip" );
-		self.tcs_bottomless_clip = false;
-	}
+	from_target = target_obj.t[ 0 ];
+	to_target = target_obj.t[ 1 ];
 
-	return result_cmdinfo( "Bottomless Clip " + on_off );
+	from_target setOrigin( to_target.origin + anglesToForward( to_target.angles ) * 64 + anglesToRight( to_target.angles ) * 64 );
+
+	from_name = _DEFAULT( from_target.name, from_target.classname );
+	to_name = _DEFAULT( to_target.name, to_target.classname );
+	return result_cmdinfo( "Successfully teleported '" + from_name + "' to '" + to_name + "'s position" );
 }
 
-private cmd_teleport_f( target_obj, args )
+private cmd_setdefaultcmdexecutor_f( target_obj, args )
 {
-	target = args[ 0 ];
-	if ( target == self )
-	{
-		return result_cmderror( "You cannot teleport to yourself" );
-	}
+	self.default_executors = target_obj.t[ 0 ];
 
-	self setOrigin( target.origin + anglesToForward( target.angles ) * 64 + anglesToRight( target.angles ) * 64 );
-	return result_cmdinfo( "Successfully teleported to " + target.name + "'s position" );
+	return result_cmdinfo( "Successfully set your default cmd executors" );
 }
 
-private cmd_cvar_f( target_obj, args )
+private cmd_setdefaultcmdtarget_f( target_obj, args )
 {
-	dvarname = args[ 0 ];
-	dvarvalue = args[ 1 ];
-	self setClientDvar( dvarname, dvarvalue );
+	self.default_targets = target_obj.t[ 0 ];
 
-	return result_cmdinfo( "Successfully set " + dvarname + " to " + dvarvalue );
+	return result_cmdinfo( "Successfully set your default cmd targets" );
 }

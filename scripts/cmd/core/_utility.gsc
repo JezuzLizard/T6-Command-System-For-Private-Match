@@ -1,6 +1,7 @@
 #include common_scripts\utility;
 #include maps\mp\_utility;
-#include scripts\cmd_system_modules\_com;
+
+#include scripts\cmd\core\_com;
 
 /*generic_obj*/ check_script_error( obj, expected_type, force_error = false )
 {
@@ -152,38 +153,49 @@ print_obj()
 com_printcmd( cmd_object )
 {
 	channels = self com_get_cmd_feedback_channel();
-	level com_printf( channels, "notitle", "cmd_name: " + cmd_object.cmd_name, self );
-	level com_printf( channels, "notitle", "usage: " + cmd_object.usage, self );
-	level com_printf( channels, "notitle", "func: " + getfunctionname( cmd_object.func ), self );
-	level com_printf( channels, "notitle", "aliases: " + repackage_args( cmd_object.aliases ), self );
-	level com_printf( channels, "notitle", "power: " + cmd_object.power, self );
-	level com_printf( channels, "notitle", "min_args: " + cmd_object.min_args, self );
-	level com_printf( channels, "notitle", "max_args: " + cmd_object.max_args, self );
-	level com_printf( channels, "notitle", "arg_types: " + repackage_args( cmd_object.arg_types ), self );
-	level com_printf( channels, "notitle", "rank_group: " + cmd_object.rank_group, self );
+	level com_printf_internal( channels, "notitle", "cmd_name: " + cmd_object.cmd_name, self );
+	level com_printf_internal( channels, "notitle", "usage: " + cmd_object.usage, self );
+	level com_printf_internal( channels, "notitle", "func: " + getfunctionname( cmd_object.func ), self );
+	level com_printf_internal( channels, "notitle", "aliases: " + repackage_args( cmd_object.aliases ), self );
+	level com_printf_internal( channels, "notitle", "power: " + cmd_object.power, self );
+	level com_printf_internal( channels, "notitle", "min_args: " + cmd_object.min_args, self );
+	level com_printf_internal( channels, "notitle", "max_args: " + cmd_object.max_args, self );
+	level com_printf_internal( channels, "notitle", "arg_types: " + repackage_args( cmd_object.arg_types ), self );
+	level com_printf_internal( channels, "notitle", "rank_group: " + cmd_object.rank_group, self );
+	level com_printf_internal( channels, "notitle", "module_group: " + cmd_object.module_group, self );
 }
 
 com_printannouncment( message, players )
 {
-	level com_printf( "iprintbold", "notitle", message, players );
+	level com_printf_internal( "iprintbold", "notitle", message, players );
+}
+
+com_printf( channels, filter, message, players )
+{
+	level com_printf_internal( channels, filter, message, players );
 }
 
 com_printinfo( message )
 {
 	channels = self com_get_cmd_feedback_channel();
-	level com_printf( channels, "cmdinfo", message, self );
+	level com_printf_internal( channels, "cmdinfo", message, self );
 }
 
 com_printwarning( message )
 {
 	channels = self com_get_cmd_feedback_channel();
-	level com_printf( channels, "cmdwarning", message, self );
+	level com_printf_internal( channels, "cmdwarning", message, self );
 }
 
 com_printerror( message )
 {
 	channels = self com_get_cmd_feedback_channel();
-	level com_printf( channels, "cmderror", message, self );
+	level com_printf_internal( channels, "cmderror", message, self );
+}
+
+com_get_cmd_feedback_channel()
+{
+	return self com_get_cmd_feedback_channel_internal();
 }
 
 com_filter_add( filter, default_value )
@@ -485,7 +497,7 @@ set_ent_cast_error( entity_obj, msg )
 
 	if ( entities.size <= 0 )
 	{
-		return set_ent_cast_error( entity_obj, "No entities found for etype: " + etype );
+		return set_ent_cast_error( entity_obj, "No entities found for etype: " + expected_etype );
 	}
 
 	cast_number_obj = cast_str_to_number( str, "positive_int" );
@@ -542,9 +554,6 @@ set_ent_cast_error( entity_obj, msg )
 		return set_ent_cast_error( entity_obj, "Could not cast numeric value to etype: '" + expected_etype + "'" );
 	}
 
-	is_whole_number = is_natural_num( entnum_targetname_or_self );
-
-
 	for ( i = 0; i < entities.size; i++ )
 	{
 		ent = entities[ i ];
@@ -564,12 +573,12 @@ set_ent_cast_error( entity_obj, msg )
 			target_playername = tolower( ent.name );
 			if ( issubstr( target_playername, str ) )
 			{
-				return set_ent_cast_success( entity_obj, player, "player==name" );
+				return set_ent_cast_success( entity_obj, ent, "player==name" );
 			}
 		}
 	}
 
-	return set_ent_cast_error( result_obj, "Couldn't find entity from input: " + str );
+	return set_ent_cast_error( entity_obj, "Couldn't find entity from input: " + str );
 }
 
 is_str_int( str )
@@ -623,7 +632,7 @@ cast_str_to_number( str, type )
 
 	if ( str_cast_obj.errored )
 	{
-		return str_cast_obj
+		return str_cast_obj;
 	}
 
 	if ( str[ 0 ] == "-" )
@@ -765,7 +774,7 @@ cast_str_to_cmd( alias )
 	return set_cast_error( result_obj, "Unknown cmd: '" + alias + "'" );
 }
 
-target_obj_add_cmd( target_type_name, is_required_target, doc_string )
+target_obj_add_cmd( target_type_name, is_required_target, doc_string, max_targets = 1024 )
 {
 	if ( !is_true( self.is_cmd_object ) )
 	{
@@ -782,7 +791,7 @@ target_obj_add_cmd( target_type_name, is_required_target, doc_string )
 	target_type = self.target_types[ self.target_types.size - 1 ];
 	target_type.etype = target_type_name;
 	target_type.is_required = is_required_target;
-	target_type.max_targets = 18;
+	target_type.max_targets = max_targets;
 }
 
 is_alpha( chr )
@@ -880,6 +889,8 @@ server_safe_notify_thread( notify_name, index )
 {
 	result = generic_obj_t_new( "result" );
 	result.msg = msg;
+	result.executor_msg_array = [];
+	result.player_msg_array = [];
 	result.filter = filter;
 	result.channels = channels;
 
@@ -895,6 +906,18 @@ server_safe_notify_thread( notify_name, index )
 	copy_result.errored = result.errored;
 
 	return copy_result;
+}
+
+add_result_executor_msg( result, additional_executor_msg )
+{
+	result.executor_msg_array[ result.executor_msg_array.size ] = additional_executor_msg;
+}
+
+add_result_player_msg( result, player, additional_player_msg )
+{
+	result.player_msg_array[ result.player_msg_array.size ] = spawnstruct();
+	result.player_msg_array[ result.player_msg_array.size - 1 ].player = player;
+	result.player_msg_array[ result.player_msg_array.size - 1 ].msg = additional_player_msg;
 }
 
 /*result_t*/ result_cmdinfo( msg )
@@ -1024,6 +1047,7 @@ cmd_add( cmd_name, cmdfunc, cmd_usage )
 	level.tcs_cmds[ cmd_name ].aliases = aliases;
 	level.tcs_cmds[ cmd_name ].power = level.tcs_perms.ranks[ rank_group ].cmdpower;
 	level.tcs_cmds[ cmd_name ].is_cmd_object = true;
+	level.tcs_cmds[ cmd_name ].requires_player_executor = false;
 	level.tcs_cmds[ cmd_name ].min_args = 0;
 	level.tcs_cmds[ cmd_name ].max_args = 0;
 	level.tcs_cmds[ cmd_name ].arg_types = [];
@@ -1225,4 +1249,20 @@ arg_obj_register( argtype, rand_gen_func, cast_func, error_message )
 	level.tcs_arg_type_handlers[ argtype ].rand_gen_func = rand_gen_func;
 	level.tcs_arg_type_handlers[ argtype ].cast_func = cast_func;
 	level.tcs_arg_type_handlers[ argtype ].error_message = error_message;
+}
+
+has_permission_for_executor_syntax()
+{
+	return self ishost();
+}
+
+executor_obj_add_cmd( doc )
+{
+	if ( !is_true( self.is_cmd_object ) )
+	{
+		assert( false );
+		return;
+	}
+
+	self.requires_player_executor = true;
 }

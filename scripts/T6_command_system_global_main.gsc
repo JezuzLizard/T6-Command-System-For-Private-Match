@@ -12,8 +12,8 @@
 
 // common cmds
 #include scripts\cmd\modules\core_cmds;
-#include scripts\cmd\modules\entity_io_cmds;
-#include scripts\cmd\modules\mapents_dumper_cmds;
+// entity cmds
+#include scripts\cmd\modules\entity_cmds;
 
 main()
 {
@@ -21,8 +21,8 @@ main()
 	level.server.playername = getdvar( "sv_hostname" );
 	level.server.name = getdvar( "sv_hostname" );
 	level.server.is_server = true;
-	level.server.default_target = level.server; // treat this value as the default target for optional target specifying
-	level.server.default_executor = level.server; // treat this value as the default executor for the command; the command is executed on behalf of the server on a player
+	level.server.default_targets = undefined; // treat this value as the default target for optional target specifying
+	level.server.default_executors = level.server; // treat this value as the default executor for the command; the command is executed on behalf of the server on a player
 	level.tcs_glob = spawnstruct();
 	level.tcs_glob.irestart_countdown = 5;
 	level.tcs_glob.icmd_total = 0;
@@ -66,10 +66,11 @@ main()
 	
 	addcallback( "on_player_connect", ::tcs_on_connect );
 
+	level thread drive_connected_notifies_for_mp();
 	level.cmd_init_done = true;
 }
 
-tcs_on_connect()
+drive_connected_notifies_for_mp()
 {
 	while ( true )
 	{
@@ -121,6 +122,6 @@ tcs_on_connect()
 	}
 	self._connected = true;
 
-	self.default_target = self;
-	self.default_executor = self;
+	self.default_targets = undefined; // the default target is by default the default_executors instead as most commands would prefer 'self' which is the executor to be the assumed default target
+	self.default_executors = self;
 }

@@ -5,15 +5,15 @@
 
 autoexec init_consts()
 {
-	arg_obj_register( "weapon", ::arg_obj_weapon_generate, ::arg_obj_weapon_cast );
 	arg_obj_register( "perk", ::arg_obj_perk_generate, ::arg_obj_perk_cast );
+	arg_obj_register( "weapon", ::arg_obj_weapon_generate, ::arg_obj_weapon_cast );
 	arg_obj_register( "powerup", ::arg_obj_powerup_generate, ::arg_obj_powerup_cast );
-	arg_obj_register( "round", ::arg_obj_round_generate, ::arg_obj_int_cast );
+	arg_obj_register( "round", ::arg_obj_round_generate, ::arg_obj_round_cast );
 }
 
-arg_obj_perk_validate( arg )
+arg_obj_perk_cast( arg )
 {
-	perks = perk_list_zm();
+	perks = [];
 	if ( perks.size <= 0 )
 	{
 		self com_printerror( "There are no perks on the map" );
@@ -24,7 +24,7 @@ arg_obj_perk_validate( arg )
 
 arg_obj_perk_generate()
 {
-	perks = perk_list_zm();
+	perks = [];
 	if ( perks.size <= 0 )
 	{
 		return "invalid_perk";
@@ -32,7 +32,7 @@ arg_obj_perk_generate()
 	return randomInt( 20 ) < 1 ? "all" : perks[ randomInt( perks.size ) ];	
 }
 
-arg_obj_weapon_validate( arg )
+arg_obj_weapon_cast( arg )
 {
 	if ( !isDefined( level.zombie_include_weapons ) || level.zombie_include_weapons.size <= 0 )
 	{
@@ -52,7 +52,7 @@ arg_obj_weapon_generate()
 	return weapon_keys[ randomInt( weapon_keys.size ) ];	
 }
 
-arg_obj_powerup_validate( arg )
+arg_obj_powerup_cast( arg )
 {
 	if ( !isDefined( level.zombie_include_powerups ) || level.zombie_include_powerups.size <= 0 )
 	{
@@ -77,9 +77,9 @@ arg_obj_powerup_generate()
 	return powerup;	
 }
 
-arg_obj_round_validate( arg )
+arg_obj_round_cast( arg )
 {
-	return scripts\cmd_system_modules\_cmd_arg::is_natural_num( arg ) && int( arg ) <= 255;
+	return is_str_natural_int( arg ) && int( arg ) <= 255;
 }
 
 arg_obj_round_generate()

@@ -1,11 +1,17 @@
 #include common_scripts\utility;
 #include maps\mp\_utility;
 #include maps\mp\zombies\_zm_utility;
+
 #include scripts\cmd\core\_utility;
 
+#include maps\mp\zombies\_zm;
+#include maps\mp\zombies\_zm_perks;
+#include maps\mp\zombies\_zm_score;
+#include maps\mp\zombies\_zm_weapons;
+
 // autoexec
-#include scripts\cmd\modules\_zm_consts;
-#include scripts\cmd\modules\zm_core_helpers;
+#include scripts\zm\cmd\modules\_zm_consts;
+#include scripts\zm\cmd\modules\zm_core_helpers;
 
 autoexec add_cmds()
 {
@@ -15,13 +21,12 @@ autoexec add_cmds()
 	spectator_cmd target_obj_add_cmd( "player" );
 	
 	togglerespawn_cmd = cmd_add( "togglerespawn", ::cmd_togglerespawn_f, "togglerespawn {player}" );
-	togglerespawn_cmd target_obj_add_cmd( "player" );
+	togglerespawn_cmd target_obj_add_cmd( "player", false, "Player to disable respawning for" );
 
-	killactors_cmd = cmd_add( "killactors", ::cmd_killactors_f, "killactors {actor}" );
-	killactors_cmd target_obj_add_cmd( "player" );
+	killactors_cmd = cmd_add( "killactors", ::cmd_killactors_f, "killactors" );
 
-	respawnspectators_cmd = cmd_add( "respawnspectators", ::cmd_respawnspectators_f, "respawnspectators {player}" );
-	respawnspectators_cmd target_obj_add_cmd( "player" );
+	respawnspectators_cmd = cmd_add( "spawnspectator", ::cmd_spawnspectator_f, "spawnspectator {player}" );
+	respawnspectators_cmd target_obj_add_cmd( "player", false, "Spectators to respawn" );
 
 	pause_cmd = cmd_add( "pause", ::cmd_pause_f, "pause [minutes]" );
 	pause_cmd arg_obj_add_cmd( "natural_int", 0, 1 );
@@ -29,32 +34,32 @@ autoexec add_cmds()
 	unpause_cmd = cmd_add( "unpause", ::cmd_unpause_f );
 	unpause_cmd arg_obj_add_cmd( "", 0, 0 );
 
-	giveperk_cmd = cmd_add( "giveperk", ::cmd_giveperk_f, "giveperk {player} <perk|all>" );
-	giveperk_cmd arg_obj_add_cmd( "player perk", 1, 2 );
-	giveperk_cmd target_obj_add_cmd( "player" );
+	giveperk_cmd = cmd_add( "perk", ::cmd_perk_f, "perk <perk|all>" );
+	giveperk_cmd arg_obj_add_cmd( "perk", 1, 1 );
+	giveperk_cmd executor_obj_add_cmd( "Player to give a perk to" );
 
-	takeperk_cmd = cmd_add( "takeperk", ::cmd_takeperk_f, "takeperk {player} <perk|all>" );
-	takeperk_cmd arg_obj_add_cmd( "player perk", 1, 2 );
-	takeperk_cmd target_obj_add_cmd( "player" );
+	takeperk_cmd = cmd_add( "takeperk", ::cmd_takeperk_f, "takeperk <perk|all>" );
+	takeperk_cmd arg_obj_add_cmd( "perk", 1, 1 );
+	takeperk_cmd executor_obj_add_cmd( "Player to take a perk from" );
 
-	givepermaperk_cmd = cmd_add( "givepermaperk", ::cmd_givepermaperk_f, "givepermaperk {player} <permaperk|all>" );
-	givepermaperk_cmd arg_obj_add_cmd( "player permaperk", 1, 2 );
-	givepermaperk_cmd target_obj_add_cmd( "player" );
+	givepermaperk_cmd = cmd_add( "permaperk", ::cmd_permaperk_f, "permaperk <permaperk|all>" );
+	givepermaperk_cmd arg_obj_add_cmd( "permaperk", 1, 1 );
+	givepermaperk_cmd executor_obj_add_cmd( "Player to give a perma perk to" );
 
-	givepoints_cmd = cmd_add( "points", ::cmd_givepoints_f, "points {player} <amount>" );
-	givepoints_cmd arg_obj_add_cmd( "player int", 1, 2 );
-	givepoints_cmd target_obj_add_cmd( "player" );
+	givepoints_cmd = cmd_add( "points", ::cmd_points_f, "points <amount>" );
+	givepoints_cmd arg_obj_add_cmd( "int", 1, 1 );
+	givepoints_cmd executor_obj_add_cmd( "Player to give points to" );
 
-	givepowerup_cmd = cmd_add( "powerup", ::cmd_givepowerup_f, "powerup {player} <powerup>" );
-	givepowerup_cmd arg_obj_add_cmd( "player powerup", 1, 2 );
-	givepowerup_cmd target_obj_add_cmd( "player" );
+	givepowerup_cmd = cmd_add( "powerup", ::cmd_powerup_f, "powerup <powerup>" );
+	givepowerup_cmd arg_obj_add_cmd( "powerup", 1, 1 );
+	givepowerup_cmd executor_obj_add_cmd( "Player to give a powerup to" );
 
-	giveweapon_cmd = cmd_add( "weapon", ::cmd_giveweapon_f, "weapon {player} <weapon>" );
-	giveweapon_cmd arg_obj_add_cmd( "player weapon", 1, 2 );
-	giveweapon_cmd target_obj_add_cmd( "player" );
+	giveweapon_cmd = cmd_add( "weapon", ::cmd_weapon_f, "weapon <weapon>" );
+	giveweapon_cmd arg_obj_add_cmd( "weapon", 1, 1 );
+	giveweapon_cmd executor_obj_add_cmd( "Player to give a weapon to" );
 
-	toggleperssystemforplayer_cmd = cmd_add( "toggleperssystemforplayer", ::cmd_toggleperssystemforplayer_f, "toggleperssystemforplayer {player}" );
-	toggleperssystemforplayer_cmd target_obj_add_cmd( "player" );
+	toggleperssystemforplayer_cmd = cmd_add( "toggleperssystemforplayer", ::cmd_toggleperssystemforplayer_f, "toggleperssystemforplayer" );
+	toggleperssystemforplayer_cmd executor_obj_add_cmd( "Player to toggle the perma perks system for" );
 
 	toggleoutofplayableareamonitor_cmd = cmd_add( "toggleoutofplayableareamonitor", ::cmd_toggleoutofplayableareamonitor_f );
 
@@ -85,36 +90,57 @@ autoexec add_cmds()
 
 cmd_spectator_f( target_obj, args )
 {
-	target = args[ 0 ];
-	target spawnspectator();
-	if ( !isDefined( target.tcs_original_respawn ) )
-	{
-		target.tcs_original_respawn = target.spectator_respawn;
-	}
-	target.spectator_respawn = undefined;
+	result = result_cmdinfo( "" );
+	targets = target_obj.t[ 0 ];
 
-	return result_cmdinfo( "Successfully made " + target.name + " a spectator" );
+	for ( i = 0; i < targets.size; i++ )
+	{
+		target = targets[ i ];
+		target spawnspectator();
+		if ( !isDefined( target.tcs_original_respawn ) )
+		{
+			target.tcs_original_respawn = target.spectator_respawn;
+		}
+		target.spectator_respawn = undefined;
+
+		add_result_executor_msg( result, "Successfully made " + target.name + " a spectator" );
+		add_result_player_msg( result, target, "You are now a spectator" );
+	}
+
+	result.msg = "Made '" + targets.size + "' players into spectators";
+
+	return result;
 }
 
 cmd_togglerespawn_f( target_obj, args )
 {
-	target = args[ 0 ];
-	should_respawn = args[ 1 ];
-	currently_respawning = isDefined( target.spectator_respawn );
-	if ( !isDefined( target.tcs_original_respawn ) )
+	result = result_cmdinfo( "" );
+	targets = target_obj.t[ 0 ];
+
+	for ( i = 0; i < targets.size; i++ )
 	{
-		target.tcs_original_respawn = target.spectator_respawn;
-	}
-	if ( currently_respawning )
-	{
-		target.spectator_respawn = undefined;
-	}
-	else 
-	{
-		target.spectator_respawn = target.tcs_original_respawn;
+		target = targets[ i ];
+		currently_respawning = isDefined( target.spectator_respawn );
+		if ( !isDefined( target.tcs_original_respawn ) )
+		{
+			target.tcs_original_respawn = target.spectator_respawn;
+		}
+		if ( currently_respawning )
+		{
+			target.spectator_respawn = undefined;
+		}
+		else 
+		{
+			target.spectator_respawn = target.tcs_original_respawn;
+		}
+
+		add_result_executor_msg( result, target.name + " has their respawn toggled" );
+		add_result_player_msg( result, target, "You will no longer respawn" );
 	}
 
-	return result_cmdinfo( target.name + " has their respawn toggled" );
+	result.msg = "Disable respawning for '" + targets.size + "' players";
+
+	return result;
 }
 
 cmd_killactors_f( target_obj, args )
@@ -132,29 +158,44 @@ cmd_killactors_f( target_obj, args )
 	return result_cmdinfo( "Killed all zombies" );
 }
 
-cmd_respawnspectators_f( target_obj, args )
+cmd_spawnspectator_f( target_obj, args )
 {
-	players = getPlayers();
-	for ( i = 0; i < players.size; i++ )
+	result = result_cmdinfo( "" );
+	targets = target_obj.t[ 0 ];
+
+	if ( !isdefined( targets ) )
 	{
-		if ( players[ i ].sessionstate == "spectator" && isDefined( players[ i ].spectator_respawn ) )
+		targets = level.players;
+	}
+
+	respawn_count = 0;
+	for ( i = 0; i < targets.size; i++ )
+	{
+		player = targets[ i ];
+		if ( player.sessionstate == "spectator" && isDefined( player.spectator_respawn ) )
 		{
-			players[ i ] [[ level.spawnplayer ]]();
+			player [[ level.spawnplayer ]]();
 			thread refresh_player_navcard_hud();
 
-			if ( isDefined( level.script ) && level.round_number > 6 && players[ i ].score < 1500 )
+			if ( isDefined( level.script ) && level.round_number > 6 && player.score < 1500 )
 			{
-				players[ i ].old_score = players[ i ].score;
+				player.old_score = player.score;
 
 				if ( isDefined( level.spectator_respawn_custom_score ) )
-					players[ i ] [[ level.spectator_respawn_custom_score ]]();
+					player [[ level.spectator_respawn_custom_score ]]();
 
-				players[ i ].score = 1500;
+				player.score = 1500;
 			}
+
+			respawn_count++;
+			add_result_executor_msg( result, "Respawned '" + player.name + "'" );
+			add_result_player_msg( result, player, "You have been respawned" );
 		}
 	}
 
-	return result_cmdinfo( "Successfully respawned all spectators" );
+	result.msg = "Successfully respawned '" + respawn_count + "' players";
+
+	return result;
 }
 
 // TODO: stop the zombies from dying due to g_ai preventing movement
@@ -180,106 +221,98 @@ cmd_unpause_f( target_obj, args )
 	return result_cmdinfo( "Game unpaused" );
 }
 
-cmd_giveperk_f( target_obj, args )
+cmd_perk_f( target_obj, args )
 {
-	target = arg_list[ 0 ];
-	perk_name = arg_list[ 1 ];
+	perk_name = args[ 0 ];
 	if ( perk_name != "all" )
 	{
-		target give_perk_zm( perk_name );
-		return result_cmdinfo( "Gave perk " + perk_name + " to " + target.name );
+		self give_perk_zm( perk_name );
+		return result_cmdinfo( "Gave perk " + perk_name + " to you" );
 	}
 	else 
 	{
 		valid_perk_list = perk_list_zm();
 		foreach ( perk in valid_perk_list )
 		{
-			target give_perk_zm( perk );
+			self give_perk_zm( perk );
 		}
 
-		return result_cmdinfo( "Gave all perks to " + target.name );
+		return result_cmdinfo( "Gave you all perks" );
 	}
 }
 
 cmd_takeperk_f( target_obj, args )
 {
-	target = arg_list[ 0 ];
-	perk_name = arg_list[ 1 ];
+	perk_name = args[ 0 ];
 	if ( perk_name != "all" )
 	{
-		target notify( perk_name + "_stop" );
-		return result_cmdinfo( "Took perk " + perk_name + " from " + target.name );
+		self notify( perk_name + "_stop" );
+		return result_cmdinfo( "Took perk " + perk_name + " from you" );
 	}
 	else 
 	{
 		valid_perk_list = perk_list_zm();
 		foreach ( perk in valid_perk_list )
 		{
-			target notify( perk + "_stop" );
+			self notify( perk + "_stop" );
 		}
 
-		return result_cmdinfo( "Took all perks from " + target.name );
+		return result_cmdinfo( "Took all perks from you" );
 	}
 }
 
-cmd_givepermaperk_f( target_obj, args )
+cmd_permaperk_f( target_obj, args )
 {
-	result = [];
-	target = args[ 0 ];
-	perma_perk_name = args[ 1 ];
+	perma_perk_name = args[ 0 ];
 	if ( perma_perk_name != "all" )
 	{
-		target give_perma_perk( perma_perk_name );
-		return result_cmdinfo( "Gave " + target.name + " " + perma_perk_name );
+		self give_perma_perk( perma_perk_name );
+		return result_cmdinfo( "Gave you " + perma_perk_name );
 	}
 	else
 	{
-		target give_all_perma_perks();
-		return result_cmdinfo( "Gave all perma perks to " + target.name );
+		self give_all_perma_perks();
+		return result_cmdinfo( "Gave you all perma perks" );
 	}
 }
 
-cmd_givepoints_f( target_obj, args )
+cmd_points_f( target_obj, args )
 {
-	target = args[ 0 ];
-	points = args[ 1 ];
-	target add_to_player_score( points );
+	points = args[ 0 ];
+	self add_to_player_score( points );
 
-	return result_cmdinfo( "Gave " + target.name + " " + points + " points" );
+	return result_cmdinfo( "Gave you '" + points + "' points" );
 }
 
-cmd_givepowerup_f( target_obj, args )
+cmd_powerup_f( target_obj, args )
 {
-	target = arg_list[ 0 ];
-	powerup_name = arg_list[ 1 ];
-	success = target give_powerup_zm( powerup_name );
+	powerup_name = args[ 0 ];
+	success = self give_powerup_zm( powerup_name );
 	if ( success )
 	{
-		return result_cmdinfo( "Spawned " + powerup_name + " for " + target.name );
+		return result_cmdinfo( "Spawned '" + powerup_name + "' for you" );
 	}
 }
 
-cmd_giveweapon_f( target_obj, args )
+cmd_weapon_f( target_obj, args )
 {
-	target = args[ 0 ];
-	weapon = args[ 1 ];
-	target thread weapon_give_custom( weapon, weapon_is_upgrade( weapon ), true );
+	weapon = args[ 0 ];
+	self thread weapon_give_custom( weapon, weapon_is_upgrade( weapon ), true );
 
-	return result_cmdinfo( "Gave " + weapon + " to " + target.name );
+	return result_cmdinfo( "Gave you '" + weapon + "'" );
 }
 
 cmd_toggleperssystemforplayer_f( target_obj, args )
 {
-	target = args[ 0 ];
-	on_off = scripts\cmd_system_modules\_cmd_arg::cast_bool_to_str( is_true( target.tcs_disable_pers_system ), "on off" );
-	target.tcs_disable_pers_system = !is_true( target.tcs_disable_pers_system );
+	on_off = cast_bool_to_str( is_true( self.tcs_disable_pers_system ), "on off" );
+	self.tcs_disable_pers_system = !is_true( self.tcs_disable_pers_system );
 
-	return result_cmdinfo( "Toggled pers system for " + target.name + " " + on_off );
+	return result_cmdinfo( "Toggled pers system for " + self.name + " " + on_off );
 }
 
 cmd_toggleoutofplayableareamonitor_f( target_obj, args )
 {
-	on_off = scripts\cmd_system_modules\_cmd_arg::cast_bool_to_str( !is_true( level.player_out_of_playable_area_monitor ), "on off" );
+	on_off = cast_bool_to_str( !is_true( level.player_out_of_playable_area_monitor ), "on off" );
 	level.player_out_of_playable_area_monitor = !level.player_out_of_playable_area_monitor;
 	if ( on_off == "on" )
 	{

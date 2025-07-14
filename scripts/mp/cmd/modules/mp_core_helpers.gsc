@@ -1,3 +1,17 @@
+#include common_scripts\utility;
+#include maps\mp\_utility;
+
+#include scripts\cmd\core\_utility;
+
+#include maps\mp\killstreaks\_dogs;
+
+autoexec init_helpers()
+{
+	build_weapons_array();
+	level thread on_unittest();
+	addcallback( "on_player_connect", ::wait_spawn_bot_think );
+}
+
 on_unittest()
 {
 	level endon( "game_ended" );
@@ -10,60 +24,10 @@ on_unittest()
 	}
 }
 
-init()
-{
-	build_weapons_array();
-}
-
-on_player_connect()
-{
-	level endon( "game_ended" );
-	while ( true )
-	{
-		level waittill( "connected", player );
-		if ( is_true( level.doing_command_system_unittest ) && is_true( player.pers[ "isBot" ] ) )
-		{
-			player thread wait_spawn_bot_think();
-		}
-	}
-}
-
 wait_spawn_bot_think()
 {
 	wait 5;
 	self thread maps\mp\bots\_bot::bot_spawn_think( random( level.teams ) );
-}
-
-cmd_sicdogsonplayer_f( target_obj, args )
-{
-	target = args[ 0 ];
-	count = args[ 1 ];
-	invisible = args[ 2 ];
-
-	other_team = getOtherTeam( target.team );
-
-	if ( !isDefined( count ) )
-	{
-		count = 1;
-	}
-
-	if ( ( getFreeActorCount() - count ) < 0 )
-	{
-		return result_cmderror( "Cannot spawn more than 32 dogs at once" );
-	}
-	for ( i = 0; i < count; i++ )
-	{
-		dog_manager_spawn_dog( target, other_team, invisible );
-	}
-	self com_printinfo( "Spawned in " + count + " dogs to hunt " + target.name );
-	self com_printinfo( "Use cmd removedogs to remove the dogs spawned with this cmd" );
-}
-
-cmd_removedogs_f( target_obj, args )
-{
-	level notify( "remove_dogs" );
-
-	return result_cmdinfo( "Removed all cmd spawned dogs" );
 }
 
 wait_for_removal()
@@ -142,4 +106,28 @@ dog_manager_spawn_dog( target, team, invisible )
 	dog thread find_target();
 	dog.aiteam = team;
 	return dog;
+}
+
+build_weapons_array()
+{
+	const INTERNAL_NAME_COLUMN = 4;
+	const END_OF_WEAPONS_ROWS = 85;
+	level.tcs_weapons = [];
+	i = 0;
+	while ( i < END_OF_WEAPONS_ROWS )
+	{
+		row = tableLookupRowNum( "statstable.csv", 0, i );
+		if ( row < 0 )
+		{
+			break;
+		}
+		weapon = tableLookupColumnForRow( "statstable.csv", row, INTERNAL_NAME_COLUMN );
+		if ( weapon == "weapon_null" || weapon == "" )
+		{
+			i++;
+			continue;
+		}
+		level.tcs_weapons[ weapon + "_mp" ] = true;
+		i++;
+	}
 }

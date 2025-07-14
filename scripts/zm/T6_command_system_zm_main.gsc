@@ -2,8 +2,11 @@
 #include maps\mp\_utility;
 #include maps\mp\zombies\_zm_utility;
 
+#include scripts\cmd\core\_utility;
+
 // zm only cmds registered by autoexec
-#include scripts\core\modules\zm_core_cmds;
+#include scripts\zm\cmd\modules\_zm_consts;
+#include scripts\zm\cmd\modules\zm_core_cmds;
 
 main()
 {

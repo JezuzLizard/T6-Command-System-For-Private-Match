@@ -1,7 +1,7 @@
 #include common_scripts\utility;
 #include maps\mp\_utility;
-#include scripts\cmd_system_modules\_com;
-#include scripts\cmd_system_modules\_cmd_util;
+
+#include scripts\cmd\core\_utility;
 
 autoexec cmd_buffer()
 {
@@ -58,7 +58,7 @@ private check_command_cooldown()
 
 private check_multi_commands( cmd_parse_obj )
 {
-	if ( cmd_parse_obj.cmds.size > 1 && !self scripts\cmd_system_modules\_perms::can_use_multi_cmds() )
+	if ( cmd_parse_obj.cmds.size > 1 && !self can_use_multi_cmds() )
 	{
 		self throw_execute_exception( "You do not have permission to use multi cmds" );
 	}
@@ -104,7 +104,7 @@ private cmd_execute( message, initiator, is_hidden, is_team_chat, from_rcon )
 	}
 
 	message = tolower( message );
-	cmd_parse_obj = scripts\cmd_system_modules\_cmd_parse::parse_cmd_message( message );
+	cmd_parse_obj = scripts\cmd\core\_cmd_parse::parse_cmd_message( message );
 	//add_obj_ref( cmd_execute_thread, cmd_parse_obj );
 
 	if ( !has_all_perms )
@@ -123,12 +123,12 @@ private cmd_execute( message, initiator, is_hidden, is_team_chat, from_rcon )
 
 			if ( !has_all_perms )
 			{
-				if ( executor != initiator && !initiator scripts\cmd_system_modules\_perms::has_permission_for_executor_syntax() )
+				if ( executor != initiator && !initiator has_permission_for_executor_syntax() )
 				{
 					initiator throw_execute_exception( "You do not have permission to specify executors" );
 				}
 
-				if ( !initiator scripts\cmd_system_modules\_perms::has_permission_for_cmd( cmd_obj.cmd_name ) )
+				if ( !initiator has_permission_for_cmd( cmd_obj.cmd_name ) )
 				{
 					initiator throw_execute_exception( "You do not have permission to use " + cmd_obj.cmd_name + " cmd" );
 				}
@@ -179,7 +179,7 @@ private target_cast( etype, directive_type, directive_args )
 {
 	obj = generic_obj_t_new( "target_cast" );
 
-	obj.value = get_entity_targets( etype, directive_type, directive_args );
+	obj.value = self get_entity_targets( etype, directive_type, directive_args );
 	if ( !isdefined( obj.value ) || obj.value.size == 0 )
 	{
 		obj.errored = true;
@@ -245,8 +245,10 @@ private get_executors( executor_type, directive_args )
 		case "self":
 			return add_to_array( undefined, self );
 		case "default":
-			return add_to_array( undefined, self.default_executor );
+			return self.default_executors;
 	}
+
+	return [];
 }
 
 private get_entity_targets( etype, directive_type, directive_args )
@@ -305,15 +307,27 @@ private get_entity_targets( etype, directive_type, directive_args )
 		case "self":
 			return add_to_array( undefined, self );
 		case "default":
-			return add_to_array( undefined, self.default_target );
+			if ( !isdefined( self.default_targets ) )
+			{
+				return self.default_executors;
+			}
+			
+			return self.default_targets;
 	}
+
+	return [];
 }
 
 private cmd_execute_internal( initiator, cmd_obj )
 {
 	cmd_data_obj = level.tcs_cmds[ cmd_obj.cmd_name ];
 
-	!initiator scripts\cmd_system_modules\_cmd_arg::test_cmd_is_valid( cmd_data_obj, cmd_obj.args );
+	initiator test_cmd_is_valid( cmd_data_obj, cmd_obj.args );
+
+	if ( self == level.server && cmd_data_obj.requires_player_executor )
+	{
+		initiator throw_execute_exception( "Command '" + cmd_data_obj.cmd_name + "' expects the executor to be a player; but executor is level.server, use setdefaultcmdexecutor on a player to execute this command" );
+	}
 
 	// Cast the args using the cast handlers
 	// Arg types without a cast handler don't get casted
@@ -363,24 +377,24 @@ private cmd_execute_internal( initiator, cmd_obj )
 
 	result = self [[ cmd_obj.func ]]( cmd_obj.casted_targets, cmd_obj.casted_args );
 
-	self handle_result_feedback( initiator, result, cmd_obj.cmd_name, arg_obj );
+	self handle_result_feedback( initiator, result, cmd_obj.cmd_name, cmd_obj.cmd_string );
 }
 
-private handle_result_feedback( initiator, result, cmd_name, arg_obj )
+private handle_result_feedback( initiator, result, cmd_name, cmd_string )
 {
 	if ( is_true( initiator.tcs_logprint_cmd_usage ) && !is_true( level.doing_cmd_system_unittest ) )
 	{
 		cmd_log = "";
 		if ( self != initiator )
 		{
-			cmd_log = initiator.name + " executed " + cmd_name + " on behalf of " + self.name + " with args " + repackage_args( arg_obj.str_args );
+			cmd_log = initiator.name + " executed '" + cmd_string + "' on behalf of " + self.name;
 		}
 		else
 		{
-			cmd_log = initiator.name + " executed " + cmd_name + " with args " + repackage_args( arg_obj.str_args );
+			cmd_log = initiator.name + " executed '" + cmd_string + "'";
 		}
 		
-		level com_printf( "g_log", "cmdinfo", cmd_log );
+		com_printinfo( cmd_log );
 	}
 	if ( !isDefined( result ) || is_true( initiator.tcs_silent_cmds ) )
 	{
@@ -388,12 +402,12 @@ private handle_result_feedback( initiator, result, cmd_name, arg_obj )
 	}
 	if ( !isDefined( result.filter ) || result.filter == "" )
 	{
-		level com_printf( "con|g_log", "screrror", "Attempted to print feedback for " + cmd_name + " but no filter exists in the result" );
+		com_printerror( "Attempted to print feedback for " + cmd_name + " but no filter exists in the result" );
 		return;
 	}
 	if ( !isDefined( result.msg ) )
 	{
-		level com_printf( "con|g_log", "screrror", "Attempted to print feedback for " + cmd_name + " but no message exists in the result" );
+		com_printerror( "Attempted to print feedback for " + cmd_name + " but no message exists in the result" );
 		return;
 	}
 	if ( result.msg == "" )
@@ -413,21 +427,42 @@ private handle_result_feedback( initiator, result, cmd_name, arg_obj )
 		initiator_channel = result.channels;
 	}
 
+	for ( i = 0; i < result.player_msg_array.size; i++ )
+	{
+		result.player_msg_array[ i ].player com_printinfo( result.player_msg_array[ i ].msg );
+	}
+
 	if ( initiator.tcs_feedback_mode == 2 )
 	{
 		if ( initiator != self )
 		{
+			for ( i = 0; i < result.executor_msg_array.size; i++ )
+			{
+				level com_printf( initiator_channel, result.filter, result.msg, initiator );
+			}
 			level com_printf( initiator_channel, result.filter, result.msg, initiator );
 		}
 		
+		for ( i = 0; i < result.executor_msg_array.size; i++ )
+		{
+			level com_printf( executor_channel, result.filter, result.msg, initiator );
+		}
 		level com_printf( executor_channel, result.filter, result.msg, self );
 	}
-	else if ( intiator.tcs_feedback_mode == 1 )
+	else if ( initiator.tcs_feedback_mode == 1 )
 	{
+		for ( i = 0; i < result.executor_msg_array.size; i++ )
+		{
+			level com_printf( initiator_channel, result.filter, result.msg, initiator );
+		}
 		level com_printf( initiator_channel, result.filter, result.msg, initiator );
 	}
 	else if ( initiator.tcs_feedback_mode == 0 )
 	{
+		for ( i = 0; i < result.executor_msg_array.size; i++ )
+		{
+			level com_printf( executor_channel, result.filter, result.msg, initiator );
+		}
 		level com_printf( executor_channel, result.filter, result.msg, self );
 	}
 }
@@ -452,7 +487,7 @@ private parse_cmd_dvar()
 		waittillframeend; // prevents notifies from being dropped if they happen in the same frame
 		if ( isdedicated() )
 		{
-			// there is no local client, so the server will always need to specify an executor/target, unless they specify the default_target and default_executor
+			// there is no local client, so the server will always need to specify an executor/target, unless they specify the default_targets and default_executors
 			level notify( "say", dvar_value, level.server, true, false );
 		}
 		else

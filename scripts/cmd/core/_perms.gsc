@@ -1,5 +1,6 @@
 #include common_scripts\utility;
 #include maps\mp\_utility;
+
 #include scripts\cmd\core\_utility;
 
 autoexec cmd_init_perms()
@@ -106,7 +107,7 @@ private set_player_perms_entry( player )
 		{
 			player_entry = player_entries[ i ];
 			player_entry_array = strTok( player_entry, " " );
-			player_in_server = level.server scripts\cmd_system_modules\_cmd_arg::cast_str_to_entity( player_entry_array[ 0 ], "player" );
+			player_in_server = level.server cast_str_to_entity( player_entry_array[ 0 ], "player" );
 			if ( !player_in_server.errored && player_in_server.value == player )
 			{
 				player_entry_array[ 1 ] = player.tcs_rank;
@@ -142,7 +143,7 @@ private player_exists_in_perms_system( player )
 {
 	for ( i = 0; i < level.tcs_player_entries.size; i++ )
 	{
-		player_in_server = level.server scripts\cmd_system_modules\_cmd_arg::cast_str_to_entity( level.tcs_player_entries[ i ].player_entry, "player" );
+		player_in_server = level.server cast_str_to_entity( level.tcs_player_entries[ i ].player_entry, "player" );
 		if ( !player_in_server.errored && player_in_server.value == player )
 		{
 			return true;

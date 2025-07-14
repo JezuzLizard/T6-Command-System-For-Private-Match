@@ -6,6 +6,8 @@
 #include maps\mp\zombies\_zm_score;
 #include maps\mp\zombies\_zm_weapons;
 
+#include scripts\cmd\core\_utility;
+
 autoexec init_helpers()
 {
 	register_modifiable_zombie_stat( "health_increase_flat", "int", 100, ::zombie_recalculate_health );

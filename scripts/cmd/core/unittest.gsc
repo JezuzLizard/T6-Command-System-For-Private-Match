@@ -1,5 +1,6 @@
 #include common_scripts\utility;
 #include maps\mp\_utility;
+
 #include scripts\cmd\core\_utility;
 
 autoexec start_unittest()
@@ -83,7 +84,7 @@ private cmd_testcmd_f( args )
 	}
 
 	result[ "filter" ] = "cmdinfo";
-	result[ "message" ] = "Testcmd " + scripts\cmd_system_modules\_cmd_arg::cast_bool_to_str( level.doing_cmd_system_testcmd, "activated deactivated" ) + " for cmd " + args[ 0 ];
+	result[ "message" ] = "Testcmd " + cast_bool_to_str( level.doing_cmd_system_testcmd, "activated deactivated" ) + " for cmd " + args[ 0 ];
 	return result;
 }
 
@@ -184,8 +185,8 @@ private activate_random_cmds()
 
 private construct_chat_message_for_unittest()
 {
-	cmdalias = arg_obj_cmdalias_generate();
-	cmd_find_result = scripts\cmd_system_modules\_cmd_arg::cast_str_to_cmd( cmdalias );
+	cmdalias = level [[ level.tcs_arg_type_handlers[ "cmdalias" ].rand_gen_func ]]();
+	cmd_find_result = cast_str_to_cmd( cmdalias );
 	if ( cmd_find_result.errored )
 	{
 		return;

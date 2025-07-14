@@ -1,6 +1,7 @@
 #include common_scripts\utility;
 #include maps\mp\_utility;
-#include scripts\cmd_system_modules\_utility;
+
+#include scripts\cmd\core\_utility;
 
 /*noreturn*/ private throw_parse_exception( generic_obj, error_msg )
 {
@@ -371,7 +372,7 @@ private parse_target_value( target_string )
 	throw_parse_exception( token_parse_obj, "Unsupported target directive value" );
 }
 
-private parse_directive( key_type, ordinal_argument, value )
+private parse_directive( cmd_parse, key_type, ordinal_argument, value )
 {
 	if ( key_type[ 0 ] == "t" || issubstr( key_type, "target" ) )
 	{
@@ -414,7 +415,7 @@ private parse_directive( key_type, ordinal_argument, value )
 			break;
 	}
 
-	throw_parse_exception( directive_parse, "Unsupported directive key '" + key + "'" );
+	throw_parse_exception( cmd_parse, "Unsupported directive key '" + key_type + "'" );
 }
 
 private parse_directives( cmd_parse, token_str )
@@ -539,7 +540,7 @@ private parse_directives( cmd_parse, token_str )
 		{
 			cmd_parse.directive_kvps[ key_type ] = [];
 		}
-		cmd_parse.directive_kvps[ key_type ][ cmd_parse.directive_kvps[ key_type ].size ] = parse_directive( key_type, ordinal_argument, value );
+		cmd_parse.directive_kvps[ key_type ][ cmd_parse.directive_kvps[ key_type ].size ] = parse_directive( cmd_parse, key_type, ordinal_argument, value );
 	}
 		// so everything is a key value pair, or key=<val>, where key is a primitive string followed by exactly "=" and then a formatted value
 		// values will only be alphanumeric, "_", "[,]", "(,)"
@@ -636,7 +637,7 @@ private add_token( value )
 	return directive_parse_obj;
 }
 
-/*cmd_parse_obj_t*/ private cmd_parse_obj_t_new()
+/*cmd_parse_obj_t*/ private cmd_parse_obj_t_new( cmd_string )
 {
 	cmd_parse_obj = generic_obj_t_new( "cmd_parse" );
 	cmd_parse_obj.directive_kvps = []; // string -> array[ directive_parse_obj_t ]
@@ -644,6 +645,7 @@ private add_token( value )
 	cmd_parse_obj.cmd_name = "";
 	cmd_parse_obj.start_pos = 0;
 	cmd_parse_obj.end_pos = 0;
+	cmd_parse_obj.cmd_string = cmd_string;
 	return cmd_parse_obj;
 }
 
@@ -734,13 +736,13 @@ private custom_split( str )
 	for ( i = 0; i < multiple_cmds_keys.size; i++ )
 	{
 		cmd_string = custom_split( multiple_cmds_keys[ i ] );
-		cmd_find_result = scripts\cmd_system_modules\_cmd_arg::cast_str_to_cmd( cmd_string[ 0 ] );
+		cmd_find_result = cast_str_to_cmd( cmd_string[ 0 ] );
 		if ( cmd_find_result.errored )
 		{
 			throw_parse_exception( cmd_parse_array, "Command: '" + cmd_find_result.value + " doesn't exist" );
 		}
 
-		new_cmd_parse = cmd_parse_obj_t_new();
+		new_cmd_parse = cmd_parse_obj_t_new( cmd_string );
 		new_cmd_parse.cmd_name = cmd_find_result.value;
 
 		start_pos = 0;
@@ -778,7 +780,7 @@ private custom_split( str )
 			executor_directive = directive_parse_obj_t_new( "executor", token_obj, 1 );
 			executor_directive.is_default = true;
 			new_cmd_parse.directive_kvps[ "executor" ] = [];
-			new_cmd_parse.directive_kvps[ "executor" ][ cmd_parse.directive_kvps[ "executor" ].size ] = executor_directive;
+			new_cmd_parse.directive_kvps[ "executor" ][ new_cmd_parse.directive_kvps[ "executor" ].size ] = executor_directive;
 		}
 
 		// set default as the target
@@ -788,7 +790,7 @@ private custom_split( str )
 			target_directive = directive_parse_obj_t_new( "target", token_obj, 1 );
 			target_directive.is_default = true;
 			new_cmd_parse.directive_kvps[ "target" ] = [];
-			new_cmd_parse.directive_kvps[ "target" ][ cmd_parse.directive_kvps[ "target" ].size ] = target_directive;
+			new_cmd_parse.directive_kvps[ "target" ][ new_cmd_parse.directive_kvps[ "target" ].size ] = target_directive;
 		}
 
 		cmd_parse_array.cmds[ cmd_find_result.value ] = new_cmd_parse;

@@ -5,7 +5,6 @@
 
 autoexec init_consts()
 {
-	build_tcs_consts();
 	build_contents_array();
 	build_hitlocs_array();
 	build_mods_array();
@@ -105,7 +104,7 @@ autoexec init_consts()
 	register_entity_type( "zbarrier", ::get_zbarrier_array );
 	register_entity_type( "temp_entity", ::get_temp_entity_array );
 
-	register_custom_entity_getter( "bot", ::get_bots_array );
+	register_custom_entity_getter( "bot", ::get_bot_array );
 
 	register_entnum_range( "player", 0, 17, 18 );
 	register_entnum_range( "player_corpse", 18, 21, 4 );
@@ -157,7 +156,7 @@ get_entities_by_etype( etype, start = 0, end = 1024 )
 		{
 			if ( ent getentitytype() >= level._entity_types[ "temp_entity" ] )
 			{
-				ents[ ents.size ] = ent
+				ents[ ents.size ] = ent;
 				continue;
 			}
 		}
@@ -347,6 +346,25 @@ get_temp_entity_array()
 	return get_entities_by_etype( "temp_entity", 109 );
 }
 
+get_bot_array()
+{
+	players = get_player_array();
+
+	bots = [];
+	for ( i = 0; i < players.size; i++ )
+	{
+		player = players[ i ];
+		if ( !player istestclient() )
+		{
+			continue;
+		}
+
+		bots[ bots.size ]= player;
+	}
+
+	return bots;
+}
+
 private register_entity_type( type, getter_func )
 {
 	if ( !isdefined( level._entity_type_funcs ) )
@@ -358,7 +376,7 @@ private register_entity_type( type, getter_func )
 	level._entity_type_funcs[ type ].getter = getter_func;
 }
 
-private register_entity_type( type, getter_func )
+private register_custom_entity_getter( type, getter_func )
 {
 	if ( !isdefined( level._entity_custom_getter_funcs ) )
 	{
@@ -653,13 +671,18 @@ arg_obj_vector_cast( arg )
 	return cast_str_to_vector( arg );
 }
 
-arg_obj_string_validate( arg )
+arg_obj_string_generate()
+{
+	return "null";
+}
+
+arg_obj_string_cast( arg )
 {
 	compare_str = "01234567890_abcdefghijklmnopqrstuvwxyz";
 
 	for ( i = 0; i < arg.size; i++ )
 	{
-		if ( !isdefined( list[ arg[ i ] ] ) )
+		if ( !isdefined( compare_str[ arg[ i ] ] ) )
 		{
 			return false;
 		}
@@ -668,24 +691,19 @@ arg_obj_string_validate( arg )
 	return true;
 }
 
-arg_obj_string_generate( arg )
+arg_obj_string_allow_null_generate()
 {
 	return "null";
 }
 
-arg_obj_string_allow_null_validate( arg )
+arg_obj_string_allow_null_cast( arg )
 {
 	if ( arg == "" )
 	{
 		return true;
 	}
 
-	return arg_obj_string_validate( arg );
-}
-
-arg_obj_string_allow_null_generate()
-{
-	return "null";
+	return arg_obj_string_cast( arg );
 }
 
 arg_obj_team_cast( arg )
@@ -740,6 +758,11 @@ arg_obj_rank_generate()
 {
 	ranks = getarraykeys( level.tcs_perms.ranks );
 	return ranks[ randomInt( ranks.size ) ]; 
+}
+
+arg_obj_rank_cast( arg )
+{
+	return undefined;
 }
 
 arg_obj_hitloc_cast( arg )
