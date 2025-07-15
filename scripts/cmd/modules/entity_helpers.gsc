@@ -2,6 +2,8 @@
 #include maps\mp\_utility;
 
 #include scripts\cmd\core\_utility;
+
+#include scripts\cmd\core\_hud_api;
 #include scripts\cmd\core\_hud_utility;
 
 autoexec init_helpers()
@@ -52,11 +54,9 @@ on_editor_connect()
 	self hud_binding_register( "editor_selected_ent_context", "entity", "selected_entity", "No selected entity!" );
 	self hud_binding_register( "editor_held_context", "entity", "held_entity", "No held entity!" );
 	self hud_binding_register( "editor_placed_context", "entity", "placed_entities", "No placed entities!" );
-	self hud_binding_set( "editor_mode_context", "none" );
-	self hud_binding_set( "editor_scale_context", 1.0 );
 
 	vertical_hud_list_obj = vertical_text_list_create( 20, 1.0, "objective", 1.8, "left", "top", "user_left", "user_top" );
-	vertical_hud_list_obj set_alpha( 1, 1.0 );
+	vertical_hud_list_obj set_alpha( 1.0 );
 
 	fontelem = self vertical_text_list_add( vertical_hud_list_obj, "editor_mode_context" );
 	fontelem = self vertical_text_list_add( vertical_hud_list_obj, "editor_scale_context" );
@@ -65,6 +65,9 @@ on_editor_connect()
 	//fontelem settext( "GRUS2" );
 	fontelem = self vertical_text_list_add( vertical_hud_list_obj, "editor_held_context" );
 	//fontelem settext( "GRUS3" );
+
+	self hud_binding_set( "editor_mode_context", "none" );
+	self hud_binding_set( "editor_scale_context", 1.0 );
 
 	self thread hud_bindings_update_loop();
 }

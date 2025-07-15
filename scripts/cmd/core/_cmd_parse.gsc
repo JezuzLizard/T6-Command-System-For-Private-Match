@@ -3,19 +3,6 @@
 
 #include scripts\cmd\core\_utility;
 
-/*noreturn*/ private throw_parse_exception( generic_obj, error_msg )
-{
-	generic_obj.errored = true;
-	generic_obj.msg = error_msg;
-
-	if ( getdvarint( "script_breakpoint" ) )
-	{
-		script_breakpoint();
-	}
-
-	self notify( "cmd_parse_exception", generic_obj );
-}
-
 /*generic_obj_t*/ private set_parse_success( generic_obj, success_msg = "" )
 {
 	generic_obj.msg = success_msg;
@@ -53,7 +40,7 @@ private parse_array( string, generic_obj )
 	if ( string[ str_end ] != "]" )
 	{
 		// error
-		throw_parse_exception( generic_obj, "Last character of array wasn't terminated with ']'" );
+		throw_exception( "Last character of array wasn't terminated with ']'", generic_obj );
 	}
 
 	// TODO: handle array nesting, requires a struct to store the array depth
@@ -81,7 +68,7 @@ private parse_array( string, generic_obj )
 		else
 		{
 			// error
-			throw_parse_exception( generic_obj, "Cannot use characters other than alnum, '_', '[]', ',' in an array" );
+			throw_exception( "Cannot use characters other than alnum, '_', '[]', ',' in an array", generic_obj );
 		}
 
 		square_brackets_match = square_bracket_count == 0;
@@ -90,13 +77,13 @@ private parse_array( string, generic_obj )
 	if ( generic_obj.token_values.size <= 0 )
 	{
 		// error
-		throw_parse_exception( generic_obj, "Directive array cannot be empty" );
+		throw_exception( "Directive array cannot be empty", generic_obj );
 	}
 
 	if ( !square_brackets_match )
 	{
 		// error
-		throw_parse_exception( generic_obj, "Directive using unmatched array" );
+		throw_exception( "Directive using unmatched array", generic_obj );
 	}
 
 	return set_parse_success( generic_obj, "token_values.size=" + generic_obj.token_values.size );
@@ -137,7 +124,7 @@ private parse_function( generic_obj, call_value )
 	if ( call_value[ str_end ] != ")" )
 	{
 		// error
-		throw_parse_exception( generic_obj, "Last character of function wasn't terminated with ')'" );
+		throw_exception( "Last character of function wasn't terminated with ')'", generic_obj );
 	}
 
 	in_comma = false;
@@ -149,7 +136,7 @@ private parse_function( generic_obj, call_value )
 				generic_obj add_token( "random" );
 				if ( call_value[ i + 1 ] != "," )
 				{
-					throw_parse_exception( generic_obj, "$ is a single token arg directive" );
+					throw_exception( "$ is a single token arg directive", generic_obj );
 				}
 
 				in_comma = false;
@@ -158,7 +145,7 @@ private parse_function( generic_obj, call_value )
 				generic_obj add_token( "undefined" );
 				if ( call_value[ i + 1 ] != "," )
 				{
-					throw_parse_exception( generic_obj, "! is a single token arg directive" );
+					throw_exception( "! is a single token arg directive", generic_obj );
 				}
 
 				in_comma = false;
@@ -167,7 +154,7 @@ private parse_function( generic_obj, call_value )
 				generic_obj add_token( "self" );
 				if ( call_value[ i + 1 ] != "," )
 				{
-					throw_parse_exception( generic_obj, "& is a single token arg directive" );
+					throw_exception( "& is a single token arg directive", generic_obj );
 				}
 
 				in_comma = false;
@@ -176,7 +163,7 @@ private parse_function( generic_obj, call_value )
 				generic_obj add_token( "default" );
 				if ( call_value[ i + 1 ] != "," )
 				{
-					throw_parse_exception( generic_obj, "# is a single token arg directive" );
+					throw_exception( "# is a single token arg directive", generic_obj );
 				}
 
 				in_comma = false;
@@ -187,7 +174,7 @@ private parse_function( generic_obj, call_value )
 		{
 			if ( call_value[ i + 1 ] == "," )
 			{
-				throw_parse_exception( generic_obj, "Arg directive cannot be empty" );
+				throw_exception( "Arg directive cannot be empty", generic_obj );
 			}
 
 			if ( in_comma )
@@ -211,7 +198,7 @@ private parse_function( generic_obj, call_value )
 		else
 		{
 			// error
-			throw_parse_exception( generic_obj, "Cannot use characters other than alnum, '_', ',', '$', '!', '&', '#' in an function call" );
+			throw_exception( "Cannot use characters other than alnum, '_', ',', '$', '!', '&', '#' in an function call", generic_obj );
 		}
 	}
 
@@ -239,7 +226,7 @@ private parse_target_random( target_string, token_parse_obj )
 	{
 		if ( !is_numeric( target_string[ i ] ) )
 		{
-			throw_parse_exception( token_parse_obj, "Random target pool limit must be a number" );
+			throw_exception( "Random target pool limit must be a number", token_parse_obj );
 		}
 	}
 
@@ -263,7 +250,7 @@ private try_parse_function( string, generic_obj )
 		{
 			if ( invalid_for_func_char_count > 0 )
 			{
-				throw_parse_exception( generic_obj, "Function names can only contain alnum, '_', and '('" );
+				throw_exception( "Function names can only contain alnum, '_', and '('", generic_obj );
 			}
 			
 			str_end = i - 1;
@@ -305,7 +292,7 @@ private try_parse_name( string, generic_obj, str_start = 0, str_end = undefined 
 	}
 	else
 	{
-		throw_parse_exception( generic_obj, "Target names can only contain alnum, and '_'" );
+		throw_exception( "Target names can only contain alnum, and '_'", generic_obj );
 	}
 }
 
@@ -335,7 +322,7 @@ private parse_target_value( target_string )
 	{
 		if ( target_string.size > 1 )
 		{
-			throw_parse_exception( token_parse_obj, "The '" + token_parse_obj.token_type + "' valid targets syntax '" + first + "' cannot be used with any other syntax as the first element" );
+			throw_exception( "The '" + token_parse_obj.token_type + "' valid targets syntax '" + first + "' cannot be used with any other syntax as the first element", token_parse_obj );
 		}
 
 		return set_parse_success( token_parse_obj, "target=" + token_parse_obj.token_type );
@@ -369,7 +356,7 @@ private parse_target_value( target_string )
 		return name_token_obj;
 	}
 
-	throw_parse_exception( token_parse_obj, "Unsupported target directive value" );
+	throw_exception( "Unsupported target directive value", token_parse_obj );
 }
 
 private parse_directive( cmd_parse, key_type, ordinal_argument, value )
@@ -415,7 +402,7 @@ private parse_directive( cmd_parse, key_type, ordinal_argument, value )
 			break;
 	}
 
-	throw_parse_exception( cmd_parse, "Unsupported directive key '" + key_type + "'" );
+	throw_exception( "Unsupported directive key '" + key_type + "'", cmd_parse );
 }
 
 private parse_directives( cmd_parse, token_str )
@@ -424,7 +411,7 @@ private parse_directives( cmd_parse, token_str )
 	if ( token_str[ 1 ] != "{" )
 	{
 		//fail, invalid options block start
-		throw_parse_exception( cmd_parse, "Invalid directive block start" );
+		throw_exception( "Invalid directive block start", cmd_parse );
 	}
 
 	// just quickly make sure the braces match
@@ -438,12 +425,12 @@ private parse_directives( cmd_parse, token_str )
 				break;
 			case "{":
 				brace_count++;
-				throw_parse_exception( cmd_parse, "Cannot nest directives" );
+				throw_exception( "Cannot nest directives", cmd_parse );
 		}
 
 		if ( brace_count < 0 )
 		{
-			throw_parse_exception( cmd_parse, "Too many closing braces" );
+			throw_exception( "Too many closing braces", cmd_parse );
 		}
 	}
 
@@ -451,7 +438,7 @@ private parse_directives( cmd_parse, token_str )
 	if ( !even_number_of_braces )
 	{
 		//fail, every opening brace must be closed
-		throw_parse_exception( cmd_parse, "Directive blocks must be closed" );
+		throw_exception( "Directive blocks must be closed", cmd_parse );
 	}
 
 	if ( token_str.size == 3 && token_str[ 2 ] == "}" )
@@ -459,7 +446,7 @@ private parse_directives( cmd_parse, token_str )
 		//fail?, or show help? as an empty directives block means that it will do nothing for that target selector; unless this is a way to skip it...
 		//no. implementing a "skip" directive makes more sense i.e "skip=1"
 		//so fail
-		throw_parse_exception( cmd_parse, "Empty directive block isn't allowed" );
+		throw_exception( "Empty directive block isn't allowed", cmd_parse );
 	}
 
 	// got past the preparser so we already know it's a little valid
@@ -477,7 +464,7 @@ private parse_directives( cmd_parse, token_str )
 			}
 			if ( !is_alpha_numeric( token_str[ key_end ] ) )
 			{
-				throw_parse_exception( cmd_parse, "Directive key contains an invalid character" );
+				throw_exception( "Directive key contains an invalid character", cmd_parse );
 			}
 
 			key_end++;
@@ -485,7 +472,7 @@ private parse_directives( cmd_parse, token_str )
 
 		if ( key_end == token_str.size )
 		{
-			throw_parse_exception( cmd_parse, "Directives are key value pairs; missing complete key" );
+			throw_exception( "Directives are key value pairs; missing complete key", cmd_parse );
 		}
 
 		key = getsubstr( token_str, key_start, key_end );
@@ -500,7 +487,7 @@ private parse_directives( cmd_parse, token_str )
 			{
 				if ( value_end >= token_str.size )
 				{
-					throw_parse_exception( cmd_parse, "Missing terminating array ']' token" );
+					throw_exception( "Missing terminating array ']' token", cmd_parse );
 				}
 
 				value_end++; 
@@ -523,7 +510,7 @@ private parse_directives( cmd_parse, token_str )
 
 			if ( value_end >= token_str.size )
 			{
-				throw_parse_exception( cmd_parse, "Missing key value pair terminator '}' or separator ','" );
+				throw_exception( "Missing key value pair terminator '}' or separator ','", cmd_parse );
 			}
 		}
 
@@ -722,7 +709,7 @@ private custom_split( str )
 	cmd_parse_array = cmd_parse_obj_array_t_new();
 	if ( message == "" )
 	{
-		throw_parse_exception( cmd_parse_array, "Command string is empty" );
+		throw_exception( "Command string is empty", cmd_parse_array );
 	}
 
 	//Strip cmd tokens.
@@ -739,14 +726,14 @@ private custom_split( str )
 		cmd_find_result = cast_str_to_cmd( cmd_string[ 0 ] );
 		if ( cmd_find_result.errored )
 		{
-			throw_parse_exception( cmd_parse_array, "Command: '" + cmd_find_result.value + " doesn't exist" );
+			throw_exception( cmd_find_result.msg, cmd_parse_array );
 		}
 
 		new_cmd_parse = cmd_parse_obj_t_new( cmd_string );
-		new_cmd_parse.cmd_name = cmd_find_result.value;
+		new_cmd_parse.cmd_name = cmd_find_result.value.cmd_name;
 
 		start_pos = 0;
-		end_pos = cmd_string[ 1 ].size;
+		//end_pos = cmd_string[ 1 ].size;
 		for ( j = 1; j < cmd_string.size; j++ )
 		{
 			// "@" should be a variable; it should be configureable
@@ -755,13 +742,13 @@ private custom_split( str )
 				if ( cmd_string[ j ].size < 3 )
 				{
 					//fail, must be at least 3 characters to be at least somewhat valid "@{}"
-					throw_parse_exception( cmd_parse_array, "Directive must be at least '@{}'" );
+					throw_exception( "Directive must be at least '@{}'", cmd_parse_array );
 				}
 
 				parse_check_obj = parse_directives( new_cmd_parse, cmd_string[ j ] );
 				if ( parse_check_obj.errored )
 				{
-					throw_parse_exception( cmd_parse_array, parse_check_obj.msg );
+					throw_exception( parse_check_obj.msg, cmd_parse_array );
 				}
 			}
 			else
@@ -793,11 +780,11 @@ private custom_split( str )
 			new_cmd_parse.directive_kvps[ "target" ][ new_cmd_parse.directive_kvps[ "target" ].size ] = target_directive;
 		}
 
-		cmd_parse_array.cmds[ cmd_find_result.value ] = new_cmd_parse;
+		cmd_parse_array.cmds[ new_cmd_parse.cmd_name ] = new_cmd_parse;
 		
 		if ( new_cmd_parse.directive_kvps[ "executor" ].directive_value.token_type == "undefined" )
 		{
-			throw_parse_exception( cmd_parse_array, "Executor cannot be 'undefined'" );
+			throw_exception( "Executor cannot be 'undefined'", cmd_parse_array );
 		}
 	}
 

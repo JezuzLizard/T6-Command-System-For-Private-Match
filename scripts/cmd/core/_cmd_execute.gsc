@@ -40,11 +40,11 @@ private check_command_syntax_used( message, is_hidden )
 {
 	if ( !level.tcs_glob.bhidden_cmds && is_hidden )
 	{
-		self throw_execute_exception( "Hidden cmds are not allowed" );
+		self throw_exception( "Hidden cmds are not allowed" );
 	}
 	else if ( !is_hidden && !is_cmd_token( message[ 0 ] ) )
 	{
-		self throw_execute_exception( "User was not using a command", false );
+		self throw_exception( "User was not using a command", false );
 	}
 }
 
@@ -52,7 +52,7 @@ private check_command_cooldown()
 {
 	if ( isDefined( self.cmd_cooldown ) && self.cmd_cooldown > 0 )
 	{
-		self throw_execute_exception( "You cannot use another cmd for " + self.cmd_cooldown + " seconds" );
+		self throw_exception( "You cannot use another cmd for " + self.cmd_cooldown + " seconds" );
 	}
 }
 
@@ -60,7 +60,7 @@ private check_multi_commands( cmd_parse_obj )
 {
 	if ( cmd_parse_obj.cmds.size > 1 && !self can_use_multi_cmds() )
 	{
-		self throw_execute_exception( "You do not have permission to use multi cmds" );
+		self throw_exception( "You do not have permission to use multi cmds" );
 	}
 }
 
@@ -84,18 +84,23 @@ private cmd_execute( message, initiator, is_hidden, is_team_chat, from_rcon )
 
 	initiator endon( "cmd_parse_exception" );
 
-	// ensure a one command a frame per user limit
-	if ( initiator.in_command_frame )
+	if ( !isdefined( initiator.in_command_frame ) )
 	{
-		return;
+		initiator.in_command_frame = false;
 	}
-	initiator.in_command_frame = true;
-	initiator thread reset_in_command();
 
 	unrestricted_access = ( initiator == level.server || initiator == level.host );
 	from_rcon = message[ 0 ] == "~";
 	has_all_perms = unrestricted_access;
 	message = getsubstr( message, 1 ); // remove '~' character which indicates rcon
+
+	// ensure a one command a frame per user limit
+	if ( !has_all_perms && initiator.in_command_frame )
+	{
+		return;
+	}
+	initiator.in_command_frame = true;
+	initiator thread reset_in_command();
 
 	if ( !has_all_perms )
 	{
@@ -125,12 +130,12 @@ private cmd_execute( message, initiator, is_hidden, is_team_chat, from_rcon )
 			{
 				if ( executor != initiator && !initiator has_permission_for_executor_syntax() )
 				{
-					initiator throw_execute_exception( "You do not have permission to specify executors" );
+					initiator throw_exception( "You do not have permission to specify executors", cmd_obj );
 				}
 
 				if ( !initiator has_permission_for_cmd( cmd_obj.cmd_name ) )
 				{
-					initiator throw_execute_exception( "You do not have permission to use " + cmd_obj.cmd_name + " cmd" );
+					initiator throw_exception( "You do not have permission to use " + cmd_obj.cmd_name + " cmd", cmd_obj );
 				}
 			}
 
@@ -152,11 +157,11 @@ private test_cmd_is_valid( cmd_object, args )
 	//self com_printcmd( cmd_object );
 	if ( args.size < cmd_object.min_args )
 	{
-		self throw_execute_exception( "Too few args: usage: " + cmd_object.usage );
+		self throw_exception( "Too few args: usage: " + cmd_object.usage );
 	}
 	if ( args.size > cmd_object.max_args )
 	{
-		self throw_execute_exception( "Too many args: usage: " + cmd_object.usage );
+		self throw_exception( "Too many args: usage: " + cmd_object.usage );
 	}
 
 	return true;
@@ -326,7 +331,7 @@ private cmd_execute_internal( initiator, cmd_obj )
 
 	if ( self == level.server && cmd_data_obj.requires_player_executor )
 	{
-		initiator throw_execute_exception( "Command '" + cmd_data_obj.cmd_name + "' expects the executor to be a player; but executor is level.server, use setdefaultcmdexecutor on a player to execute this command" );
+		initiator throw_exception( "Command '" + cmd_data_obj.cmd_name + "' expects the executor to be a player; but executor is level.server, use setdefaultcmdexecutor on a player to execute this command", cmd_obj );
 	}
 
 	// Cast the args using the cast handlers
@@ -341,7 +346,7 @@ private cmd_execute_internal( initiator, cmd_obj )
 			cast_result = initiator arg_cast( arg_type, arg, i );
 			if ( cast_result.errored )
 			{
-				initiator throw_execute_exception( cast_result.msg );
+				initiator throw_exception( cast_result.msg, cmd_obj );
 			}
 			else
 			{
@@ -366,7 +371,7 @@ private cmd_execute_internal( initiator, cmd_obj )
 					continue;
 				}
 
-				initiator throw_execute_exception( cast_result.msg );
+				initiator throw_exception( cast_result.msg, cmd_obj );
 			}
 			else
 			{
@@ -495,22 +500,6 @@ private parse_cmd_dvar()
 			level notify( "say", dvar_value, level.host, true, false );
 		}
 	}
-}
-
-/*noreturn*/ private throw_execute_exception( error_msg, print = true, generic_obj = undefined )
-{
-	generic_obj = _DEFAULT( generic_obj, generic_obj_t_new() );
-	generic_obj.errored = true;
-	generic_obj.msg = error_msg;
-	generic_obj.do_print = print;
-
-	if ( getdvarint( "script_breakpoint" ) )
-	{
-		generic_obj script_breakpoint();
-	}
-
-	self notify( "cmd_parse_exception", generic_obj );
-	return;
 }
 
 /*generic_obj_t*/ private set_execute_success( generic_obj, success_msg )

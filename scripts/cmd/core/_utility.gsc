@@ -759,16 +759,9 @@ cast_str_to_cmd( alias )
 		return set_cast_error( result_obj, "No alias provided" );
 	}
 
-	cmd_keys = getarraykeys( level.tcs_cmds );
-	for ( i = 0; i < cmd_keys.size; i++ )
+	if ( isdefined( level.tcs_cmds[ alias ] ) )
 	{
-		for ( j = 0; j < level.tcs_cmds[ cmd_keys[ i ] ].aliases.size; j++ )
-		{
-			if ( alias == level.tcs_cmds[ cmd_keys[ i ] ].aliases[ j ] )
-			{
-				return set_cast_success( result_obj, level.tcs_cmds[ cmd_keys[ i ] ], "alias==" + cmd_keys[ i ] );
-			}
-		}
+		return set_cast_success( result_obj, level.tcs_cmds[ alias ], "alias==" + alias );
 	}
 
 	return set_cast_error( result_obj, "Unknown cmd: '" + alias + "'" );
@@ -1265,4 +1258,20 @@ executor_obj_add_cmd( doc )
 	}
 
 	self.requires_player_executor = true;
+}
+
+/*noreturn*/ throw_exception( error_msg, generic_obj = undefined, print = true )
+{
+	generic_obj = _DEFAULT( generic_obj, generic_obj_t_new() );
+	generic_obj.errored = true;
+	generic_obj.msg = error_msg;
+	generic_obj.do_print = print;
+
+	if ( getdvarint( "script_breakpoint" ) )
+	{
+		generic_obj script_breakpoint();
+	}
+
+	self notify( "cmd_exception", generic_obj );
+	return;
 }
