@@ -235,7 +235,7 @@ set_entfield_relative( entfield_name, new_value )
 		case "birthtime":
 			return set_cast_error( result_obj, entfield_name + " is read only!" );
 		case "model":
-		case "destkey":
+		case "target":
 		case "targetname":
 		case "script_noteworthy":
 			return set_cast_error( result_obj, entfield_name + " cannot be changed relatively!" );
@@ -287,8 +287,8 @@ set_entfield( entfield_name, new_value )
 		case "model":
 			self setmodel( new_value );
 			break;
-		case "destkey":
-			self.destkey = new_value;
+		case "target":
+			self.target = new_value;
 			break;
 		case "targetname":
 			self.targetname = new_value;
@@ -362,8 +362,8 @@ get_entfield( entfield_name )
 			return set_cast_success( result_obj, self.birthtime, "birthtime==" + self.birthtime, "int" );
 		case "model":
 			return set_cast_success( result_obj, self.model, "model==" + self.model, "string" );
-		case "destkey":
-			return set_cast_success( result_obj, self.destkey, "destkey==" + self.destkey, "string" );
+		case "target":
+			return set_cast_success( result_obj, self.target, "target==" + self.target, "string" );
 		case "targetname":
 			return set_cast_success( result_obj, self.targetname, "targetname==" + self.targetname, "string" );
 		case "script_noteworthy":
@@ -1320,4 +1320,11 @@ create_entity_location_screenshot( type, player_name, angles, origin, classname 
 */
 
 
-
+/*entity_string_obj_t*/ entity_string_obj_t_new( classname, origin, angles )
+{
+	entity_string_obj = generic_obj_t_new( "entity_string" );
+	entity_string_obj.kvps = [];
+	entity_string_obj.kvps[ "classname" ] = classname;
+	entity_string_obj.kvps[ "origin" ] = origin;
+	entity_string_obj.kvps[ "angles" ] = angles;
+}

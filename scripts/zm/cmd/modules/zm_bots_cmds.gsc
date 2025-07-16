@@ -32,13 +32,13 @@ autoexec add_cmds()
 	hasscriptgoal target_obj_add_cmd( "bot", true, "Bot to print goal for" );
 }
 
-private cmd_setscriptgoal_f( args )
+private cmd_setscriptgoal_f( param )
 {
 	result = [];
-	bot = args[ 0 ];
-	goal = args[ 1 ];
+	bot = param.t[ 0 ];
+	goal = param.a[ 0 ];
 	player = self;
-	dist = isdefined( args[ 2 ] ) ? arg_obj_float_cast( args[ 2 ] ) : 16;
+	dist = _DEFAULT( param.a[ 1 ], 16 );
 
 	if ( !isdefined( goal ) )
 	{
@@ -46,21 +46,21 @@ private cmd_setscriptgoal_f( args )
 		direction_vec = anglestoforward( direction );
 		eye = player geteye();
 		scale = 8000;
-		direction_vec = ( direction_vec[0] * scale, direction_vec[1] * scale, direction_vec[2] * scale );
+		direction_vec = ( direction_vec[ 0 ] * scale, direction_vec[ 1 ] * scale, direction_vec[ 2 ] * scale );
 		trace = bullettrace( eye, eye + direction_vec, 0, undefined );
-		direction_vec = player.origin - trace["position"];
+		direction_vec = player.origin - trace[ "position" ];
 		direction = vectortoangles( direction_vec );
 
 		goal = trace[ "position" ];
 
-		bot SetScriptGoalPos( goal, dist );
+		bot setscriptgoalpos( goal, dist );
 	}
 	else
 	{
-		is_vector_goal = arg_vector_validate( args[ 1 ] );
+		is_vector_goal = arg_vector_validate( goal );
 		if ( !is_vector_goal )
 		{
-			ent = arg_obj_entity_cast( args[ 1 ] );
+			ent = arg_obj_entity_cast( goal );
 			if ( !isdefined( ent ) )
 			{
 				return result_cmderror( "Invalid entity for bot goal" );
@@ -73,7 +73,7 @@ private cmd_setscriptgoal_f( args )
 		}
 		else
 		{
-			goal = cast_str_to_vector( args[ 1 ] );
+			goal = cast_str_to_vector( goal );
 			bot SetScriptGoalPos( goal, dist );
 		}
 	}
@@ -81,16 +81,16 @@ private cmd_setscriptgoal_f( args )
 	return result_cmdinfo( "Set " + bot.name + " goal to " + goal );
 }
 
-private cmd_clearscriptgoal_f( args )
+private cmd_clearscriptgoal_f( param )
 {
-	bot = args[ 0 ];
+	bot = param.t[ 0 ];
 	bot ClearScriptGoal();
 	return result_cmdinfo( "Cleared " + bot.name + " goal" );
 }
 
-private cmd_hasscriptgoal_f( args )
+private cmd_hasscriptgoal_f( param )
 {
-	bot = args[ 0 ];
+	bot = param.t[ 0 ];
 	bot ClearScriptGoal();
 	return result_cmdinfo( "Bot " + bot.name + " has goal: " + cast_bool_to_str( bot HasScriptGoal(), "yes no" ) );
 }

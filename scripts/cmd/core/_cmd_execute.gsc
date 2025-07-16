@@ -26,7 +26,7 @@ private handle_parse_exception_feedback( user )
 	}
 	for ( ;; )
 	{
-		user waittill( "cmd_parse_exception", generic_parse_obj );
+		user waittill( "cmd_exception", generic_parse_obj );
 		user.in_command_frame = false;
 		if ( !generic_parse_obj.do_print )
 		{
@@ -82,17 +82,20 @@ private cmd_execute( message, initiator, is_hidden, is_team_chat, from_rcon )
 		initiator endon( "disconnect" );
 	}
 
-	initiator endon( "cmd_parse_exception" );
+	initiator endon( "cmd_exception" );
 
 	if ( !isdefined( initiator.in_command_frame ) )
 	{
 		initiator.in_command_frame = false;
 	}
 
-	unrestricted_access = ( initiator == level.server || initiator == level.host );
-	from_rcon = message[ 0 ] == "~";
+	unrestricted_access = has_all_perms();
+	from_rcon = unrestricted_access && message[ 0 ] == "~";
 	has_all_perms = unrestricted_access;
-	message = getsubstr( message, 1 ); // remove '~' character which indicates rcon
+	if ( from_rcon || is_cmd_token( message[ 0 ] ) )
+	{
+		message = getsubstr( message, 1 ); // remove '~' character which indicates rcon, as well as any cmd tokens
+	}
 
 	// ensure a one command a frame per user limit
 	if ( !has_all_perms && initiator.in_command_frame )
@@ -117,10 +120,10 @@ private cmd_execute( message, initiator, is_hidden, is_team_chat, from_rcon )
 		initiator check_multi_commands( cmd_parse_obj );
 	}
 
-	foreach ( cmd_obj, key in cmd_parse_obj.cmds )
+	foreach ( key, cmd_obj in cmd_parse_obj.cmds )
 	{
-		executor_directive_type = cmd_obj.directive_kvps[ "executor" ].directive_type;
-		executors = get_executors( executor_directive_type.token_type, executor_directive_type.token_values );
+		executor_directive = cmd_obj.directive_kvps[ "executor" ].directive_value;
+		executors = get_executors( executor_directive.token_type, executor_directive.token_values );
 
 		for ( executor_index = 0; executor_index < executors.size; executor_index++ )
 		{
@@ -133,9 +136,9 @@ private cmd_execute( message, initiator, is_hidden, is_team_chat, from_rcon )
 					initiator throw_exception( "You do not have permission to specify executors", cmd_obj );
 				}
 
-				if ( !initiator has_permission_for_cmd( cmd_obj.cmd_name ) )
+				if ( !initiator has_permission_for_cmd( cmd_obj.cmd_data_source ) )
 				{
-					initiator throw_exception( "You do not have permission to use " + cmd_obj.cmd_name + " cmd", cmd_obj );
+					initiator throw_exception( "You do not have permission to use " + cmd_obj.cmd_data_source.cmd_name + " cmd", cmd_obj );
 				}
 			}
 
@@ -180,11 +183,11 @@ private arg_cast( arg_type, arg, arg_index )
 	return set_cast_success( cast_result, arg, "no argtype defined" );
 }
 
-private target_cast( etype, directive_type, directive_args )
+private target_cast( etype, directive_value )
 {
 	obj = generic_obj_t_new( "target_cast" );
 
-	obj.value = self get_entity_targets( etype, directive_type, directive_args );
+	obj.value = self get_entity_targets( etype, directive_value.token_type, directive_value.token_values );
 	if ( !isdefined( obj.value ) || obj.value.size == 0 )
 	{
 		obj.errored = true;
@@ -312,7 +315,7 @@ private get_entity_targets( etype, directive_type, directive_args )
 		case "self":
 			return add_to_array( undefined, self );
 		case "default":
-			if ( !isdefined( self.default_targets ) )
+			if ( self.default_targets.size == 0 )
 			{
 				return self.default_executors;
 			}
@@ -325,24 +328,28 @@ private get_entity_targets( etype, directive_type, directive_args )
 
 private cmd_execute_internal( initiator, cmd_obj )
 {
-	cmd_data_obj = level.tcs_cmds[ cmd_obj.cmd_name ];
+	cmd_data_source = cmd_obj.cmd_data_source;
 
-	initiator test_cmd_is_valid( cmd_data_obj, cmd_obj.args );
+	initiator test_cmd_is_valid( cmd_data_source, cmd_obj.args );
 
-	if ( self == level.server && cmd_data_obj.requires_player_executor )
+	if ( self == level.server && cmd_data_source.requires_player_executor )
 	{
-		initiator throw_exception( "Command '" + cmd_data_obj.cmd_name + "' expects the executor to be a player; but executor is level.server, use setdefaultcmdexecutor on a player to execute this command", cmd_obj );
+		initiator throw_exception( "Command '" + cmd_data_source.cmd_name + "' expects the executor to be a player; but executor is level.server, use setdefaultcmdexecutor on a player to execute this command", cmd_obj );
 	}
+
+	param = generic_obj_t_new( "param" );
+	param.t = []; // targets
+	param.a = cmd_obj.args; // arguments
 
 	// Cast the args using the cast handlers
 	// Arg types without a cast handler don't get casted
 	// Leaving the casting up to the cmd itself
-	if ( array_validate( cmd_obj.args ) && array_validate( cmd_data_obj.arg_types ) )
+	if ( array_validate( cmd_obj.args ) && array_validate( cmd_data_source.arg_types ) )
 	{
-		for ( i = 0; i < cmd_obj.args.size; i++ )
+		for ( i = 0; i < cmd_data_source.max_args; i++ )
 		{
 			arg = cmd_obj.args[ i ];
-			arg_type = cmd_data_obj.arg_types[ i ];
+			arg_type = cmd_data_source.arg_types[ i ];
 			cast_result = initiator arg_cast( arg_type, arg, i );
 			if ( cast_result.errored )
 			{
@@ -350,20 +357,20 @@ private cmd_execute_internal( initiator, cmd_obj )
 			}
 			else
 			{
-				cmd_obj.casted_args[ i ] = cast_result.value;
+				param.a[ i ] = cast_result.value;
 			}
 		}
 	}
 
 	targets = cmd_obj.directive_kvps[ "target" ]; // always contains at least the default target
 	cmd_obj.casted_targets = [];
-	if ( array_validate( cmd_data_obj.target_types ) )
+	if ( array_validate( cmd_data_source.target_types ) )
 	{
 		for ( i = 0; i < targets.size; i++ )
 		{
 			target = targets[ i ];
-			target_type = cmd_data_obj.target_types[ i ];
-			cast_result = initiator target_cast( target_type.etype, target.directive_value.token_type, target.directive_value.token_value );
+			target_type = cmd_data_source.target_types[ i ];
+			cast_result = initiator target_cast( target_type.etype, target.directive_value );
 			if ( cast_result.errored )
 			{
 				if ( !target_type.is_required )
@@ -375,12 +382,16 @@ private cmd_execute_internal( initiator, cmd_obj )
 			}
 			else
 			{
-				cmd_obj.casted_targets[ i ] = cast_result.value;
+				if ( cast_result.value.size > target_type.max_targets )
+				{
+					initiator throw_exception( "Command '" + cmd_obj.cmd_name + "' expects a maximum of '" + target_type.max_targets + "' got '" + cast_result.value.size + "' instead" , cmd_obj );
+				}
+				param.t[ i ] = cast_result.value;
 			}
 		}
 	}
 
-	result = self [[ cmd_obj.func ]]( cmd_obj.casted_targets, cmd_obj.casted_args );
+	result = self [[ cmd_data_source.func ]]( param );
 
 	self handle_result_feedback( initiator, result, cmd_obj.cmd_name, cmd_obj.cmd_string );
 }

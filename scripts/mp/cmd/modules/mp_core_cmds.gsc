@@ -10,17 +10,17 @@ autoexec add_cmds()
 	cmd_block_set_module_group( "core_mp" );
 	cmd_block_set_rank_group( "cheat" );
 	sicdogsonplayer_cmd = cmd_add( "sicdogsonplayer", ::cmd_sicdogsonplayer_f, "sicdogsonplayer {player} [count] [invisible]" );
-	sicdogsonplayer_cmd arg_obj_add_cmd( "wholenum wholenum", 0, 2 );
+	sicdogsonplayer_cmd arg_obj_add_cmd( "positive_int positive_int", 0, 2 );
 	givenotarget_cmd target_obj_add_cmd( "player" );
 
 	removedogs_cmd = cmd_add( "removedogs", ::cmd_removedogs_f );
 }
 
-cmd_sicdogsonplayer_f( target_obj, args )
+cmd_sicdogsonplayer_f( param )
 {
-	target = args[ 0 ];
-	count = args[ 1 ];
-	invisible = args[ 2 ];
+	target = param.t[ 0 ];
+	count = param.a[ 0 ];
+	invisible = param.a[ 1 ];
 
 	other_team = getotherteam( target.team );
 
@@ -41,7 +41,7 @@ cmd_sicdogsonplayer_f( target_obj, args )
 	self com_printinfo( "Use cmd removedogs to remove the dogs spawned with this cmd" );
 }
 
-cmd_removedogs_f( target_obj, args )
+cmd_removedogs_f( param )
 {
 	level notify( "remove_dogs" );
 

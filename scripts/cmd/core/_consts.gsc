@@ -133,6 +133,22 @@ autoexec init_consts()
 	arg_obj_register( "string_allow_null", ::arg_obj_string_allow_null_generate, ::arg_obj_string_allow_null_cast );
 	arg_obj_register( "model", ::arg_obj_model_generate, ::arg_obj_model_cast );
 	arg_obj_register( "spawnable_classname", ::arg_obj_spawnable_classname_generate, ::arg_obj_spawnable_classname_cast );
+
+	register_entity_string_field( "classname", "string", true );
+	register_entity_string_field( "origin", "vector" );
+	register_entity_string_field( "model", "model", true );
+	register_entity_string_field( "spawnflags", "spawnflags", true );
+	register_entity_string_field( "target", "string" );
+	register_entity_string_field( "targetname", "string" );
+	register_entity_string_field( "script_noteworthy", "string" );
+	register_entity_string_field( "count", "int" );
+	register_entity_string_field( "health", "int" );
+	register_entity_string_field( "dmg", "int" );
+	register_entity_string_field( "angles", "vector" );
+	register_entity_string_field( "birthtime", "int", true );
+	register_entity_string_field( "index", "int" );
+	register_entity_string_field( "lerp_to_lighter", "float" );
+	register_entity_string_field( "lerp_to_darker", "float" );
 }
 
 get_entities_by_etype( etype, start = 0, end = 1024 )
@@ -160,6 +176,7 @@ get_entities_by_etype( etype, start = 0, end = 1024 )
 				continue;
 			}
 		}
+		
 		if ( ent getentitytype() != level._entity_types[ etype ] )
 		{
 			continue;
@@ -374,6 +391,30 @@ private register_entity_type( type, getter_func )
 
 	level._entity_type_funcs[ type ] = spawnstruct();
 	level._entity_type_funcs[ type ].getter = getter_func;
+}
+
+private register_entity_string_type( classname, required_fields, optional_fields )
+{
+	if ( !isdefined( level._entity_string_types ) )
+	{
+		level._entity_string_types = [];
+	}
+
+	level._entity_string_types[ classname ] = spawnstruct();
+	level._entity_string_types[ classname ].required_fields = required_fields;
+	level._entity_string_types[ classname ].optional_fields = optional_fields;
+}
+
+private register_entity_string_field( field_name, type_value, readonly = false )
+{
+	if ( !isdefined( level._entity_string_fields ) )
+	{
+		level._entity_string_fields = [];
+	}
+
+	level._entity_string_fields[ field_name ] = spawnstruct();
+	level._entity_string_fields[ field_name ].type_value = type_value;
+	level._entity_string_fields[ field_name ].readonly = readonly;
 }
 
 private register_custom_entity_getter( type, getter_func )
@@ -856,14 +897,13 @@ arg_obj_player_generate()
 	{
 		randomint = randomint( 4 );
 	}
-	players = getplayers();
 
-	if ( players.size <= 0 )
+	if ( level.players.size <= 0 )
 	{
 		return -1;
 	}
 
-	random_player = players[ randomint( players.size ) ];
+	random_player = level.players[ randomint( level.players.size ) ];
 	switch ( randomint )
 	{
 		case 0:
@@ -938,16 +978,7 @@ arg_obj_bot_generate()
 		randomint = randomInt( 4 );
 	}
 
-	bots = [];
-	for ( i = 0; i < level.players.size; i++ )
-	{
-		if ( !level.players[ i ] istestclient() )
-		{
-			continue;
-		}
-		bots[ bots.size ] = level.players[ i ];
-	}
-
+	bots = get_bot_array();
 	if ( bots.size <= 0 )
 	{
 		return -1;

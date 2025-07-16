@@ -25,19 +25,19 @@ autoexec init_helpers()
 	level thread on_unittest();
 }
 
-zm_help_prints( channel )
+zm_help_prints()
 {
 	if ( is_true( self.is_server ) )
 	{
-		level com_printf( channel, "notitle", "^3To view available powerups use tcscmd poweruplist", self );
-		level com_printf( channel, "notitle", "^3To view available perks use tcscmd perklist", self );
-		level com_printf( channel, "notitle", "^3To view available weapons use tcscmd weaponlist", self );
+		self com_printnotitle( "^3To view available powerups use 'tcscmd poweruplist'" );
+		self com_printnotitle( "^3To view available perks use 'tcscmd perklist'" );
+		self com_printnotitle( "^3To view available weapons use 'tcscmd weaponlist'" );
 	}
 	else 
 	{
-		level com_printf( channel, "notitle", "^3To view available powerups do poweruplist prefixed with a cmd token", self );
-		level com_printf( channel, "notitle", "^3To view available perks do perklist prefixed with a cmd token", self );
-		level com_printf( channel, "notitle", "^3To view available weapons do weaponlist prefixed with a cmd token", self );		
+		self com_printnotitle( "^3To view available powerups do 'poweruplist'" );
+		self com_printnotitle( "^3To view available perks do 'perklist'" );
+		self com_printnotitle( "^3To view available weapons do 'weaponlist's" );		
 	}
 }
 
@@ -48,7 +48,7 @@ never_end_game()
 
 unittest_check_player_is_valid_for_powerup( player )
 {
-	return is_true( player.pers[ "isBot" ] );
+	return player istestclient();
 }
 
 no_player_damage_during_unittest( einflictor, eattacker, idamage, idflags, smeansofdeath, sweapon, vpoint, vdir, shitloc, psoffsettime )
@@ -128,14 +128,51 @@ give_perk_zm( perkname, index )
 {
 	if ( !self hasPerk( perkname ) )
 	{
-		self give_perk( perkname, false );
+		self maps\mp\zombies\_zm_perks::give_perk( perkname, true );
 	}
+}
+
+disable_zombies()
+{
+	level endon( "game_unpaused" );
+
+	flag_clear( "spawn_zombies" );
+	disablezombies( 1 );
+
+	for ( ;; )
+	{
+		actors = [[ level._entity_type_funcs[ "actor" ].getter ]]();
+
+		for ( i = 0; i < actors.size; i++ )
+		{
+			ai = actors[ i ];
+			ai.lastchunk_destroy_time = gettime();
+			ai.ignore_distance_tracking = true;
+		}
+
+		wait 3;
+	}
+}
+
+enable_zombies()
+{
+	flag_set( "spawn_zombies" );
+	enablezombies( 1 );
+
+	actors = [[ level._entity_type_funcs[ "actor" ].getter ]]();
+
+	for ( i = 0; i < actors.size; i++ )
+	{
+		ai = actors[ i ];
+		ai.ignore_distance_tracking = undefined;
+	}
+
+	wait 3;
 }
 
 game_pause( duration )
 {
-	flag_clear( "spawn_zombies" );
-	disablezombies( 1 );
+	level thread disable_zombies();
 	foreach ( player in level.players )
 	{
 		player enableInvulnerability();
@@ -164,8 +201,8 @@ unpause_after_time( duration )
 game_unpause()
 {
 	level notify( "game_unpaused" );
-	flag_set( "spawn_zombies" );
-	enablezombies( 1 );
+
+	level thread enable_zombies();
 	foreach ( player in level.players )
 	{
 		player disableInvulnerability();
@@ -191,19 +228,19 @@ unlimited_weapons( player )
 	return 5;
 }
 
-list_weapons_throttled( channel, weapons )
+list_weapons_throttled()
 {
 	self notify( "listing_weapons" );
 	self endon( "listing_weapons" );
+
+	weapons = get_all_weapons();
 	for ( i = 0; i < weapons.size; i++ )
 	{
-		level com_printf( channel, "notitle", weapons[ i ], self );
+		self com_printnotitle( weapons[ i ] );
 		wait 0.1;
 	}
-	if ( !is_true( self.is_server ) )
-	{
-		self com_printinfo( "Use shift + ` and scroll to the bottom to view the full list" );
-	}
+	
+	self com_printconsoleprintlore();
 }
 
 open_seseme()
@@ -212,7 +249,7 @@ open_seseme()
 	flag_wait( "initial_blackscreen_passed" );
 	setdvar( "zombie_unlock_all", 1 );
 	flag_set( "power_on" );
-	players = getPlayers();
+
 	zombie_doors = getentarray( "zombie_door", "targetname" );
 	for ( i = 0; i < zombie_doors.size; i++ )
 	{
@@ -232,30 +269,34 @@ open_seseme()
 	zombie_debris = getentarray( "zombie_debris", "targetname" );
 	for ( i = 0; i < zombie_debris.size; i++ )
 	{
-		zombie_debris[ i ] notify( "trigger", players[ 0 ] );
+		zombie_debris[ i ] notify( "trigger", level.players[ 0 ] );
 		wait 0.05;
 	}
 	setdvar( "zombie_unlock_all", 0 );
 }
 
-list_powerups_throttled( channel, powerups )
+list_powerups_throttled()
 {
 	self notify( "listing_powerups" );
 	self endon( "listing_powerups" );
+
+	powerups = getarraykeys( level.zombie_include_powerups );
 	for ( i = 0; i < powerups.size; i++ )
 	{
-		level com_printf( channel, "notitle", powerups[ i ], self );
+		self com_printnotitle( powerups[ i ] );
 		wait 0.1;
 	}
 }
 
-list_perks_throttled( channel, perks )
+list_perks_throttled()
 {
 	self notify( "listing_perks" );
 	self endon( "listing_perks" );
+
+	perks = perk_list_zm();
 	for ( i = 0; i < perks.size; i++ )
 	{
-		level com_printf( channel, "notitle", perks[ i ], self );
+		self com_printnotitle( perks[ i ] );
 		wait 0.1;
 	}
 }
@@ -280,7 +321,7 @@ set_global_zombie_stat( stat, stat_name, stat_value )
 	}
 }
 
-list_zombie_stats_throttled( channel )
+list_zombie_stats_throttled()
 {
 	self notify( "listing_zombie_stats" );
 	self endon( "listing_zombie_stats" );
@@ -292,13 +333,11 @@ list_zombie_stats_throttled( channel )
 
 		message = stat_names[ i ] + " current: " +  cur_value + " default: " + reset_value;
 
-		level com_printf( channel, "notitle", message, self );
+		self com_printnotitle( message );
 		wait 0.1;
 	}
-	if ( !is_true( self.is_server ) )
-	{
-		self com_printinfo( "Use shift + ` and scroll to the bottom to view the full list" );
-	}	
+
+	self com_printconsoleprintlore();
 }
 
 end_of_round_behavior()
@@ -455,7 +494,7 @@ zombie_recalculate_total( stat_name, new_value )
 	if ( level.round_number >= 10 )
 		multiplier *= ( level.round_number * 0.15 );
 
-	player_num = getPlayers().size;
+	player_num = level.players.size;
 
 	if ( player_num == 1 )
 		max += int( 0.5 * level.zombie_vars["zombie_ai_per_player"] * multiplier );

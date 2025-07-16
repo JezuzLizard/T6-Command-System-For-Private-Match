@@ -56,10 +56,10 @@ private parse_array( string, generic_obj )
 		}
 		else if ( string[ i ] == "," )
 		{
-			str_end = i - 1;
+			str_end = i;
 			array_token = getsubstr( string, str_start, str_end );
 			generic_obj add_token( array_token );
-			str_start = i + 1;
+			str_start = i;
 		}
 		else if ( is_alpha_numeric( string[ i ] ) )
 		{
@@ -179,7 +179,7 @@ private parse_function( generic_obj, call_value )
 
 			if ( in_comma )
 			{
-				str_end = i - 1;
+				str_end = i;
 				string = getsubstr( call_value, str_start, str_end );
 				generic_obj add_token( string );
 
@@ -187,7 +187,7 @@ private parse_function( generic_obj, call_value )
 			}
 			else
 			{
-				str_start = i + 1;
+				str_start = i;
 				in_comma = true;
 			}
 		}
@@ -253,7 +253,7 @@ private try_parse_function( string, generic_obj )
 				throw_exception( "Function names can only contain alnum, '_', and '('", generic_obj );
 			}
 			
-			str_end = i - 1;
+			str_end = i;
 			function_name = getsubstr( string, str_start, str_end );
 			generic_obj.token_type = "function";
 			generic_obj add_token( function_name );
@@ -451,7 +451,7 @@ private parse_directives( cmd_parse, token_str )
 
 	// got past the preparser so we already know it's a little valid
 
-	key_start = 2;
+	key_start = 1;
 	for ( ;; )
 	{
 		// parse key
@@ -478,7 +478,7 @@ private parse_directives( cmd_parse, token_str )
 		key = getsubstr( token_str, key_start, key_end );
 
 		// parse value
-		value_start = key_end + 1; // start after the '=' token
+		value_start = key_end; // start after the '=' token
 		value_end = value_start;
 		if ( token_str[ value_start ] == "[" ) // start of array
 		{
@@ -515,6 +515,8 @@ private parse_directives( cmd_parse, token_str )
 		}
 
 		value = getsubstr( token_str, value_start, value_end );
+
+		cmd_parse.start_pos = value_end;
 
 		key_type = key;
 		ordinal_argument = int( key[ key.size - 1 ] );
@@ -624,12 +626,12 @@ private add_token( value )
 	return directive_parse_obj;
 }
 
-/*cmd_parse_obj_t*/ private cmd_parse_obj_t_new( cmd_string )
+/*cmd_parse_obj_t*/ private cmd_parse_obj_t_new( cmd_string, cmd_data_source )
 {
 	cmd_parse_obj = generic_obj_t_new( "cmd_parse" );
 	cmd_parse_obj.directive_kvps = []; // string -> array[ directive_parse_obj_t ]
 	cmd_parse_obj.args = []; // index -> string
-	cmd_parse_obj.cmd_name = "";
+	cmd_parse_obj.cmd_data_source = cmd_data_source;
 	cmd_parse_obj.start_pos = 0;
 	cmd_parse_obj.end_pos = 0;
 	cmd_parse_obj.cmd_string = cmd_string;
@@ -647,52 +649,49 @@ private add_token( value )
 // the command to be executed is the first alnum + '_' string encountered; therefore it can be before or after any '@' directives
 // directives '@' can appear in any order in the string
 // spaces can now be used within directives, functions and arrays; otherwise it would not be possible to 
-private custom_split( str )
+private custom_split( str, cmd_parse_array )
 {
 	tokens = [];
-
-	in_array = 0;
-	in_directive = 0;
-	in_func_call = 0;
+	in_identifier = false;
 
 	split_start = 0;
-	split_end = split_start;
+	was_in_identifier = false;
 	for ( i = 0; i < str.size; i++ )
 	{
-		if ( str[ i ] == "[" )
+		if ( str[ i ] == "@" )
 		{
-			in_array++;
-		}
-		else if ( str[ i ] == "{" )
-		{
-			in_directive++;
-		}
-		else if ( str[ i ] == "(" )
-		{
-			in_func_call++;
-		}
-		else if ( str[ i ] == "]" )
-		{
-			in_array--;
-		}
-		else if ( str[ i ] == "}" )
-		{
-			in_directive--;
-		}
-		else if ( str[ i ] == ")" )
-		{
-			in_func_call--;
-		}
-		else if ( str[ i ] == " " )
-		{
-			if ( in_array == 0 && in_directive == 0 && in_func_call == 0 )
+			split_start = i;
+			if ( !isdefined( str[ i + 1 ] ) || str[ i + 1 ] != "{" )
 			{
-				tokens[ tokens.size ] = getsubstr( str, split_start, split_end );
-				split_start = split_end;
+				//fail, must be at least 3 characters to be at least somewhat valid "@{}"
+				throw_exception( "Directive must be at least '@{'", cmd_parse_array );
 			}
-		}
+			for ( ; i != "}"; i++ )
+			{
+				if ( !isdefined( str[ i + 1 ] ) )
+				{
+					throw_exception( "Directive must be terminated with '}'", cmd_parse_array );
+				}
 
-		split_end++;
+				tokens[ tokens.size ] = getsubstr( str, split_start, i );
+			}
+
+			in_identifier = false;
+		}
+		else if ( is_alpha_numeric( str[ i ], true ) )
+		{
+			in_identifier = true;
+		}
+		else if ( str[ i ] == " " || !isdefined( str[ i + 1 ] ) )
+		{
+			if ( in_identifier )
+			{
+				tokens[ tokens.size ] = getsubstr( str, split_start, i );
+				split_start = i;
+			}
+
+			in_identifier = false;
+		}
 	}
 
 	if ( tokens.size == 0 )
@@ -712,39 +711,23 @@ private custom_split( str )
 		throw_exception( "Command string is empty", cmd_parse_array );
 	}
 
-	//Strip cmd tokens.
-	stripped_message = message;
-	if ( is_cmd_token( message[ 0 ] ) )
-	{
-		stripped_message = getsubstr( message, 1 );
-	}
-
-	multiple_cmds_keys = strtok( stripped_message, "^" );
+	multiple_cmds_keys = strtok( message, "^" );
 	for ( i = 0; i < multiple_cmds_keys.size; i++ )
 	{
-		cmd_string = custom_split( multiple_cmds_keys[ i ] );
+		cmd_string = custom_split( multiple_cmds_keys[ i ], cmd_parse_array );
 		cmd_find_result = cast_str_to_cmd( cmd_string[ 0 ] );
 		if ( cmd_find_result.errored )
 		{
 			throw_exception( cmd_find_result.msg, cmd_parse_array );
 		}
 
-		new_cmd_parse = cmd_parse_obj_t_new( cmd_string );
-		new_cmd_parse.cmd_name = cmd_find_result.value.cmd_name;
+		new_cmd_parse = cmd_parse_obj_t_new( multiple_cmds_keys[ i ], cmd_find_result.value );
 
-		start_pos = 0;
-		//end_pos = cmd_string[ 1 ].size;
 		for ( j = 1; j < cmd_string.size; j++ )
 		{
 			// "@" should be a variable; it should be configureable
-			if ( cmd_string[ j ][ start_pos ] == "@" )
+			if ( cmd_string[ j ][ 0 ] == "@" )
 			{
-				if ( cmd_string[ j ].size < 3 )
-				{
-					//fail, must be at least 3 characters to be at least somewhat valid "@{}"
-					throw_exception( "Directive must be at least '@{}'", cmd_parse_array );
-				}
-
 				parse_check_obj = parse_directives( new_cmd_parse, cmd_string[ j ] );
 				if ( parse_check_obj.errored )
 				{
@@ -754,10 +737,8 @@ private custom_split( str )
 			else
 			{
 				new_cmd_parse.args[ new_cmd_parse.args.size ] = cmd_string[ j ];
+				level.players[ 0 ] script_breakpoint( new_cmd_parse );
 			}
-
-			start_pos = new_cmd_parse.start_pos;
-			end_pos = new_cmd_parse.end_pos;
 		}
 
 		// set default as the executor
@@ -766,8 +747,7 @@ private custom_split( str )
 			token_obj = token_parse_obj_t_new( "default" );
 			executor_directive = directive_parse_obj_t_new( "executor", token_obj, 1 );
 			executor_directive.is_default = true;
-			new_cmd_parse.directive_kvps[ "executor" ] = [];
-			new_cmd_parse.directive_kvps[ "executor" ][ new_cmd_parse.directive_kvps[ "executor" ].size ] = executor_directive;
+			new_cmd_parse.directive_kvps[ "executor" ] = executor_directive;
 		}
 
 		// set default as the target

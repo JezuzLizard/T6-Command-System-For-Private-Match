@@ -39,8 +39,12 @@
 	}
 }
 
-script_breakpoint( display_callstack = true, should_print = true )
+script_breakpoint( generic_obj, msg = "", display_callstack = true, should_print = true )
 {
+	if ( !getdvarint( "script_breakpoint" ) )
+	{
+		return false;
+	}
 	if ( !isdefined( level.script_breakpoints ) )
 	{
 		level.script_breakpoints = [];
@@ -53,27 +57,32 @@ script_breakpoint( display_callstack = true, should_print = true )
 
 	if ( should_print )
 	{
-		self print_obj();
+		if ( msg != "" )
+		{
+			self com_printerror( msg );
+		}
+
+		generic_obj.owner = self;
+		generic_obj print_obj();
 	}
 
-	level.script_breakpoints[ self.name ].enabled = true;
-	while ( isdefined( level.script_breakpoints[ self.name ] ) && is_true( level.script_breakpoints[ self.name ].enabled ) )
+	for ( ;; )
 	{
 		evt = self waittill_any_return( "debug_continue", "debug_abort" );
 
 		if ( evt == "debug_continue" )
 		{
-			break;
+			return true;
 		}
 		else if ( evt == "debug_abort" )
 		{
-			self notify( self.name + "_" + self.id + "_abort" );
-			break;
+			self notify( "cmd_exception", generic_obj );
+			return false;
 		}
 	}
 }
 
-print_obj()
+print_obj( player )
 {
 	if ( !isdefined( self ) || !isdefined( self.obj_type ) )
 	{
@@ -85,21 +94,21 @@ print_obj()
 
 	print_entity = self.owner;
 	// common fields
-	print_entity com_printinfo( "Printing " + self.obj_type + " fields: " );
-	print_entity com_printinfo( self.obj_type );
-	print_entity com_printinfo( self.warning );
-	print_entity com_printinfo( self.errored );
-	print_entity com_printinfo( self.msg );
+	print_entity com_printnotitle( "Printing " + self.obj_type + " fields: " );
+	print_entity com_printnotitle( "owner: " + self.owner.name );
+	print_entity com_printnotitle( "obj_type: " + self.obj_type );
+	print_entity com_printnotitle( "warning: " + self.warning );
+	print_entity com_printnotitle( "errored: " + self.errored );
+	print_entity com_printnotitle( "msg: " + self.msg );
 
 	if ( self.obj_type == "cmd_execute" )
 	{
-		print_entity com_printinfo( self.owner.name );
-		print_entity com_printinfo( self.id );
+		print_entity com_printnotitle( self.id );
 		if ( isdefined( self.objects ) )
 		{
 			foreach ( key, object in self.objects )
 			{
-				print_entity com_printinfo( "Printing child fields: " + key );
+				print_entity com_printnotitle( "Printing child fields: " + key );
 				object print_obj();
 			}
 		}
@@ -108,61 +117,76 @@ print_obj()
 	{
 		foreach ( key, object in self.cmds )
 		{
-			print_entity com_printinfo( "Printing cmd fields: " + key );
+			print_entity com_printnotitle( "Printing cmd fields: " + key );
 			object print_obj();
 		}
 	}
 	else if ( self.obj_type == "cmd_parse" )
 	{
-		print_entity com_printinfo( self.cmd_name );
-		print_entity com_printinfo( self.start_pos );
-		print_entity com_printinfo( self.end_pos );
-		foreach ( key, object in self.args )
+		print_entity com_printnotitle( "cmd_name: " + self.cmd_name );
+		print_entity com_printnotitle( "start_pos: " + self.start_pos );
+		print_entity com_printnotitle( "end_pos: " + self.end_pos );
+		for ( i = 0; i < self.args.size; i++ )
 		{
-			print_entity com_printinfo( "Printing arg fields: " + key );
-			object print_obj();
+			ordinal = ( i + 1 );
+			print_entity com_printnotitle( "arg" + ordinal + ": " + self.args[ i ] );
 		}
-	}
-	else if ( self.obj_type == "arg_parse" )
-	{
-		print_entity com_printinfo( self.arg );
+
+		keys = getarraykeys( self.directive_kvps );
+		for ( i = 0; i < keys.size; i++ )
+		{
+			for ( j = 0; j < self.directive_kvps[ keys[ i ] ].size; j++ )
+			{
+				self.directive_kvps[ keys[ i ] ][ j ] print_obj();
+			}
+		}
 	}
 	else if ( self.obj_type == "directive_parse" )
 	{
-		print_entity com_printinfo( self.directive_type );
+		print_entity com_printnotitle( self.directive_type );
 		self.directive_value print_obj();
 	}
 	else if ( self.obj_type == "token_parse" )
 	{
-		print_entity com_printinfo( self.token_type );
+		print_entity com_printnotitle( self.token_type );
 		foreach ( key, value in self.token_values )
 		{
-			print_entity com_printinfo( value );
+			print_entity com_printnotitle( value );
 		}
 	}
 	else if ( self.obj_type == "player" )
 	{
-		print_entity com_printinfo( self.name );
-		print_entity com_printinfo( self.clientnum );
-		print_entity com_printinfo( self.guid );
-		print_entity com_printinfo( self.origin );
-		print_entity com_printinfo( self.angles );
+		print_entity com_printnotitle( self.name );
+		print_entity com_printnotitle( self.clientnum );
+		print_entity com_printnotitle( self.guid );
+		print_entity com_printnotitle( self.origin );
+		print_entity com_printnotitle( self.angles );
 	}
 }
 
 com_printcmd( cmd_object )
 {
-	channels = self com_get_cmd_feedback_channel();
-	level com_printf_internal( channels, "notitle", "cmd_name: " + cmd_object.cmd_name, self );
-	level com_printf_internal( channels, "notitle", "usage: " + cmd_object.usage, self );
-	level com_printf_internal( channels, "notitle", "func: " + getfunctionname( cmd_object.func ), self );
-	level com_printf_internal( channels, "notitle", "aliases: " + repackage_args( cmd_object.aliases ), self );
-	level com_printf_internal( channels, "notitle", "power: " + cmd_object.power, self );
-	level com_printf_internal( channels, "notitle", "min_args: " + cmd_object.min_args, self );
-	level com_printf_internal( channels, "notitle", "max_args: " + cmd_object.max_args, self );
-	level com_printf_internal( channels, "notitle", "arg_types: " + repackage_args( cmd_object.arg_types ), self );
-	level com_printf_internal( channels, "notitle", "rank_group: " + cmd_object.rank_group, self );
-	level com_printf_internal( channels, "notitle", "module_group: " + cmd_object.module_group, self );
+	self com_printnotitle( "cmd_name: " + cmd_object.cmd_name );
+	self com_printnotitle( "usage: " + cmd_object.usage );
+	self com_printnotitle( "func: " + getfunctionname( cmd_object.func ) );
+	self com_printnotitle( "power: " + cmd_object.power );
+	self com_printnotitle( "min_args: " + cmd_object.min_args );
+	self com_printnotitle( "max_args: " + cmd_object.max_args );
+	self com_printnotitle( "arg_types: " + repackage_args( cmd_object.arg_types ) );
+	self com_printnotitle( "rank_group: " + cmd_object.rank_group );
+	self com_printnotitle( "module_group: " + cmd_object.module_group );
+}
+
+com_printcmd_help( cmd_object )
+{
+	self com_printnotitle( "Name: " + cmd_object.cmd_name );
+	self com_printnotitle( "Usage: " + cmd_object.usage );
+	self com_printnotitle( "Power: " + cmd_object.power );
+	self com_printnotitle( "Min Args: " + cmd_object.min_args );
+	self com_printnotitle( "Max Args: " + cmd_object.max_args );
+	self com_printnotitle( "Arg Types: " + repackage_args( cmd_object.arg_types ) );
+	self com_printnotitle( "Rank: " + cmd_object.rank_group );
+	self com_printnotitle( "Module: " + cmd_object.module_group );
 }
 
 com_printannouncment( message, players )
@@ -177,20 +201,34 @@ com_printf( channels, filter, message, players )
 
 com_printinfo( message )
 {
-	channels = self com_get_cmd_feedback_channel();
+	channels = self com_get_cmd_feedback_channel_internal();
 	level com_printf_internal( channels, "cmdinfo", message, self );
 }
 
 com_printwarning( message )
 {
-	channels = self com_get_cmd_feedback_channel();
+	channels = self com_get_cmd_feedback_channel_internal();
 	level com_printf_internal( channels, "cmdwarning", message, self );
 }
 
 com_printerror( message )
 {
-	channels = self com_get_cmd_feedback_channel();
+	channels = self com_get_cmd_feedback_channel_internal();
 	level com_printf_internal( channels, "cmderror", message, self );
+}
+
+com_printnotitle( message )
+{
+	channels = self com_get_cmd_feedback_channel_internal();
+	level com_printf_internal( channels, "notitle", message, self );
+}
+
+com_printconsoleprintlore()
+{
+	if ( !is_true( self.is_server ) )
+	{
+		self com_printnotitle( "Use 'shift' + '`' and then 'ctrl' + 'end' to see the full list" );
+	}
 }
 
 com_get_cmd_feedback_channel()
@@ -228,11 +266,7 @@ cmd_cooldown()
 	{
 		return;
 	}
-	if ( is_true( self.is_server ) )
-	{
-		return;
-	}
-	if ( isDefined( level.host ) && self == level.host )
+	if ( self has_all_perms() )
 	{
 		return;
 	}
@@ -254,11 +288,7 @@ can_use_multi_cmds()
 	{
 		return true;
 	}
-	if ( is_true( self.is_server ) )
-	{
-		return true;
-	}
-	if (isDefined( level.host ) && self == level.host )
+	if ( self has_all_perms() )
 	{
 		return true;
 	}
@@ -275,11 +305,7 @@ has_permission_for_cmd( cmd )
 	{
 		return true;
 	}
-	if ( is_true( self.is_server ) )
-	{
-		return true;
-	}
-	if ( isDefined( level.host ) && self == level.host )
+	if ( self has_all_perms() )
 	{
 		return true;
 	}
@@ -791,7 +817,15 @@ is_alpha( chr )
 {
 	abc = "abcdefghijklmnopqrstuvwxyz";
 
-	return isdefined( abc[ tolower( chr ) ] );
+	for ( i = 0; i < abc.size; i++ )
+	{
+		if ( abc[ i ] == tolower( chr ) )
+		{
+			return true;
+		}
+	}
+
+	return false;
 }
 
 is_alpha_numeric( chr, check_underscore = false )
@@ -802,14 +836,31 @@ is_alpha_numeric( chr, check_underscore = false )
 	{
 		abc += "_";
 	}
-	return isdefined( abc[ tolower( chr ) ] );
+
+	for ( i = 0; i < abc.size; i++ )
+	{
+		if ( abc[ i ] == tolower( chr ) )
+		{
+			return true;
+		}
+	}
+
+	return false;
 }
 
 is_numeric( chr )
 {
-	abc = "0123456789";
+	num = "0123456789";
 
-	return isdefined( abc[ tolower( chr ) ] );
+	for ( i = 0; i < num.size; i++ )
+	{
+		if ( num[ i ] == tolower( chr ) )
+		{
+			return true;
+		}
+	}
+
+	return false;
 }
 
 // very nice builtin which allows get entities in an arbitrary abstract volume
@@ -1267,11 +1318,14 @@ executor_obj_add_cmd( doc )
 	generic_obj.msg = error_msg;
 	generic_obj.do_print = print;
 
-	if ( getdvarint( "script_breakpoint" ) )
+	if ( !self script_breakpoint( generic_obj, error_msg ) )
 	{
-		generic_obj script_breakpoint();
+		self notify( "cmd_exception", generic_obj );
 	}
-
-	self notify( "cmd_exception", generic_obj );
 	return;
+}
+
+has_all_perms()
+{
+	return is_true( self.is_server ) || is_true( self.is_host );
 }

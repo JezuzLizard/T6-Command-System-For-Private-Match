@@ -21,8 +21,9 @@ main()
 	level.server.playername = getdvar( "sv_hostname" );
 	level.server.name = getdvar( "sv_hostname" );
 	level.server.is_server = true;
-	level.server.default_targets = undefined; // treat this value as the default target for optional target specifying
-	level.server.default_executors = level.server; // treat this value as the default executor for the command; the command is executed on behalf of the server on a player
+	level.server.default_targets = []; // treat this value as the default target for optional target specifying
+	level.server.default_executors = []; // treat this value as the default executor for the command; the command is executed on behalf of the server on a player
+	level.server.default_executors[ 0 ] = level.server;
 	level.tcs_glob = spawnstruct();
 	level.tcs_glob.irestart_countdown = 5;
 	level.tcs_glob.icmd_total = 0;
@@ -105,6 +106,7 @@ tcs_on_connect()
 		self.tcs_pl.cmdpower = level.tcs_perms.ranks[ "host" ].cmdpower;
 		self.tcs_pl.tcs_rank = "host";
 		level.host = self;
+		self.is_host = true;
 		found_entry = true;
 	}
 	else if ( array_validate( level.tcs_player_entries ) )
@@ -122,6 +124,7 @@ tcs_on_connect()
 	}
 	self._connected = true;
 
-	self.default_targets = undefined; // the default target is by default the default_executors instead as most commands would prefer 'self' which is the executor to be the assumed default target
-	self.default_executors = self;
+	self.default_targets = []; // the default target is by default the default_executors instead as most commands would prefer 'self' which is the executor to be the assumed default target
+	self.default_executors = [];
+	self.default_executors[ 0 ] = self;
 }

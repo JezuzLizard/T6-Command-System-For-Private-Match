@@ -3,122 +3,86 @@
 
 #include scripts\cmd\core\_utility;
 
-list_players_throttled( channel, players )
+list_players_throttled( team )
 {
 	self notify( "listing_players" );
 	self endon( "listing_players" );
-	for ( i = 0; i < players.size; i++ )
+
+	for ( i = 0; i < level.players.size; i++ )
 	{
-		if ( is_true( self.is_server ) || self.cmdpower >= level.CMD_POWER_MODERATOR )
+		player = level.players[ i ];
+		if ( isdefined( team ) && player.team != team )
 		{
-			message = "^3" + players[ i ].name + " " + players[ i ] getGUID() + " " + players[ i ] getEntityNumber();
+			continue;
 		}
-		else 
+
+		str = "^name: " + player.name;
+		str += " entnum: " + player getentitynumber();
+		if ( has_all_perms() || self.cmdpower >= level.CMD_POWER_MODERATOR )
 		{
-			message = "^3" + players[ i ].name + " " + players[ i ] getEntityNumber();
+			str += " guid: " + player getguid();
 		}
-		level com_printf( channel, "notitle", message, self );
+
+		self com_printnotitle( str );
 		wait 0.1;
 	}
-	if ( !is_true( self.is_server ) )
-	{
-		self com_printinfo( "Use shift + ` and scroll to the bottom to view the full list" );
-	}
+		
+	self com_printconsoleprintlore();
 }
 
-list_cmds_throttled( channel )
+list_cmds_throttled()
 {
 	self notify( "listing_cmds" );
 	self endon( "listing_cmds" );
+
 	cmds = getArrayKeys( level.tcs_cmds );
 	for ( i = 0; i < cmds.size; i++ )
 	{
-		if ( self has_permission_for_cmd( cmds[ i ] ) )
+		cmd = cmds[ i ];
+		if ( self has_permission_for_cmd( cmd ) )
 		{
-			message = level.tcs_cmds[ cmds[ i ] ].usage;
+			message = level.tcs_cmds[ cmd ].usage;
 			
-			level com_printf( channel, "notitle", message, self );
+			self com_printnotitle( message );
 			wait 0.1;
 		}
 	}
-	if ( !is_true( self.is_server ) )
-	{
-		self com_printinfo( "Use shift + ` and scroll to the bottom to view the full list" );
-	}
+		
+	self com_printconsoleprintlore();
 }
 
-list_entities_throttled( channel, str, entities )
+list_entities_throttled( param )
 {
 	self notify( "listing_entities" );
 	self endon( "listing_entities" );
-	if ( isDefined( str ) )
+
+	entities = param.t[ 0 ];
+	targetname_str = undefined;
+	classname_str = undefined;
+	script_noteworthy_str = undefined;
+	for ( i = 0; i < entities.size; i++ )
 	{
-		for ( i = 0; i < entities.size; i++ )
+		ent = entities[ i ];
+		if ( !isdefined( ent ) )
 		{
-			ent = entities[ i ];
-			if ( !isdefined( ent ) )
-			{
-				continue;
-			}
-			if ( isDefined( ent.targetname ) && ent.targetname == str )
-			{
-				if ( isDefined( ent.classname ) )
-				{
-					if ( isDefined( ent.script_notetworthy ) )
-					{
-						level com_printf( channel, "notitle", "Ent " + ent getEntityNumber() + " classname " + ent.classname + " targetname " + ent.targetname + " script_noteworthy " + ent.script_noteworthy + " origin " + ent.origin, self );
-					}
-					else 
-					{
-						level com_printf( channel, "notitle", "Ent " + ent getEntityNumber() + " classname " + ent.classname + " targetname " + ent.targetname + " origin " + ent.origin, self );
-					}
-				}
-				else 
-				{
-					level com_printf( channel, "notitle", "Ent " + ent getEntityNumber() + " targetname " + ent.targetname + " origin " + ent.origin, self );
-				}
-				wait 0.1;
-			}
+			continue;
 		}
+
+		str = "^3entnum " + ent getentitynumber();
+
+		str += " classname: " + isdefined( ent.classname ) ? ent.classname : "";
+		str += " targetname: " + isdefined( ent.targetname ) ? ent.targetname : "";
+		str += " script_noteworthy: " + isdefined( ent.script_noteworthy ) ? ent.script_noteworthy : "";
+		str += " script_string: " + isdefined( ent.script_string ) ? ent.script_string : "";
+		str += " angles: " + ent.angles;
+		str += " origin: " + ent.origin;
+
+		self com_printnotitle( str );
+		
+		wait 0.1;
 	}
-	else
-	{
-		for ( i = 0; i < entities.size; i++ )
-		{
-			ent = entities[ i ];
-			if ( !isdefined( ent ) )
-			{
-				continue;
-			}
-			if ( isDefined( ent.classname ) )
-			{
-				if ( isDefined( ent.targetname ) )
-				{
-					if ( isDefined( ent.script_noteworthy ) )
-					{
-						level com_printf( channel, "notitle", "Ent " + ent getEntityNumber() + " classname " + ent.classname + " targetname " + ent.targetname + " script_noteworthy " + ent.script_noteworthy + " origin " + ent.origin, self );
-					}
-					else 
-					{
-						level com_printf( channel, "notitle", "Ent " + ent getEntityNumber() + " classname " + ent.classname + " targetname " + ent.targetname + " origin " + ent.origin, self );
-					}
-				}
-				else 
-				{
-					level com_printf( channel, "notitle", "Ent " + ent getEntityNumber() + " classname " + ent.classname + " origin " + ent.origin, self );
-				}
-			}
-			else 
-			{
-				level com_printf( channel, "notitle", "Ent " + ent getEntityNumber() + " origin " + ent.origin, self );
-			}
-			wait 0.1;
-		}
-	}
-	if ( !is_true( self.is_server ) )
-	{
-		self com_printinfo( "Use shift + ` and scroll to the bottom to view the full list" );
-	}
+		
+	self com_printconsoleprintlore();
 }
 
 bottomless_clip()

@@ -38,25 +38,25 @@ private com_channel_is_active( channel )
 	return isDefined( level.com_channels[ channel ] );
 }
 
-private com_caps_msg_title( channel, filter )
+private com_caps_msg_title( channel, filter, allow_custom_colors = false )
 {
-	if ( filter == "notitle" || channel == "con" )
+	if ( filter == "notitle" )
 	{
 		return "";
 	}
 	if ( channel == "g_log" )
 	{
-		return toUpper( filter ) + ":";
+		return toupper( filter ) + ":";
 	}
-	if ( isSubStr( filter, "error" ) )
+	if ( issubstr( filter, "error" ) )
 	{
 		color_code = "^1";
 	}
-	else if ( isSubStr( filter, "warning" ) )
+	else if ( issubstr( filter, "warning" ) )
 	{
 		color_code = "^3";
 	}
-	else if ( isSubStr( filter, "info" ) )
+	else if ( issubstr( filter, "info" ) )
 	{
 		color_code = "^2";
 	}
@@ -64,7 +64,7 @@ private com_caps_msg_title( channel, filter )
 	{
 		color_code = "";
 	}
-	return color_code + toUpper( filter ) + ":";
+	return color_code + toupper( filter ) + ":";
 }
 
 private com_print( message, players )
@@ -126,7 +126,7 @@ com_printf_internal( channels, filter, message, players )
 	{
 		return;
 	}
-	if ( !isDefined( message ) || message == "" )
+	if ( !isDefined( message ) || isstring( message ) && message == "" )
 	{
 		return;
 	}
@@ -136,7 +136,7 @@ com_printf_internal( channels, filter, message, players )
 		channel = channel_keys[ i ];
 		if ( com_channel_is_active( channel ) && com_filter_is_active( filter ) )
 		{
-			if ( channel == "g_log" )
+			if ( channel == "g_log" || channel == "notitle" )
 			{
 				message_color_code = "";
 			}
@@ -145,6 +145,7 @@ com_printf_internal( channels, filter, message, players )
 				message_color_code = "^8";
 			}
 			message_modified = com_caps_msg_title( channel, filter ) + message_color_code + message;
+
 			if ( array_validate( players ) )
 			{
 				channel = channel + "_array";
@@ -164,8 +165,12 @@ com_get_cmd_feedback_channel_internal()
 	{
 		return "g_log";
 	}
-	else 
+	else if ( is_true( self.is_host ) )
 	{
 		return "iprint|con|g_log";
+	}
+	else
+	{
+		return "iprint";
 	}
 }

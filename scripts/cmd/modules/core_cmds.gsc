@@ -60,7 +60,7 @@ autoexec add_cmds()
 	cmd_block_set_rank_group( "none" );
 	cmdlist_cmd = cmd_add( "cmdlist", ::cmd_cmdlist_f );
 
-	playerlist_cmd = cmd_add( "playerlist", ::cmd_playerlist_f, "playerlist [team}]" );
+	playerlist_cmd = cmd_add( "playerlist", ::cmd_playerlist_f, "playerlist [team]" );
 	playerlist_cmd arg_obj_add_cmd( "team", 0, 1 );
 
 	printorigin_cmd = cmd_add( "printorigin", ::cmd_printorigin_f, "printorigin {entity}" );
@@ -82,21 +82,23 @@ autoexec add_cmds()
 	setdefaultcmdtarget_cmd = cmd_add( "setdefaultcmdtarget", ::cmd_setdefaultcmdtarget_f, "setdefaultcmdtarget {player}" );
 	setdefaultcmdtarget_cmd target_obj_add_cmd( "player", true );
 
+	debug_cmd = cmd_add( "debug", ::cmd_debug_f, "debug ..." );
+
 	// entities are no longer used in plain argument syntax, use the target syntax instead
 
 	// executor argtype/target for level.server and player commands
 }
 
-private cmd_setcvar_f( target_obj, args )
+private cmd_setcvar_f( param )
 {
-	dvarname = args[ 0 ];
-	dvarvalue = args[ 1 ];
+	dvarname = param.a[ 0 ];
+	dvarvalue = param.a[ 1 ];
 	self setClientDvar( dvarname, dvarvalue );
 
 	return result_cmdinfo( "Successfully set " + dvarname + " to " + dvarvalue );
 }
 
-private cmd_god_f( target_obj, args )
+private cmd_god_f( param )
 {
 	on_off = cast_bool_to_str( !is_true( self.tcs_is_invulnerable ), "on off" );
 	if ( on_off == "on" )
@@ -113,7 +115,7 @@ private cmd_god_f( target_obj, args )
 	return result_cmdinfo( "God " + on_off );
 }
 
-private cmd_notarget_f( target_obj, args )
+private cmd_notarget_f( param )
 {
 	on_off = cast_bool_to_str( !is_true( self.ignoreme ), "on off" );
 	if ( on_off == "on" )
@@ -128,7 +130,7 @@ private cmd_notarget_f( target_obj, args )
 	return result_cmdinfo( "Notarget " + on_off );
 }
 
-private cmd_invisible_f( target_obj, args )
+private cmd_invisible_f( param )
 {
 	on_off = cast_bool_to_str( !is_true( self.tcs_is_invisible ), "on off" );
 	if ( on_off == "on" )
@@ -145,7 +147,7 @@ private cmd_invisible_f( target_obj, args )
 	return result_cmdinfo( "Invisible " + on_off );
 }
 
-private cmd_togglehud_f( target_obj, args )
+private cmd_togglehud_f( param )
 {
 	on_off = cast_bool_to_str( is_true( self.tcs_hud_toggled ), "on off" );
 	if ( on_off == "off" )
@@ -162,7 +164,7 @@ private cmd_togglehud_f( target_obj, args )
 	return result_cmdinfo( "Your hud has been toggled " + on_off );
 }
 
-private cmd_bottomlessclip_f( target_obj, args )
+private cmd_bottomlessclip_f( param )
 {
 	on_off = cast_bool_to_str( !is_true( self.tcs_bottomless_clip ), "on off" );
 	if ( on_off == "on" )
@@ -179,24 +181,24 @@ private cmd_bottomlessclip_f( target_obj, args )
 	return result_cmdinfo( "Bottomless Clip " + on_off );
 }
 
-private cmd_server_dvar_f( target_obj, args )
+private cmd_server_dvar_f( param )
 {
-	dvarname = args[ 0 ];
-	dvarvalue = args[ 1 ];
+	dvarname = param.a[ 0 ];
+	dvarvalue = param.a[ 1 ];
 	setDvar( dvarname, dvarvalue );
 
 	return result_cmdinfo( "Successfully set " + dvarname + " to " + dvarvalue );
 }
 
-private cmd_setrank_f( target_obj, args )
+private cmd_setrank_f( param )
 {
-	target = args[ 0 ];
-	if ( !is_true( self.is_server ) && self.cmdpower < target.cmdpower )
+	target = param.a[ 0 ];
+	if ( !self has_all_perms() && self.cmdpower < target.cmdpower )
 	{
 		return result_cmderror( "Insufficient cmdpower to set " + target.name + "'s rank" );
 	}
-	new_rank = args[ 1 ];
-	if ( !is_true( self.is_server ) && ( level.tcs_perms.ranks[ new_rank ].cmdpower >= self.cmdpower ) && self.cmdpower < level.tcs_perms.ranks[ "host" ].cmdpower )
+	new_rank = param.a[ 1 ];
+	if ( !self has_all_perms() && ( level.tcs_perms.ranks[ new_rank ].cmdpower >= self.cmdpower ) && self.cmdpower < level.tcs_perms.ranks[ "host" ].cmdpower )
 	{
 		return result_cmderror( "You cannot set " + target.name + " to a rank higher than or equal to your own" );
 	}
@@ -209,124 +211,120 @@ private cmd_setrank_f( target_obj, args )
 	return result_cmdinfo( "Target's new rank is " + new_rank );
 }
 
-private cmd_playerlist_f( target_obj, args )
+private cmd_playerlist_f( param )
 {
-	channel = self com_get_cmd_feedback_channel();
-	players = getPlayers();
-	if ( players.size == 0 )
+	if ( level.players.size == 0 )
 	{
-		return result_cmderror( "There are no players in the server" );
+		return result_cmderror( "The server is empty" );
 	}
-	self thread list_players_throttled( channel, players );
+
+	team = param.a[ 0 ];
+	self thread list_players_throttled( team );
 
 	return result_cmdinfo( "" );
 }
 
-private cmd_cmdlist_f( target_obj, args )
+private cmd_cmdlist_f( param )
 {
-	channel = self com_get_cmd_feedback_channel();
-	self thread list_cmds_throttled( channel );
+	self thread list_cmds_throttled();
 	return result_cmdinfo( "" );
 }
 
-private cmd_help_f( target_obj, args )
+private cmd_help_f( param )
 {
-	channel = self com_get_cmd_feedback_channel();
+	specific_cmd = param.a[ 0 ];
+
+	if ( isdefined( specific_cmd ) )
+	{
+		self com_printcmd_help( specific_cmd );
+		return result_cmderror( "" );
+	}
+
 	if ( is_true( self.is_server ) )
 	{
-		level com_printf( channel, "notitle", "^3To view cmds you can use tcscmd cmdlist in the console", self );
-		level com_printf( channel, "notitle", "^3To view players in the server do tcscmd playerlist in the console", self );
-		level com_printf( channel, "notitle", "^3To view the usage of a specific cmd do tcscmd help <cmdalias>", self );
-		if ( isDefined( level.tcs_additional_help_prints_func ) )
-		{
-			self [[ level.tcs_additional_help_prints_func ]]( channel );
-		}
+		self com_printnotitle( "^3To view cmds you can use 'tcscmd cmdlist' in the console" );
+		self com_printnotitle( "^3To view players in the server do 'tcscmd playerlist' in the console" );
+		self com_printnotitle( "^3To view the usage of a specific cmd do 'tcscmd help' <cmdalias>" );
 	}
 	else 
 	{
 		valid_cmd_tokens = getDvar( "tcs_cmd_tokens" );
-		if ( level.tcs_allow_hidden_cmds )
+		if ( level.tcs_glob.bhidden_cmds )
 		{
-			level com_printf( channel, "notitle", "^3Valid cmd tokens are / " + valid_cmd_tokens, self );
+			self com_printnotitle("^3Valid cmd prefixes are '/ " + valid_cmd_tokens + "'" );
 		}
 		else 
 		{
-			level com_printf( channel, "notitle", "^3Valid cmd tokens are " + valid_cmd_tokens, self );
+			self com_printnotitle( "^3Valid cmd prefixes are '" + valid_cmd_tokens + "'" );
 		}
-		level com_printf( channel, "notitle", "^3To view cmds you can use cmdlist prefixed with the cmd token", self );
-		level com_printf( channel, "notitle", "^3To view players in the server do playerlist prefixed with the cmd token", self );
-		level com_printf( channel, "notitle", "^3To view the usage of a specific cmd do help <cmdalias> prefixed with the cmd token", self );
-		if ( isDefined( level.tcs_additional_help_prints_func ) )
-		{
-			self [[ level.tcs_additional_help_prints_func ]]( channel );
-		}
-		self com_printinfo( "Use shift + ` and scroll to the bottom to view the full list" );
+
+		self com_printnotitle( "^3To view cmds you can use 'cmdlist'" );
+		self com_printnotitle( "^3To view players in the server do 'playerlist'" );
+		self com_printnotitle( "^3To view the usage of a specific cmd do 'help' <cmdalias>" );
 	}
+
+	if ( isDefined( level.tcs_additional_help_prints_func ) )
+	{
+		self [[ level.tcs_additional_help_prints_func ]]();
+	}
+	self com_printconsoleprintlore();
 
 	return result_cmdinfo( "" );
 }
 
-private cmd_dodamage_f( target_obj, args )
+private cmd_dodamage_f( param )
 {
-	result = [];
-	target = target_obj.t[ 0 ];
-	damage = args[ 1 ];
-	pos = args[ 2 ];
-	attacker = args[ 3 ];
-	inflictor = args[ 4 ];
-	hitloc = args[ 5 ];
-	mod = args[ 6 ];
-	idflags = args[ 7 ];
-	weapon = args[ 8 ];
-	switch ( args.size )
+	target = param.t[ 0 ];
+	attacker = param.t[ 1 ];
+	inflictor = param.t[ 2 ];
+	damage = param.a[ 0 ];
+	pos = param.a[ 1 ];
+	hitloc = param.a[ 2 ];
+	mod = param.a[ 3 ];
+	idflags = param.a[ 4 ];
+	weapon = param.a[ 5 ];
+
+	if ( isdefined( weapon ) )
 	{
-		case 3:
-			target dodamage( damage, pos );
-			break;
-		case 4:
-			target dodamage( damage, pos, attacker );
-			break;
-		case 5:
-			target dodamage( damage, pos, attacker, inflictor );
-			break;
-		case 6:
-			target dodamage( damage, pos, attacker, inflictor, hitloc );
-			break;
-		case 7:
-			target dodamage( damage, pos, attacker, inflictor, hitloc, mod );
-			break;
-		case 8:
-			target dodamage( damage, pos, attacker, inflictor, hitloc, mod, idflags );
-			break;
-		case 9:
-			target dodamage( damage, pos, attacker, inflictor, hitloc, mod, idflags, weapon );
-			break;
-		default:
-			return result_cmderror( "Wrong number of parameters sent to cmd dodamage max is 9 and min is 3" );
+		target dodamage( damage, pos, attacker, inflictor, hitloc, mod, idflags, weapon );
+	}
+	else if ( isdefined( idflags ) )
+	{
+		target dodamage( damage, pos, attacker, inflictor, hitloc, mod, idflags );
+	}
+	else if ( isdefined( mod ) )
+	{
+		target dodamage( damage, pos, attacker, inflictor, hitloc, mod );
+	}
+	else if ( isdefined( hitloc ) )
+	{
+		target dodamage( damage, pos, attacker, inflictor, hitloc );
+	}
+	else if ( isdefined( inflictor ) )
+	{
+		target dodamage( damage, pos, attacker, inflictor );
+	}
+	else if ( isdefined( attacker ) )
+	{
+		target dodamage( damage, pos, attacker );
 	}
 
 	return result_cmdinfo( "Executed dodamage on target" );
 }
 
-private cmd_entitylist_f( target_obj, args )
+private cmd_entitylist_f( param )
 {
-	channel = self com_get_cmd_feedback_channel();
-	entities = getEntArray();
-	if ( entities.size <= 0 )
-	{
-		return result_cmderror( "There are no entities in the server" );
-	}
-	self thread list_entities_throttled( channel, args[ 0 ], entities );
+	self thread list_entities_throttled( param );
 
 	return result_cmdinfo( "" );
 }
 
-private cmd_scrnotify_f( target_obj, args )
+private cmd_scrnotify_f( param )
 {
-	notify_ent = target_obj.t[ 0 ];
-	notify_name = args[ 0 ];
+	notify_ent = param.t[ 0 ];
+	notify_name = param.a[ 0 ];
 
-	arg_count = args.size - 2;
+	arg_count = param.a.size - 1;
 
 	switch ( arg_count )
 	{
@@ -334,13 +332,13 @@ private cmd_scrnotify_f( target_obj, args )
 			notify_ent notify( notify_name );
 			break;
 		case 1:
-			notify_ent notify( notify_name, args[ 2 ] );
+			notify_ent notify( notify_name, param.a[ 2 ] );
 			break;
 		case 2:
-			notify_ent notify( notify_name, args[ 2 ], args[ 3 ] );
+			notify_ent notify( notify_name, param.a[ 2 ], param.a[ 3 ] );
 			break;
 		case 3:
-			notify_ent notify( notify_name, args[ 2 ], args[ 3 ], args[ 4 ] );
+			notify_ent notify( notify_name, param.a[ 2 ], param.a[ 3 ], param.a[ 4 ] );
 			break;
 		default:
 			return result_cmderror( "Max arguments is 3!" );
@@ -349,24 +347,24 @@ private cmd_scrnotify_f( target_obj, args )
 	return result_cmdinfo( "Successfully delivered notify " + notify_name );
 }
 
-private cmd_printorigin_f( target_obj, args )
+private cmd_printorigin_f( param )
 {
-	target = target_obj.t[ 0 ];
+	target = param.t[ 0 ];
 
 	return result_cmdinfo( "Entity origin is: '" + target.origin + "'" );
 }
 
-private cmd_printangles_f( target_obj, args )
+private cmd_printangles_f( param )
 {
-	target = target_obj.t[ 0 ];
+	target = param.t[ 0 ];
 
 	return result_cmdinfo( "Entity angles are: '" + target.angles + "'" );
 }
 
-private cmd_teleportentity_f( target_obj, args )
+private cmd_teleportentity_f( param )
 {
-	from_target = target_obj.t[ 0 ];
-	to_target = target_obj.t[ 1 ];
+	from_target = param.t[ 0 ];
+	to_target = param.t[ 1 ];
 
 	from_target setOrigin( to_target.origin + anglesToForward( to_target.angles ) * 64 + anglesToRight( to_target.angles ) * 64 );
 
@@ -375,16 +373,31 @@ private cmd_teleportentity_f( target_obj, args )
 	return result_cmdinfo( "Successfully teleported '" + from_name + "' to '" + to_name + "'s position" );
 }
 
-private cmd_setdefaultcmdexecutor_f( target_obj, args )
+private cmd_setdefaultcmdexecutor_f( param )
 {
-	self.default_executors = target_obj.t[ 0 ];
+	self.default_executors = param.t[ 0 ];
 
 	return result_cmdinfo( "Successfully set your default cmd executors" );
 }
 
-private cmd_setdefaultcmdtarget_f( target_obj, args )
+private cmd_setdefaultcmdtarget_f( param )
 {
-	self.default_targets = target_obj.t[ 0 ];
+	self.default_targets = param.t[ 0 ];
 
 	return result_cmdinfo( "Successfully set your default cmd targets" );
+}
+
+private cmd_debug_f( param )
+{
+	type = param.a[ 0 ];
+
+	switch ( type )
+	{
+		case "continue":
+			self notify( "debug_continue" );
+			break;
+		case "abort":
+			self notify( "debug_abort" );
+			break;
+	}
 }
