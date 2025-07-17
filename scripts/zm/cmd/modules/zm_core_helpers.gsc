@@ -8,6 +8,8 @@
 
 #include scripts\cmd\core\_utility;
 
+#include scripts\zm\cmd\modules\_utility;
+
 autoexec init_helpers()
 {
 	register_modifiable_zombie_stat( "health_increase_flat", "int", 100, ::zombie_recalculate_health );
@@ -115,7 +117,7 @@ give_powerup_zm( powerup_name )
 		self com_printerror( "Cannot spawn a powerup this far from the map center" );
 		return false;
 	}
-	powerup_loc = self.origin + anglesToForward( self.angles ) * 64 + anglesToRight( self.angles ) * 64;
+	powerup_loc = self.origin + anglestoforward( self.angles ) * 64 + anglestoright( self.angles ) * 64;
 	powerup = maps\mp\zombies\_zm_powerups::specific_powerup_drop( powerup_name, powerup_loc );
 	if ( powerup_name == "teller_withdrawl" )
 	{
@@ -126,7 +128,7 @@ give_powerup_zm( powerup_name )
 
 give_perk_zm( perkname, index )
 {
-	if ( !self hasPerk( perkname ) )
+	if ( !self hasperk( perkname ) )
 	{
 		self maps\mp\zombies\_zm_perks::give_perk( perkname, true );
 	}
@@ -418,7 +420,7 @@ change_round( target_round )
 	level thread maps\mp\zombies\_zm::round_think( 1 );
 }
 
-register_modifiable_zombie_stat( stat_name, value_type, current_value, reset_value, recalculate_func )
+register_modifiable_zombie_stat( stat_name, value_type, reset_value, recalculate_func )
 {
 	if ( !isDefined( level.tcs_modifiable_zombie_stats ) )
 	{
@@ -509,55 +511,6 @@ zombie_recalculate_total( stat_name, new_value )
 		level.zombie_total = [[ level.max_zombie_func ]]( max );
 		level notify( "zombie_total_set" );
 	}	
-}
-
-perk_list_zm()
-{
-	if ( !isDefined( level._zm_perks ) )
-	{
-		level._zm_perks = [];
-	}
-	else 
-	{
-		return level._zm_perks; //Fix so even if quickrevive machine is removed it can still be given.
-	}
-	switch ( level.script )
-	{
-		case "zm_tomb":
-			level._zm_perks = level._random_perk_machine_perk_list;
-			return level._zm_perks;
-		case "zm_transit": //Fix so you can give perks with cmds on maps without perk machines.
-			level._zm_perks = array( "specialty_quickrevive", "specialty_rof", "specialty_fastreload", "specialty_armorvest", "specialty_longersprint", "specialty_scavenger" );
-			return level._zm_perks;
-		default:
-			machines = getentarray( "zombie_vending", "targetname" );
-			perks = [];
-
-			for ( i = 0; i < machines.size; i++ )
-			{
-				if ( machines[ i ].script_noteworthy == "specialty_weapupgrade" )
-					continue;
-
-				perks[ perks.size ] = machines[ i ].script_noteworthy;
-			}
-			level._zm_perks = perks;
-			return level._zm_perks;
-	}
-}
-
-permaperk_list_zm()
-{
-	return getarraykeys( level.pers_upgrades );
-}
-
-get_all_weapons()
-{
-	return getarraykeys( level.zombie_include_weapons );
-}
-
-weapon_is_upgrade( weapon )
-{
-	return issubstr( weapon, "upgraded" );
 }
 
 weapon_give_custom( weapon, is_upgrade, should_switch_weapon )
@@ -685,7 +638,7 @@ weapon_give_custom( weapon, is_upgrade, should_switch_weapon )
 		self giveweapon( weapon );
 	else
 		self giveweapon( weapon, 0, self get_pack_a_punch_weapon_options( weapon ) );
-	if ( is_true( self.pers["isBot"] ) )
+	if ( self istestclient() )
 	{
 		self setSpawnWeapon( weapon );
 	}

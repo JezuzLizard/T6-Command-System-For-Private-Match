@@ -17,6 +17,7 @@
 
 main()
 {
+	level._developer = getdvarint( "developer" );
 	level.server = spawnStruct();
 	level.server.playername = getdvar( "sv_hostname" );
 	level.server.name = getdvar( "sv_hostname" );
@@ -86,7 +87,6 @@ drive_connected_notifies_for_mp()
 tcs_p_obj_new()
 {
 	tcs_pl_obj = spawnstruct();
-	tcs_pl_obj.cmdpower = getdvarintdefault( "tcs_cmdpower_default", level.tcs_perms.ranks[ "user" ].cmdpower );
 	tcs_pl_obj.tcs_rank = getdvarstringdefault( "tcs_default_rank", "user" );
 	return tcs_pl_obj;
 }
@@ -103,7 +103,6 @@ tcs_on_connect()
 	found_entry = false;
 	if ( self ishost() )
 	{
-		self.tcs_pl.cmdpower = level.tcs_perms.ranks[ "host" ].cmdpower;
 		self.tcs_pl.tcs_rank = "host";
 		level.host = self;
 		self.is_host = true;
@@ -116,7 +115,6 @@ tcs_on_connect()
 			find = level.server cast_str_to_entity( entry.player_entry, "player" );
 			if ( !find.errored && find.ent == self )
 			{
-				self.tcs_pl.cmdpower = entry.cmdpower;
 				self.tcs_pl.tcs_rank = entry.tcs_rank;
 				found_entry = true;
 			}

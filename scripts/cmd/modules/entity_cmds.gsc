@@ -7,6 +7,7 @@
 
 autoexec add_cmds()
 {
+	waittillframeend;
 	cmd_block_set_module_group( "addon_entity_tools" );
 	cmd_block_set_rank_group( "cheat" );
 
@@ -24,19 +25,19 @@ autoexec add_cmds()
 	deletecamera_cmd arg_obj_add_cmd( "string", 1, 1 );
 
 	linkcameratoent_cmd = cmd_add( "linkcameratoent", ::cmd_linkcameratoent_f, "linkcameratoent {entity} <camera_name> [tagname] [origin_offset] [angles_offset]" );
-	linkcameratoent_cmd arg_obj_add_cmd( "string string_allow_null vector vector", 1, 4 );
-	linkcameratoent_cmd target_obj_add_cmd( "entity", true, "Entity to link a spawned camera to", 1 );
+	linkcameratoent_cmd arg_obj_add_cmd( "string string vector vector", 1, 4 );
+	linkcameratoent_cmd target_type_add_cmd( "general", true, "Entity to link a spawned camera to", 1 );
 
 	linkcameratoent_cmd = cmd_add( "unlinkcamera", ::cmd_unlinkcamera_f, "unlinkcamera <camera_name>" );
 	linkcameratoent_cmd arg_obj_add_cmd( "string", 1, 1 );
 
 	spectateactor_cmd = cmd_add( "spectateactor", ::cmd_spectateactor_f, "spectateactor {actor} <tagname>" );
-	spectateactor_cmd arg_obj_add_cmd( "string_allow_null", 1, 1 );
-	spectateactor_cmd target_obj_add_cmd( "actor", true, "Actor to spectate", 1 );
+	spectateactor_cmd arg_obj_add_cmd( "string", 1, 1 );
+	spectateactor_cmd target_type_add_cmd( "actor", true, "Actor to spectate", 1 );
 
 	// entity manipulation
 	seteditortargetent_cmd = cmd_add( "seteditortargetent", ::cmd_seteditortargetent_f, "seteditortargetent {entity}" );
-	seteditortargetent_cmd target_obj_add_cmd( "entity", false, "Manual entity to target for editing", 1 );
+	seteditortargetent_cmd target_type_add_cmd( "general", false, "Manual entity to target for editing", 1 );
 
 	seteditortargetangles_cmd = cmd_add( "seteditortargetangles", ::cmd_seteditortargetangles_f, "seteditortargetangles <angles> [relative] [scale]" );
 	seteditortargetangles_cmd arg_obj_add_cmd( "vector boolean", 1, 3 );
@@ -49,10 +50,11 @@ autoexec add_cmds()
 
 	editorspawnheldmodel_cmd = cmd_add( "editorspawnheldmodel", ::cmd_editorspawnheldmodel_f, "editorspawnheldmodel <ent_name> <model> [carry_origin_offset] [carry_angles_offset]" );
 	editorspawnheldmodel_cmd arg_obj_add_cmd( "string model vector vector", 2, 4 );
+	editorspawnheldmodel_cmd make_cmd_immune_to_unittest();
 
 	editorpickup_cmd = cmd_add( "editorpickup", ::cmd_editorpickup_f, "editorpickup {entity} [carry_origin_offset] [carry_angles_offset]" );
 	editorpickup_cmd arg_obj_add_cmd( "vector vector", 0, 2 );
-	editorpickup_cmd target_obj_add_cmd( "entity", false, "Manual entity to pickup for editing", 1 );
+	editorpickup_cmd target_type_add_cmd( "general", false, "Manual entity to pickup for editing", 1 );
 
 	editorsetcontext_cmd = cmd_add( "editorsetcontext", ::cmd_editorsetcontext_f, "editorsetcontext <context_mode> [context_scale]" );
 	editorsetcontext_cmd arg_obj_add_cmd( "string", 1, 1 );
@@ -135,7 +137,7 @@ autoexec add_cmds()
 	setviewpos_cmd arg_obj_add_cmd( "vector vector", 1, 2 );
 
 	spawn_cmd = cmd_add( "spawn", ::cmd_spawn_f, "spawn <classname> <origin> [spawnflags] [contextual1] [contextual2] [contextual3]" );
-	spawn_cmd arg_obj_add_cmd( "classname vector spawnflags string string string", 2, 6 );
+	spawn_cmd arg_obj_add_cmd( "string vector string string string string", 2, 6 );
 
 	dumpent_cmd = cmd_add( "saveent", ::cmd_dumpent_f, "saveent <type> [classname]" );
 	dumpent_cmd arg_obj_add_cmd( "string string", 1, 2 );
@@ -429,7 +431,7 @@ cmd_editorpickup_f( param )
 
 cmd_editorcontextmodifyentity_f( param )
 {
-	context_scale = self hud_binding_get( "editor_scale_context" );
+	context_scale = float( self hud_binding_get( "editor_scale_context" ).binding_val );
 	total_time = _DEFAULT( param.a[ 0 ], 0.1 );
 	accel_time = _DEFAULT( param.a[ 1 ], 0.05 );
 	decel_time = _DEFAULT( param.a[ 2 ], 0.05 );

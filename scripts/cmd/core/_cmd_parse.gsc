@@ -322,7 +322,7 @@ private parse_target_value( target_string )
 	{
 		if ( target_string.size > 1 )
 		{
-			throw_exception( "The '" + token_parse_obj.token_type + "' valid targets syntax '" + first + "' cannot be used with any other syntax as the first element", token_parse_obj );
+			throw_exception( "The '" + token_parse_obj.token_type + "' valid targets syntax '" + first + "' cannot be used with any other syntax as the first element: token: '" + target_string + "'", token_parse_obj );
 		}
 
 		return set_parse_success( token_parse_obj, "target=" + token_parse_obj.token_type );
@@ -356,7 +356,7 @@ private parse_target_value( target_string )
 		return name_token_obj;
 	}
 
-	throw_exception( "Unsupported target directive value", token_parse_obj );
+	throw_exception( "Unsupported target directive value: '" + target_string + "'", token_parse_obj );
 }
 
 private parse_directive( cmd_parse, key_type, ordinal_argument, value )
@@ -407,40 +407,6 @@ private parse_directive( cmd_parse, key_type, ordinal_argument, value )
 
 private parse_directives( cmd_parse, token_str )
 {
-	// parse directives
-	if ( token_str[ 1 ] != "{" )
-	{
-		//fail, invalid options block start
-		throw_exception( "Invalid directive block start", cmd_parse );
-	}
-
-	// just quickly make sure the braces match
-	brace_count = 1;
-	for ( k = 2; k < token_str.size; k++ )
-	{
-		switch ( token_str[ k ] )
-		{
-			case "}":
-				brace_count--;
-				break;
-			case "{":
-				brace_count++;
-				throw_exception( "Cannot nest directives", cmd_parse );
-		}
-
-		if ( brace_count < 0 )
-		{
-			throw_exception( "Too many closing braces", cmd_parse );
-		}
-	}
-
-	even_number_of_braces = brace_count == 0;
-	if ( !even_number_of_braces )
-	{
-		//fail, every opening brace must be closed
-		throw_exception( "Directive blocks must be closed", cmd_parse );
-	}
-
 	if ( token_str.size == 3 && token_str[ 2 ] == "}" )
 	{
 		//fail?, or show help? as an empty directives block means that it will do nothing for that target selector; unless this is a way to skip it...
@@ -451,7 +417,7 @@ private parse_directives( cmd_parse, token_str )
 
 	// got past the preparser so we already know it's a little valid
 
-	key_start = 1;
+	key_start = 2;
 	for ( ;; )
 	{
 		// parse key
@@ -464,7 +430,7 @@ private parse_directives( cmd_parse, token_str )
 			}
 			if ( !is_alpha_numeric( token_str[ key_end ] ) )
 			{
-				throw_exception( "Directive key contains an invalid character", cmd_parse );
+				throw_exception( "Directive key: '" + token_str + "' contains an invalid character: '" + token_str[ key_end ] + "'", cmd_parse );
 			}
 
 			key_end++;
@@ -478,7 +444,7 @@ private parse_directives( cmd_parse, token_str )
 		key = getsubstr( token_str, key_start, key_end );
 
 		// parse value
-		value_start = key_end; // start after the '=' token
+		value_start = key_end + 1; // start after the '=' token
 		value_end = value_start;
 		if ( token_str[ value_start ] == "[" ) // start of array
 		{
@@ -496,14 +462,12 @@ private parse_directives( cmd_parse, token_str )
 
 		for ( ;; )
 		{
-			value_end++;
-
 			if ( token_str[ value_end + 1 ] == "}" )
 			{
 				break; // we don't need to send the closing brace
 			}
 
-			if ( token_str[ value_end ] == "," )
+			if ( token_str[ value_end + 1 ] == "," )
 			{
 				break; // we don't need to send the separating comma
 			}
@@ -512,6 +476,8 @@ private parse_directives( cmd_parse, token_str )
 			{
 				throw_exception( "Missing key value pair terminator '}' or separator ','", cmd_parse );
 			}
+
+			value_end++;
 		}
 
 		value = getsubstr( token_str, value_start, value_end );
@@ -524,12 +490,16 @@ private parse_directives( cmd_parse, token_str )
 		{
 			key_type = getsubstr( key, 0, key.size - 1 );
 		}
+		else if ( issubstr( key_type, "target" ) )
+		{
+			throw_exception( "'target' requires an ordinal suffix to indicate unambiguously which target is used", cmd_parse );
+		}
 
 		if ( !isdefined( cmd_parse.directive_kvps[ key_type ] ) )
 		{
 			cmd_parse.directive_kvps[ key_type ] = [];
 		}
-		cmd_parse.directive_kvps[ key_type ][ cmd_parse.directive_kvps[ key_type ].size ] = parse_directive( cmd_parse, key_type, ordinal_argument, value );
+		cmd_parse.directive_kvps[ key_type ][ ordinal_argument - 1 ] = parse_directive( cmd_parse, key_type, ordinal_argument, value );
 	}
 		// so everything is a key value pair, or key=<val>, where key is a primitive string followed by exactly "=" and then a formatted value
 		// values will only be alphanumeric, "_", "[,]", "(,)"
@@ -661,33 +631,54 @@ private custom_split( str, cmd_parse_array )
 		if ( str[ i ] == "@" )
 		{
 			split_start = i;
-			if ( !isdefined( str[ i + 1 ] ) || str[ i + 1 ] != "{" )
+			if ( ( i + 1 ) == str.size || str[ i + 1 ] != "{" )
 			{
 				//fail, must be at least 3 characters to be at least somewhat valid "@{}"
 				throw_exception( "Directive must be at least '@{'", cmd_parse_array );
 			}
-			for ( ; i != "}"; i++ )
+			for ( ; str[ i ] != "}"; i++ )
 			{
-				if ( !isdefined( str[ i + 1 ] ) )
+				if ( ( i + 1 ) == str.size )
 				{
 					throw_exception( "Directive must be terminated with '}'", cmd_parse_array );
 				}
-
-				tokens[ tokens.size ] = getsubstr( str, split_start, i );
 			}
+
+			split_end = ( i + 1 );
+			tokens[ tokens.size ] = getsubstr( str, split_start, split_end );
+			com_printdebugwarning( "Custom split for directive: tok: " + tokens[ tokens.size - 1 ] + " start: " + split_start + " end: " + split_end );
 
 			in_identifier = false;
 		}
 		else if ( is_alpha_numeric( str[ i ], true ) )
 		{
+			if ( !was_in_identifier )
+			{
+				split_start = i;
+				was_in_identifier = true;
+			}
 			in_identifier = true;
 		}
-		else if ( str[ i ] == " " || !isdefined( str[ i + 1 ] ) )
+
+		if ( str[ i ] == " " )
 		{
 			if ( in_identifier )
 			{
 				tokens[ tokens.size ] = getsubstr( str, split_start, i );
 				split_start = i;
+				was_in_identifier = false;
+			}
+
+			in_identifier = false;
+		}
+
+		if ( ( i + 1 ) == str.size )
+		{
+			if ( in_identifier )
+			{
+				tokens[ tokens.size ] = getsubstr( str, split_start );
+				split_start = i;
+				was_in_identifier = false;
 			}
 
 			in_identifier = false;
@@ -711,20 +702,24 @@ private custom_split( str, cmd_parse_array )
 		throw_exception( "Command string is empty", cmd_parse_array );
 	}
 
+	com_printdebugwarning( message );
+
 	multiple_cmds_keys = strtok( message, "^" );
 	for ( i = 0; i < multiple_cmds_keys.size; i++ )
 	{
 		cmd_string = custom_split( multiple_cmds_keys[ i ], cmd_parse_array );
 		cmd_find_result = cast_str_to_cmd( cmd_string[ 0 ] );
+		new_cmd_parse = cmd_parse_obj_t_new( multiple_cmds_keys[ i ], cmd_find_result.value );
 		if ( cmd_find_result.errored )
 		{
 			throw_exception( cmd_find_result.msg, cmd_parse_array );
 		}
-
-		new_cmd_parse = cmd_parse_obj_t_new( multiple_cmds_keys[ i ], cmd_find_result.value );
+		
+		cmd_name = cmd_find_result.value.cmd_name;
 
 		for ( j = 1; j < cmd_string.size; j++ )
 		{
+			com_printdebugwarning( cmd_string[ j ] );
 			// "@" should be a variable; it should be configureable
 			if ( cmd_string[ j ][ 0 ] == "@" )
 			{
@@ -760,7 +755,7 @@ private custom_split( str, cmd_parse_array )
 			new_cmd_parse.directive_kvps[ "target" ][ new_cmd_parse.directive_kvps[ "target" ].size ] = target_directive;
 		}
 
-		cmd_parse_array.cmds[ new_cmd_parse.cmd_name ] = new_cmd_parse;
+		cmd_parse_array.cmds[ cmd_name ] = new_cmd_parse;
 		
 		if ( new_cmd_parse.directive_kvps[ "executor" ].directive_value.token_type == "undefined" )
 		{

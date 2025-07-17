@@ -227,6 +227,11 @@ hud_binding_get( binding_name )
 	return self._hud_bindings[ binding_name ];
 }
 
+hud_binding_get_value( binding_name )
+{
+	
+}
+
 vertical_text_list_update_member( parent, member, member_index )
 {
 	member set_alignment( parent.alignx, parent.aligny, parent.horzalign, parent.vertalign );

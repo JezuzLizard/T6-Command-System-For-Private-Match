@@ -12,24 +12,20 @@
 
 autoexec add_cmds()
 {
-	while ( !is_true( level.command_init_done ) )
-	{
-		wait 0.05;
-	}
-
+	waittillframeend;
 	cmd_block_set_module_group( "core_common" );
 	cmd_block_set_rank_group( "cheat" );
 	setscriptgoal = cmd_add( "setscriptgoal", "scriptgoal {bot} <goal|entity> [dist]", ::cmd_setscriptgoal_f );
 	setscriptgoal arg_obj_add_cmd( "goal", 1, 2 );
-	setscriptgoal target_obj_add_cmd( "bot", true, "Bot to set goal for" );
+	setscriptgoal target_type_add_cmd( "bot", true, "Bot to set goal for" );
 
 	clearscriptgoal = cmd_add( "clearscriptgoal", "clearscriptgoal {bot}", ::cmd_clearscriptgoal_f );
 	clearscriptgoal arg_obj_add_cmd( "", 0, 0 );
-	setscriptgoal target_obj_add_cmd( "bot", true, "Bot to clear goal for" );
+	setscriptgoal target_type_add_cmd( "bot", true, "Bot to clear goal for" );
 
 	hasscriptgoal = cmd_add( "hasscriptgoal", "hasscriptgoal {bot}", ::cmd_hasscriptgoal_f );
 	hasscriptgoal arg_obj_add_cmd( "", 0, 0 );
-	hasscriptgoal target_obj_add_cmd( "bot", true, "Bot to print goal for" );
+	hasscriptgoal target_type_add_cmd( "bot", true, "Bot to print goal for" );
 }
 
 private cmd_setscriptgoal_f( param )

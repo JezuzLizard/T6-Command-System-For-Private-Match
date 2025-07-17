@@ -6,6 +6,7 @@
 
 autoexec add_cmds()
 {
+	waittillframeend;
 	cmd_block_set_module_group( "core_common" );
 	cmd_block_set_rank_group( "cheat" );
 	setcvar_cmd = cmd_add( "cvar", ::cmd_setcvar_f, "cvar <cvarname> <newval>" );
@@ -25,37 +26,37 @@ autoexec add_cmds()
 	togglehud_cmd executor_obj_add_cmd( "Player who's hud will be toggled" );
 
 	bottomlessclip_cmd = cmd_add( "bottomlessclip", ::cmd_bottomlessclip_f, "bottomlessclip" );
-	bottomlessclip_cmd target_obj_add_cmd( "Player who will receive bottomless clip" );
+	bottomlessclip_cmd executor_obj_add_cmd( "Player who will receive bottomless clip" );
 
 	dvar_cmd = cmd_add( "dvar", ::cmd_server_dvar_f, "dvar <dvarname> <newval>" );
 	dvar_cmd arg_obj_add_cmd( "string string", 2, 2 );
 
 	setrank_cmd = cmd_add( "setrank", ::cmd_setrank_f, "setrank {player} <rank>" );
 	setrank_cmd arg_obj_add_cmd( "rank", 1, 1 );
-	setrank_cmd target_obj_add_cmd( "player", true, "Player whos rank will be modified to be <rank>" );
+	setrank_cmd target_type_add_cmd( "player", true, "Player whos rank will be modified to be <rank>" );
 
-	entitylist_cmd = cmd_add( "entitylist", ::cmd_entitylist_f, "entitylist [targetname]" );
-	entitylist_cmd arg_obj_add_cmd( "string", 0, 1 );
+	entitylist_cmd = cmd_add( "entitylist", ::cmd_entitylist_f, "entitylist {entities}" );
+	entitylist_cmd target_type_add_cmd( "general", true, "Entities to print info for" );
 
 	dodamage_cmd = cmd_add( "dodamage", ::cmd_dodamage_f, "dodamage {entity_to_be_damaged} <damage> <origin> {entity_who_is_attacker} {entity_who_is_inflictor} [hitloc] [MOD] [idflags] [weapon]" );
 	dodamage_cmd arg_obj_add_cmd( "float vector hitloc MOD idflags weapon", 2, 6 );
-	dodamage_cmd target_obj_add_cmd( "entity", true, "Entity who will receive <damage> from <origin>" );
-	dodamage_cmd target_obj_add_cmd( "entity", false, "Entity who will be set as the <attacker>" );
-	dodamage_cmd target_obj_add_cmd( "entity", false, "Entity who will be set as the <inflictor>" );
+	dodamage_cmd target_type_add_cmd( "general", true, "Entity who will receive <damage> from <origin>" );
+	dodamage_cmd target_type_add_cmd( "general", false, "Entity who will be set as the <attacker>" );
+	dodamage_cmd target_type_add_cmd( "general", false, "Entity who will be set as the <inflictor>" );
 
 	teleportplayer_cmd = cmd_add( "teleportentity", ::cmd_teleportentity_f, "teleporttoplayer {entity_from} {entity_to}" );
-	teleportplayer_cmd target_obj_add_cmd( "entity", false, "Player who will be teleported from" );
-	teleportplayer_cmd target_obj_add_cmd( "entity", true, "Player who will be teleported to" );
+	teleportplayer_cmd target_type_add_cmd( "general", false, "Player who will be teleported from" );
+	teleportplayer_cmd target_type_add_cmd( "general", true, "Player who will be teleported to" );
 
 	// very nice builtin which allows get entities in an arbitrary abstract volume
 	// GetTouchingVolume( vec, vec, vec );
 	// printentitiesinradius_cmd = cmd_add( "printentitiesinradius", ::cmd_printentitiesinradius_f, "printentitiesinradius {entity_anchor} {entity_filter} [radius=1000]" );
 	// printentitiesinradius_cmd arg_obj_add_cmd( "float", 0, 1 );
-	// printentitiesinradius_cmd target_obj_add_cmd( "entity entity" );
+	// printentitiesinradius_cmd target_type_add_cmd( "entity entity" );
 
 	scrnotify_cmd = cmd_add( "scrnotify", ::cmd_scrnotify_f, "scrnotify {entity} <notifyname> [notifyargs] ..." );
 	scrnotify_cmd arg_obj_add_cmd( "string string ...", 2, 255 );
-	scrnotify_cmd target_obj_add_cmd( "entity", false, "Entity who will be notified" );
+	scrnotify_cmd target_type_add_cmd( "general", false, "Entity who will be notified" );
 
 	cmd_block_set_rank_group( "none" );
 	cmdlist_cmd = cmd_add( "cmdlist", ::cmd_cmdlist_f );
@@ -64,25 +65,28 @@ autoexec add_cmds()
 	playerlist_cmd arg_obj_add_cmd( "team", 0, 1 );
 
 	printorigin_cmd = cmd_add( "printorigin", ::cmd_printorigin_f, "printorigin {entity}" );
-	printorigin_cmd target_obj_add_cmd( "entity", false, "Entity who's origin will be printed" );
+	printorigin_cmd target_type_add_cmd( "general", false, "Entity who's origin will be printed" );
 
 	printangles_cmd = cmd_add( "printangles", ::cmd_printangles_f, "printangles {entity}" );
-	printangles_cmd target_obj_add_cmd( "entity", false, "Entity who's angles will be printed" );
+	printangles_cmd target_type_add_cmd( "general", false, "Entity who's angles will be printed" );
 
 	help_cmd = cmd_add( "help", ::cmd_help_f, "help [cmdalias]" );
 	help_cmd arg_obj_add_cmd( "cmdalias", 0, 1 );
 
 	// Sets the default cmd target for the executor(normally 'self'); this allows the server through rcon or otherwise to still use the default target functionality that makes the default target 'self' or another entity.
 	setdefaultcmdtarget_cmd = cmd_add( "setdefaultcmdtarget", ::cmd_setdefaultcmdtarget_f, "setdefaultcmdtarget {entity}" );
-	setdefaultcmdtarget_cmd target_obj_add_cmd( "entity", true, "Entity set as the default target for commands with optional targets" );
+	setdefaultcmdtarget_cmd target_type_add_cmd( "general", true, "Entity set as the default target for commands with optional targets" );
 
 	setdefaultcmdexecutor_cmd = cmd_add( "setdefaultcmdexecutor", ::cmd_setdefaultcmdexecutor_f, "setdefaultcmdexecutor {player}" );
-	setdefaultcmdexecutor_cmd target_obj_add_cmd( "player", true );
+	setdefaultcmdexecutor_cmd target_type_add_cmd( "player", true, "Players to run the command for" );
+	setdefaultcmdexecutor_cmd make_cmd_immune_to_unittest();
 
 	setdefaultcmdtarget_cmd = cmd_add( "setdefaultcmdtarget", ::cmd_setdefaultcmdtarget_f, "setdefaultcmdtarget {player}" );
-	setdefaultcmdtarget_cmd target_obj_add_cmd( "player", true );
+	setdefaultcmdtarget_cmd target_type_add_cmd( "player", true );
 
 	debug_cmd = cmd_add( "debug", ::cmd_debug_f, "debug ..." );
+	debug_cmd arg_obj_add_cmd( "string", 0, 255 );
+	debug_cmd make_cmd_immune_to_unittest();
 
 	// entities are no longer used in plain argument syntax, use the target syntax instead
 
@@ -193,18 +197,17 @@ private cmd_server_dvar_f( param )
 private cmd_setrank_f( param )
 {
 	target = param.a[ 0 ];
-	if ( !self has_all_perms() && self.cmdpower < target.cmdpower )
+	if ( !self has_all_perms() )
 	{
-		return result_cmderror( "Insufficient cmdpower to set " + target.name + "'s rank" );
+		return result_cmderror( "Insufficient rank to set " + target.name + "'s rank" );
 	}
 	new_rank = param.a[ 1 ];
-	if ( !self has_all_perms() && ( level.tcs_perms.ranks[ new_rank ].cmdpower >= self.cmdpower ) && self.cmdpower < level.tcs_perms.ranks[ "host" ].cmdpower )
+	if ( !self has_all_perms() )
 	{
 		return result_cmderror( "You cannot set " + target.name + " to a rank higher than or equal to your own" );
 	}
 
-	target.tcs_rank = new_rank;
-	target.cmdpower = level.tcs_perms.ranks[ new_rank ].cmdpower;
+	target.tcs_pl.tcs_rank = new_rank;
 	//add_player_perms_entry( target );
 	target com_printinfo( "Your new rank is " + new_rank );
 

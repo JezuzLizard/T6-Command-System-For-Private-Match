@@ -13,21 +13,25 @@
 #include scripts\zm\cmd\modules\_zm_consts;
 #include scripts\zm\cmd\modules\zm_core_helpers;
 
+
+#include scripts\zm\cmd\modules\_utility;
+
 autoexec add_cmds()
 {
+	waittillframeend;
 	cmd_block_set_module_group( "core_zm" );
 	cmd_block_set_rank_group( "cheat" );
 	spectator_cmd = cmd_add( "spectator", ::cmd_spectator_f, "spectator {player}" );
-	spectator_cmd target_obj_add_cmd( "player", true, "Player to force into spectate state" );
+	spectator_cmd target_type_add_cmd( "player", true, "Player to force into spectate state" );
 	
 	togglerespawn_cmd = cmd_add( "togglerespawn", ::cmd_togglerespawn_f, "togglerespawn {player}" );
-	togglerespawn_cmd target_obj_add_cmd( "player", false, "Player to disable respawning for" );
+	togglerespawn_cmd target_type_add_cmd( "player", false, "Player to disable respawning for" );
 
 	killactors_cmd = cmd_add( "killactors", ::cmd_killactors_f, "killactors {actor_targets}" );
-	killactors_cmd target_obj_add_cmd( "actor", false, "Actor to kill" );
+	killactors_cmd target_type_add_cmd( "actor", false, "Actor to kill" );
 
 	respawnspectators_cmd = cmd_add( "spawnspectator", ::cmd_spawnspectator_f, "spawnspectator {player}" );
-	respawnspectators_cmd target_obj_add_cmd( "player", false, "Spectators to respawn" );
+	respawnspectators_cmd target_type_add_cmd( "player", false, "Spectators to respawn" );
 
 	pause_cmd = cmd_add( "pause", ::cmd_pause_f, "pause [minutes]" );
 	pause_cmd arg_obj_add_cmd( "natural_int", 0, 1 );
@@ -79,7 +83,8 @@ autoexec add_cmds()
 	listglobalzombiestats_cmd = cmd_add( "listglobalzombiestats", ::cmd_listglobalzombiestats_f );
 
 	setallphysparams_cmd = cmd_add( "setallphysparams", ::cmd_setallphysparams_f, "setallphysparams {actor} <vector>" );
-	setallphysparams_cmd arg_obj_add_cmd( "actor vector", 1, 2 );
+	setallphysparams_cmd arg_obj_add_cmd( "vector", 1, 1 );
+	setallphysparams_cmd target_type_add_cmd( "actor", false, "Actor to modify phys params for" );
 
 	cmd_block_set_rank_group( "none" );
 	weaponlist_cmd = cmd_add( "weaponlist", ::cmd_weaponlist_f );
@@ -418,8 +423,12 @@ cmd_listglobalzombiestats_f( param )
 cmd_setallphysparams_f( param )
 {
 	phys_params = param.a[ 0 ];
+	zombies = param.t[ 0 ];
 
-	zombies = get_round_enemy_array();
+	if ( !isdefined( zombies ) )
+	{
+		zombies = get_round_enemy_array();
+	}
 
 	foreach ( zombie in zombies )
 	{

@@ -29,6 +29,24 @@ autoexec init_consts()
 	level._boolean_strings[ "false" ][0] = "0";
 	level._boolean_strings[ "false" ][1] = "false";
 
+	level._alphabet_array = [];
+
+	alpha_string = "abcdefghijklmnopqrstuvwxyz";
+
+	for ( i = 0; i < alpha_string.size; i++ )
+	{
+		level._alphabet_array[ alpha_string[ i ] ] = i;
+	}
+
+	level._numeric_array = [];
+
+	numeric_string = "0123456789";
+
+	for ( i = 0; i < numeric_string.size; i++ )
+	{
+		level._numeric_array[ numeric_string[ i ] ] = i;
+	}
+
 	/*
 		ET_GENERAL = 0x0,
 		ET_PLAYER = 0x1,
@@ -116,23 +134,23 @@ autoexec init_consts()
 	register_entnum_range( "world", 1022, 1022, 1 );
 	register_entnum_range( "undefined", 1023, 1023, 1 );
 
-	arg_obj_register( "player", ::arg_obj_player_generate, ::arg_obj_player_cast );
-	arg_obj_register( "positive_int", ::arg_obj_positive_int_generate, ::arg_obj_positive_int_cast );
-	arg_obj_register( "boolean", ::arg_obj_boolean_generate, ::arg_obj_boolean_cast );
-	arg_obj_register( "int", ::arg_obj_int_generate, ::arg_obj_int_cast );
-	arg_obj_register( "float", ::arg_obj_float_generate, ::arg_obj_float_cast );
-	arg_obj_register( "positive_float", ::arg_obj_positive_float_generate, ::arg_obj_positive_float_cast );
-	arg_obj_register( "vector", ::arg_obj_vector_generate, ::arg_obj_vector_cast );
-	arg_obj_register( "team", ::arg_obj_team_generate, ::arg_obj_team_cast );
-	arg_obj_register( "cmdalias", ::arg_obj_cmdalias_generate, ::arg_obj_cmdalias_cast );
-	arg_obj_register( "rank", ::arg_obj_rank_generate, ::arg_obj_rank_cast );
-	arg_obj_register( "hitloc", ::arg_obj_hitloc_generate, ::arg_obj_hitloc_cast );
-	arg_obj_register( "MOD", ::arg_obj_mod_generate, ::arg_obj_mod_cast );
-	arg_obj_register( "idflags", ::arg_obj_idflags_generate, ::arg_obj_idflags_cast );
-	arg_obj_register( "string", ::arg_obj_string_generate, ::arg_obj_string_cast );
-	arg_obj_register( "string_allow_null", ::arg_obj_string_allow_null_generate, ::arg_obj_string_allow_null_cast );
-	arg_obj_register( "model", ::arg_obj_model_generate, ::arg_obj_model_cast );
-	arg_obj_register( "spawnable_classname", ::arg_obj_spawnable_classname_generate, ::arg_obj_spawnable_classname_cast );
+	arg_type_register( "int", ::arg_obj_int_generate, ::arg_obj_int_cast );
+	arg_type_register( "positive_int", ::arg_obj_positive_int_generate, ::arg_obj_positive_int_cast );
+	arg_type_register( "natural_int", ::arg_obj_natural_int_generate, ::arg_obj_natural_int_cast );
+	arg_type_register( "boolean", ::arg_obj_boolean_generate, ::arg_obj_boolean_cast );
+	arg_type_register( "float", ::arg_obj_float_generate, ::arg_obj_float_cast );
+	arg_type_register( "positive_float", ::arg_obj_positive_float_generate, ::arg_obj_positive_float_cast );
+	arg_type_register( "vector", ::arg_obj_vector_generate, ::arg_obj_vector_cast );
+	arg_type_register( "team", ::arg_obj_team_generate, ::arg_obj_team_cast );
+	arg_type_register( "cmdalias", ::arg_obj_cmdalias_generate, ::arg_obj_cmdalias_cast );
+	arg_type_register( "rank", ::arg_obj_rank_generate, ::arg_obj_rank_cast );
+	arg_type_register( "hitloc", ::arg_obj_hitloc_generate, ::arg_obj_hitloc_cast );
+	arg_type_register( "MOD", ::arg_obj_mod_generate, ::arg_obj_mod_cast );
+	arg_type_register( "idflags", ::arg_obj_idflags_generate, ::arg_obj_idflags_cast );
+	arg_type_register( "string", ::arg_obj_string_generate, ::arg_obj_string_cast );
+	arg_type_register( "model", ::arg_obj_model_generate, ::arg_obj_model_cast );
+	arg_type_register( "spawnable_classname", ::arg_obj_spawnable_classname_generate, ::arg_obj_spawnable_classname_cast );
+	arg_type_register( "...", undefined, undefined );
 
 	register_entity_string_field( "classname", "string", true );
 	register_entity_string_field( "origin", "vector" );
@@ -149,6 +167,8 @@ autoexec init_consts()
 	register_entity_string_field( "index", "int" );
 	register_entity_string_field( "lerp_to_lighter", "float" );
 	register_entity_string_field( "lerp_to_darker", "float" );
+
+	level._target_obj_generate = ::target_obj_generate;
 }
 
 get_entities_by_etype( etype, start = 0, end = 1024 )
@@ -654,14 +674,37 @@ arg_obj_positive_int_cast( arg )
 	return cast_str_to_number( arg, "positive_int" );
 }
 
-arg_obj_positive_int_generate()
+arg_obj_positive_int_generate( arg1, arg2, arg3 )
 {
-	return randomint( 1000000 );
+	find = generic_obj_t_new();
+
+	int_val = randomint( 1000000 );
+	find.str_value = int_val + "";
+	return set_cast_success( find, int_val, "positive_int==" + find.str_value );
 }
 
-arg_obj_boolean_generate()
+arg_obj_natural_int_cast( arg )
 {
-	return cointoss();
+	return cast_str_to_number( arg, "natural_int" );
+}
+
+arg_obj_natural_int_generate( arg1, arg2, arg3 )
+{
+	find = generic_obj_t_new();
+
+	int_val = randomintrange( 1, 1000000 );
+	find.str_value = int_val + "";
+	return set_cast_success( find, int_val, "natural_int==" + find.str_value );
+}
+
+arg_obj_boolean_generate( arg1, arg2, arg3 )
+{
+	find = generic_obj_t_new();
+
+	bool_val = cointoss();
+	bool_val_str = cointoss() ? cast_bool_to_str( bool_val, "true false" ) : bool_val + "";
+	find.str_value = bool_val_str;
+	return set_cast_success( find, bool_val, "boolean==" + find.str_value );
 }
 
 arg_obj_boolean_cast( arg )
@@ -669,9 +712,13 @@ arg_obj_boolean_cast( arg )
 	return cast_str_to_bool( arg );
 }
 
-arg_obj_int_generate()
+arg_obj_int_generate( arg1, arg2, arg3 )
 {
-	return cointoss() ? randomint( 1000000 ) : randomint( 1000000 ) * -1;
+	find = generic_obj_t_new();
+
+	int_val = cointoss() ? randomFloat( 1000000 ) : randomFloat( 1000000 ) * -1;
+	find.str_value = int_val + "";
+	return set_cast_success( find, int_val, "int==" + find.str_value );
 }
 
 arg_obj_int_cast( arg )
@@ -679,9 +726,13 @@ arg_obj_int_cast( arg )
 	return cast_str_to_number( arg, "int" );
 }
 
-arg_obj_float_generate()
+arg_obj_float_generate( arg1, arg2, arg3 )
 {
-	return cointoss() ? randomFloat( 1000000 ) : randomFloat( 1000000 ) * -1;
+	find = generic_obj_t_new();
+
+	float_val = cointoss() ? randomFloat( 1000000 ) : randomFloat( 1000000 ) * -1;
+	find.str_value = float_val + "";
+	return set_cast_success( find, float_val, "float==" + find.str_value );
 }
 
 arg_obj_float_cast( arg )
@@ -689,9 +740,13 @@ arg_obj_float_cast( arg )
 	return cast_str_to_number( arg, "float" );
 }
 
-arg_obj_positive_float_generate()
+arg_obj_positive_float_generate( arg1, arg2, arg3 )
 {
-	return randomfloat( 1000000 );
+	find = generic_obj_t_new();
+
+	float_val = randomfloat( 1000000 );
+	find.str_value = float_val + "";
+	return set_cast_success( find, float_val, "positive_float==" + find.str_value );
 }
 
 arg_obj_positive_float_cast( arg )
@@ -699,12 +754,17 @@ arg_obj_positive_float_cast( arg )
 	return cast_str_to_number( arg, "positive_float" );
 }
 
-arg_obj_vector_generate()
+arg_obj_vector_generate( arg1, arg2, arg3 )
 {
+	find = generic_obj_t_new();
+
 	x = cointoss() ? randomfloat( 1000 ) : randomfloat( 1000 ) * -1;
 	y = cointoss() ? randomfloat( 1000 ) : randomfloat( 1000 ) * -1;
 	z = cointoss() ? randomfloat( 1000 ) : randomfloat( 1000 ) * -1;
-	return x + "," + y + "," + z;
+	vec = ( x, y, z );
+
+	find.str_value = x + "," + y + "," + z;
+	return set_cast_success( find, vec, "vector==" + find.str_value );
 }
 
 arg_obj_vector_cast( arg )
@@ -712,81 +772,59 @@ arg_obj_vector_cast( arg )
 	return cast_str_to_vector( arg );
 }
 
-arg_obj_string_generate()
+arg_obj_string_generate( arg1, arg2, arg3 )
 {
-	return "null";
+	find = generic_obj_t_new();
+
+	max_len = randomint( 16 ) + 1;
+	str = "";
+
+	keys = getarraykeys( level._alphabet_array );
+	for ( i = 0; i < max_len; i++ )
+	{
+		str += keys[ randomint( keys.size ) ];
+	}
+
+	find.str_value = str;
+	return set_cast_success( find, str, "string==" + str );
 }
 
 arg_obj_string_cast( arg )
 {
-	compare_str = "01234567890_abcdefghijklmnopqrstuvwxyz";
+	find = generic_obj_t_new();
 
-	for ( i = 0; i < arg.size; i++ )
-	{
-		if ( !isdefined( compare_str[ arg[ i ] ] ) )
-		{
-			return false;
-		}
-	}
-
-	return true;
-}
-
-arg_obj_string_allow_null_generate()
-{
-	return "null";
-}
-
-arg_obj_string_allow_null_cast( arg )
-{
-	if ( arg == "" )
-	{
-		return true;
-	}
-
-	return arg_obj_string_cast( arg );
+	return set_cast_success( find, arg, "string==" + arg );
 }
 
 arg_obj_team_cast( arg )
 {
 	find = generic_obj_t_new();
-	if ( isdefined( level.teams[ arg ] ) )
+	if ( !isdefined( level.teams[ arg ] ) )
 	{
-		find.value = arg;
-		return set_cast_success( find );
+		msg = get_possible_array_values_msg( arg, level.teams, "team" );
+
+		return set_cast_error( find, msg );
 	}
 
-	msg = "";
-	foreach ( team, key in level.teams )
-	{
-		msg += "'" + key + "' ";
-	}
-
-	return set_cast_error( find, "Invalid team: '" + arg + "' valid teams are: " + msg );
+	return set_cast_success( find, arg, "team==" + arg );
 }
 
-arg_obj_team_generate()
+arg_obj_team_generate( arg1, arg2, arg3 )
 {
-	return random( level.teams );
+	find = generic_obj_t_new();
+
+	team = random_val( level.teams );
+	find.str_value = team;
+	return set_cast_success( find, team, "team==" + team );
 }
 
-arg_obj_cmdalias_generate()
+arg_obj_cmdalias_generate( arg1, arg2, arg3 )
 {
-	cmd_keys = getarraykeys( level.tcs_cmds );
-	aliases = [];
-	for ( i = 0; i < cmd_keys.size; i++ )
-	{
-		if ( is_true( level.cmd_system_unittest_cmd_exclusions[ cmd_keys[ i ] ] ) )
-		{
-			continue;
-		}
-		for ( j = 0; j < level.tcs_cmds[ cmd_keys[ i ] ].aliases.size; j++ )
-		{
-			aliases[ aliases.size ] = level.tcs_cmds[ cmd_keys[ i ] ].aliases[ j ];
-		}
-	}
+	find = generic_obj_t_new();
 
-	return aliases[ randomInt( aliases.size ) ];
+	cmd = random_val( level.tcs_cmds );
+	find.str_value = cmd.cmd_name;
+	return set_cast_success( find, cmd, "cmd==" + cmd.cmd_name );
 }
 
 arg_obj_cmdalias_cast( arg )
@@ -795,45 +833,55 @@ arg_obj_cmdalias_cast( arg )
 	return cmd_find_result;	
 }
 
-arg_obj_rank_generate()
+arg_obj_rank_generate( arg1, arg2, arg3 )
 {
-	ranks = getarraykeys( level.tcs_perms.ranks );
-	return ranks[ randomInt( ranks.size ) ]; 
+	find = generic_obj_t_new();
+
+	rank = random_key( level.tcs_perms.ranks );
+	find.str_value = rank;
+	return set_cast_success( find, rank, "rank==" + rank );
 }
 
 arg_obj_rank_cast( arg )
 {
-	return undefined;
+	find = generic_obj_t_new();
+	if ( !isdefined( level.tcs_perms.ranks[ arg ] ) )
+	{
+		msg = get_possible_array_values_msg( arg, level.tcs_perms.ranks, "rank" );
+		return set_cast_error( find, msg );
+	}
+
+	return set_cast_success( find, arg, "rank==" + arg );
 }
 
 arg_obj_hitloc_cast( arg )
 {
 	find = generic_obj_t_new();
-	if ( isdefined( level.tcs_hitlocs[ arg ] ) )
+	if ( !isdefined( level.tcs_hitlocs[ arg ] ) )
 	{
-		find.value = arg;
-		return set_cast_success( find );
+		msg = get_possible_array_values_msg( arg, level.tcs_hitlocs, "hitloc" );
+		return set_cast_error( find, msg );
 	}
 
-	msg = "";
-	foreach ( team, key in level.tcs_hitlocs )
-	{
-		msg += "'" + key + "' ";
-	}
-
-	return set_cast_error( find, "Invalid hitloc: '" + arg + "' valid hitlocs are: " + msg );
+	return set_cast_success( find, arg, "hitloc==" + arg );
 }
 
-arg_obj_hitloc_generate()
+arg_obj_hitloc_generate( arg1, arg2, arg3 )
 {
-	hitlocs = getarraykeys( level.tcs_hitlocs );
-	return hitlocs[ randomint( hitlocs.size ) ];
+	find = generic_obj_t_new();
+
+	hitloc = random_key( level.tcs_hitlocs );
+	find.str_value = hitloc;
+	return set_cast_success( find, hitloc, "hitloc==" + hitloc );
 }
 
-arg_obj_mod_generate()
+arg_obj_mod_generate( arg1, arg2, arg3 )
 {
-	mods = getarraykeys( level.tcs_mods );
-	return mods[ randomInt( mods.size ) ];
+	find = generic_obj_t_new();
+
+	mod = random_key( level.tcs_mods );
+	find.str_value = mod;
+	return set_cast_success( find, mod, "mod==" + mod );
 }
 
 arg_obj_mod_cast( arg )
@@ -841,197 +889,232 @@ arg_obj_mod_cast( arg )
 	find = generic_obj_t_new();
 	if ( isdefined( level.tcs_mods[ arg ] ) )
 	{
-		find.value = toupper( arg );
-		return set_cast_success( find );
+		toupper_arg = toupper( arg );
+		return set_cast_success( find, toupper_arg, "MOD==" + toupper_arg );
 	}
 
-	msg = "";
-	foreach ( team, key in level.tcs_mods )
-	{
-		msg += "'" + key + "' ";
-	}
+	msg = get_possible_array_values_msg( arg, level.tcs_mods, "mod" );
 
-	return set_cast_error( find, "Invalid means of death: '" + arg + "' valid means of death are: " + msg );
+	return set_cast_error( find, msg );
 }
 
-arg_obj_idflags_generate()
+arg_obj_idflags_generate( arg1, arg2, arg3 )
 {
+	find = generic_obj_t_new();
 	flags = 0;
-	idflags_array = level.tcs_idflags;
-	max_flags_to_add = randomint( level.tcs_idflags.size );
-	for ( i = 0; i < max_flags_to_add && ( idflags_array.size > 0 ); i++ )
+	idflags_array = getarraykeys( level.tcs_idflags );
+	max_flags_to_add = randomint( idflags_array.size );
+
+	find.str_value = "";
+	for ( i = 0; i < max_flags_to_add; i++ )
 	{
 		random_flag_index = randomint( idflags_array.size );
-		flags |= idflags_array[ random_flag_index ];
+		flags |= level.tcs_idflags[ idflags_array[ random_flag_index ] ];
+		find.str_value += idflags_array[ random_flag_index ];
+
+		if ( ( i + 1 ) < max_flags_to_add )
+		{
+			find.str_value += "|";
+		}
 		arrayremoveindex( idflags_array, random_flag_index );
 	}
 
-	return flags;
+	return set_cast_success( find, flags, "idflags==" + find.str_value );
 }
 
-// unimplmented
+// type is FLAG, so delimited by |
 arg_obj_idflags_cast( arg )
 {
+	find = generic_obj_t_new();
 
+	flag_strs = strtok( arg, "|" );
+
+	flags = 0;
+
+	if ( flag_strs[ 0 ] == "all" )
+	{
+		flags = -1;
+		return set_cast_success( find, flags, "flags==all" );
+	}
+
+	for ( i = 0; i < flag_strs.size; i++ )
+	{
+		if ( !isdefined( level.tcs_idflags[ flag_strs[ i ] ] ) )
+		{
+			msg = get_possible_array_values_msg( flag_strs[ i ], level.tcs_idflags, "flag", false );
+			msg += "FLAG: 'all'\n";
+
+			return set_cast_error( find, msg );
+		}
+
+		flags |= level.tcs_idflags[ flag_strs[ i ] ];
+	}
+
+	return set_cast_success( find, flags, "flags==" + arg );
 }
 
-arg_obj_model_generate()
+arg_obj_model_generate( arg1, arg2, arg3 )
 {
-	return "null";
+	find = generic_obj_t_new();
+	find.rand_gen_unimplemented = true;
+	return set_cast_success( find, "Unimplemented", "model==" + "null" );
 }
 
-// unimplmented
+delete_after_time( entity )
+{
+	entity endon( "death" );
+
+	wait 0.05;
+
+	entity delete();
+}
+
+spawn_test_ent()
+{
+	test_ent = spawn( "script_model", ( 0, 0, -5000 ) );
+	level thread delete_after_time( test_ent );
+
+	return test_ent;
+}
+
 arg_obj_model_cast( arg )
 {
-	result_obj = result_obj_new( "model", "string" );
-	return set_cast_success( result_obj, arg, "model==" + arg );
-}
+	find = generic_obj_t_new();
 
-arg_obj_player_generate()
-{
-	if ( is_true( self.is_server ) )
+	test_ent = spawn_test_ent();
+	test_ent setmodel( arg );
+
+	if ( test_ent.model == "" )
 	{
-		randomint = randomint( 3 );
-	}
-	else 
-	{
-		randomint = randomint( 4 );
+		test_ent delete();
+		return set_cast_error( find, "Model not precached: '" + arg + "'" );
 	}
 
-	if ( level.players.size <= 0 )
-	{
-		return -1;
-	}
+	test_ent delete();
 
-	random_player = level.players[ randomint( level.players.size ) ];
-	switch ( randomint )
-	{
-		case 0:
-			return random_player getentitynumber();
-		case 1:
-			return random_player getguid();
-		case 2:
-			return random_player.name;
-		case 3:
-			return "self";
-	}
+	return set_cast_success( find, arg, "model==" + arg );
 }
 
-arg_obj_player_cast( arg )
+arg_obj_spawnable_classname_generate( arg1, arg2, arg3 )
 {
-	return self cast_str_to_entity( arg, "player" );
-}
+	find = generic_obj_t_new();
 
-arg_obj_entity_generate()
-{
-	randomint = randomint( 4 );
-	entities = getentarray();
-	if ( entities.size <= 0 )
-	{
-		return 1023;
-	}
-	random_entity = entities[ randomint( entities.size ) ];
-	switch ( randomint )
-	{
-		case 0:
-			return random_entity getentitynumber();
-		case 1:
-			if ( is_true( self.is_server ) )
-			{
-				return random_entity getentitynumber();
-			}
-			else
-			{
-				return "self";
-			}
-		case 2:
-			return 1022;
-		case 3:
-			return 1023;
-	}
-}
-
-arg_obj_entity_cast( arg )
-{
-	return self cast_str_to_entity( arg, "general" );
-}
-
-arg_obj_entity_allow_null_generate()
-{
-	return arg_obj_entity_generate();
-}
-
-arg_obj_entity_allow_null_cast( arg )
-{
-	find = self cast_str_to_entity( arg, "general", true );
-	return ;
-}
-
-arg_obj_bot_generate()
-{
-	if ( is_true( self.is_server ) )
-	{
-		randomint = randomInt( 3 );
-	}
-	else 
-	{
-		randomint = randomInt( 4 );
-	}
-
-	bots = get_bot_array();
-	if ( bots.size <= 0 )
-	{
-		return -1;
-	}
-
-	random_bot = bots[ randomInt( bots.size ) ];
-	switch ( randomint )
-	{
-		case 0:
-			return random_bot getEntityNumber();
-		case 1:
-			return random_bot getGuid();
-		case 2:
-			return random_bot.name;
-		case 3:
-			return "self";
-	}
-}
-
-arg_obj_bot_cast( arg )
-{
-	find = self cast_str_to_entity( arg, "player" );
-	if ( !find.errored && !find.ent istestclient() )
-	{
-		return set_cast_error( find, find.ent.name + " is not a bot" );
-	}
-	return find;
-}
-
-arg_obj_actor_generate()
-{
-	return undefined;
-}
-
-// unimplmented
-arg_obj_actor_cast( arg )
-{
-	return self cast_str_to_entity( arg );
-}
-
-arg_obj_spawnable_classname_generate()
-{
-	return undefined;
+	classname = random_key( level.tcs_dynamic_spawns );
+	find.str_value = classname;
+	return set_cast_success( find, classname, "classname==" + classname );
 }
 
 arg_obj_spawnable_classname_cast( arg )
 {
-	result_obj = result_obj_new( "spawnable_classname", "string" );
+	find = generic_obj_t_new();
 
 	if ( !isdefined( level.tcs_dynamic_spawns[ arg ] ) )
 	{
-		return set_cast_error( result_obj, "arg!=classname" );
+		return set_cast_error( find, "arg!=classname" );
 	}
 
-	return set_cast_success( result_obj, arg, "classname==" + arg );
+	return set_cast_success( find, arg, "classname==" + arg );
+}
+
+target_obj_generate( etype )
+{
+	find = generic_obj_t_new();
+
+	target_str = "=";
+	if ( cointoss() )
+	{
+		rand = randomint( 3 );
+
+		switch ( rand )
+		{
+			case 0:
+				target_str += "!";
+				break;
+			case 1:
+				target_str += "*";
+				break;
+			case 2:
+				target_str += "#";
+				break;
+		}
+
+		return target_str;
+	}
+
+	ents = self [[ level._entity_type_funcs[ etype ].getter ]]();
+	if ( ents.size == 0 )
+	{
+		return "";
+	}
+
+	ents = array_randomize( ents );
+
+	rand = randomint( 3 );
+
+	switch ( rand )
+	{
+		case 0:
+			target_str += "$";
+			rand_limit = randomint( ents.size );
+			target_str += rand_limit;
+			break;
+		case 1:
+			if ( cointoss() )
+			{
+				target_str += "$";
+			}
+			target_str += "[";
+			rand_limit = randomint( ents.size );
+
+			for ( i = 0; i < rand_limit; i++ )
+			{
+				if ( ( etype == "player" || etype == "bot" ) && cointoss() )
+				{
+					if ( cointoss() )
+					{
+						target_str += ents[ i ].name;
+					}
+					else if ( cointoss() )
+					{
+						target_str += "&";
+					}
+					else
+					{
+						target_str += ents[ i ].guid;
+					}
+				}
+				else
+				{
+					target_str += ents[ i ] getentitynumber();
+				}
+
+				if ( ( i + 1 ) < rand_limit )
+				{
+					target_str += ",";
+				}
+			}
+
+			target_str += "]";
+			break;
+		case 2:
+			rand = randomint( 100 );
+			if ( rand == 0 )
+			{
+				if ( cointoss() )
+				{
+					target_str += "1022";
+				}
+				else
+				{
+					target_str += "1023";
+				}
+			}
+			else
+			{
+				target_str += ents[ 0 ] getentitynumber();
+			}
+			break;
+	}
+
+	return target_str;
 }

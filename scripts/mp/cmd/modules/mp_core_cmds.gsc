@@ -7,11 +7,12 @@
 
 autoexec add_cmds()
 {
+	waittillframeend;
 	cmd_block_set_module_group( "core_mp" );
 	cmd_block_set_rank_group( "cheat" );
 	sicdogsonplayer_cmd = cmd_add( "sicdogsonplayer", ::cmd_sicdogsonplayer_f, "sicdogsonplayer {player} [count] [invisible]" );
 	sicdogsonplayer_cmd arg_obj_add_cmd( "positive_int positive_int", 0, 2 );
-	givenotarget_cmd target_obj_add_cmd( "player" );
+	givenotarget_cmd target_type_add_cmd( "player" );
 
 	removedogs_cmd = cmd_add( "removedogs", ::cmd_removedogs_f );
 }

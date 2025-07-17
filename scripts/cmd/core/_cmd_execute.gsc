@@ -144,7 +144,7 @@ private cmd_execute( message, initiator, is_hidden, is_team_chat, from_rcon )
 
 			initiator.tcs_silent_cmds = getdvarintdefault( "tcs_silent_cmds", 0 );
 			initiator.tcs_logprint_cmd_usage = getdvarintdefault( "tcs_logprint_cmd_usage", 1 );
-			initiator.tcs_feedback_mode = 2; // 0 == executor receives cmd feedback, 1 == initiator receives cmd feedback, 2 == initiator and executor receives cmd feedback
+			initiator.tcs_feedback_mode = getdvarintdefault( "tcs_feedback_mode", 1 ); // 0 == executor receives cmd feedback, 1 == initiator receives cmd feedback, 2 == initiator and executor receives cmd feedback
 			executor cmd_execute_internal( initiator, cmd_obj );
 		}
 	}
@@ -210,7 +210,7 @@ private get_random_limited_array( array, limit )
 	array = array_randomize( array );
 	for ( i = 0; i < limit; i++ )
 	{
-		new_array = add_to_array( new_array, array[ i ] );
+		new_array[ new_array.size ] = array[ i ];
 	}
 
 	return new_array;
@@ -261,8 +261,6 @@ private get_executors( executor_type, directive_args )
 
 private get_entity_targets( etype, directive_type, directive_args )
 {
-	assert( isplayer( self ) );
-
 	getter_func = undefined;
 	if ( isdefined( level._entity_type_funcs[ etype ] ) )
 	{
@@ -309,7 +307,7 @@ private get_entity_targets( etype, directive_type, directive_args )
 			}
 			else
 			{
-				return add_to_array( undefined, random( ents ) );
+				return add_to_array( undefined, random_val( ents ) );
 			}
 			
 		case "self":
@@ -321,6 +319,9 @@ private get_entity_targets( etype, directive_type, directive_args )
 			}
 			
 			return self.default_targets;
+		case "function":
+			// TODO: basically we need to use getfunction, which requires both a function name and a filename, and then pass the arguments to it appropriately casted
+			return [];
 	}
 
 	return [];
@@ -346,10 +347,20 @@ private cmd_execute_internal( initiator, cmd_obj )
 	// Leaving the casting up to the cmd itself
 	if ( array_validate( cmd_obj.args ) && array_validate( cmd_data_source.arg_types ) )
 	{
-		for ( i = 0; i < cmd_data_source.max_args; i++ )
+		for ( i = 0; i < cmd_obj.args.size; i++ )
 		{
 			arg = cmd_obj.args[ i ];
 			arg_type = cmd_data_source.arg_types[ i ];
+			if ( arg_type == "..." )
+			{
+				// consume rest of arguments
+				for ( j = i; j < cmd_obj.args.size; j++ )
+				{
+					param.a[ j ] = cmd_obj.args[ j ];
+				}
+
+				break;
+			}
 			cast_result = initiator arg_cast( arg_type, arg, i );
 			if ( cast_result.errored )
 			{

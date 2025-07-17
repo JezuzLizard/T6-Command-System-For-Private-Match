@@ -294,7 +294,7 @@ set_safe_text( text, is_label = false )
 			level._text_count++;
 		}
 
-		level.server com_printinfo( "Had to clear the text cache..." );
+		com_printdebugerror( "Had to clear the text cache..." );
 	}
 
 	if ( isdefined( self.save_text ) && self.save_text == text )

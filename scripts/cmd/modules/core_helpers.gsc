@@ -18,7 +18,7 @@ list_players_throttled( team )
 
 		str = "^name: " + player.name;
 		str += " entnum: " + player getentitynumber();
-		if ( has_all_perms() || self.cmdpower >= level.CMD_POWER_MODERATOR )
+		if ( self has_all_perms() )
 		{
 			str += " guid: " + player getguid();
 		}
@@ -57,6 +57,12 @@ list_entities_throttled( param )
 	self endon( "listing_entities" );
 
 	entities = param.t[ 0 ];
+
+	if ( !isdefined( entities ) )
+	{
+		assert( false );
+		return;
+	}
 	targetname_str = undefined;
 	classname_str = undefined;
 	script_noteworthy_str = undefined;

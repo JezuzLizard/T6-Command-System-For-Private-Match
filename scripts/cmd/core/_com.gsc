@@ -112,7 +112,7 @@ private com_iprintlnbold( message, players )
 	}
 	for ( i = 0; i < level.players.size; i++ )
 	{
-		level.players[ i ] iPrintLnBold( message );
+		level.players[ i ] iprintlnbold( message );
 	}
 }
 
@@ -160,10 +160,6 @@ com_get_cmd_feedback_channel_internal()
 	if ( is_true( self.is_server ) )
 	{
 		return "con|g_log";
-	}
-	else if ( is_true( level.doing_cmd_system_unittest ) )
-	{
-		return "g_log";
 	}
 	else if ( is_true( self.is_host ) )
 	{

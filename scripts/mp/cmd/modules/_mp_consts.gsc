@@ -5,7 +5,7 @@
 
 autoexec init_consts()
 {
-	arg_obj_register( "weapon", ::arg_obj_weapon_generate, ::arg_obj_weapon_cast );
+	arg_type_register( "weapon", ::arg_obj_weapon_generate, ::arg_obj_weapon_cast );
 }
 
 arg_obj_weapon_cast( arg )
