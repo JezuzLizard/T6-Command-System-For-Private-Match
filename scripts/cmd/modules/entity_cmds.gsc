@@ -137,7 +137,7 @@ autoexec add_cmds()
 	setviewpos_cmd arg_obj_add_cmd( "vector vector", 1, 2 );
 
 	spawn_cmd = cmd_add( "spawn", ::cmd_spawn_f, "spawn <classname> <origin> [spawnflags] [contextual1] [contextual2] [contextual3]" );
-	spawn_cmd arg_obj_add_cmd( "string vector string string string string", 2, 6 );
+	spawn_cmd arg_obj_add_cmd( "spawnable_classname vector string string string string", 2, 6 );
 
 	dumpent_cmd = cmd_add( "saveent", ::cmd_dumpent_f, "saveent <type> [classname]" );
 	dumpent_cmd arg_obj_add_cmd( "string string", 1, 2 );
@@ -441,7 +441,7 @@ cmd_editorcontextmodifyentity_f( param )
 		return result_cmderror( "<scale> cannot be 0!" );
 	}
 
-	editor_context = self hud_binding_get( "editor_mode_context" );
+	editor_context = self hud_binding_get( "editor_mode_context" ).binding_val;
 	if ( editor_context.binding_val == "none" )
 	{
 		return result_cmderror( "You must set the context using the command 'editorsetmodifycontext' first!" );
@@ -449,7 +449,7 @@ cmd_editorcontextmodifyentity_f( param )
 
 	base_delta = 1;
 	delta = base_delta * context_scale;
-	ent = self hud_binding_get( "editor_selected_ent_context" );
+	ent = self hud_binding_get( "editor_selected_ent_context" ).binding_val;
 	switch ( editor_context )
 	{
 		case "pitch":
@@ -478,7 +478,7 @@ cmd_editorcontextmodifyentity_f( param )
 cmd_editorsetcontext_f( param )
 {
 	context_mode = param.a[ 0 ];
-	current_scale = self hud_binding_get( "editor_scale_context" );
+	current_scale = float( self hud_binding_get( "editor_scale_context" ).binding_val );
 	context_scale = _DEFAULT( current_scale, param.a[ 1 ] );
 
 	if ( context_scale > 0.0 || context_scale < 0.0 )

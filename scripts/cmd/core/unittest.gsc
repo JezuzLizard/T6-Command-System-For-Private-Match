@@ -210,7 +210,7 @@ private create_random_valid_targets( cmd )
 			continue;
 		}
 
-		if ( targets != "" && i > 1 && ( i + 1 ) < types.size )
+		if ( targets != "" && i > 0 && ( i + 1 ) < types.size )
 		{
 			targets += ",";
 		}

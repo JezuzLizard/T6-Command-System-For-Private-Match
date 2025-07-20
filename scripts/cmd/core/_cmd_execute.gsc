@@ -112,7 +112,7 @@ private cmd_execute( message, initiator, is_hidden, is_team_chat, from_rcon )
 	}
 
 	message = tolower( message );
-	cmd_parse_obj = scripts\cmd\core\_cmd_parse::parse_cmd_message( message );
+	cmd_parse_obj = scripts\cmd\core\_cmd_parse2::parse_cmd_message( message );
 	//add_obj_ref( cmd_execute_thread, cmd_parse_obj );
 
 	if ( !has_all_perms )
@@ -122,7 +122,7 @@ private cmd_execute( message, initiator, is_hidden, is_team_chat, from_rcon )
 
 	foreach ( key, cmd_obj in cmd_parse_obj.cmds )
 	{
-		executor_directive = cmd_obj.directive_kvps[ "executor" ].directive_value;
+		executor_directive = cmd_obj.kvps[ "executor" ].directive_value;
 		executors = get_executors( executor_directive.token_type, executor_directive.token_values );
 
 		for ( executor_index = 0; executor_index < executors.size; executor_index++ )

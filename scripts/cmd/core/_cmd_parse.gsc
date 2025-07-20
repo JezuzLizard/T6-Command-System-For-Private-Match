@@ -28,349 +28,239 @@ private reset_parse_warning( obj )
 	return obj;
 }
 
-private parse_array( string, generic_obj )
+private parse_array( token_parse )
 {
+	token_parse.start_pos++; // skip '['
 	// basic checks
-	square_bracket_count = 0;
-	square_brackets_match = square_bracket_count == 0;
-	str_start = 0;
-	str_end = string.size - 1;
 
 	tokens = [];
-	if ( string[ str_end ] != "]" )
+	if ( token_parse.str[ token_parse.str.size - 1 ] != "]" )
 	{
 		// error
-		throw_exception( "Last character of array wasn't terminated with ']'", generic_obj );
+		throw_exception( "Last character of array wasn't terminated with ']'", token_parse );
 	}
 
-	// TODO: handle array nesting, requires a struct to store the array depth
-	for ( i = 0; i < string.size; i++ )
+	token_parse.str = getsubstr( token_parse.str, token_parse.start_pos, token_parse.str.size - 1 );
+	token_parse.start_pos = 0;
+
+	for ( ;; )
 	{
-		if ( string[ i ] == "[" )
+		if ( token_parse.start_pos >= token_parse.str.size )
 		{
-			square_bracket_count++; // great now we need another one
-		}
-		else if ( string[ i ] == "]" )
-		{
-			square_bracket_count--; // thank god were back to zero
-		}
-		else if ( string[ i ] == "," )
-		{
-			str_end = i;
-			array_token = getsubstr( string, str_start, str_end );
-			generic_obj add_token( array_token );
-			str_start = i;
-		}
-		else if ( is_alpha_numeric( string[ i ] ) )
-		{
-
-		}
-		else
-		{
-			// error
-			throw_exception( "Cannot use characters other than alnum, '_', '[]', ',' in an array", generic_obj );
+			break;
 		}
 
-		square_brackets_match = square_bracket_count == 0;
+		// parse value
+		value = parse_value( token_parse );
+		token_parse add_token( "array", value );
+		token_parse.start_pos = token_parse.end_pos;
 	}
 
-	if ( generic_obj.token_values.size <= 0 )
+	if ( token_parse get_token_count() <= 0 )
 	{
 		// error
-		throw_exception( "Directive array cannot be empty", generic_obj );
+		throw_exception( "Directive array cannot be empty", token_parse );
 	}
 
-	if ( !square_brackets_match )
-	{
-		// error
-		throw_exception( "Directive using unmatched array", generic_obj );
-	}
-
-	return set_parse_success( generic_obj, "token_values.size=" + generic_obj.token_values.size );
+	return set_parse_success( token_parse, "tokens.size==" + get_token_count() );
 }
 
-private set_parse_random_limit( token_parse_obj, new_value )
+private set_parse_random_limit( token_parse, new_value )
 {
-	token_parse_obj.target_values[ 0 ] = new_value;
+	token_parse.target_values[ 0 ] = new_value;
 
-	if ( int( token_parse_obj.target_values[ 0 ] ) <= 0 )
+	if ( int( token_parse.target_values[ 0 ] ) <= 0 )
 	{
-		return set_parse_success( token_parse_obj, "Random target pool limit must be greater than 0" );
+		return set_parse_success( token_parse, "Random target pool limit must be greater than 0" );
 	}
 
-	return set_parse_success( token_parse_obj, "random_limit=" + new_value );
-}
-
-/*func_call_parse_obj_t*/ private func_call_parse_obj_t_new( function_name )
-{
-	func_call_parse_obj = spawnstruct();
-	func_call_parse_obj.arg_directives = [];
-	func_call_parse_obj.function_name = function_name;
-
-	return func_call_parse_obj;
+	return set_parse_success( token_parse, "random_limit=" + new_value );
 }
 
 // structure of a function:
 // 0 - function_name
 // 1 - function caller, use undefined for no caller
 // >1 - arguments
-private parse_function( generic_obj, call_value )
+private parse_function( token_parse )
 {
-	// basic checks
-	str_start = 0;
-	str_end = call_value.size - 1;
+	// the 'function' at this point is just a comma delimited list of arguments...
+	// strtok them!
 
-	tokens = [];
-	if ( call_value[ str_end ] != ")" )
+	func_args = strtok( token_parse.str, "," );
+	for ( i = 0; i < func_args.size; i++ )
 	{
-		// error
-		throw_exception( "Last character of function wasn't terminated with ')'", generic_obj );
-	}
-
-	in_comma = false;
-	for ( i = 0; i < call_value.size; i++ )
-	{
-		switch ( call_value[ i ] )
+		switch ( func_args[ i ] )
 		{
 			case "$":
-				generic_obj add_token( "random" );
-				if ( call_value[ i + 1 ] != "," )
-				{
-					throw_exception( "$ is a single token arg directive", generic_obj );
-				}
-
-				in_comma = false;
+				token_parse add_token( "func_args", "random" );
 				continue;
 			case "!":
-				generic_obj add_token( "undefined" );
-				if ( call_value[ i + 1 ] != "," )
-				{
-					throw_exception( "! is a single token arg directive", generic_obj );
-				}
-
-				in_comma = false;
+				token_parse add_token( "func_args", "undefined" );
 				continue;
 			case "&":
-				generic_obj add_token( "self" );
-				if ( call_value[ i + 1 ] != "," )
-				{
-					throw_exception( "& is a single token arg directive", generic_obj );
-				}
-
-				in_comma = false;
+				token_parse add_token( "func_args", "self" );
 				continue;
 			case "#":
-				generic_obj add_token( "default" );
-				if ( call_value[ i + 1 ] != "," )
-				{
-					throw_exception( "# is a single token arg directive", generic_obj );
-				}
-
-				in_comma = false;
+				token_parse add_token( "func_args", "default" );
 				continue;
 		}
 
-		if ( call_value[ i ] == "," || i == ( call_value.size - 1 ) )
+		if ( !is_alpha_numeric( func_args[ i ], true ) )
 		{
-			if ( call_value[ i + 1 ] == "," )
-			{
-				throw_exception( "Arg directive cannot be empty", generic_obj );
-			}
-
-			if ( in_comma )
-			{
-				str_end = i;
-				string = getsubstr( call_value, str_start, str_end );
-				generic_obj add_token( string );
-
-				in_comma = false;
-			}
-			else
-			{
-				str_start = i;
-				in_comma = true;
-			}
-		}
-		else if ( is_alpha_numeric( call_value[ i ], true ) )
-		{
-
-		}
-		else
-		{
-			// error
-			throw_exception( "Cannot use characters other than alnum, '_', ',', '$', '!', '&', '#' in an function call", generic_obj );
+			throw_exception( "Cannot use characters other than alnum, '_', ',', '$', '!', '&', '#' in an function call", token_parse );
 		}
 	}
 
-	return set_parse_success( generic_obj );
+	return set_parse_success( token_parse );
 }
 
-private parse_target_random( target_string, token_parse_obj )
+private parse_target_random( token_parse )
 {
-	token_parse_obj.token_type = "random";
+	token_parse.context_type = "random";
+	token_parse.start_pos++; // skip $
 
-	if ( target_string.size <= 1 )
+	if ( token_parse.start_pos == token_parse.str.size )
 	{
-		return set_parse_random_limit( token_parse_obj, "99999" );
+		return set_parse_random_limit( token_parse, "99999" );
 	}
 
-	if ( target_string[ i + 1 ] == "[" )
+	if ( token_parse.str[ token_parse.start_pos ] == "[" )
 	{
-		token_parse_obj.token_type = "array_random";
-		return parse_array( target_string, token_parse_obj );
+		directive = parse_array( token_parse );
+		token_parse.context_type = "array_random"; // override token type
+		return directive;
 	}
 
-	str_start = 0;
-	str_end = target_string.size - 1;
-	for ( i = 0; i < target_string.size; i++ )
+	if ( !is_numeric( token_parse.str, token_parse.start_pos ) )
 	{
-		if ( !is_numeric( target_string[ i ] ) )
-		{
-			throw_exception( "Random target pool limit must be a number", token_parse_obj );
-		}
+		throw_exception( "Random target pool limit must be a number", token_parse );
 	}
 
-	random_limit = getsubstr( target_string, str_start );
-	return set_parse_random_limit( token_parse_obj, random_limit );
+	random_limit = getsubstr( token_parse.str, token_parse.start_pos );
+	return set_parse_random_limit( token_parse, random_limit );
 }
 
-private try_parse_function( string, generic_obj )
+private try_parse_function( token_parse )
 {
-	str_start = 0;
-	function_name = "";
-	invalid_for_func_char_count = 0;
-	for ( i = 0; i < string.size; i++ )
+	end_pos = -1;
+	for ( i = 0; i < token_parse.str.size; i++ )
 	{
-		if ( is_alpha_numeric( string[ i ], true ) )
+		if ( token_parse.str[ i ] == "(" ) // function start
 		{
-			continue;
-		}
-
-		if ( string[ i ] == "(" ) // function start
-		{
-			if ( invalid_for_func_char_count > 0 )
-			{
-				throw_exception( "Function names can only contain alnum, '_', and '('", generic_obj );
-			}
-			
-			str_end = i;
-			function_name = getsubstr( string, str_start, str_end );
-			generic_obj.token_type = "function";
-			generic_obj add_token( function_name );
-			return parse_function( generic_obj, string );
-		}
-		else
-		{
-			invalid_for_func_char_count++;
+			end_pos = i - 1;
+			break;
 		}
 	}
 
-	return set_parse_warning( generic_obj );
+	if ( end_pos == -1 )
+	{
+		return set_parse_warning( token_parse );
+	}
+
+	if ( !is_alpha_numeric( token_parse.str, token_parse.start_pos, end_pos ) )
+	{
+		throw_exception( "Function names can only contain alnum, '_', and '('", token_parse );
+	}
+
+	function_name = getsubstr( token_parse.str, token_parse.start_pos, end_pos );
+	token_parse add_token( "function", function_name );
+
+	if ( token_parse.str[ token_parse.str.size - 1 ] != ")" )
+	{
+		throw_exception( "Function wasn't terminated with ')'", token_parse );
+	}
+
+	// push token string ahead of the function name and remove parentheses
+	token_parse.str = getsubstr( token_parse.str, ( token_parse.start_pos + function_name.size + 1 ), function_name.size - 1 );
+	return parse_function( token_parse );
 }
 
-private try_parse_name( string, generic_obj, str_start = 0, str_end = undefined )
+private try_parse_name( token_parse )
 {
-	str_start = _DEFAULT( str_start, 0 );
-	std_end = _DEFAULT( str_end, string.size );
-	invalid_for_name_char_count = 0;
-	for ( i = str_start; i < std_end; i++ )
+	if ( !is_alpha_numeric( token_parse.str, true ) )
 	{
-		if ( is_alpha_numeric( string[ i ], true ) )
-		{
-			continue;
-		}
-
-		invalid_for_name_char_count++;
+		throw_exception( "Target names can only contain alnum, and '_'", token_parse );
 	}
 
-	if ( invalid_for_name_char_count == 0 )
-	{
-		name = getsubstr( string, str_start, str_end );
-		generic_obj.token_type = "identifier";
-		generic_obj add_token( name );
-		return set_parse_success( generic_obj );
-	}
-	else
-	{
-		throw_exception( "Target names can only contain alnum, and '_'", generic_obj );
-	}
+	name = getsubstr( token_parse.str, 0, token_parse.str.size );
+	token_parse add_token( "identifier", name );
+	return set_parse_success( token_parse );
 }
 
-private parse_target_value( target_string )
+private parse_target_value( key, value )
 {
-	token_parse_obj = token_parse_obj_t_new( "unassigned" );
-	first = target_string[ 0 ];
+	token_parse = token_parse_obj_t_new( "unassigned", value, 0, value.size, key );
 
 	// basic tokens
-	switch ( first )
+	switch ( token_parse.str[ 0 ] )
 	{
 		case "*":
-			token_parse_obj.token_type = "all";
+			token_parse.context_type = "all";
 			break;
 		case "!":
-			token_parse_obj.token_type = "undefined";
+			token_parse.context_type = "undefined";
 			break;
 		case "&":
-			token_parse_obj.token_type = "self"; // explicit self
+			token_parse.context_type = "self"; // explicit self
 			break;
 		case "#":
-			token_parse_obj.token_type = "default"; // the default, and configureable target explicitly specified
+			token_parse.context_type = "default"; // the default, and configureable target explicitly specified
 			break;
 	}
 
-	if ( token_parse_obj.token_type != "unassigned" )
+	if ( token_parse.context_type != "unassigned" )
 	{
-		if ( target_string.size > 1 )
+		if ( token_parse.str.size > 1 )
 		{
-			throw_exception( "The '" + token_parse_obj.token_type + "' valid targets syntax '" + first + "' cannot be used with any other syntax as the first element: token: '" + target_string + "'", token_parse_obj );
+			throw_exception( "The '" + token_parse.context_type + "' valid targets syntax '" + token_parse.str[ 0 ] + "' cannot be used with any other syntax as the first element: token: '" + token_parse.str + "'", token_parse );
 		}
 
-		return set_parse_success( token_parse_obj, "target=" + token_parse_obj.token_type );
+		return set_parse_success( token_parse, "target==" + token_parse.context_type );
 	}
 
 	// array and random
-	switch ( first )
+	switch ( token_parse.str[ 0 ] )
 	{
 		case "$":
-			return parse_target_random( target_string, token_parse_obj );
+			return parse_target_random( token_parse );
 		case "[":
-			token_parse_obj.token_type = "array";
-			return parse_array( target_string, token_parse_obj );
+			return parse_array( token_parse );
 	}
 
 	// function and name(identifier)
-	if ( is_alpha_numeric( first ) )
+	if ( is_alpha_numeric( token_parse.str[ 0 ] ) )
 	{
 		// ambiguous, could be function start or a name
-		function_call_obj = try_parse_function( target_string, token_parse_obj );
+		function_call_obj = try_parse_function( token_parse );
 		if ( !function_call_obj.warning )
 		{
 			return function_call_obj;
 		}
 
-		reset_parse_warning( token_parse_obj );
+		reset_parse_warning( token_parse );
 
 		// not a function, no '(' token
 		// names can contain a lot of weird characters, but you are better off using the guid/clientnum syntax anyway
-		name_token_obj = try_parse_name( target_string, token_parse_obj );
+		name_token_obj = try_parse_name( token_parse );
 		return name_token_obj;
 	}
 
-	throw_exception( "Unsupported target directive value: '" + target_string + "'", token_parse_obj );
+	throw_exception( "Unsupported target directive value: '" + token_parse.str + "'", token_parse );
 }
 
-private parse_directive( cmd_parse, key_type, ordinal_argument, value )
+private parse_directive( cmd_parse, key, key_type, ordinal_argument, value )
 {
 	if ( key_type[ 0 ] == "t" || issubstr( key_type, "target" ) )
 	{
-		directive_value = parse_target_value( value );
+		directive_value = parse_target_value( key, value );
 		return directive_parse_obj_t_new( "target", directive_value, ordinal_argument );
 	}
 	else if ( key_type[ 0 ] == "e" || issubstr( key_type, "executor" ) ) // allows you to specify the 'executor' or who executes the command
 	{
-		directive_value = parse_target_value( value );
+		directive_value = parse_target_value( key, value );
 		return directive_parse_obj_t_new( "executor", directive_value, ordinal_argument );
 	}
+	
 	directive_value = undefined;
 	switch ( key_type )
 	{
@@ -405,84 +295,156 @@ private parse_directive( cmd_parse, key_type, ordinal_argument, value )
 	throw_exception( "Unsupported directive key '" + key_type + "'", cmd_parse );
 }
 
-private parse_directives( cmd_parse, token_str )
+private parse_key( cmd_parse )
 {
-	if ( token_str.size == 3 && token_str[ 2 ] == "}" )
+	key = "";
+
+	for ( pos = cmd_parse.start_pos;; pos++ )
 	{
-		//fail?, or show help? as an empty directives block means that it will do nothing for that target selector; unless this is a way to skip it...
-		//no. implementing a "skip" directive makes more sense i.e "skip=1"
-		//so fail
+		if ( pos >= cmd_parse.str.size )
+		{
+			break;
+		}
+
+		if ( cmd_parse.str[ pos ] == "=" )
+		{
+			cmd_parse.end_pos = pos - 1; // we don't want to send '='
+			break;
+		}
+	}
+
+	if ( cmd_parse.end_pos == cmd_parse.str.size )
+	{
+		throw_exception( "Directives are key value pairs; missing complete key", cmd_parse );
+	}
+
+	key = getsubstr( cmd_parse.str, cmd_parse.start_pos, cmd_parse.end_pos );
+	if ( !is_alpha_numeric( key ) )
+	{
+		throw_exception( "Directive key: '" + key + "' contains an invalid character; only alnum and '_' characters are allowed", cmd_parse );
+	}
+
+	return key;
+}
+
+// {target1=[a,b,c],t2=JezuzLizard,t3={a=5,b=8}}
+private split_kvps( cmd_parse )
+{
+	keys_to_values = [];
+
+	kvps = strtok( cmd_parse.str, "=" );
+
+	if ( ( kvps.size % 2 ) != 0 )
+	{
+		throw_exception( "Key value pairs are not matching", cmd_parse );
+	}
+
+	for ( i = 0; i < kvps.size; i += 2 )
+	{
+		switch ( kvps[ i + 1 ][ 0 ] )
+		{
+			case "{":
+				throw_exception( "Nested keys are not supported", cmd_parse );
+				break;
+			case "[":
+			default:
+				keys_to_values[ kvps[ i ] ] = kvps[ i + 1 ];
+				break;
+		}
+	}
+
+	return keys_to_values;
+}
+
+private parse_value( cmd_parse )
+{
+	value = "";
+	commas_delimit = true;
+	func_needs_closed = 0;
+	array_needs_closed = 0;
+	key_needs_closed = 0;
+
+	for ( pos = cmd_parse.start_pos;; pos++ )
+	{
+		if ( pos >= cmd_parse.str.size )
+		{
+			if ( !commas_delimit )
+			{
+				throw_exception( "Unmatching function or array braces", cmd_parse );
+			}
+			break;
+		}
+
+		if ( cmd_parse.str[ pos ] == "{" )
+		{
+			key_needs_closed++;
+		}
+
+		if ( cmd_parse.str[ pos ] == "}" )
+		{
+			key_needs_closed--;
+		}
+
+		if ( cmd_parse.str[ pos ] == "(" )
+		{
+			func_needs_closed++;
+		}
+
+		if ( cmd_parse.str[ pos ] == ")" )
+		{
+			func_needs_closed--;
+		}
+
+		if ( cmd_parse.str[ pos ] == "[" )
+		{
+			array_needs_closed++;
+		}
+
+		if ( cmd_parse.str[ pos ] == "]" )
+		{
+			array_needs_closed--;
+		}
+
+		commas_delimit = array_needs_closed == 0 && func_needs_closed == 0 && key_needs_closed == 0;
+
+		if ( commas_delimit && cmd_parse.str[ pos ] == "," )
+		{
+			cmd_parse.end_pos = pos - 1; // we don't need to send the separating comma
+			break;
+		}
+	}
+
+	value = getsubstr( cmd_parse.str, cmd_parse.start_pos, cmd_parse.end_pos );
+
+	return value;
+} 
+
+private parse_directives( cmd_parse )
+{
+	// token_str == "@{...}
+	// in here we just want to parse the middle bit
+
+	if ( cmd_parse.str.size <= 3 )
+	{
 		throw_exception( "Empty directive block isn't allowed", cmd_parse );
 	}
 
-	// got past the preparser so we already know it's a little valid
+	cmd_parse.str = getsubstr( cmd_parse.str, 2, ( cmd_parse.str.size - 1 ) );
 
-	key_start = 2;
 	for ( ;; )
 	{
+		if ( cmd_parse.start_pos == cmd_parse.str.size )
+		{
+			break;
+		}
+
 		// parse key
-		key_end = key_start;
-		while ( key_end < token_str.size )
-		{
-			if ( token_str[ key_end ] == "=" )
-			{
-				break;
-			}
-			if ( !is_alpha_numeric( token_str[ key_end ] ) )
-			{
-				throw_exception( "Directive key: '" + token_str + "' contains an invalid character: '" + token_str[ key_end ] + "'", cmd_parse );
-			}
-
-			key_end++;
-		}
-
-		if ( key_end == token_str.size )
-		{
-			throw_exception( "Directives are key value pairs; missing complete key", cmd_parse );
-		}
-
-		key = getsubstr( token_str, key_start, key_end );
+		key = parse_key( cmd_parse );
+		cmd_parse.start_pos = cmd_parse.end_pos + 2; // skip over the '=' token 
 
 		// parse value
-		value_start = key_end + 1; // start after the '=' token
-		value_end = value_start;
-		if ( token_str[ value_start ] == "[" ) // start of array
-		{
-			value_end++;
-			while ( token_str[ value_end ] != "]" )
-			{
-				if ( value_end >= token_str.size )
-				{
-					throw_exception( "Missing terminating array ']' token", cmd_parse );
-				}
-
-				value_end++; 
-			}
-		}
-
-		for ( ;; )
-		{
-			if ( token_str[ value_end + 1 ] == "}" )
-			{
-				break; // we don't need to send the closing brace
-			}
-
-			if ( token_str[ value_end + 1 ] == "," )
-			{
-				break; // we don't need to send the separating comma
-			}
-
-			if ( value_end >= token_str.size )
-			{
-				throw_exception( "Missing key value pair terminator '}' or separator ','", cmd_parse );
-			}
-
-			value_end++;
-		}
-
-		value = getsubstr( token_str, value_start, value_end );
-
-		cmd_parse.start_pos = value_end;
+		value = parse_value( cmd_parse );
+		cmd_parse.start_pos = cmd_parse.end_pos;
 
 		key_type = key;
 		ordinal_argument = int( key[ key.size - 1 ] );
@@ -499,7 +461,7 @@ private parse_directives( cmd_parse, token_str )
 		{
 			cmd_parse.directive_kvps[ key_type ] = [];
 		}
-		cmd_parse.directive_kvps[ key_type ][ ordinal_argument - 1 ] = parse_directive( cmd_parse, key_type, ordinal_argument, value );
+		cmd_parse.directive_kvps[ key_type ][ ordinal_argument - 1 ] = parse_directive( cmd_parse, key, key_type, ordinal_argument, value );
 	}
 		// so everything is a key value pair, or key=<val>, where key is a primitive string followed by exactly "=" and then a formatted value
 		// values will only be alphanumeric, "_", "[,]", "(,)"
@@ -573,16 +535,37 @@ private parse_directives( cmd_parse, token_str )
 // ? - wildcard token for vectors
 // since we must define all keys explicitly we don't need to worry about user defined keys, which means certain kinds of syntax can be simplified to be implicit(vector parsing)
 
-private add_token( value )
+private add_token( key, value )
 {
-	self.token_values[ self.token_values.size ] = value;
+	if ( !isdefined( self.tokens[ key ] ) )
+	{
+		new_token = spawnstruct();
+		new_token.key = key;
+		new_token.value = value;
+		new_token.tokens = [];
+	}
+
+	self.tokens[ self.tokens.size ] = new_token;
+
+	return new_token;
 }
 
-/*token_parse_obj_t*/ private token_parse_obj_t_new( token_type )
+private get_token_count()
+{
+	return self.tokens.size;
+}
+
+/*token_parse_obj_t*/ private token_parse_obj_t_new( context_type, str, start, end, key )
 {
 	token_parse_obj = generic_obj_t_new( "token_parse" );
-	token_parse_obj.token_type = token_type;
-	token_parse_obj.token_values = []; // if type is array, index > 0 is used, otherwise only index 0 is
+	token_parse_obj.context_type = context_type;
+	token_parse_obj.tokens = []; // string indexed array of struct using type and literal
+	token_parse_obj.start_pos = start;
+	token_parse_obj.end_pos = end;
+	token_parse_obj.save_start_pos = start;
+	token_parse_obj.save_end_pos = end;
+	token_parse_obj.str = str;
+	token_parse_obj.key = key;
 	return token_parse_obj;
 }
 
@@ -604,6 +587,7 @@ private add_token( value )
 	cmd_parse_obj.cmd_data_source = cmd_data_source;
 	cmd_parse_obj.start_pos = 0;
 	cmd_parse_obj.end_pos = 0;
+	cmd_parse_obj.max_len = 0;
 	cmd_parse_obj.cmd_string = cmd_string;
 	return cmd_parse_obj;
 }
@@ -626,18 +610,38 @@ private custom_split( str, cmd_parse_array )
 
 	split_start = 0;
 	was_in_identifier = false;
+	spaces_delimit = true;
 	for ( i = 0; i < str.size; i++ )
 	{
 		if ( str[ i ] == "@" )
 		{
+			spaces_delimit = false;
 			split_start = i;
-			if ( ( i + 1 ) == str.size || str[ i + 1 ] != "{" )
+			i++;
+			if ( i == str.size || str[ i ] != "{" )
 			{
 				//fail, must be at least 3 characters to be at least somewhat valid "@{}"
 				throw_exception( "Directive must be at least '@{'", cmd_parse_array );
 			}
-			for ( ; str[ i ] != "}"; i++ )
+
+			brace_count = 0;
+			for ( ; ; i++ )
 			{
+				if ( str[ i ] == "{" )
+				{
+					brace_count++;
+				}
+				else if ( str[ i ] == "}" )
+				{
+					brace_count--;
+				}
+
+				spaces_delimit = brace_count == 0;
+
+				if ( spaces_delimit )
+				{
+					break; // we are not in a directive block anymore
+				}
 				if ( ( i + 1 ) == str.size )
 				{
 					throw_exception( "Directive must be terminated with '}'", cmd_parse_array );
@@ -649,6 +653,7 @@ private custom_split( str, cmd_parse_array )
 			com_printdebugwarning( "Custom split for directive: tok: " + tokens[ tokens.size - 1 ] + " start: " + split_start + " end: " + split_end );
 
 			in_identifier = false;
+			spaces_delimit = true;
 		}
 		else if ( is_alpha_numeric( str[ i ], true ) )
 		{
@@ -719,11 +724,14 @@ private custom_split( str, cmd_parse_array )
 
 		for ( j = 1; j < cmd_string.size; j++ )
 		{
+			new_cmd_parse.start_pos = 0;
+			new_cmd_parse.end_pos = cmd_string[ j ].size;
+			new_cmd_parse.str = cmd_string[ j ];
 			com_printdebugwarning( cmd_string[ j ] );
 			// "@" should be a variable; it should be configureable
 			if ( cmd_string[ j ][ 0 ] == "@" )
 			{
-				parse_check_obj = parse_directives( new_cmd_parse, cmd_string[ j ] );
+				parse_check_obj = parse_directives( new_cmd_parse );
 				if ( parse_check_obj.errored )
 				{
 					throw_exception( parse_check_obj.msg, cmd_parse_array );

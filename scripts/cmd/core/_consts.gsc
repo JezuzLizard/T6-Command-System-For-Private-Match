@@ -1010,7 +1010,11 @@ arg_obj_spawnable_classname_cast( arg )
 
 	if ( !isdefined( level.tcs_dynamic_spawns[ arg ] ) )
 	{
-		return set_cast_error( find, "arg!=classname" );
+		if ( isdefined( level.tcs_bsp_spawns[ arg ] ) )
+		{
+			return set_cast_error( find, "Classname: '" + arg + "' cannot be spawned dynamically; only through mapents" );
+		}
+		return set_cast_error( find, "Unsupported classname: '" + arg + "'" );
 	}
 
 	return set_cast_success( find, arg, "classname==" + arg );

@@ -833,9 +833,15 @@ cast_str_to_cmd( alias )
 	return set_cast_success( result_obj, level.tcs_cmds[ alias ], "cmd==" + alias );
 }
 
-is_alpha( chr )
+is_alpha( chr, start = 0, end = undefined )
 {
-	for ( i = 0; i < chr.size; i++ )
+	start = _DEFAULT( start, 0 );
+	end = _DEFAULT( end, chr.size );
+	if ( end > chr.size )
+	{
+		end = chr.size;
+	}
+	for ( i = start; i < end; i++ )
 	{
 		if ( !isdefined( level._alphabet_array[ chr[ i ] ] ) )
 		{
@@ -846,9 +852,15 @@ is_alpha( chr )
 	return true;
 }
 
-is_alpha_numeric( chr, check_underscore = false )
+is_alpha_numeric( chr, check_underscore = false, start = 0, end = undefined )
 {
-	for ( i = 0; i < chr.size; i++ )
+	start = _DEFAULT( start, 0 );
+	end = _DEFAULT( end, chr.size );
+	if ( end > chr.size )
+	{
+		end = chr.size;
+	}
+	for ( i = start; i < end; i++ )
 	{
 		if ( !isdefined( level._alphabet_array[ tolower( chr[ i ] ) ] ) && !isdefined( level._numeric_array[ chr[ i ] ] ) )
 		{
@@ -866,9 +878,15 @@ is_alpha_numeric( chr, check_underscore = false )
 	return true;
 }
 
-is_numeric( chr )
+is_numeric( chr, start = 0, end = undefined )
 {
-	for ( i = 0; i < chr.size; i++ )
+	start = _DEFAULT( start, 0 );
+	end = _DEFAULT( end, chr.size );
+	if ( end > chr.size )
+	{
+		end = chr.size;
+	}
+	for ( i = start; i < end; i++ )
 	{
 		if ( !isdefined( level._numeric_array[ chr[ i ] ] ) )
 		{
