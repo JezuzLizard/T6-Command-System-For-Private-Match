@@ -88,9 +88,9 @@ autoexec add_cmds()
 	debug_cmd arg_obj_add_cmd( "string", 0, 255 );
 	debug_cmd make_cmd_immune_to_unittest();
 
-	// entities are no longer used in plain argument syntax, use the target syntax instead
+	last_cmd = cmd_add( "lastcmd", ::cmd_last_f, "lastcmd", "Execute the previous used command string, except this one." );
 
-	// executor argtype/target for level.server and player commands
+	listcmdhistory_cmd = cmd_add( "listcmdhistory", ::cmd_listcmdhistory_f, "listcmdhistory", "Print the last 20 executed command strings." );
 }
 
 private cmd_setcvar_f( param )
@@ -173,7 +173,7 @@ private cmd_bottomlessclip_f( param )
 	on_off = cast_bool_to_str( !is_true( self.tcs_bottomless_clip ), "on off" );
 	if ( on_off == "on" )
 	{
-		self thread bottomless_clip();
+		self thread scripts\cmd\modules\core_helpers::bottomless_clip();
 		self.tcs_bottomless_clip = true;
 	}
 	else 
@@ -222,14 +222,14 @@ private cmd_playerlist_f( param )
 	}
 
 	team = param.a[ 0 ];
-	self thread list_players_throttled( team );
+	self thread scripts\cmd\modules\core_helpers::list_players_throttled( team );
 
 	return result_cmdinfo( "" );
 }
 
 private cmd_cmdlist_f( param )
 {
-	self thread list_cmds_throttled();
+	self thread scripts\cmd\modules\core_helpers::list_cmds_throttled();
 	return result_cmdinfo( "" );
 }
 
@@ -277,9 +277,9 @@ private cmd_help_f( param )
 
 private cmd_dodamage_f( param )
 {
-	target = param.t[ 0 ];
-	attacker = param.t[ 1 ];
-	inflictor = param.t[ 2 ];
+	target = param.t[ 0 ][ 0 ];
+	attacker = param.t[ 1 ][ 0 ];
+	inflictor = param.t[ 2 ][ 0 ];
 	damage = param.a[ 0 ];
 	pos = param.a[ 1 ];
 	hitloc = param.a[ 2 ];
@@ -317,14 +317,14 @@ private cmd_dodamage_f( param )
 
 private cmd_entitylist_f( param )
 {
-	self thread list_entities_throttled( param );
+	self thread scripts\cmd\modules\core_helpers::list_entities_throttled( param );
 
 	return result_cmdinfo( "" );
 }
 
 private cmd_scrnotify_f( param )
 {
-	notify_ent = param.t[ 0 ];
+	notify_ent = param.t[ 0 ][ 0 ];
 	notify_name = param.a[ 0 ];
 
 	arg_count = param.a.size - 1;
@@ -352,21 +352,21 @@ private cmd_scrnotify_f( param )
 
 private cmd_printorigin_f( param )
 {
-	target = param.t[ 0 ];
+	target = param.t[ 0 ][ 0 ];
 
 	return result_cmdinfo( "Entity origin is: '" + target.origin + "'" );
 }
 
 private cmd_printangles_f( param )
 {
-	target = param.t[ 0 ];
+	target = param.t[ 0 ][ 0 ];
 
 	return result_cmdinfo( "Entity angles are: '" + target.angles + "'" );
 }
 
 private cmd_teleportentity_f( param )
 {
-	from_target = param.t[ 0 ];
+	from_target = param.t[ 0 ][ 0 ];
 	to_target = param.t[ 1 ];
 
 	from_target setOrigin( to_target.origin + anglesToForward( to_target.angles ) * 64 + anglesToRight( to_target.angles ) * 64 );
@@ -378,14 +378,14 @@ private cmd_teleportentity_f( param )
 
 private cmd_setdefaultcmdexecutor_f( param )
 {
-	self.default_executors = param.t[ 0 ];
+	self.default_executors = param.t[ 0 ] [ 0];
 
 	return result_cmdinfo( "Successfully set your default cmd executors" );
 }
 
 private cmd_setdefaultcmdtarget_f( param )
 {
-	self.default_targets = param.t[ 0 ];
+	self.default_targets = param.t[ 0 ][ 0 ];
 
 	return result_cmdinfo( "Successfully set your default cmd targets" );
 }
@@ -403,4 +403,14 @@ private cmd_debug_f( param )
 			self notify( "debug_abort" );
 			break;
 	}
+}
+
+private cmd_last_f( param )
+{
+
+}
+
+private cmd_listcmdhistory_f( param )
+{
+
 }

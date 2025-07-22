@@ -960,7 +960,7 @@ arg_obj_model_generate( arg1, arg2, arg3 )
 	return set_cast_success( find, "Unimplemented", "model==" + "null" );
 }
 
-delete_after_time( entity )
+private delete_after_time( entity )
 {
 	entity endon( "death" );
 
@@ -969,7 +969,7 @@ delete_after_time( entity )
 	entity delete();
 }
 
-spawn_test_ent()
+private spawn_test_ent()
 {
 	test_ent = spawn( "script_model", ( 0, 0, -5000 ) );
 	level thread delete_after_time( test_ent );
@@ -1059,7 +1059,7 @@ target_obj_generate( etype )
 	{
 		case 0:
 			target_str += "$";
-			rand_limit = randomint( ents.size );
+			rand_limit = randomintrange( 1, ( ents.size + 1 ) );
 			target_str += rand_limit;
 			break;
 		case 1:
@@ -1068,7 +1068,7 @@ target_obj_generate( etype )
 				target_str += "$";
 			}
 			target_str += "[";
-			rand_limit = randomint( ents.size );
+			rand_limit = randomintrange( 1, ( ents.size + 1 ) );
 
 			for ( i = 0; i < rand_limit; i++ )
 			{

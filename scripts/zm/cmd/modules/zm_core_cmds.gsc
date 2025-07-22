@@ -94,7 +94,7 @@ autoexec add_cmds()
 	perklist_cmd = cmd_add( "perklist", ::cmd_perklist_f );
 }
 
-cmd_spectator_f( param )
+private cmd_spectator_f( param )
 {
 	result = result_cmdinfo( "" );
 	targets = param.t[ 0 ];
@@ -118,10 +118,17 @@ cmd_spectator_f( param )
 	return result;
 }
 
-cmd_togglerespawn_f( param )
+private cmd_togglerespawn_f( param )
 {
 	result = result_cmdinfo( "" );
 	targets = param.t[ 0 ];
+
+	assert( isdefined( targets ) );
+
+	if ( !isdefined( targets ) )
+	{
+		return result;
+	}
 
 	for ( i = 0; i < targets.size; i++ )
 	{
@@ -149,10 +156,10 @@ cmd_togglerespawn_f( param )
 	return result;
 }
 
-cmd_killactors_f( param )
+private cmd_killactors_f( param )
 {
 	targets = param.t[ 0 ];
-	if ( !isdefined( targets ) )
+	if ( !array_validate( targets ) )
 	{
 		targets = getaiarray( level.zombie_team );
 	}
@@ -168,12 +175,12 @@ cmd_killactors_f( param )
 	return result_cmdinfo( "Killed all zombies" );
 }
 
-cmd_spawnspectator_f( param )
+private cmd_spawnspectator_f( param )
 {
 	result = result_cmdinfo( "" );
 	targets = param.t[ 0 ];
 
-	if ( !isdefined( targets ) )
+	if ( !array_validate( targets ) )
 	{
 		targets = level.players;
 	}
@@ -209,34 +216,34 @@ cmd_spawnspectator_f( param )
 }
 
 // TODO: stop the zombies from dying due to g_ai preventing movement
-cmd_pause_f( param )
+private cmd_pause_f( param )
 {
 	duration = _DEFAULT( param.a[ 0 ], -1 );
 	if ( duration > 0 )
 	{
-		level thread game_pause( duration );
+		level thread scripts\zm\cmd\modules\zm_core_helpers::game_pause( duration );
 		return result_cmdinfo( "Game paused for " + duration + " minutes" );
 	}
 	else 
 	{
-		level thread game_pause( -1 );
+		level thread scripts\zm\cmd\modules\zm_core_helpers::game_pause( -1 );
 		return result_cmdinfo( "Game paused indefinitely use unpause to end the pause" );
 	}
 }
 
-cmd_unpause_f( param )
+private cmd_unpause_f( param )
 {
-	game_unpause();
+	scripts\zm\cmd\modules\zm_core_helpers::game_unpause();
 
 	return result_cmdinfo( "Game unpaused" );
 }
 
-cmd_perk_f( param )
+private cmd_perk_f( param )
 {
 	perk_name = param.a[ 0 ];
 	if ( perk_name != "all" )
 	{
-		self give_perk_zm( perk_name );
+		self scripts\zm\cmd\modules\zm_core_helpers::give_perk_zm( perk_name );
 		return result_cmdinfo( "Gave perk " + perk_name + " to you" );
 	}
 	else 
@@ -244,14 +251,14 @@ cmd_perk_f( param )
 		valid_perk_list = perk_list_zm();
 		foreach ( perk in valid_perk_list )
 		{
-			self give_perk_zm( perk );
+			self scripts\zm\cmd\modules\zm_core_helpers::give_perk_zm( perk );
 		}
 
 		return result_cmdinfo( "Gave you all perks" );
 	}
 }
 
-cmd_takeperk_f( param )
+private cmd_takeperk_f( param )
 {
 	perk_name = param.a[ 0 ];
 	if ( perk_name != "all" )
@@ -271,22 +278,22 @@ cmd_takeperk_f( param )
 	}
 }
 
-cmd_permaperk_f( param )
+private cmd_permaperk_f( param )
 {
 	perma_perk_name = param.a[ 0 ];
 	if ( perma_perk_name != "all" )
 	{
-		self give_perma_perk( perma_perk_name );
+		self scripts\zm\cmd\modules\zm_core_helpers::give_perma_perk( perma_perk_name );
 		return result_cmdinfo( "Gave you " + perma_perk_name );
 	}
 	else
 	{
-		self give_all_perma_perks();
+		self scripts\zm\cmd\modules\zm_core_helpers::give_all_perma_perks();
 		return result_cmdinfo( "Gave you all perma perks" );
 	}
 }
 
-cmd_points_f( param )
+private cmd_points_f( param )
 {
 	points = param.a[ 0 ];
 	self add_to_player_score( points );
@@ -294,25 +301,25 @@ cmd_points_f( param )
 	return result_cmdinfo( "Gave you '" + points + "' points" );
 }
 
-cmd_powerup_f( param )
+private cmd_powerup_f( param )
 {
 	powerup_name = param.a[ 0 ];
-	success = self give_powerup_zm( powerup_name );
+	success = self scripts\zm\cmd\modules\zm_core_helpers::give_powerup_zm( powerup_name );
 	if ( success )
 	{
 		return result_cmdinfo( "Spawned '" + powerup_name + "' for you" );
 	}
 }
 
-cmd_weapon_f( param )
+private cmd_weapon_f( param )
 {
 	weapon = param.a[ 0 ];
-	self thread weapon_give_custom( weapon, weapon_is_upgrade( weapon ), true );
+	self thread scripts\zm\cmd\modules\zm_core_helpers::weapon_give_custom( weapon, weapon_is_upgrade( weapon ), true );
 
 	return result_cmdinfo( "Gave you '" + weapon + "'" );
 }
 
-cmd_toggleperssystemforplayer_f( param )
+private cmd_toggleperssystemforplayer_f( param )
 {
 	on_off = cast_bool_to_str( is_true( self.tcs_disable_pers_system ), "on off" );
 	self.tcs_disable_pers_system = !is_true( self.tcs_disable_pers_system );
@@ -320,7 +327,7 @@ cmd_toggleperssystemforplayer_f( param )
 	return result_cmdinfo( "Toggled pers system for " + self.name + " " + on_off );
 }
 
-cmd_toggleoutofplayableareamonitor_f( param )
+private cmd_toggleoutofplayableareamonitor_f( param )
 {
 	on_off = cast_bool_to_str( !is_true( level.player_out_of_playable_area_monitor ), "on off" );
 	level.player_out_of_playable_area_monitor = !level.player_out_of_playable_area_monitor;
@@ -342,44 +349,44 @@ cmd_toggleoutofplayableareamonitor_f( param )
 	return result_cmdinfo( "Out of playable area monitor " + on_off );
 }
 
-cmd_openalldoors_f( param )
+private cmd_openalldoors_f( param )
 {
 	if ( is_true( level.tcs_doors_all_opened ) )
 	{
 		return result_cmdinfo( "All doors are already open" );
 	}
-	level thread open_seseme();
+	level thread scripts\zm\cmd\modules\zm_core_helpers::open_seseme();
 
 	return result_cmdinfo( "All doors are now open" );
 }
 
-cmd_setround_f( param )
+private cmd_setround_f( param )
 {
 	round_number = param.a[ 0 ];
 
 	level.round_number = round_number;
-	change_round( round_number );
+	scripts\zm\cmd\modules\zm_core_helpers::change_round( round_number );
 
 	return result_cmdinfo( "Round set to " + round_number );
 }
 
-cmd_nextround_f( param )
+private cmd_nextround_f( param )
 {
 	level.round_number++;
-	change_round( level.round_number );
+	scripts\zm\cmd\modules\zm_core_helpers::change_round( level.round_number );
 
 	return result_cmdinfo( "Round set to " + level.round_number );
 }
 
-cmd_prevround_f( param )
+private cmd_prevround_f( param )
 {
 	level.round_number--;
-	change_round( level.round_number );
+	scripts\zm\cmd\modules\zm_core_helpers::change_round( level.round_number );
 
 	return result_cmdinfo( "Round set to " + level.round_number );
 }
 
-cmd_setglobalzombiestat_f( param )
+private cmd_setglobalzombiestat_f( param )
 {
 	stat_name = param.a[ 0 ];
 	stat = level.tcs_modifiable_zombie_stats[ stat_name ];
@@ -392,7 +399,7 @@ cmd_setglobalzombiestat_f( param )
 	
 	if ( value == "reset" )
 	{
-		if ( !set_global_zombie_stat( stat, stat_name, stat.reset_value ) )
+		if ( !scripts\zm\cmd\modules\zm_core_helpers::set_global_zombie_stat( stat, stat_name, stat.reset_value ) )
 		{
 			return result_cmderror( "2Invalid zombie stat " + stat_name + " , use listglobalzombiestats to see modifiable stats" );
 		}
@@ -403,7 +410,7 @@ cmd_setglobalzombiestat_f( param )
 	{
 		casted_value = self [[ level.tcs_arg_type_handlers[ stat.type ].cast_func ]]( value );
 
-		if ( !set_global_zombie_stat( stat, stat_name, casted_value ) )
+		if ( !scripts\zm\cmd\modules\zm_core_helpers::set_global_zombie_stat( stat, stat_name, casted_value ) )
 		{
 			return result_cmderror( "3Invalid zombie stat " + stat_name + " , use listglobalzombiestats to see modifiable stats" );
 		}
@@ -414,18 +421,18 @@ cmd_setglobalzombiestat_f( param )
 	return result_cmderror( "Expected positive_int or positive_float, got: " + value );
 }
 
-cmd_listglobalzombiestats_f( param )
+private cmd_listglobalzombiestats_f( param )
 {
-	self thread list_zombie_stats_throttled();
+	self thread scripts\zm\cmd\modules\zm_core_helpers::list_zombie_stats_throttled();
 	return result_cmderror( "" );
 }
 
-cmd_setallphysparams_f( param )
+private cmd_setallphysparams_f( param )
 {
 	phys_params = param.a[ 0 ];
 	zombies = param.t[ 0 ];
 
-	if ( !isdefined( zombies ) )
+	if ( !array_validate( zombies ) )
 	{
 		zombies = get_round_enemy_array();
 	}
@@ -438,22 +445,22 @@ cmd_setallphysparams_f( param )
 	return result_cmdinfo( "Set all zombies phys params to " + phys_params );
 }
 
-cmd_weaponlist_f( param )
+private cmd_weaponlist_f( param )
 {
-	self thread list_weapons_throttled();
+	self thread scripts\zm\cmd\modules\zm_core_helpers::list_weapons_throttled();
 	return result_cmdinfo( "" );
 }
 
-cmd_poweruplist_f( param )
+private cmd_poweruplist_f( param )
 {
-	self thread list_powerups_throttled();
+	self thread scripts\zm\cmd\modules\zm_core_helpers::list_powerups_throttled();
 
 	return result_cmdinfo( "" );
 }
 
-cmd_perklist_f( param )
+private cmd_perklist_f( param )
 {
-	self thread list_perks_throttled();
+	self thread scripts\zm\cmd\modules\zm_core_helpers::list_perks_throttled();
 
 	return result_cmdinfo( "" );
 }

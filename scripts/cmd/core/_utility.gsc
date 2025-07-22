@@ -566,7 +566,7 @@ set_ent_cast_error( entity_obj, msg )
 
 	if ( !cast_number_obj.errored )
 	{
-		entnum = cast_number_obj.casted_value;
+		entnum = cast_number_obj.value;
 		if ( entnum > 1023 )
 		{
 			return set_ent_cast_error( entity_obj, "Entity number cannot be greater than 1023" );
@@ -677,7 +677,6 @@ is_str_positive_float( str )
 {
 	str_cast_obj = generic_obj_t_new( "str_cast" );
 	str_cast_obj.number_type = type;
-	str_cast_obj.casted_value = undefined;
 	str_cast_obj.str_value = str_value;
 
 	if ( !isdefined( level._number_strings[ type ] ) )
@@ -1093,7 +1092,7 @@ repackage_args( args )
 	return args_string;
 }
 
-cmd_add( cmd_name, cmdfunc, cmd_usage )
+cmd_add( cmd_name, cmdfunc, cmd_usage, description = "No description defined" )
 {
 	cmd_usage = _DEFAULT( cmd_usage, cmd_name );
 	if ( !isdefined( level.tcs_cmds ) )
@@ -1118,6 +1117,7 @@ cmd_add( cmd_name, cmdfunc, cmd_usage )
 	level.tcs_cmds[ cmd_name ] = spawnstruct();
 	level.tcs_cmds[ cmd_name ].cmd_name = cmd_name;
 	level.tcs_cmds[ cmd_name ].usage = cmd_usage;
+	level.tcs_cmds[ cmd_name ].desc = description;
 	level.tcs_cmds[ cmd_name ].func = cmdfunc;
 	level.tcs_cmds[ cmd_name ].is_cmd_object = true;
 	level.tcs_cmds[ cmd_name ].requires_player_executor = false;
@@ -1230,6 +1230,22 @@ arg_type_register( argtype, rand_gen_func, cast_func )
 	level.tcs_arg_type_handlers[ argtype ].cast_func = cast_func;
 }
 
+has_permission_for_executor_syntax()
+{
+	return self ishost();
+}
+
+executor_obj_add_cmd( doc )
+{
+	if ( !is_true( self.is_cmd_object ) )
+	{
+		assert( false );
+		return;
+	}
+
+	self.requires_player_executor = true;
+}
+
 make_cmd_immune_to_unittest()
 {
 	if ( !is_true( self.is_cmd_object ) || is_true( self.immune_to_unittest ) )
@@ -1332,22 +1348,6 @@ pop_front( arr_obj )
 pop_back( arr_obj )
 {
 	pop( arr_obj, ( arr_obj.array.size - 1 ) );
-}
-
-has_permission_for_executor_syntax()
-{
-	return self ishost();
-}
-
-executor_obj_add_cmd( doc )
-{
-	if ( !is_true( self.is_cmd_object ) )
-	{
-		assert( false );
-		return;
-	}
-
-	self.requires_player_executor = true;
 }
 
 /*noreturn*/ throw_exception( error_msg, generic_obj = undefined, print = true )

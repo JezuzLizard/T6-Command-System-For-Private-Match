@@ -56,7 +56,7 @@ list_entities_throttled( param )
 	self notify( "listing_entities" );
 	self endon( "listing_entities" );
 
-	entities = param.t[ 0 ];
+	entities = param.t[ 0 ][ 0 ];
 
 	if ( !isdefined( entities ) )
 	{

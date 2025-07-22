@@ -136,14 +136,14 @@ autoexec add_cmds()
 	setviewpos_cmd = cmd_add( "setviewpos", ::cmd_setviewpos_f, "setviewpos <origin> [angles]" );
 	setviewpos_cmd arg_obj_add_cmd( "vector vector", 1, 2 );
 
-	spawn_cmd = cmd_add( "spawn", ::cmd_spawn_f, "spawn <classname> <origin> [spawnflags] [contextual1] [contextual2] [contextual3]" );
-	spawn_cmd arg_obj_add_cmd( "spawnable_classname vector string string string string", 2, 6 );
+	//spawn_cmd = cmd_add( "spawn", ::cmd_spawn_f, "spawn <classname> <origin> [spawnflags] [contextual1] [contextual2] [contextual3]" );
+	//spawn_cmd arg_obj_add_cmd( "spawnable_classname vector string string string string", 2, 6 );
 
-	dumpent_cmd = cmd_add( "saveent", ::cmd_dumpent_f, "saveent <type> [classname]" );
-	dumpent_cmd arg_obj_add_cmd( "string string", 1, 2 );
+	//dumpent_cmd = cmd_add( "saveent", ::cmd_dumpent_f, "saveent <type> [classname]" );
+	//dumpent_cmd arg_obj_add_cmd( "string string", 1, 2 );
 }
 
-cmd_createcamera_f( param )
+private cmd_createcamera_f( param )
 {
 	camera_name = param.a[ 0 ];
 	player = self;
@@ -161,7 +161,7 @@ cmd_createcamera_f( param )
 	return result_cmdinfo( "Created a camera named: '" + camera_name + "' at: '" + self.origin + "' with angles: '" + self.angles + "'" );
 }
 
-cmd_setcamera_f( param )
+private cmd_setcamera_f( param )
 {
 	camera_name = param.a[ 0 ];
 	camera_flags = _DEFAULT( param.a[ 1 ], 1 );
@@ -182,7 +182,7 @@ cmd_setcamera_f( param )
 	}
 }
 
-cmd_unsetcamera_f( param )
+private cmd_unsetcamera_f( param )
 {
 	player = self;
 	player cameraactivate( 0 );
@@ -191,7 +191,7 @@ cmd_unsetcamera_f( param )
 	return result_cmdinfo( "Set camera lookat to a camera named: '" + camera_name + "' at: '" + self.origin + "' with angles: '" + self.angles + "'" );
 }
 
-cmd_deletecamera_f( param )
+private cmd_deletecamera_f( param )
 {
 	camera_name = param.a[ 0 ];
 	camera_flags = param.a[ 1 ];
@@ -210,7 +210,7 @@ cmd_deletecamera_f( param )
 	}
 }
 
-cmd_linkcameratoent_f( param )
+private cmd_linkcameratoent_f( param )
 {
 	camera_name = param.a[ 0 ];
 	entity = param.t[ 0 ][ 0 ];
@@ -229,7 +229,7 @@ cmd_linkcameratoent_f( param )
 	}
 }
 
-cmd_unlinkcamera_f( param )
+private cmd_unlinkcamera_f( param )
 {
 	camera_name = param.a[ 0 ];
 	camera_ent = self._cmds_cameras[ camera_name ];
@@ -245,7 +245,7 @@ cmd_unlinkcamera_f( param )
 	
 }
 
-cmd_spectateactor_f( param )
+private cmd_spectateactor_f( param )
 {
 	actor = param.t[ 0 ][ 0 ];
 	tag_name = param.a[ 0 ];
@@ -255,7 +255,7 @@ cmd_spectateactor_f( param )
 	args3 = [];
 	args3[ 0 ] = "auto1";
 	self cmd_createcamera_f( args2 );
-	self link_camera_to_ent( "auto1", actor, tag_name );
+	self scripts\cmd\modules\entity_helpers::link_camera_to_ent( "auto1", actor, tag_name );
 	self cmd_setcamera_f( args3 );
 
 	return result_cmdinfo( "You are now linked to actor: " + actor getentitynumber() );
@@ -269,12 +269,12 @@ cmd_spectateactor_f( param )
 	level.physicstracemaskclip = 8;
 	level.physicstracecontentsvehicleclip = 16;
 */
-cmd_seteditortargetent_f( param )
+private cmd_seteditortargetent_f( param )
 {
 	entity = param.t[ 0 ][ 0 ];
 	if ( !isdefined( entity ) )
 	{
-		trace = self cast_entity_raycast_from_player_eye();
+		trace = self scripts\cmd\modules\entity_helpers::cast_entity_raycast_from_player_eye();
 		entity = trace[ "entity" ];
 		if ( !isdefined( entity ) )
 		{
@@ -286,7 +286,7 @@ cmd_seteditortargetent_f( param )
 	return result_cmdinfo( "Selected target entity: " + entity.classname + " origin: " + entity.origin + " angles: " + entity.angles );
 }
 
-cmd_seteditortargetangles_f( param )
+private cmd_seteditortargetangles_f( param )
 {
 	editor_ent = self hud_binding_get_subscribed_entity( "editor_selected_ent_context" );
 	if ( !isdefined( editor_ent ) )
@@ -300,19 +300,19 @@ cmd_seteditortargetangles_f( param )
 
 	if ( is_true( is_relative ) )
 	{
-		self editor_move_selected_ent_relative( editor_ent, new_angles, ( 0, 0, 0 ), scale );
+		self scripts\cmd\modules\entity_helpers::editor_move_selected_ent_relative( editor_ent, new_angles, ( 0, 0, 0 ), scale );
 		editor_ent.angles += new_angles;
 	}
 	else
 	{
-		self editor_move_selected_ent_absolute( editor_ent, new_angles, ( 0, 0, 0 ) );
+		self scripts\cmd\modules\entity_helpers::editor_move_selected_ent_absolute( editor_ent, new_angles, ( 0, 0, 0 ) );
 		editor_ent.angles = new_angles;
 	}
 
 	return result_cmdinfo( "Set angles of target entity: '" + editor_ent.classname + "' to: '" + editor_ent.angles + "'" );
 }
 
-cmd_seteditortargetorigin_f( param )
+private cmd_seteditortargetorigin_f( param )
 {
 	editor_ent = self hud_binding_get_subscribed_entity( "editor_selected_ent_context" );
 	if ( !isdefined( editor_ent ) )
@@ -335,12 +335,12 @@ cmd_seteditortargetorigin_f( param )
 	return result_cmdinfo( "Set origin of target entity: '" + editor_ent.classname + "' to: '" + new_origin + "'" );
 }
 
-cmd_setviewpos_f( param )
+private cmd_setviewpos_f( param )
 {
 	self com_printerror( "UNIMPLEMENTED" );
 }
 
-cmd_editheldmodel_f( param )
+private cmd_editheldmodel_f( param )
 {
 	editor_held_ent = self hud_binding_get_subscribed_entity( "editor_held_context" );
 	model = _DEFAULT( param.a[ 0 ], "null" );
@@ -370,7 +370,7 @@ cmd_editheldmodel_f( param )
 	return result_cmdinfo( "Successfully set your carried model to " + model );
 }
 
-cmd_editorspawnheldmodel_f( param )
+private cmd_editorspawnheldmodel_f( param )
 {
 	ent_name = param.a[ 0 ];
 	model = param.a[ 1 ];
@@ -384,19 +384,19 @@ cmd_editorspawnheldmodel_f( param )
 	}
 
 	self.editor_spawn_ent_name = ent_name;
-	held_ent = give_player_turret( model, "auto_turret", "equip_turbine_zm_turret", "", true, carry_offset, carry_angles );
-	self thread take_player_turret_thread( held_ent );
-	self thread editor_held_model_thread( held_ent, "spawn" );
+	held_ent = scripts\cmd\modules\entity_helpers::give_player_turret( model, "auto_turret", "equip_turbine_zm_turret", "", true, carry_offset, carry_angles );
+	self thread scripts\cmd\modules\entity_helpers::take_player_turret_thread( held_ent );
+	self thread scripts\cmd\modules\entity_helpers::editor_held_model_thread( held_ent, "spawn" );
 
 	return result_cmdinfo( "Successfully set your carried model to " + model );
 }
 
-cmd_editorspawn_f( param )
+private cmd_editorspawn_f( param )
 {
 
 }
 
-cmd_editorpickup_f( param )
+private cmd_editorpickup_f( param )
 {
 	target_entity = param.t[ 0 ][ 0 ];
 	carry_offset = _DEFAULT( param.a[ 0 ], ( 22, 0, 0 ) );
@@ -410,7 +410,7 @@ cmd_editorpickup_f( param )
 
 	if ( !isdefined( target_entity ) )
 	{
-		trace = self cast_entity_raycast_from_player_eye();
+		trace = self scripts\cmd\modules\entity_helpers::cast_entity_raycast_from_player_eye();
 		if ( !isdefined( trace[ "entity" ] ) )
 		{
 			return result_cmderror( "Not looking at an entity!" );
@@ -423,13 +423,13 @@ cmd_editorpickup_f( param )
 	self.editor_move_ent = target_entity;
 	self hud_binding_subscribe_to_entity( "editor_held_context", target_entity );
 
-	held_ent = give_player_turret( target_entity.model, "auto_turret", "equip_turbine_zm_turret", "", true, carry_offset, carry_angles );
-	self thread take_player_turret_thread( held_ent );
-	self thread editor_held_model_thread( held_ent, "move" );
+	held_ent = scripts\cmd\modules\entity_helpers::give_player_turret( target_entity.model, "auto_turret", "equip_turbine_zm_turret", "", true, carry_offset, carry_angles );
+	self thread scripts\cmd\modules\entity_helpers::take_player_turret_thread( held_ent );
+	self thread scripts\cmd\modules\entity_helpers::editor_held_model_thread( held_ent, "move" );
 	return result_cmdinfo( "Picked up target entity: " + target_entity.classname );
 }
 
-cmd_editorcontextmodifyentity_f( param )
+private cmd_editorcontextmodifyentity_f( param )
 {
 	context_scale = float( self hud_binding_get( "editor_scale_context" ).binding_val );
 	total_time = _DEFAULT( param.a[ 0 ], 0.1 );
@@ -475,7 +475,7 @@ cmd_editorcontextmodifyentity_f( param )
 	}
 }
 
-cmd_editorsetcontext_f( param )
+private cmd_editorsetcontext_f( param )
 {
 	context_mode = param.a[ 0 ];
 	current_scale = float( self hud_binding_get( "editor_scale_context" ).binding_val );
@@ -513,12 +513,12 @@ cmd_editorsetcontext_f( param )
 	self hud_binding_set( "editor_mode_context", context_mode );
 }
 
-cmd_editorsave_f( param )
+private cmd_editorsave_f( param )
 {
 
 }
 
-cmd_spawn_f( param )
+private cmd_spawn_f( param )
 {
 	classname = param.a[ 0 ];
 	origin = param.a[ 1 ];
@@ -528,25 +528,25 @@ cmd_spawn_f( param )
 	switch ( classname )
 	{
 		case "trigger_radius":
-			ent = spawn_trigger_radius( origin, spawnflags, param.a[ 3 ], param.a[ 4 ] );
+			ent = self scripts\cmd\modules\entity_helpers::spawn_trigger_radius( origin, spawnflags, param.a[ 3 ], param.a[ 4 ] );
 			break;
 		case "trigger_box":
-			ent = spawn_trigger_box( origin, spawnflags, param.a[ 3 ], param.a[ 4 ], param.a[ 5 ] );
+			ent = self scripts\cmd\modules\entity_helpers::spawn_trigger_box( origin, spawnflags, param.a[ 3 ], param.a[ 4 ], param.a[ 5 ] );
 			break;
 		case "trigger_box_use":
-			ent = spawn_trigger_box_use( origin, spawnflags, param.a[ 3 ], param.a[ 4 ], param.a[ 5 ] );
+			ent = self scripts\cmd\modules\entity_helpers::spawn_trigger_box_use( origin, spawnflags, param.a[ 3 ], param.a[ 4 ], param.a[ 5 ] );
 			break;
 		case "trigger_radius_use":
-			ent = spawn_trigger_radius_use( origin, spawnflags, param.a[ 3 ], param.a[ 4 ] );
+			ent = self scripts\cmd\modules\entity_helpers::spawn_trigger_radius_use( origin, spawnflags, param.a[ 3 ], param.a[ 4 ] );
 			break;
 		case "trigger_damage":
-			ent = spawn_trigger_damage( origin, spawnflags, param.a[ 3 ], param.a[ 4 ] );
+			ent = self scripts\cmd\modules\entity_helpers::spawn_trigger_damage( origin, spawnflags, param.a[ 3 ], param.a[ 4 ] );
 			break;
 		case "script_model":
-			ent = spawn_script_model( origin, spawnflags );
+			ent = self scripts\cmd\modules\entity_helpers::spawn_script_model( origin, spawnflags );
 			break;
 		case "script_origin":
-			ent = self spawn_script_origin( origin, spawnflags );
+			ent = self scripts\cmd\modules\entity_helpers::spawn_script_origin( origin, spawnflags );
 			break;
 		case "info_notnull":
 		case "info_notnull_big":
@@ -556,7 +556,7 @@ cmd_spawn_f( param )
 	}
 }
 
-cmd_dumpent_f( param )
+private cmd_dumpent_f( param )
 {
 	type = param.a[ 0 ];
 	classname = param.a[ 1 ];
@@ -594,19 +594,20 @@ cmd_dumpent_f( param )
 		switch ( type )
 		{
 			case "dogs":
-				level dump_mapents_dog_actor_spawner( player.angles, player.origin );
+				level scripts\cmd\modules\entity_helpers::dump_mapents_dog_actor_spawner( player.angles, player.origin );
 				break;
 
 			case "minimap":
-				level dump_mapents_minimap_corner( player.angles, player.origin );
+				level scripts\cmd\modules\entity_helpers::dump_mapents_minimap_corner( player.angles, player.origin );
 				break;
 
 			case "player_spawn":
-				level dump_gsc_spawnpoint( classname, player.angles, player.origin );
-				level dump_mapents_spawnpoint( classname, player.angles, player.origin );
+				level scripts\cmd\modules\entity_helpers::dump_gsc_spawnpoint( classname, player.angles, player.origin );
+				level scripts\cmd\modules\entity_helpers::dump_mapents_spawnpoint( classname, player.angles, player.origin );
 				break;
 		}
-		create_entity_location_screenshot( type, player.name, player.angles, player.origin, classname );
+
+		scripts\cmd\modules\entity_helpers::create_entity_location_screenshot( type, player.name, player.angles, player.origin, classname );
 		return result;
 	}
 	else

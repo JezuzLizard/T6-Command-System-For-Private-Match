@@ -71,6 +71,28 @@ private reset_in_command()
 	self.in_command_frame = false;
 }
 
+private debug_print_execute( index, cmd_obj )
+{
+	self com_printdebuginfo( "Printing info for cmd index '" + index + "'" );
+	self com_printdebuginfo( "cmd_name: '" + cmd_obj.cmd_data_source.cmd_name + "'" );
+	self com_printdebuginfo( "cmd_string: '" + cmd_obj.cmd_string + "'" );
+	for ( i = 0; i < cmd_obj.args.size; i++ )
+	{
+		self com_printdebuginfo( "args[ '" + i + "' ]: " + cmd_obj.args[ i ] );
+	}
+
+	foreach ( key, value in cmd_obj.kvps )
+	{
+		self com_printdebuginfo( "kvps[ '" + key + "']:" );
+		self com_printdebuginfo( "base_key: " + value.base_key );
+		self com_printdebuginfo( "type: " + value.type );
+		for ( i = 0; i < value.v.size; i++ )
+		{
+			self com_printdebuginfo( "v[ '" + i + "']: " + value.v[ i ] );
+		}
+	}
+}
+
 private cmd_execute( message, initiator, is_hidden, is_team_chat, from_rcon )
 {
 	if ( !isdefined( initiator.cmd_execute_id ) )
@@ -120,10 +142,12 @@ private cmd_execute( message, initiator, is_hidden, is_team_chat, from_rcon )
 		initiator check_multi_commands( cmd_parse_obj );
 	}
 
+	i = 0;
 	foreach ( key, cmd_obj in cmd_parse_obj.cmds )
 	{
-		executor_directive = cmd_obj.kvps[ "executor" ].directive_value;
-		executors = get_executors( executor_directive.token_type, executor_directive.token_values );
+		executor_directive = cmd_obj.kvps[ "executor" ];
+		executors = initiator get_executors( executor_directive );
+		debug_print_execute( i, cmd_obj );
 
 		for ( executor_index = 0; executor_index < executors.size; executor_index++ )
 		{
@@ -147,6 +171,8 @@ private cmd_execute( message, initiator, is_hidden, is_team_chat, from_rcon )
 			initiator.tcs_feedback_mode = getdvarintdefault( "tcs_feedback_mode", 1 ); // 0 == executor receives cmd feedback, 1 == initiator receives cmd feedback, 2 == initiator and executor receives cmd feedback
 			executor cmd_execute_internal( initiator, cmd_obj );
 		}
+
+		i++;
 	}
 
 	if ( !has_all_perms )
@@ -183,15 +209,26 @@ private arg_cast( arg_type, arg, arg_index )
 	return set_cast_success( cast_result, arg, "no argtype defined" );
 }
 
-private target_cast( etype, directive_value )
+private target_cast( ordinal, target_type, executor_directive )
 {
 	obj = generic_obj_t_new( "target_cast" );
 
-	obj.value = self get_entity_targets( etype, directive_value.token_type, directive_value.token_values );
-	if ( !isdefined( obj.value ) || obj.value.size == 0 )
+	obj.value = self get_entity_targets( target_type.etype, executor_directive );
+	if ( ( executor_directive.type != "undefined" && executor_directive.type != "default" ) && ( !isdefined( obj.value ) || obj.value.size == 0 ) )
 	{
 		obj.errored = true;
 		obj.msg = "Failed to find any compatible entities";
+	}
+
+	if ( isstring( obj.value[ 0 ] ) && obj.value[ 0 ] == "#default" && target_type.is_required )
+	{
+		self throw_exception( "Cannot specify explicit default targets for 'target" + ordinal + "'" );
+	}
+
+	// clear the array for _DEFAULT to work automatically
+	if ( isstring( obj.value[ 0 ] ) && obj.value[ 0 ] == "#default" )
+	{
+		obj.value = [];
 	}
 
 	return obj;
@@ -216,10 +253,15 @@ private get_random_limited_array( array, limit )
 	return new_array;
 }
 
-private get_executors( executor_type, directive_args )
+private get_executors( executor_directive )
 {
 	executors = [];
-	switch ( executor_type )
+
+	if ( !isdefined( executor_directive ) )
+	{
+		return self.default_executors;
+	}
+	switch ( executor_directive.type )
 	{
 		case "all":
 			executors = level.players;
@@ -228,30 +270,32 @@ private get_executors( executor_type, directive_args )
 			return [];
 		case "random":
 			limit = 1;
-			if ( isdefined( directive_args[ 0 ] ) )
+			if ( isdefined( executor_directive.v[ 0 ] ) )
 			{
-				limit = int( directive_args[ 0 ] );
+				limit = int( executor_directive.v[ 0 ] );
 			}
 			
 			return get_random_limited_array( level.players, limit );
 		case "array":
+			values = strtok( executor_directive.v[ 0 ], "," );
 			players = [];
-			foreach ( presumed_player in directive_args )
+			foreach ( presumed_player in values )
 			{
 				players[ players.size ] = cast_str_to_entity( presumed_player, "player" );
 			}
 
 			return players;
 		case "array_random":
+			values = strtok( executor_directive.v[ 0 ], "," );
 			players = [];
-			foreach ( presumed_player in directive_args )
+			foreach ( presumed_player in values )
 			{
 				players[ players.size ] = cast_str_to_entity( presumed_player, "player" );
 			}
 
-			return add_to_array( undefined, random( players ) );
+			return add_to_array( executors, random_val( players ) );
 		case "self":
-			return add_to_array( undefined, self );
+			return add_to_array( executors, self );
 		case "default":
 			return self.default_executors;
 	}
@@ -259,7 +303,7 @@ private get_executors( executor_type, directive_args )
 	return [];
 }
 
-private get_entity_targets( etype, directive_type, directive_args )
+private get_entity_targets( etype, executor_directive )
 {
 	getter_func = undefined;
 	if ( isdefined( level._entity_type_funcs[ etype ] ) )
@@ -277,7 +321,7 @@ private get_entity_targets( etype, directive_type, directive_args )
 	}
 
 	ents = undefined;
-	switch ( directive_type )
+	switch ( executor_directive.type )
 	{
 		case "all":
 			ents = [[ getter_func ]]();
@@ -287,21 +331,22 @@ private get_entity_targets( etype, directive_type, directive_args )
 		case "random":
 			ents = [[ getter_func ]]();
 			limit = 1;
-			if ( isdefined( directive_args[ 0 ] ) )
+			if ( isdefined( executor_directive.v[ 0 ] ) )
 			{
-				limit = int( directive_args[ 0 ] );
+				limit = int( executor_directive.v[ 0 ] );
 			}
 			
 			return get_random_limited_array( ents, limit );
 		case "array":
 		case "array_random":
+			values = strtok( executor_directive.v[ 0 ], "," );
 			ents = [];
-			foreach ( presumed_ent in directive_args )
+			foreach ( presumed_ent in values )
 			{
 				ents[ ents.size ] = cast_str_to_entity( presumed_ent, etype );
 			}
 
-			if ( directive_type == "array" )
+			if ( executor_directive.type == "array" )
 			{
 				return ents;
 			}
@@ -313,14 +358,25 @@ private get_entity_targets( etype, directive_type, directive_args )
 		case "self":
 			return add_to_array( undefined, self );
 		case "default":
-			if ( self.default_targets.size == 0 )
+			return [];
+		case "function_call":
+			if ( executor_directive.v[ 0 ] == "" )
 			{
-				return self.default_executors;
+				// TODO: search paths
+				return [];
 			}
-			
-			return self.default_targets;
-		case "function":
-			// TODO: basically we need to use getfunction, which requires both a function name and a filename, and then pass the arguments to it appropriately casted
+
+			func = getfunction( executor_directive.v[ 0 ], executor_directive.v[ 1 ] );
+			if ( isdefined( func ) )
+			{
+				// structure of arguments:
+				// 0 = caller
+				// > 0 = regular arguments
+				// caller must always be defined, but it can be level or '#' for default which would use the normal argument casting logic
+				args = strtok( executor_directive.v[ 2 ], "," );
+				// requires casting without millions of script errors
+			}
+			// TODO: check entities to match the expected etype
 			return [];
 	}
 
@@ -373,15 +429,29 @@ private cmd_execute_internal( initiator, cmd_obj )
 		}
 	}
 
-	targets = cmd_obj.directive_kvps[ "target" ]; // always contains at least the default target
-	cmd_obj.casted_targets = [];
-	if ( array_validate( cmd_data_source.target_types ) )
+	if ( array_validate( cmd_obj.kvps ) && array_validate( cmd_data_source.target_types ) )
 	{
+		// find target kvps
+		targets = [];
+		foreach ( key, value in cmd_obj.kvps )
+		{
+			if ( value.base_key[ 0 ] == "t" || value.base_key == "target" )
+			{
+				index_str = getsubstr( key, key.size - 1 );
+				index = int( index_str );
+				if ( index <= 0 )
+				{
+					initiator throw_exception( "Target ordinal must be an integer greater than 0" );
+				}
+				targets[ index - 1 ] = value;
+			}
+		}
+
 		for ( i = 0; i < targets.size; i++ )
 		{
-			target = targets[ i ];
+			param.t[ i ] = []; // this is so derefs on the array do not script error if the target was optional
 			target_type = cmd_data_source.target_types[ i ];
-			cast_result = initiator target_cast( target_type.etype, target.directive_value );
+			cast_result = initiator target_cast( ( i + 1 ), target_type, targets[ i ] );
 			if ( cast_result.errored )
 			{
 				if ( !target_type.is_required )
@@ -397,6 +467,7 @@ private cmd_execute_internal( initiator, cmd_obj )
 				{
 					initiator throw_exception( "Command '" + cmd_obj.cmd_name + "' expects a maximum of '" + target_type.max_targets + "' got '" + cast_result.value.size + "' instead" , cmd_obj );
 				}
+
 				param.t[ i ] = cast_result.value;
 			}
 		}
@@ -514,7 +585,7 @@ private parse_cmd_dvar()
 		waittillframeend; // prevents notifies from being dropped if they happen in the same frame
 		if ( isdedicated() )
 		{
-			// there is no local client, so the server will always need to specify an executor/target, unless they specify the default_targets and default_executors
+			// there is no local client, so the server will always need to specify an executor, unless they specify the default_executors
 			level notify( "say", dvar_value, level.server, true, false );
 		}
 		else
@@ -522,11 +593,4 @@ private parse_cmd_dvar()
 			level notify( "say", dvar_value, level.host, true, false );
 		}
 	}
-}
-
-/*generic_obj_t*/ private set_execute_success( generic_obj, success_msg )
-{
-	generic_obj.msg = success_msg;
-
-	return generic_obj;
 }

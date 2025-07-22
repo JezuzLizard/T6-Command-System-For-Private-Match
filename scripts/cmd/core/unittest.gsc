@@ -210,11 +210,6 @@ private create_random_valid_targets( cmd )
 			continue;
 		}
 
-		if ( targets != "" && i > 0 && ( i + 1 ) < types.size )
-		{
-			targets += ",";
-		}
-
 		if ( !isdefined( level._entity_type_funcs[ types[ i ].etype ] ) )
 		{
 			assert( false );
@@ -229,6 +224,12 @@ private create_random_valid_targets( cmd )
 
 		targets += "target" + ordinal;
 		targets += self [[ level._target_obj_generate ]]( types[ i ].etype );
+		targets += ",";
+	}
+
+	if ( targets != "" && targets[ targets.size - 1 ] == "," )
+	{
+		targets = getsubstr( targets, 0, ( targets.size - 1 ) );
 	}
 
 	if ( targets != "" )

@@ -31,7 +31,7 @@ autoexec add_cmds()
 private cmd_setscriptgoal_f( param )
 {
 	result = [];
-	bot = param.t[ 0 ];
+	bot = param.t[ 0 ][ 0 ];
 	goal = param.a[ 0 ];
 	player = self;
 	dist = _DEFAULT( param.a[ 1 ], 16 );
@@ -79,14 +79,14 @@ private cmd_setscriptgoal_f( param )
 
 private cmd_clearscriptgoal_f( param )
 {
-	bot = param.t[ 0 ];
+	bot = param.t[ 0 ][ 0 ];
 	bot ClearScriptGoal();
 	return result_cmdinfo( "Cleared " + bot.name + " goal" );
 }
 
 private cmd_hasscriptgoal_f( param )
 {
-	bot = param.t[ 0 ];
+	bot = param.t[ 0 ][ 0 ];
 	bot ClearScriptGoal();
 	return result_cmdinfo( "Bot " + bot.name + " has goal: " + cast_bool_to_str( bot HasScriptGoal(), "yes no" ) );
 }

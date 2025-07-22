@@ -19,7 +19,7 @@ autoexec add_cmds()
 
 cmd_sicdogsonplayer_f( param )
 {
-	target = param.t[ 0 ];
+	target = param.t[ 0 ][ 0 ];
 	count = param.a[ 0 ];
 	invisible = param.a[ 1 ];
 

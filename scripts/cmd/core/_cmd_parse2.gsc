@@ -3,7 +3,7 @@
 
 #include scripts\cmd\core\_utility;
 
-throw_parse_exception( msg )
+private throw_parse_exception( msg )
 {
 	throw_exception( msg, level._parse_obj );
 }
@@ -17,6 +17,10 @@ private parse_array()
 		throw_parse_exception( "Last character of array wasn't terminated with ']'" );
 	}
 
+	// trim the opening '[' and closing ']'
+	level._parse_obj.current_value_string = getsubstr( level._parse_obj.current_value_string, 1, level._parse_obj.current_value_string.size - 1 );
+	level._parse_obj.kvps[ level._parse_obj.current_key_string ].v[ level._parse_obj.current_value_index ] = level._parse_obj.current_value_string;
+
 	set_type( "array" );
 }
 
@@ -27,8 +31,9 @@ private parse_target_random()
 		return;
 	}
 
-	if ( level._parse_obj.current_value_string[ 2 ] == "[" )
+	if ( level._parse_obj.current_value_string[ 1 ] == "[" )
 	{
+		level._parse_obj.current_value_string = getsubstr( level._parse_obj.current_value_string, 2 );
 		parse_array();
 		return;
 	}
@@ -38,12 +43,14 @@ private parse_target_random()
 		throw_parse_exception( "Random target pool limit must be a number" );
 	}
 
-	number_string = getsubstr( level._parse_obj.current_value_string, 1 );
+	level._parse_obj.current_value_string = getsubstr( level._parse_obj.current_value_string, 1 );
 
-	if ( int( number_string ) <= 0 )
+	if ( int( level._parse_obj.current_value_string ) <= 0 )
 	{
 		throw_parse_exception( "Random target pool limit must be a number and greater than '0'" );
 	}
+
+	level._parse_obj.kvps[ level._parse_obj.current_key_string ].v[ level._parse_obj.current_value_index ] = level._parse_obj.current_value_string;
 
 	set_type( "random" );
 }
@@ -51,21 +58,30 @@ private parse_target_random()
 private try_parse_function()
 {
 	end_pos = -1;
-	for ( i = 0; i < level._parse_obj.current_value_string.size; i++ )
+	path_end_pos = -1;
+	name_end_pos = -1;
+	str = level._parse_obj.current_value_string;
+	for ( i = 0; i < str.size; i++ )
 	{
-		if ( level._parse_obj.current_value_string[ i ] == "(" ) // function start
+		if ( str[ i ] == "(" ) // function start
 		{
-			end_pos = i - 1;
+			name_end_pos = i - 1;
 			break;
+		}
+
+		if ( str[ i ] == ":" && str[ i + 1 ] == ":" )
+		{
+			path_end_pos = i - 1;
 		}
 	}
 
-	if ( end_pos == -1 )
+	// the path doesn't need to be specified as we can add a command to set search paths for getfunction
+	if ( name_end_pos == -1 )
 	{
 		return false;
 	}
 
-	if ( !is_alpha_numeric( level._parse_obj.current_value_string, true, 0, end_pos ) )
+	if ( !is_alpha_numeric( level._parse_obj.current_value_string, true, path_end_pos + 2, name_end_pos ) )
 	{
 		throw_parse_exception( "Function names can only contain alnum, '_', and '('" );
 	}
@@ -75,6 +91,24 @@ private try_parse_function()
 		throw_parse_exception( "Function wasn't terminated with ')'" );
 	}
 
+	// path
+	if ( path_end_pos == -1 )
+	{
+		level._parse_obj.kvps[ level._parse_obj.current_key_string ].v[ level._parse_obj.current_value_index ] = "";
+		level._parse_obj.current_value_index++;
+		path_end_pos = -3;
+	}
+	else
+	{
+		level._parse_obj.kvps[ level._parse_obj.current_key_string ].v[ level._parse_obj.current_value_index ] = getsubstr( level._parse_obj.current_value_string, 0, path_end_pos );
+		level._parse_obj.current_value_index++;
+	}
+
+	// name
+	level._parse_obj.kvps[ level._parse_obj.current_key_string ].v[ level._parse_obj.current_value_index ] = getsubstr( level._parse_obj.current_value_string, path_end_pos + 3, name_end_pos );
+	level._parse_obj.current_value_index++;
+	// args
+	level._parse_obj.kvps[ level._parse_obj.current_key_string ].v[ level._parse_obj.current_value_index ] = getsubstr( level._parse_obj.current_value_string, name_end_pos + 2, level._parse_obj.current_value_string.size - 1 );
 	set_type( "function_call" );
 
 	return true;
@@ -119,7 +153,7 @@ private parse_target_value()
 	}
 
 	// function and name(identifier)
-	if ( is_alpha_numeric( level._parse_obj.current_value_string[ 0 ] ) )
+	if ( is_alpha_numeric( level._parse_obj.current_value_string[ 0 ], true ) )
 	{
 		// ambiguous, could be function start or a name
 		is_function = try_parse_function();
@@ -131,50 +165,61 @@ private parse_target_value()
 		// not a function, no '(' token
 		// names can contain a lot of weird characters, but you are better off using the guid/clientnum syntax anyway
 		try_parse_name();
+		return;
 	}
 
 	throw_parse_exception( "Unsupported target directive value: '" + level._parse_obj.current_value_string + "'" );
 }
 
-private parse_directive( base_key, value_string )
+private parse_directive()
 {
-	if ( level._parse_obj.current_key_string[ 0 ] == "t" || level._parse_obj.current_key_string == "target" )
+	check_str = level._parse_obj.current_key_string;
+	if ( level._parse_obj.current_base_key_string != level._parse_obj.current_key_string )
 	{
-		parse_target_value();
-	}
-	else if ( level._parse_obj.current_key_string[ 0 ] == "e" || level._parse_obj.current_key_string == "executor" ) // allows you to specify the 'executor' or who executes the command
-	{
-		parse_target_value();
+		check_str = level._parse_obj.current_base_key_string;
 	}
 	
-	switch ( level._parse_obj.current_key_string )
+	com_printdebugwarning( "parse_directive: '" + check_str + "'" );
+
+	if ( check_str[ 0 ] == "t" || check_str == "target" )
+	{
+		parse_target_value();
+		return;
+	}
+	else if ( check_str[ 0 ] == "e" || check_str == "executor" ) // allows you to specify the 'executor' or who executes the command
+	{
+		parse_target_value();
+		return;
+	}
+	
+	switch ( check_str )
 	{
 		case "c":
 		case "call":
 			//parse_call_value( value );
-			break;
+			return;
 		case "script":
 			//parse_script_value( value );
-			break;
+			return;
 		case "func":
-			break;
+			return;
 		case "hook":
 			//parse_args_value( value );
-			break;
+			return;
 		case "types":
-			break;
+			return;
 		case "name": // a component of a function; functions contain: a name, a script, and types
-			break;
+			return;
 		case "unhook": // remove a hook from a function
-			break;
+			return;
 		case "print_args": // the redirected function will also print its arguments based on the specified types
-			break;
+			return;
 		case "nullsub": // redirect function to a do nothing or nullsub function; boolean
-			break;
+			return;
 		case "persist": // persist the hook by committing it to the filesystem; boolean
-			break;
+			return;
 		case "cmd_arg": // this allows manually specifying more data about the arguments if needed; syntax is arg1 or arg followed by the argument ordinal
-			break;
+			return;
 	}
 
 	throw_parse_exception( "Unsupported directive key '" + level._parse_obj.current_key_string + "'" );
@@ -269,9 +314,13 @@ private split_kvps()
 
 		if ( commas_delimit && str[ pos ] == "," )
 		{
-			// we don't need to send the separating comma
-			combined_kvps[ combined_kvps.size ] = getsubstr( str, start_pos, pos - 1 );
+			combined_kvps[ combined_kvps.size ] = getsubstr( str, start_pos, pos );
 			start_pos = pos + 1; // start after the separating comma
+		}
+
+		if ( ( pos + 1 ) >= str.size )
+		{
+			combined_kvps[ combined_kvps.size ] = getsubstr( str, start_pos );
 		}
 	}
 
@@ -317,9 +366,9 @@ private copy_parse_obj_t( parse_obj )
 	copy.args = parse_obj.args;
 	copy.kvps = parse_obj.kvps;
 	copy.cmd_data_source = parse_obj.cmd_data_source;
-	copy.str = parse_obj.str;
-	copy.start_pos = parse_obj.start_pos;
-	copy.end_pos = parse_obj.end_pos;
+	copy.cmd_string = parse_obj.cmd_string;
+
+	// volatile things are not needed
 
 	return copy;
 }
@@ -344,7 +393,8 @@ private add_value( value_string )
 	assert( isdefined( level._parse_obj.kvps[ key_string ] ) );
 
 	level._parse_obj.current_value_string = value_string;
-	level._parse_obj.kvps[ key_string ].v[ level._parse_obj.kvps[ key_string ].v.size ] = value_string;
+	level._parse_obj.current_value_index = level._parse_obj.kvps[ key_string ].v.size;
+	level._parse_obj.kvps[ key_string ].v[ level._parse_obj.current_value_index ] = value_string;
 }
 
 private add_key( key_string )
@@ -358,13 +408,38 @@ private add_key( key_string )
 		base_key = getsubstr( key_string, 0, key_string.size - 1 );
 	}
 
-	level._parse_obj.current_key_string = base_key;
+	level._parse_obj.current_key_string = key_string;
+	level._parse_obj.current_base_key_string = base_key;
 	level._parse_obj.kvps[ key_string ] = token_obj_t_new( base_key );
 }
 
 private add_arg( arg_str )
 {
 	level._parse_obj.args[ level._parse_obj.args.size ] = arg_str;
+}
+
+private parse_token_until_delimiter( str, start, delimiter = " " )
+{
+	delimited_obj = spawnstruct();
+	delimited_obj.end = start;
+	for ( i = start; i < str.size; i++ )
+	{
+		if ( ( i + 1 ) >= str.size )
+		{
+			delimited_obj.end = i + 1;
+			delimited_obj.identifier_str = getsubstr( str, start, delimited_obj.end );
+			break;
+		}
+
+		if ( str[ i ] == delimiter )
+		{
+			delimited_obj.end = i;
+			delimited_obj.identifier_str = getsubstr( str, start, delimited_obj.end );
+			break;
+		}
+	}
+
+	return delimited_obj;
 }
 
 // by convention the following are true:
@@ -416,45 +491,20 @@ private custom_split( str )
 				}
 			}
 
-			split_end = ( i + 1 );
+			split_end = i + 1;
 			tokens[ tokens.size ] = getsubstr( str, split_start, split_end );
 			com_printdebugwarning( "Custom split for directive: tok: " + tokens[ tokens.size - 1 ] + " start: " + split_start + " end: " + split_end );
+			split_start = split_end;
+			i = split_end;
 
-			in_identifier = false;
 			spaces_delimit = true;
 		}
-		else if ( is_alpha_numeric( str[ i ], true ) )
+		else
 		{
-			if ( !was_in_identifier )
-			{
-				split_start = i;
-				was_in_identifier = true;
-			}
-			in_identifier = true;
-		}
-
-		if ( str[ i ] == " " )
-		{
-			if ( in_identifier )
-			{
-				tokens[ tokens.size ] = getsubstr( str, split_start, i );
-				split_start = i;
-				was_in_identifier = false;
-			}
-
-			in_identifier = false;
-		}
-
-		if ( ( i + 1 ) == str.size )
-		{
-			if ( in_identifier )
-			{
-				tokens[ tokens.size ] = getsubstr( str, split_start );
-				split_start = i;
-				was_in_identifier = false;
-			}
-
-			in_identifier = false;
+			delimited_str_obj = parse_token_until_delimiter( str, i, " " );
+			tokens[ tokens.size ] = delimited_str_obj.identifier_str;
+			com_printdebugwarning( "Custom split for arg: tok: " + tokens[ tokens.size - 1 ] + " start: " + i + " end: " + delimited_str_obj.end );
+			i = delimited_str_obj.end;
 		}
 	}
 
@@ -480,19 +530,18 @@ private custom_split( str )
 	multiple_cmds_keys = strtok( message, "^" );
 	for ( i = 0; i < multiple_cmds_keys.size; i++ )
 	{
-		cmd_string = custom_split( multiple_cmds_keys[ i ] );
-		cmd_find_result = cast_str_to_cmd( cmd_string[ 0 ] );
-		parse_obj_t_new( cmd_string, cmd_find_result );
+		cmd_strings = custom_split( multiple_cmds_keys[ i ] );
+		cmd_find_result = cast_str_to_cmd( cmd_strings[ 0 ] );
 		if ( cmd_find_result.errored )
 		{
 			throw_parse_exception( cmd_find_result.msg );
 		}
-		
-		cmd_name = cmd_find_result.value.cmd_name;
 
-		for ( j = 1; j < cmd_string.size; j++ )
+		parse_obj_t_new( multiple_cmds_keys[ i ], cmd_find_result.value );
+
+		for ( j = 1; j < cmd_strings.size; j++ )
 		{
-			level._parse_obj.current_token = cmd_string[ j ];
+			level._parse_obj.current_token = cmd_strings[ j ];
 			com_printdebugwarning( level._parse_obj.current_token );
 			if ( level._parse_obj.current_token[ 0 ] == "@" )
 			{
@@ -508,6 +557,7 @@ private custom_split( str )
 
 				// remove the @{...}, so that it is easier to parse
 				level._parse_obj.current_token = getsubstr( level._parse_obj.current_token, 2, ( level._parse_obj.current_token.size - 1 ) );
+				
 
 				kvps = split_kvps();
 				for ( k = 0; k < kvps.size; k += 2 )
@@ -527,13 +577,15 @@ private custom_split( str )
 					}
 
 					add_key( key );
+					com_printdebugwarning( "key: '" + key + "'" );
 					add_value( value );
+					com_printdebugwarning( "value: '" + value + "'" );
 					parse_directive();
 				}
 			}
 			else
 			{
-				add_arg( cmd_string[ j ] );
+				add_arg( level._parse_obj.current_token );
 				level.players[ 0 ] script_breakpoint( level._parse_obj );
 			}
 		}

@@ -23,7 +23,7 @@ autoexec init_helpers()
 	addcallback( "on_player_connect", ::on_editor_connect );
 }
 
-on_editor_connect()
+private on_editor_connect()
 {
 	if ( !isdefined( level._first_player ) )
 	{
