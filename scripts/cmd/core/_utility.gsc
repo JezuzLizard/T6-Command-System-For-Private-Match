@@ -3,44 +3,11 @@
 
 #include scripts\cmd\core\_com;
 
-/*generic_obj*/ check_script_error( obj, expected_type, force_error = false )
+script_breakpoint( generic_obj, msg, display_callstack, should_print )
 {
-	if ( !isdefined( obj ) )
-	{
-		obj = generic_obj_t_new( "void" );
-		obj.msg = "Attempted to set cmd parse error for an undefined object";
-		obj.errored = true;
-	}
-
-	if ( obj.type != expected_type )
-	{
-		obj.msg = "Attempted to set obj type of '" + expected_type + "' for '" + obj.type + "'";
-		obj.errored = true;
-	}
-
-	if ( ( obj.errored || force_error ) && getdvarint( "cmd_debug_debugbreak" ) )
-	{
-		// print state info
-		// block further execution with waited loop?
-		assert( false );
-		com_printerror( obj.msg );
-		for ( ;; )
-		{
-			should_continue = getdvarint( "cmd_debug_continue" );
-
-			if ( should_continue )
-			{
-				setdvar( "cmd_debug_continue", 0 );
-				break;
-			}
-
-			wait 0.05;
-		}
-	}
-}
-
-script_breakpoint( generic_obj, msg = "", display_callstack = true, should_print = true )
-{
+	msg = _DEFAULT( msg, undefined );
+	display_callstack = _DEFAULT( display_callstack, true );
+	should_print = _DEFAULT( should_print, true );
 	if ( !getdvarint( "script_breakpoint" ) )
 	{
 		return false;
@@ -57,7 +24,7 @@ script_breakpoint( generic_obj, msg = "", display_callstack = true, should_print
 
 	if ( should_print )
 	{
-		if ( msg != "" )
+		if ( isdefined( msg ) )
 		{
 			self com_printerror( msg );
 		}
@@ -123,16 +90,16 @@ print_obj()
 		print_entity com_printcmd( self.cmd_data_source );
 		com_printdebugwarning( "start_pos: " + self.start_pos );
 		com_printdebugwarning( "end_pos: " + self.end_pos );
-		for ( i = 0; i < self.args.size; i++ )
+		for ( i = 0; i < _SIZE( self.args.size ); i++ )
 		{
 			ordinal = ( i + 1 );
 			com_printdebugwarning( "arg" + ordinal + ": " + self.args[ i ] );
 		}
 
 		keys = getarraykeys( self.directive_kvps );
-		for ( i = 0; i < keys.size; i++ )
+		for ( i = 0; i < _SIZE( keys.size ); i++ )
 		{
-			for ( j = 0; j < self.directive_kvps[ keys[ i ] ].size; j++ )
+			for ( j = 0; j < _SIZE( self.directive_kvps[ keys[ i ] ].size ); j++ )
 			{
 				self.directive_kvps[ keys[ i ] ][ j ] print_obj();
 			}
@@ -166,10 +133,9 @@ com_printcmd( cmd_object )
 	self com_printnotitle( "cmd_name: " + cmd_object.cmd_name );
 	self com_printnotitle( "usage: " + cmd_object.usage );
 	self com_printnotitle( "func: " + getfunctionname( cmd_object.func ) );
-	self com_printnotitle( "power: " + cmd_object.power );
-	self com_printnotitle( "min_args: " + cmd_object.min_args );
-	self com_printnotitle( "max_args: " + cmd_object.max_args );
-	self com_printnotitle( "arg_types: " + repackage_args( cmd_object.arg_types ) );
+	self com_printnotitle( "min_args: " + cmd_object get_min_args() );
+	self com_printnotitle( "max_args: " + cmd_object get_max_args() );
+	//self com_printnotitle( "arg_types: " + repackage_args( cmd_object.arg_types ) ); // TODO
 	self com_printnotitle( "rank_group: " + cmd_object.rank_group );
 	self com_printnotitle( "module_group: " + cmd_object.module_group );
 }
@@ -178,9 +144,9 @@ com_printcmd_help( cmd_object )
 {
 	self com_printnotitle( "Name: " + cmd_object.cmd_name );
 	self com_printnotitle( "Usage: " + cmd_object.usage );
-	self com_printnotitle( "Min Args: " + cmd_object.min_args );
-	self com_printnotitle( "Max Args: " + cmd_object.max_args );
-	self com_printnotitle( "Arg Types: " + repackage_args( cmd_object.arg_types ) );
+	self com_printnotitle( "Min Args: " + cmd_object get_min_args() );
+	self com_printnotitle( "Max Args: " + cmd_object get_max_args() );
+	//self com_printnotitle( "Arg Types: " + repackage_args( cmd_object.arg_types ) ); // TODO
 	self com_printnotitle( "Rank: " + cmd_object.rank_group );
 	self com_printnotitle( "Module: " + cmd_object.module_group );
 }
@@ -344,7 +310,7 @@ has_permission_for_cmd( cmd )
 	}
 	if ( isDefined( level.tcs_perms.ranks[ self.tcs_rank ] ) && isDefined( level.tcs_perms.ranks[ self.tcs_rank ].disallowed_cmds ) )
 	{
-		for ( i = 0; i < level.tcs_perms.ranks[ self.tcs_rank ].disallowed_cmds.size; i++ )
+		for ( i = 0; i < _SIZE( level.tcs_perms.ranks[ self.tcs_rank ].disallowed_cmds.size ); i++ )
 		{
 			disallowed_cmd = level.tcs_perms.ranks[ self.tcs_rank ].disallowed_cmds[ i ];
 			if ( disallowed_cmd == "all_cmds" )
@@ -364,7 +330,7 @@ has_permission_for_cmd( cmd )
 	}
 	if ( isDefined( level.tcs_perms.ranks[ self.tcs_rank ] ) && isDefined( level.tcs_perms.ranks[ self.tcs_rank ].allowed_cmds ) )
 	{
-		for ( i = 0; i < level.tcs_perms.ranks[ self.tcs_rank ].allowed_cmds.size; i++ )
+		for ( i = 0; i < _SIZE( level.tcs_perms.ranks[ self.tcs_rank ].allowed_cmds.size ); i++ )
 		{
 			allowed_cmd = level.tcs_perms.ranks[ self.tcs_rank ].allowed_cmds[ i ];
 			if ( allowed_cmd == "all_cmds" )
@@ -386,13 +352,13 @@ has_permission_for_cmd( cmd )
 	return false;
 }
 
-cast_contents_to_str( contents_int, noprint = false )
+cast_contents_to_str( contents_int )
 {
-	result_obj = result_obj_new( "contents", "string", noprint );
+	result_obj = generic_obj_t_new( "contents" );
 
 	contents_str = "";
 	keys = getarraykeys( level.tcs_contents );
-	for ( i = 0; i < keys.size; i++ )
+	for ( i = 0; i < _SIZE( keys.size ); i++ )
 	{
 		if ( ( contents_int & level.tcs_contents[ keys[ i ] ] ) != 0 )
 		{
@@ -408,13 +374,13 @@ cast_contents_to_str( contents_int, noprint = false )
 	return set_cast_success( result_obj, contents_str, "contents==" + contents_str );
 }
 
-cast_str_to_contents( contents_str, noprint = false )
+cast_str_to_contents( contents_str )
 {
-	result_obj = result_obj_new( "contents", "int", noprint );
+	result_obj = generic_obj_t_new( "contents" );
 
 	contents_int = level.tcs_contents[ "NONE" ];
 	keys = strtok( contents_str, "|" );
-	for ( i = 0; i < keys.size; i++ )
+	for ( i = 0; i < _SIZE( keys.size ); i++ )
 	{
 		if ( isdefined( level.tcs_contents[ keys[ i ] ] ) )
 		{
@@ -512,39 +478,24 @@ cast_origin_to_ent_array( result_obj, origin, maxdist, max )
 	return true;
 }
 
-/*entity_obj_t*/ entity_obj_t_new( etype, entnum = 1023 )
+/*entity_obj_t*/ cast_str_to_entity( str, etype, allow_null_ent, allow_world_ent, finder_func, finder_arg1, finder_arg2 )
 {
+	allow_null_ent = _DEFAULT( allow_null_ent, false );
+	allow_world_ent = _DEFAULT( allow_world_ent, false );
+	finder_func = _DEFAULT( finder_func, undefined );
+	finder_arg1 = _DEFAULT( finder_arg1, undefined );
+	finder_arg2 = _DEFAULT( finder_arg2, undefined );
+
 	entity_obj = generic_obj_t_new( "entity" );
 	entity_obj.etype = etype;
-	entity_obj.entnum = entnum;
-	entity_obj.ent = undefined;
-
-	return entity_obj;
-}
-
-set_ent_cast_success( entity_obj, ent, msg )
-{
-	entity_obj.ent = entity_obj;
-	entity_obj.entnum = ent getentitynumber();
-	return set_cast_success( entity_obj, undefined, msg );
-}
-
-set_ent_cast_error( entity_obj, msg )
-{
-	return set_cast_error( entity_obj, msg );
-}
-
-/*entity_obj_t*/ cast_str_to_entity( str, etype, allow_null_ent = false, allow_world_ent = false, finder_func = undefined, finder_arg1 = undefined, finder_arg2 = undefined )
-{
-	entity_obj = entity_obj_t_new( etype );
 	if ( !isDefined( str ) || str == "" )
 	{
-		return set_ent_cast_error( entity_obj, "Missing value to find entity" );
+		return set_cast_error( entity_obj, "Missing value to find entity" );
 	}
 
 	if ( !isdefined( etype ) || !isdefined( level._entity_type_funcs[ etype ] ) && !isdefined( level._entity_custom_getter_funcs[ etype ] ) )
 	{
-		return set_ent_cast_error( entity_obj, "Unsupported etype" );
+		return set_cast_error( entity_obj, "Unsupported etype" );
 	}
 
 	entities = [];
@@ -559,7 +510,7 @@ set_ent_cast_error( entity_obj, msg )
 
 	if ( entities.size <= 0 )
 	{
-		return set_ent_cast_error( entity_obj, "No entities found for etype: " + etype );
+		return set_cast_error( entity_obj, "No entities found for etype: " + etype );
 	}
 
 	cast_number_obj = cast_str_to_number( str, "positive_int" );
@@ -569,54 +520,54 @@ set_ent_cast_error( entity_obj, msg )
 		entnum = cast_number_obj.value;
 		if ( entnum > 1023 )
 		{
-			return set_ent_cast_error( entity_obj, "Entity number cannot be greater than 1023" );
+			return set_cast_error( entity_obj, "Entity number cannot be greater than 1023" );
 		}
 
 		if ( entnum == 1023 )
 		{
 			if ( allow_null_ent )
 			{
-				return set_ent_cast_success( entity_obj, undefined, "ent==allow_null_ent" );
+				return set_cast_success( entity_obj, undefined, "ent==allow_null_ent" );
 			}
 			else
 			{
-				return set_ent_cast_error( entity_obj, "ent!=allow_null_ent" );
+				return set_cast_error( entity_obj, "ent!=allow_null_ent" );
 			}
 		}
 		else if ( entnum == 1022 )
 		{
 			if ( allow_world_ent )
 			{
-				return set_ent_cast_success( entity_obj, getentbynum( 1022 ), "ent==allow_world_ent" );
+				return set_cast_success( entity_obj, getentbynum( 1022 ), "ent==allow_world_ent" );
 			}
 			else
 			{
-				return set_ent_cast_error( entity_obj, "ent!=allow_world_ent" );
+				return set_cast_error( entity_obj, "ent!=allow_world_ent" );
 			}
 		}
 
-		for ( i = 0; i < entities.size; i++ )
+		for ( i = 0; i < _SIZE( entities.size ); i++ )
 		{
 			ent = entities[ i ];
 
 			if ( ent getentitynumber() == entnum )
 			{
-				return set_ent_cast_success( entity_obj, ent, "ent==entnum" );
+				return set_cast_success( entity_obj, ent, "ent==entnum" );
 			}
 
 			if ( etype == "player" && !ent istestclient() )
 			{
 				if ( ent getGUID() == entnum )
 				{
-					return set_ent_cast_success( entity_obj, ent, "ent==GUID" );
+					return set_cast_success( entity_obj, ent, "ent==GUID" );
 				}
 			}
 		}
 
-		return set_ent_cast_error( entity_obj, "Could not cast numeric value: '" + entnum + "' to etype: '" + etype + "'" );
+		return set_cast_error( entity_obj, "Could not cast numeric value: '" + entnum + "' to etype: '" + etype + "'" );
 	}
 
-	for ( i = 0; i < entities.size; i++ )
+	for ( i = 0; i < _SIZE( entities.size ); i++ )
 	{
 		ent = entities[ i ];
 
@@ -627,7 +578,7 @@ set_ent_cast_error( entity_obj, msg )
 
 		if ( isdefined( finder_func ) && ent [[ finder_func ]]( str, etype, finder_arg1, finder_arg2 ) )
 		{
-			return set_ent_cast_success( entity_obj, ent, "ent==finder_func" );
+			return set_cast_success( entity_obj, ent, "ent==finder_func" );
 		}
 
 		if ( etype == "player" )
@@ -635,12 +586,12 @@ set_ent_cast_error( entity_obj, msg )
 			target_playername = tolower( ent.name );
 			if ( issubstr( target_playername, str ) )
 			{
-				return set_ent_cast_success( entity_obj, ent, "player==name" );
+				return set_cast_success( entity_obj, ent, "player==name" );
 			}
 		}
 	}
 
-	return set_ent_cast_error( entity_obj, "Couldn't find entity of etype: '" + etype + "' from input: " + str );
+	return set_cast_error( entity_obj, "Couldn't find entity of etype: '" + etype + "' from input: " + str );
 }
 
 is_str_int( str )
@@ -673,16 +624,21 @@ is_str_positive_float( str )
 	return !cast_obj.errored;
 }
 
-/*str_cast_obj_t*/ str_cast_obj_t_new( type = "undefined", str_value = "" )
+/*str_cast_obj_t*/ str_cast_obj_t_new( type, str_value )
 {
 	str_cast_obj = generic_obj_t_new( "str_cast" );
 	str_cast_obj.number_type = type;
 	str_cast_obj.str_value = str_value;
 
-	if ( !isdefined( level._number_strings[ type ] ) )
+	if ( !isdefined( type ) || !isdefined( level._number_strings[ type ] ) )
 	{
 		assert( false );
 		return set_cast_error( str_cast_obj, "Unknown type: " + type );
+	}
+	if ( !isdefined( str_value ) || str_value == "" )
+	{
+		assert( false );
+		return set_cast_error( str_cast_obj, "Unknown str_value" );
 	}
 	return str_cast_obj;
 }
@@ -722,7 +678,7 @@ cast_str_to_number( str, type )
 	{
 		return set_cast_error( str_cast_obj, "Trailing decimal point is not allowed" );
 	}
-	for ( i = start_index; i < str.size; i++ )
+	for ( i = start_index; i < _SIZE( str.size ); i++ )
 	{
 		if ( period_allowed && str[ i ] == "." )
 		{
@@ -762,7 +718,7 @@ cast_str_to_number( str, type )
 
 cast_str_to_vector( str )
 {
-	result_obj = result_obj_new( "vector", "vector" );
+	result_obj = generic_obj_t_new( "vector" );
 	float_strs = strTok( str, "," );
 	if ( float_strs.size != 3 )
 	{
@@ -770,7 +726,7 @@ cast_str_to_vector( str )
 	}
 
 	casted_floats = [];
-	for ( i = 0; i < float_strs.size; i++ )
+	for ( i = 0; i < _SIZE( float_strs.size ); i++ )
 	{
 		casted_floats[ i ] = cast_str_to_number( float_strs[ i ], "float" );
 		if ( casted_floats[ i ].errored )
@@ -803,7 +759,7 @@ cast_bool_to_str( bool, binary_string_options )
 cast_str_to_bool( str )
 {
 	lower_str = tolower( str );
-	result_obj = result_obj_new( "boolean", "boolean" );
+	result_obj = generic_obj_t_new( "boolean" );
 	if ( lower_str == "true" || lower_str == "1" )
 	{
 		return set_cast_success( result_obj, true, lower_str == "true" ? "boolean==true" : "boolean==1" );
@@ -818,7 +774,7 @@ cast_str_to_bool( str )
 
 cast_str_to_cmd( alias )
 {
-	result_obj = result_obj_new( "cmdobject", "struct" );
+	result_obj = generic_obj_t_new( "cmdobj" );
 	if ( alias == "" )
 	{
 		return set_cast_error( result_obj, "No alias provided" );
@@ -832,7 +788,7 @@ cast_str_to_cmd( alias )
 	return set_cast_success( result_obj, level.tcs_cmds[ alias ], "cmd==" + alias );
 }
 
-is_alpha( chr, start = 0, end = undefined )
+is_alpha( chr, start, end )
 {
 	start = _DEFAULT( start, 0 );
 	end = _DEFAULT( end, chr.size );
@@ -840,7 +796,7 @@ is_alpha( chr, start = 0, end = undefined )
 	{
 		end = chr.size;
 	}
-	for ( i = start; i < end; i++ )
+	for ( i = start; i < _SIZE( end ); i++ )
 	{
 		if ( !isdefined( level._alphabet_array[ chr[ i ] ] ) )
 		{
@@ -851,15 +807,16 @@ is_alpha( chr, start = 0, end = undefined )
 	return true;
 }
 
-is_alpha_numeric( chr, check_underscore = false, start = 0, end = undefined )
+is_alpha_numeric( chr, check_underscore, start, end )
 {
+	check_underscore = _DEFAULT( check_underscore, false );
 	start = _DEFAULT( start, 0 );
 	end = _DEFAULT( end, chr.size );
 	if ( end > chr.size )
 	{
 		end = chr.size;
 	}
-	for ( i = start; i < end; i++ )
+	for ( i = start; i < _SIZE( end ); i++ )
 	{
 		if ( !isdefined( level._alphabet_array[ tolower( chr[ i ] ) ] ) && !isdefined( level._numeric_array[ chr[ i ] ] ) )
 		{
@@ -877,7 +834,7 @@ is_alpha_numeric( chr, check_underscore = false, start = 0, end = undefined )
 	return true;
 }
 
-is_numeric( chr, start = 0, end = undefined )
+is_numeric( chr, start, end )
 {
 	start = _DEFAULT( start, 0 );
 	end = _DEFAULT( end, chr.size );
@@ -904,27 +861,6 @@ get_targets_by_func()
 
 }
 
-_DEFAULT( value, default_value )
-{
-	if ( !isdefined( value ) )
-	{
-		return default_value;
-	}
-
-	return value;
-}
-
-array_validate( array )
-{
-	return isdefined( array ) && isarray( array ) && array.size > 0;
-}
-
-server_safe_notify_thread( notify_name, index )
-{
-	waittillframeend;
-	level notify( notify_name );
-}
-
 /*generic_obj_t*/ generic_obj_t_new( obj_type )
 {
 	generic_obj = spawnstruct();
@@ -932,145 +868,89 @@ server_safe_notify_thread( notify_name, index )
 	generic_obj.errored = false;
 	generic_obj.msg = "";
 	generic_obj.obj_type = obj_type;
-	generic_obj.objects = []; // kvp array of obj_type to easily add references to other obj types for debugging
+
 	return generic_obj;
 }
 
-/*void*/ add_obj_ref( parent_obj, child_obj )
-{
-	if ( isdefined( parent_obj.objects[ child_obj.obj_type ] ) || isdefined( child_obj.objects[ parent_obj.obj_type ] ) )
-	{
-		// force a script error which prints a callstack, regardless of dev script
-		str = 5;
-		str *= undefined;
-		return;
-	}
-
-	parent_obj.objects[ child_obj.obj_type ] = child_obj;
-}
-
-/*void*/ remove_obj_ref( parent_obj, obj_type )
-{
-	if ( !isdefined( parent_obj.objects[ obj_type ] ) )
-	{
-		// force a script error which prints a callstack, regardless of dev script
-		str = 5;
-		str *= undefined;
-		return;
-	}
-
-	parent_obj.objects[ obj_type ] = undefined;
-}
-
-/*result_t*/ result_new( msg, filter, channels = "" )
+/*result_t*/ result_new( msg, filter, channels )
 {
 	result = generic_obj_t_new( "result" );
 	result.msg = msg;
-	result.executor_msg_array = [];
-	result.player_msg_array = [];
 	result.filter = filter;
-	result.channels = channels;
+	result.channels = _DEFAULT( channels, undefined );
 
 	return result;
 }
 
-/*result_t*/ result_copy( result )
+// self == param
+add_player_msg( player, msg, filter, channels )
 {
-	copy_result = generic_obj_t_new( "result" );
-	copy_result.msg = result.msg;
-	copy_result.filter = result.filter;
-	copy_result.channels = result.channels;
-	copy_result.errored = result.errored;
+	channels = _DEFAULT( channels, player com_get_cmd_feedback_channel() );
 
-	return copy_result;
+	if ( !isdefined( self.result_array ) )
+	{
+		self.result_array = [];
+	}
+
+	new_entry = result_new( msg, filter, channels );
+	new_entry.player = player;
+
+	self.result_array[ self.result_array.size ] = new_entry;
 }
 
-add_result_executor_msg( result, additional_executor_msg )
+add_executor_cmdinfo( msg, channels )
 {
-	result.executor_msg_array[ result.executor_msg_array.size ] = additional_executor_msg;
+	channels = _DEFAULT( channels, undefined );
+	self add_player_msg( self.executor, msg, "cmdinfo", channels );
 }
 
-add_result_player_msg( result, player, additional_player_msg )
+add_executor_cmdwarning( msg, channels )
 {
-	result.player_msg_array[ result.player_msg_array.size ] = spawnstruct();
-	result.player_msg_array[ result.player_msg_array.size - 1 ].player = player;
-	result.player_msg_array[ result.player_msg_array.size - 1 ].msg = additional_player_msg;
+	channels = _DEFAULT( channels, undefined );
+	self add_player_msg( self.executor, msg, "cmdwarning", channels );
 }
 
-/*result_t*/ result_cmdinfo( msg )
+add_executor_cmderror( msg, channels )
 {
-	result = result_new( msg, "cmdinfo" );
-
-	return result;
+	channels = _DEFAULT( channels, undefined );
+	self add_player_msg( self.executor, msg, "cmderror", channels );
 }
 
-/*result_t*/ result_cmderror( msg )
+add_player_cmdinfo( player, msg, channels )
 {
-	result = result_new( msg, "cmderror" );
-	result.errored = true;
-
-	return result;
+	channels = _DEFAULT( channels, undefined );
+	self add_player_msg( player, msg, "cmdinfo", channels );
 }
 
-/*result_obj_t*/ result_obj_new( expected_value_type, underlying_type, noprint = true )
+add_player_cmdwarning( player, msg, channels )
 {
-	result_obj = generic_obj_t_new( "result_obj" );
-	result_obj.noprint = noprint;
-	result_obj.value = undefined;
-	result_obj.type = expected_value_type;
-	result_obj.underlying_type = underlying_type;
-
-	return result_obj;
+	channels = _DEFAULT( channels, undefined );
+	self add_player_msg( player, msg, "cmdwarning", channels );
 }
 
-/*result_obj_t*/ result_obj_copy( result_obj )
+add_player_cmderror( player, msg, channels )
 {
-	copy_result_obj = generic_obj_t_new( "result_obj" );
-	copy_result_obj.errored = result_obj.errored;
-	copy_result_obj.noprint = result_obj.noprint;
-	copy_result_obj.value = result_obj.value;
-	copy_result_obj.type = result_obj.type;
-	copy_result_obj.underlying_type = result_obj.underlying_type;
-	copy_result_obj.msg = result_obj.msg;
-
-	return copy_result_obj;
+	channels = _DEFAULT( channels, undefined );
+	self add_player_msg( player, msg, "cmderror", channels );
 }
 
-/*result_obj_t*/ set_cast_error( result_obj, error_msg, expected_value_type = undefined )
+/*result_obj_t*/ set_cast_error( result_obj, error_msg, expected_value_type )
 {
 	result_obj.errored = true;
 	result_obj.value = undefined;
-	if ( isdefined( expected_value_type ) )
-	{
-		result_obj.type = expected_value_type;
-	}
+	result_obj.type = _DEFAULT( expected_value_type, undefined );
 	result_obj.msg = error_msg;
 
 	return result_obj;
 }
 
-/*result_obj_t*/ set_cast_success( result_obj, new_value, success_msg, expected_value_type = undefined )
+/*result_obj_t*/ set_cast_success( result_obj, new_value, success_msg, expected_value_type )
 {
 	result_obj.value = new_value;
 	result_obj.msg = success_msg;
-	if ( isdefined( expected_value_type ) )
-	{
-		result_obj.type = expected_value_type;
-	}
+	result_obj.type = _DEFAULT( expected_value_type, undefined );
 
 	return result_obj;
-}
-
-/*target_obj_t*/ target_obj_new( expected_value_type, underlying_type, max_targets = 64, error_if_not_found = true )
-{
-	target_obj = generic_obj_t_new( "target_obj" );
-	target_obj.error_if_not_found = error_if_not_found;
-	target_obj.targets = [];
-	target_obj.max_targets = max_targets;
-	target_obj.type = expected_value_type;
-	target_obj.underlying_type = underlying_type;
-
-	return target_obj;
 }
 
 repackage_args( args )
@@ -1080,7 +960,7 @@ repackage_args( args )
 	{
 		return args_string;
 	}
-	for ( i = 0; i < args.size; i++ )
+	for ( i = 0; i < _SIZE( args.size ); i++ )
 	{
 		if ( i == ( args.size - 1 ) )
 		{
@@ -1092,9 +972,10 @@ repackage_args( args )
 	return args_string;
 }
 
-cmd_add( cmd_name, cmdfunc, cmd_usage, description = "No description defined" )
+cmd_add( cmd_name, cmdfunc, cmd_usage, description )
 {
 	cmd_usage = _DEFAULT( cmd_usage, cmd_name );
+	description = _DEFAULT( description, "No description defined" );
 	if ( !isdefined( level.tcs_cmds ) )
 	{
 		level.tcs_cmds = [];
@@ -1114,19 +995,19 @@ cmd_add( cmd_name, cmdfunc, cmd_usage, description = "No description defined" )
 		return;
 	}
 
-	level.tcs_cmds[ cmd_name ] = spawnstruct();
-	level.tcs_cmds[ cmd_name ].cmd_name = cmd_name;
-	level.tcs_cmds[ cmd_name ].usage = cmd_usage;
-	level.tcs_cmds[ cmd_name ].desc = description;
-	level.tcs_cmds[ cmd_name ].func = cmdfunc;
-	level.tcs_cmds[ cmd_name ].is_cmd_object = true;
-	level.tcs_cmds[ cmd_name ].requires_player_executor = false;
-	level.tcs_cmds[ cmd_name ].min_args = 0;
-	level.tcs_cmds[ cmd_name ].max_args = 0;
-	level.tcs_cmds[ cmd_name ].arg_types = [];
-	level.tcs_cmds[ cmd_name ].target_types = [];
-	level.tcs_cmds[ cmd_name ].rank_group = rank_group;
-	level.tcs_cmds[ cmd_name ].module_group = module_group;
+	new_cmd = spawnstruct();
+	new_cmd.cmd_name = cmd_name;
+	new_cmd.usage = cmd_usage;
+	new_cmd.desc = description;
+	new_cmd.func = cmdfunc;
+	new_cmd.is_cmd_object = true;
+	new_cmd.requires_player_executor = false;
+	new_cmd.arg_types = [];
+	new_cmd.target_types = [];
+	new_cmd.has_required_target = false;
+	new_cmd.rank_group = rank_group;
+	new_cmd.module_group = module_group;
+	level.tcs_cmds[ cmd_name ] = new_cmd;
 	level.tcs_glob.icmd_total++;
 	if ( !isdefined( level.cmd_groups ) )
 	{
@@ -1138,15 +1019,7 @@ cmd_add( cmd_name, cmdfunc, cmd_usage, description = "No description defined" )
 	}
 	level.cmd_groups[ rank_group ][ cmd_name ] = true;
 
-	return level.tcs_cmds[ cmd_name ];
-}
-
-cmd_set_power( power )
-{
-	if ( is_true( self.is_cmd_object ) )
-	{
-		self.power = power;
-	}
+	return new_cmd;
 }
 
 cmd_block_set_rank_group( rank_group )
@@ -1159,59 +1032,152 @@ cmd_block_set_module_group( module_group )
 	level.tcs_cmd_register_module_group = module_group;
 }
 
-arg_obj_add_cmd( arg_types, min_args, max_args )
+get_min_args()
 {
+	if ( !is_true( self.is_cmd_object ) )
+	{
+		assert( false );
+		return 0;
+	}
+
+	count = 0;
+	for ( i = 1; i < _SIZE( self.arg_types.size ); i++ )
+	{
+		if ( isdefined( self.arg_types[ i + "" ] ) && self.arg_types[ i + "" ].is_required )
+		{
+			count++;
+		}
+	}
+
+	return count; 
+}
+
+get_max_args()
+{
+	if ( !is_true( self.is_cmd_object ) )
+	{
+		assert( false );
+		return 0;
+	}
+
+	return self.arg_types.size; 
+}
+
+// ordinal would allow argument overloading
+private arg_add( ordinal, name, arg_type, is_required, desc )
+{
+	desc = _DEFAULT( desc, "No description" );
+	ordinal = ordinal + ""; // best to be a string
+
 	if ( !is_true( self.is_cmd_object ) )
 	{
 		assert( false );
 		return;
 	}
 
-	self.min_args = min_args;
-	self.max_args = max_args;
-
-	if ( !isdefined( arg_types ) || arg_types == "" )
+	if ( !isdefined( self.arg_types[ ordinal ] ) )
 	{
-		return;
+		new_arg = spawnstruct();
+		new_arg.name = name;
+		new_arg.is_required = is_required;
+		new_arg.ordinal = ordinal;
+		new_arg.desc = desc;
+		new_arg.overloads = [];
+		new_arg.overloads[ arg_type ] = true;
+
+		self.arg_types[ ordinal ] = new_arg;
 	}
-	self.arg_types = strTok( arg_types, " " );
-
-	for ( i = 0; i < self.arg_types.size; i++ )
+	else if ( !isdefined( self.arg_types[ ordinal ].overloads[ arg_type ] ) )
 	{
-		arg_type = self.arg_types[ i ];
-		if ( !isdefined( level.tcs_arg_type_handlers[ arg_type ] ) )
-		{
-			assert( false );
-			com_printdebugerror( "Unknown arg type: '" + arg_type + "' being registered for cmd: '" + self.cmd_name + "' at index '" + i + "'" );
-		}
+		self.arg_types[ ordinal ].overloads[ arg_type ] = true;
+	}
+	else
+	{
+		assert( false );
+		com_printdebugerror( "Cannot overload argument ordinal: '" + ordinal + "' for command: '" + self.cmd_name + "' with type: '" + arg_type + "' as it is already overloaded with that type" );
+	}
+
+	if ( !isdefined( level.tcs_arg_type_handlers[ arg_type ] ) )
+	{
+		assert( false );
+		com_printdebugerror( "Unknown arg type: '" + arg_type + "' being registered for cmd: '" + self.cmd_name + "' at ordinal '" + ordinal + "'" );
 	}
 }
 
-target_type_add_cmd( target_type_name, is_required_target, doc_string, max_targets = 1024 )
+arg_add_required( ordinal, name, arg_type, desc )
 {
+	self arg_add( ordinal, name, arg_type, true, desc );
+}
+
+arg_add_optional( ordinal, name, arg_type, desc )
+{
+	self arg_add( ordinal, name, arg_type, false, desc );
+}
+
+private target_add( ordinal, name, target_type, is_required, desc, max_targets )
+{
+	max_targets = _DEFAULT( max_targets, 1024 );
+	desc = _DEFAULT( desc, "No description" );
+	ordinal = ordinal + ""; // best to be a string
+
 	if ( !is_true( self.is_cmd_object ) )
 	{
 		assert( false );
 		return;
 	}
 
-	if ( !isdefined( target_type_name ) || target_type_name == "" )
+	if ( !isdefined( self.target_types[ ordinal ] ) )
 	{
+		new_target = spawnstruct();
+		new_target.name = name;
+		new_target.is_required = is_required;
+		new_target.ordinal = ordinal;
+		new_target.desc = desc;
+		new_target.overloads = [];
+
+		new_overload = spawnstruct();
+		new_overload.etype = target_type;
+		new_overload.max_targets = max_targets;
+		new_target.overloads[ target_type ] = new_overload;
+
+		self.target_types[ ordinal ] = new_target;
+	}
+	else if ( !isdefined( self.target_types[ ordinal ].overloads[ target_type ] ) )
+	{
+		new_overload = spawnstruct();
+		new_overload.etype = target_type;
+		new_overload.max_targets = max_targets;
+		self.target_types[ ordinal ].overloads[ target_type ] = new_overload;
+	}
+	else
+	{
+		assert( false );
+		com_printdebugerror( "Cannot overload target ordinal: '" + ordinal + "' for command: '" + self.cmd_name + "' with type: '" + target_type + "' as it is already overloaded with that type" );
 		return;
 	}
 
-	target_type = spawnstruct();
-	target_type.etype = target_type_name;
-	target_type.is_required = is_required_target;
-	target_type.max_targets = max_targets;
-	target_type.doc_string = doc_string;
-	self.target_types[ self.target_types.size ] = target_type;
+	self.has_required_target = self.has_required_target || is_required;
 
-	if ( !isdefined( level._entity_type_funcs[ target_type_name ] ) )
+	if ( !isdefined( level._entity_type_funcs[ target_type ] ) )
 	{
 		assert( false );
-		com_printdebugerror( "Unknown entity type: '" + target_type_name + "' registered for command: '" + self.cmd_name + "'" );
+		com_printdebugerror( "Unknown entity type: '" + target_type + "' registered for command: '" + self.cmd_name + "'" );
 	}
+}
+
+target_add_required( ordinal, name, target_type, desc, max_targets )
+{
+	self target_add( ordinal, name, target_type, true, desc, max_targets );
+}
+
+target_add_optional( ordinal, name, target_type, desc, max_targets )
+{
+	self target_add( ordinal, name, target_type, false, desc, max_targets );
+}
+
+get_target_from_ordinal( cmd_data_source, ordinal )
+{
+	return cmd_data_source.target_types[ ordinal + "" ];
 }
 
 arg_type_register( argtype, rand_gen_func, cast_func )
@@ -1264,12 +1230,40 @@ set_client_dvar_thread( dvar, value, index )
 	self setClientDvar( dvar, value );
 }
 
-getDvarStringDefault( dvarname, default_value )
+get_dvar_string_default( dvarname, default_value )
 {
-	cur_dvar_value = getDvar( dvarname );
+	cur_dvar_value = getdvar( dvarname );
 	if ( isDefined( cur_dvar_value ) && cur_dvar_value != "" )
 	{
 		return cur_dvar_value;
+	}
+	else 
+	{
+		setDvar( dvarname, default_value );
+		return default_value;
+	}
+}
+
+get_dvar_int_default( dvarname, default_value )
+{
+	cur_dvar_value = getdvar( dvarname );
+	if ( isDefined( cur_dvar_value ) && cur_dvar_value != "" )
+	{
+		return getdvarint( dvarname );
+	}
+	else 
+	{
+		setDvar( dvarname, default_value );
+		return default_value;
+	}
+}
+
+get_dvar_float_default( dvarname, default_value )
+{
+	cur_dvar_value = getdvar( dvarname );
+	if ( isDefined( cur_dvar_value ) && cur_dvar_value != "" )
+	{
+		return getdvarfloat( dvarname );
 	}
 	else 
 	{
@@ -1287,12 +1281,9 @@ is_cmd_token( char )
 	return false;
 }
 
-notify_callback_thread( notify_name, func, ent = undefined )
+notify_callback_thread( notify_name, func, ent )
 {
-	if ( !isdefined( ent ) )
-	{
-		ent = level;
-	}
+	ent = _DEFAULT( ent, level );
 
 	ent notify( notify_name + "_death" );
 	ent endon( notify_name + "_death" );
@@ -1304,12 +1295,9 @@ notify_callback_thread( notify_name, func, ent = undefined )
 	}
 }
 
-add_notify_callback( notify_name, func, ent = undefined )
+add_notify_callback( notify_name, func, ent )
 {
-	if ( !isdefined( ent ) )
-	{
-		ent = level;
-	}
+	ent = _DEFAULT( ent, level );
 
 	if ( !isdefined( ent._notify_callbacks ) || !isdefined( ent._notify_callbacks[ notify_name ] ) )
 	{
@@ -1319,12 +1307,9 @@ add_notify_callback( notify_name, func, ent = undefined )
 	level thread notify_callback_thread( notify_name, func, ent );
 }
 
-remove_notify_callback( notify_name, ent = undefined )
+remove_notify_callback( notify_name, ent )
 {
-	if ( !isdefined( ent ) )
-	{
-		ent = level;
-	}
+	ent = _DEFAULT( ent, level );
 
 	if ( !isdefined( ent._notify_callbacks ) || !isdefined( ent._notify_callbacks[ notify_name ] ) )
 	{
@@ -1335,24 +1320,10 @@ remove_notify_callback( notify_name, ent = undefined )
 	ent._notify_callbacks[ notify_name ] = undefined;
 }
 
-pop( arr_obj, index )
-{
-	arrayremoveindex( arr_obj.array, index );
-}
-
-pop_front( arr_obj )
-{
-	pop( arr_obj, 0 );
-}
-
-pop_back( arr_obj )
-{
-	pop( arr_obj, ( arr_obj.array.size - 1 ) );
-}
-
-/*noreturn*/ throw_exception( error_msg, generic_obj = undefined, print = true )
+/*noreturn*/ throw_exception( error_msg, generic_obj, print )
 {
 	generic_obj = _DEFAULT( generic_obj, generic_obj_t_new( "cmd_exception" ) );
+	print = _DEFAULT( print, true );
 	generic_obj.errored = true;
 	generic_obj.msg = error_msg;
 	generic_obj.do_print = print;
@@ -1374,8 +1345,9 @@ has_all_perms()
 	return is_true( self.is_server ) || is_true( self.is_host );
 }
 
-get_possible_array_values_msg( arg, array, type, key_indexed = true )
+get_possible_array_values_msg( arg, array, type, key_indexed )
 {
+	key_indexed = _DEFAULT( key_indexed, true );
 	type_upper = toupper( type );
 	list = "";
 	foreach ( key, val in array )
@@ -1395,6 +1367,7 @@ get_possible_array_values_msg( arg, array, type, key_indexed = true )
 	return msg;
 }
 
+// inlineable...
 random_key( arr )
 {
 	keys = getarraykeys( arr );
@@ -1413,4 +1386,77 @@ random_val( arr )
 {
 	keys = getarraykeys( arr );
 	return arr[ keys[ randomint( keys.size ) ] ];
+}
+
+_CLAMP( val, val_min, val_max )
+{
+	if ( val < val_min )
+	{
+		val = val_min;
+	}
+	else if ( val > val_max )
+	{
+		val = val_max;
+	}
+
+	return val;
+}
+
+pop( arr_obj, index )
+{
+	arrayremoveindex( arr_obj.array, index );
+}
+
+pop_front( arr_obj )
+{
+	pop( arr_obj, 0 );
+}
+
+pop_back( arr_obj )
+{
+	pop( arr_obj, ( arr_obj.array.size - 1 ) );
+}
+
+_DEFAULT( value, default_value )
+{
+	if ( !isdefined( value ) )
+	{
+		return default_value;
+	}
+
+	return value;
+}
+
+_OPTIONAL( value )
+{
+	if ( isdefined( value ) )
+	{
+		return value;
+	}
+
+	return undefined;
+}
+
+// this function isn't intended to handle script errors, it just stops infinite loops from happening due to the arr being undefined so they can be caught immediately
+// can't use like a method unfortunately as self may not be defined
+_SIZE( arr_size )
+{
+	if ( !isdefined( arr_size ) )
+	{
+		// exits the loop as undefined is used in a truthy way
+		return 0;
+	}
+
+	return arr_size;
+}
+
+array_validate( array )
+{
+	return isdefined( array ) && isarray( array ) && array.size > 0;
+}
+
+server_safe_notify_thread( notify_name, index )
+{
+	waittillframeend;
+	level notify( notify_name );
 }

@@ -1,3 +1,8 @@
+#include common_scripts\utility;
+#include maps\mp\_utility;
+
+#include scripts\cmd\core\_utility;
+
 permaperk_list_zm()
 {
 	return getarraykeys( level.pers_upgrades );
@@ -34,7 +39,7 @@ perk_list_zm()
 			return level._zm_perks;
 		default:
 			machines = getentarray( "zombie_vending", "targetname" );
-			for ( i = 0; i < machines.size; i++ )
+			for ( i = 0; i < _SIZE( machines.size ); i++ )
 			{
 				if ( machines[ i ].script_noteworthy == "specialty_weapupgrade" )
 					continue;

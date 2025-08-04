@@ -34,7 +34,7 @@ main()
 	level.tcs_glob.bhidden_cmds = getdvarintdefault( "tcs_allow_hidden_cmds", 1 );
 
 	level.clientdvars = [];
-	tokens_str = getdvarstringdefault( "tcs_cmd_tokens", "" ); //separated by spaces, good tokens are generally not used at the start of a normal message 
+	tokens_str = get_dvar_string_default( "tcs_cmd_tokens", "" ); //separated by spaces, good tokens are generally not used at the start of a normal message 
 	if ( tokens_str != "" )
 	{
 		tokens = strtok( tokens_str, " " );
@@ -69,12 +69,17 @@ main()
 	addcallback( "on_player_connect", ::tcs_on_connect );
 
 	level thread drive_connected_notifies_for_mp();
-	level.cmd_init_done = true;
+	level thread drive_disconnected_notifies();
+
+	wait 0.05;
+	waittillframeend;
+	level.onplayerdisconnect_old = level.onplayerdisconnect;
+	level.onplayerdisconnect = ::onplayerdisconnect;
 }
 
 drive_connected_notifies_for_mp()
 {
-	while ( true )
+	for ( ;; )
 	{
 		level waittill( "connected", player );
 		if ( !sessionmodeiszombiesgame() )
@@ -84,10 +89,29 @@ drive_connected_notifies_for_mp()
 	}
 }
 
+onplayerdisconnect()
+{
+	if ( sessionmodeiszombiesgame() )
+	{
+		level notify( "disconnect", self ); // ZM doesn't have...
+	}
+
+	self [[ level.onplayerdisconnect_old ]]();
+}
+
+drive_disconnected_notifies()
+{
+	for ( ;; )
+	{
+		level waittill( "disconnect", player );
+		player callback( "on_player_disconnect" );
+	}
+}
+
 tcs_p_obj_new()
 {
 	tcs_pl_obj = spawnstruct();
-	tcs_pl_obj.tcs_rank = getdvarstringdefault( "tcs_default_rank", "user" );
+	tcs_pl_obj.tcs_rank = get_dvar_string_default( "tcs_default_rank", "user" );
 	return tcs_pl_obj;
 }
 

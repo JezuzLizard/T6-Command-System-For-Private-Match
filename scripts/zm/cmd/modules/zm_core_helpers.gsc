@@ -145,7 +145,7 @@ disable_zombies()
 	{
 		actors = [[ level._entity_type_funcs[ "actor" ].getter ]]();
 
-		for ( i = 0; i < actors.size; i++ )
+		for ( i = 0; i < _SIZE( actors.size ); i++ )
 		{
 			ai = actors[ i ];
 			ai.lastchunk_destroy_time = gettime();
@@ -163,7 +163,7 @@ enable_zombies()
 
 	actors = [[ level._entity_type_funcs[ "actor" ].getter ]]();
 
-	for ( i = 0; i < actors.size; i++ )
+	for ( i = 0; i < _SIZE( actors.size ); i++ )
 	{
 		ai = actors[ i ];
 		ai.ignore_distance_tracking = undefined;
@@ -193,7 +193,7 @@ unpause_after_time( duration )
 	level endon( "unpause_countdown" );
 	level endon( "game_unpaused" );
 	duration_seconds = duration * 60;
-	for ( ; duration_seconds > 0; duration_seconds-- )
+	for ( ; _SIZE( duration_seconds ) > 0; duration_seconds-- )
 	{
 		wait 1;
 	}
@@ -236,7 +236,7 @@ list_weapons_throttled()
 	self endon( "listing_weapons" );
 
 	weapons = get_all_weapons();
-	for ( i = 0; i < weapons.size; i++ )
+	for ( i = 0; i < _SIZE( weapons.size ); i++ )
 	{
 		self com_printnotitle( weapons[ i ] );
 		wait 0.1;
@@ -253,7 +253,7 @@ open_seseme()
 	flag_set( "power_on" );
 
 	zombie_doors = getentarray( "zombie_door", "targetname" );
-	for ( i = 0; i < zombie_doors.size; i++ )
+	for ( i = 0; i < _SIZE( zombie_doors.size ); i++ )
 	{
 		zombie_doors[ i ] notify( "trigger" );
 		if ( is_true( zombie_doors[ i ].power_door_ignore_flag_wait ) )
@@ -263,13 +263,13 @@ open_seseme()
 		wait 0.05;
 	}
 	zombie_airlock_doors = getentarray( "zombie_airlock_buy", "targetname" );
-	for ( i = 0; i < zombie_airlock_doors.size; i++ )
+	for ( i = 0; i < _SIZE( zombie_airlock_doors.size ); i++ )
 	{
 		zombie_airlock_doors[ i ] notify( "trigger" );
 		wait 0.05;
 	}
 	zombie_debris = getentarray( "zombie_debris", "targetname" );
-	for ( i = 0; i < zombie_debris.size; i++ )
+	for ( i = 0; i < _SIZE( zombie_debris.size ); i++ )
 	{
 		zombie_debris[ i ] notify( "trigger", level.players[ 0 ] );
 		wait 0.05;
@@ -283,7 +283,7 @@ list_powerups_throttled()
 	self endon( "listing_powerups" );
 
 	powerups = getarraykeys( level.zombie_include_powerups );
-	for ( i = 0; i < powerups.size; i++ )
+	for ( i = 0; i < _SIZE( powerups.size ); i++ )
 	{
 		self com_printnotitle( powerups[ i ] );
 		wait 0.1;
@@ -296,7 +296,7 @@ list_perks_throttled()
 	self endon( "listing_perks" );
 
 	perks = perk_list_zm();
-	for ( i = 0; i < perks.size; i++ )
+	for ( i = 0; i < _SIZE( perks.size ); i++ )
 	{
 		self com_printnotitle( perks[ i ] );
 		wait 0.1;
@@ -328,7 +328,7 @@ list_zombie_stats_throttled()
 	self notify( "listing_zombie_stats" );
 	self endon( "listing_zombie_stats" );
 	stat_names = getArrayKeys( level.tcs_modifiable_zombie_stats );
-	for ( i = 0; i < stat_names.size; i++ )
+	for ( i = 0; i < _SIZE( stat_names.size ); i++ )
 	{
 		cur_value = level.tcs_modifiable_zombie_stats[ stat_names[ i ] ].current_value;
 		reset_value = level.tcs_modifiable_zombie_stats[ stat_names[ i ] ].reset_value;
@@ -391,7 +391,7 @@ change_round( target_round )
 	else
 		level.zombie_move_speed = level.round_number * level.zombie_vars["zombie_move_speed_multiplier"];
 	level.zombie_vars["zombie_spawn_delay"] = 2;
-	for ( i = 1; i <= level.round_number; i++ )
+	for ( i = 1; i <= _SIZE( level.round_number ); i++ )
 	{
 		timer = level.zombie_vars["zombie_spawn_delay"];
 
@@ -412,7 +412,7 @@ change_round( target_round )
 
 	if ( isdefined( zombies ) )
 	{
-		for ( i = 0; i < zombies.size; i++ )
+		for ( i = 0; i < _SIZE( zombies.size ); i++ )
 			zombies[i] dodamage( zombies[i].health + 666, zombies[i].origin );
 	}
 
@@ -438,7 +438,7 @@ zombie_recalculate_health( stat_name, new_value )
 {
 	level.zombie_health = level.zombie_vars["zombie_health_start"];
 
-	for ( i = 2; i <= level.round_number; i++ )
+	for ( i = 2; i <= _SIZE( level.round_number ); i++ )
 	{
 		if ( i >= 10 )
 		{
@@ -462,7 +462,7 @@ zombie_recalculate_spawn_delay( stat_name, new_value )
 	{
 		return;
 	}
-	for ( i = 1; i <= level.round_number; i++ )
+	for ( i = 1; i <= _SIZE( level.round_number ); i++ )
 	{
 		timer = level.zombie_vars["zombie_spawn_delay"];
 

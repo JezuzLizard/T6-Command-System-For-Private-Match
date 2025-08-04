@@ -11,56 +11,47 @@ autoexec add_cmds()
 	cmd_block_set_module_group( "addon_entity_tools" );
 	cmd_block_set_rank_group( "cheat" );
 
-	// camera commands
-	createcamera_cmd = cmd_add( "createcamera", ::cmd_createcamera_f, "createcamera <camera_name>" );
-	createcamera_cmd arg_obj_add_cmd( "string", 1, 1 );
-
-	setcamera_cmd = cmd_add( "setcamera", ::cmd_setcamera_f, "setcamera <camera_name> [flags]" );
-	setcamera_cmd arg_obj_add_cmd( "string cameraflags", 1, 2 );
-
-	unsetcamera_cmd = cmd_add( "unsetcamera", ::cmd_unsetcamera_f, "unsetcamera <camera_name>" );
-	unsetcamera_cmd arg_obj_add_cmd( "string", 1, 1 );
-
-	deletecamera_cmd = cmd_add( "deletecamera", ::cmd_deletecamera_f, "deletecamera <camera_name>" );
-	deletecamera_cmd arg_obj_add_cmd( "string", 1, 1 );
-
-	linkcameratoent_cmd = cmd_add( "linkcameratoent", ::cmd_linkcameratoent_f, "linkcameratoent {entity} <camera_name> [tagname] [origin_offset] [angles_offset]" );
-	linkcameratoent_cmd arg_obj_add_cmd( "string string vector vector", 1, 4 );
-	linkcameratoent_cmd target_type_add_cmd( "general", true, "Entity to link a spawned camera to", 1 );
-
-	linkcameratoent_cmd = cmd_add( "unlinkcamera", ::cmd_unlinkcamera_f, "unlinkcamera <camera_name>" );
-	linkcameratoent_cmd arg_obj_add_cmd( "string", 1, 1 );
-
-	spectateactor_cmd = cmd_add( "spectateactor", ::cmd_spectateactor_f, "spectateactor {actor} <tagname>" );
-	spectateactor_cmd arg_obj_add_cmd( "string", 1, 1 );
-	spectateactor_cmd target_type_add_cmd( "actor", true, "Actor to spectate", 1 );
-
 	// entity manipulation
 	seteditortargetent_cmd = cmd_add( "seteditortargetent", ::cmd_seteditortargetent_f, "seteditortargetent {entity}" );
-	seteditortargetent_cmd target_type_add_cmd( "general", false, "Manual entity to target for editing", 1 );
+	seteditortargetent_cmd target_add_required( 1, "entity", "general", "Manual entity to target for editing", 1 );
 
-	seteditortargetangles_cmd = cmd_add( "seteditortargetangles", ::cmd_seteditortargetangles_f, "seteditortargetangles <angles> [relative] [scale]" );
-	seteditortargetangles_cmd arg_obj_add_cmd( "vector boolean", 1, 3 );
+	seteditortargetangles_cmd = cmd_add( "seteditortargetangles", ::cmd_seteditortargetangles_f, "seteditortargetangles {[entity]} <angles> [relative] [scale]" );
+	seteditortargetangles_cmd arg_add_required( 1, "angles", "vector", "New angles to set the target entity to" );
+	seteditortargetangles_cmd arg_add_optional( 2, "relative", "boolean", "Causes the entity angles to be modified by <angles> instead of assigned" );
+	seteditortargetangles_cmd arg_add_optional( 3, "scale", "float", "The scale of the angle modification" );
+	seteditortargetangles_cmd target_add_optional( 1, "entity", "general", "Manual entity to target for editing", 1 );
 
-	seteditortargetorigin_cmd = cmd_add( "seteditortargetorigin", ::cmd_seteditortargetorigin_f, "seteditortargetorigin <pos> [relative]" );
-	seteditortargetorigin_cmd arg_obj_add_cmd( "vector boolean", 1, 2 );
+	seteditortargetorigin_cmd = cmd_add( "seteditortargetorigin", ::cmd_seteditortargetorigin_f, "seteditortargetorigin {[entity]} <pos> [relative]" );
+	seteditortargetorigin_cmd arg_add_required( 1, "pos", "vector", "New position to set the target entity to" );
+	seteditortargetorigin_cmd arg_add_optional( 2, "relative", "boolean", "Causes the entity origin to be modified by <pos> instead of assigned" );
+	seteditortargetorigin_cmd target_add_optional( 1, "entity", "general", "Manual entity to target for editing", 1 );
 
 	editheldmodel_cmd = cmd_add( "editheldmodel", ::cmd_editheldmodel_f, "editheldmodel [model] [carry_origin_offset] [carry_angles_offset]" );
-	editheldmodel_cmd arg_obj_add_cmd( "model vector vector", 0, 3 );
+	editheldmodel_cmd arg_add_optional( 1, "model", "model", "New model to assign the held model to" );
+	editheldmodel_cmd arg_add_optional( 2, "carry_origin_offset", "vector", "New carry origin offset" );
+	editheldmodel_cmd arg_add_optional( 3, "carry_angles_offset", "vector", "New carry angles offset" );
 
 	editorspawnheldmodel_cmd = cmd_add( "editorspawnheldmodel", ::cmd_editorspawnheldmodel_f, "editorspawnheldmodel <ent_name> <model> [carry_origin_offset] [carry_angles_offset]" );
-	editorspawnheldmodel_cmd arg_obj_add_cmd( "string model vector vector", 2, 4 );
+	editorspawnheldmodel_cmd arg_add_required( 1, "ent_name", "string", "Name of entity to identify it with later commands" );
+	editorspawnheldmodel_cmd arg_add_required( 2, "model", "model", "Model to assign to entity" );
+	editorspawnheldmodel_cmd arg_add_optional( 3, "carry_origin_offset", "vector", "Initial carry origin offset" );
+	editorspawnheldmodel_cmd arg_add_optional( 4, "carry_angles_offset", "vector", "Initial carry angles offset" );
 	editorspawnheldmodel_cmd make_cmd_immune_to_unittest();
 
 	editorpickup_cmd = cmd_add( "editorpickup", ::cmd_editorpickup_f, "editorpickup {entity} [carry_origin_offset] [carry_angles_offset]" );
-	editorpickup_cmd arg_obj_add_cmd( "vector vector", 0, 2 );
-	editorpickup_cmd target_type_add_cmd( "general", false, "Manual entity to pickup for editing", 1 );
+	editorpickup_cmd arg_add_optional( 1, "carry_origin_offset", "vector", "Initial carry origin offset" );
+	editorpickup_cmd arg_add_optional( 2, "carry_angles_offset", "vector", "Initial carry angles offset" );
+	editorpickup_cmd target_add_optional( 1, "entity", "general", "Manual entity to pickup for editing", 1 );
 
 	editorsetcontext_cmd = cmd_add( "editorsetcontext", ::cmd_editorsetcontext_f, "editorsetcontext <context_mode> [context_scale]" );
-	editorsetcontext_cmd arg_obj_add_cmd( "string", 1, 1 );
+	editorsetcontext_cmd arg_add_required( 1, "context_mode", "string", "Mode for editing selected entity" );
+	editorsetcontext_cmd arg_add_optional( 2, "context_scale", "float", "Scale applied to change values" );
 
 	editorcontextmodifyentity_cmd = cmd_add( "editorcontextmodifyentity", ::cmd_editorcontextmodifyentity_f, "editorcontextmodifyentity <scale> [total_time] [accel_time] [decel_time]" );
-	editorcontextmodifyentity_cmd arg_obj_add_cmd( "float float float float", 1, 4 );
+	editorcontextmodifyentity_cmd arg_add_required( 1, "scale", "float", "Scale of changes made" );
+	editorcontextmodifyentity_cmd arg_add_optional( 2, "total_time", "float", "Total time for entity changes to occur over" );
+	editorcontextmodifyentity_cmd arg_add_optional( 3, "accel_time", "float", "Acceleration time before entity change speed maximum is reached" );
+	editorcontextmodifyentity_cmd arg_add_optional( 4, "decel_time", "float", "Deceleration time before entity change speed minimum is reached" );
 
 	editorsave_cmd = cmd_add( "editorsave", ::cmd_editorsave_f );
 	// TODO:
@@ -134,131 +125,14 @@ autoexec add_cmds()
 
 	// debugging
 	setviewpos_cmd = cmd_add( "setviewpos", ::cmd_setviewpos_f, "setviewpos <origin> [angles]" );
-	setviewpos_cmd arg_obj_add_cmd( "vector vector", 1, 2 );
+	setviewpos_cmd arg_add_required( 1, "origin", "vector", "New origin for you to be moved to" );
+	setviewpos_cmd arg_add_optional( 2, "angles", "vector", "New angles for you to have" );
 
 	//spawn_cmd = cmd_add( "spawn", ::cmd_spawn_f, "spawn <classname> <origin> [spawnflags] [contextual1] [contextual2] [contextual3]" );
-	//spawn_cmd arg_obj_add_cmd( "spawnable_classname vector string string string string", 2, 6 );
+	//spawn_cmd arg_add( "spawnable_classname vector string string string string", 2, 6 );
 
 	//dumpent_cmd = cmd_add( "saveent", ::cmd_dumpent_f, "saveent <type> [classname]" );
-	//dumpent_cmd arg_obj_add_cmd( "string string", 1, 2 );
-}
-
-private cmd_createcamera_f( param )
-{
-	camera_name = param.a[ 0 ];
-	player = self;
-	if ( isdefined( self._cmds_cameras[ camera_name ] ) )
-	{
-		self._cmds_cameras[ camera_name ] delete();
-	}
-	camera_ent = spawn( "script_model", self.origin );
-	camera_ent.angles = self.angles;
-	camera_ent setmodel( "tag_origin" );
-	camera_ent.camera_name = camera_name;
-
-	self._cmds_cameras[ camera_name ] = camera_ent;
-
-	return result_cmdinfo( "Created a camera named: '" + camera_name + "' at: '" + self.origin + "' with angles: '" + self.angles + "'" );
-}
-
-private cmd_setcamera_f( param )
-{
-	camera_name = param.a[ 0 ];
-	camera_flags = _DEFAULT( param.a[ 1 ], 1 );
-	
-	player = self;
-	camera_ent = self._cmds_cameras[ camera_name ];
-	if ( isdefined( camera_ent ) )
-	{
-		player camerasetposition( camera_ent );
-		player camerasetlookat();
-		player cameraactivate( camera_flags );
-
-		return result_cmdinfo( "Set camera lookat to a camera named: '" + camera_name + "' at: '" + self.origin + "' with angles: '" + self.angles + "'" );
-	}
-	else
-	{
-		return result_cmderror( "No camera with name '" + camera_name + "' exists!" );
-	}
-}
-
-private cmd_unsetcamera_f( param )
-{
-	player = self;
-	player cameraactivate( 0 );
-	camera_name = param.a[ 0 ];
-
-	return result_cmdinfo( "Set camera lookat to a camera named: '" + camera_name + "' at: '" + self.origin + "' with angles: '" + self.angles + "'" );
-}
-
-private cmd_deletecamera_f( param )
-{
-	camera_name = param.a[ 0 ];
-	camera_flags = param.a[ 1 ];
-	player = self;
-
-	camera_ent = self._cmds_cameras[ camera_name ];
-	if ( isdefined( camera_ent ) )
-	{
-		camera_ent unlink();
-		camera_ent delete();
-		return result_cmdinfo( "Deleted camera lookat for a camera named: '" + camera_name + "' at: '" + self.origin + " with angles: '" + self.angles + "'" );
-	}
-	else
-	{
-		return result_cmderror( "No camera with name '" + camera_name + "' exists!" );
-	}
-}
-
-private cmd_linkcameratoent_f( param )
-{
-	camera_name = param.a[ 0 ];
-	entity = param.t[ 0 ][ 0 ];
-	tag_name = _DEFAULT( param.a[ 1 ], "" );
-	origin_offset = _DEFAULT( param.a[ 2 ], ( 0, 0, 0 ) );
-	angles_offset = _DEFAULT( param.a[ 3 ], ( 0, 0, 0 ) );
-	camera_ent = self._cmds_cameras[ camera_name ];
-	if ( isdefined( camera_ent ) )
-	{
-		self link_camera_to_ent( camera_name, entity, tag_name, origin_offset, angles_offset );
-		return result_cmdinfo( "Linked camera '" + camera_name + "' to ent '" + entity.classname + "'!"  );
-	}
-	else
-	{
-		return result_cmderror( "No camera with name '" + camera_name + "' exists!" );
-	}
-}
-
-private cmd_unlinkcamera_f( param )
-{
-	camera_name = param.a[ 0 ];
-	camera_ent = self._cmds_cameras[ camera_name ];
-	if ( isdefined( camera_ent ) )
-	{
-		camera_ent unlink();
-		return result_cmdinfo( "Unlinked camera '" + camera_name + "'!"  );
-	}
-	else
-	{
-		return result_cmderror( "No camera with name '" + camera_name + "' exists!" );
-	}
-	
-}
-
-private cmd_spectateactor_f( param )
-{
-	actor = param.t[ 0 ][ 0 ];
-	tag_name = param.a[ 0 ];
-
-	args2 = [];
-	args2[ 0 ] = "auto1";
-	args3 = [];
-	args3[ 0 ] = "auto1";
-	self cmd_createcamera_f( args2 );
-	self scripts\cmd\modules\entity_helpers::link_camera_to_ent( "auto1", actor, tag_name );
-	self cmd_setcamera_f( args3 );
-
-	return result_cmdinfo( "You are now linked to actor: " + actor getentitynumber() );
+	//dumpent_cmd arg_add( "string string", 1, 2 );
 }
 
 // GScr_PhysicsTrace masks
@@ -278,20 +152,25 @@ private cmd_seteditortargetent_f( param )
 		entity = trace[ "entity" ];
 		if ( !isdefined( entity ) )
 		{
-			return result_cmderror( "Not looking at an entity!" );
+			return param add_executor_cmderror( "Not looking at an entity!" );
 		}
 	}
 
 	self hud_binding_subscribe_to_entity( "editor_selected_ent_context", entity );
-	return result_cmdinfo( "Selected target entity: " + entity.classname + " origin: " + entity.origin + " angles: " + entity.angles );
+	param add_executor_cmdinfo( "Selected target entity: " + entity.classname + " origin: " + entity.origin + " angles: " + entity.angles );
 }
 
 private cmd_seteditortargetangles_f( param )
 {
-	editor_ent = self hud_binding_get_subscribed_entity( "editor_selected_ent_context" );
+	// allow using the argument from the target system to optionally override
+	editor_ent = param.t[ 0 ][ 0 ];
 	if ( !isdefined( editor_ent ) )
 	{
-		return result_cmderror( "No target entity selected!" );
+		editor_ent = self hud_binding_get_subscribed_entity( "editor_selected_ent_context" );
+		if ( !isdefined( editor_ent ) )
+		{
+			return param add_executor_cmderror( "No target entity selected!" );
+		}
 	}
 
 	new_angles = param.a[ 0 ];
@@ -309,15 +188,20 @@ private cmd_seteditortargetangles_f( param )
 		editor_ent.angles = new_angles;
 	}
 
-	return result_cmdinfo( "Set angles of target entity: '" + editor_ent.classname + "' to: '" + editor_ent.angles + "'" );
+	param add_executor_cmdinfo( "Set angles of target entity: '" + editor_ent.classname + "' to: '" + editor_ent.angles + "'" );
 }
 
 private cmd_seteditortargetorigin_f( param )
 {
-	editor_ent = self hud_binding_get_subscribed_entity( "editor_selected_ent_context" );
+	// allow using the argument from the target system to optionally override
+	editor_ent = param.t[ 0 ][ 0 ];
 	if ( !isdefined( editor_ent ) )
 	{
-		return result_cmderror( "No target entity selected!" );
+		editor_ent = self hud_binding_get_subscribed_entity( "editor_selected_ent_context" );
+		if ( !isdefined( editor_ent ) )
+		{
+			return param add_executor_cmderror( "No target entity selected!" );
+		}
 	}
 
 	new_origin = param.a[ 0 ];
@@ -332,7 +216,7 @@ private cmd_seteditortargetorigin_f( param )
 		editor_ent.origin = new_origin;
 	}
 
-	return result_cmdinfo( "Set origin of target entity: '" + editor_ent.classname + "' to: '" + new_origin + "'" );
+	param add_executor_cmdinfo( "Set origin of target entity: '" + editor_ent.classname + "' to: '" + new_origin + "'" );
 }
 
 private cmd_setviewpos_f( param )
@@ -349,12 +233,12 @@ private cmd_editheldmodel_f( param )
 
 	if ( !isdefined( editor_held_ent ) )
 	{
-		return result_cmderror( "Cannot set model on held model, you are not holding a model!" );
+		return param add_executor_cmderror( "Cannot set model on held model, you are not holding a model!" );
 	}
 
 	if ( !isdefined( param.a[ 0 ] ) && !isdefined( param.a[ 1 ] ) && !isdefined( param.a[ 2 ] ) )
 	{
-		return result_cmderror( "No arguments, no changes..." );
+		return param add_executor_cmderror( "No arguments, no changes..." );
 	}
 
 	self stopcarryturret( editor_held_ent );
@@ -367,7 +251,7 @@ private cmd_editheldmodel_f( param )
 	editor_held_ent setturretcarried( true );
 	self carryturret( editor_held_ent, carry_offset, carry_angles );
 
-	return result_cmdinfo( "Successfully set your carried model to " + model );
+	param add_executor_cmdinfo( "Successfully set your carried model to " + model );
 }
 
 private cmd_editorspawnheldmodel_f( param )
@@ -380,7 +264,7 @@ private cmd_editorspawnheldmodel_f( param )
 	editor_held_ent = self hud_binding_get_subscribed_entity( "editor_held_context" );
 	if ( isdefined( editor_held_ent ) )
 	{
-		return result_cmderror( "You are already holding a model!" );
+		return param add_executor_cmderror( "You are already holding a model!" );
 	}
 
 	self.editor_spawn_ent_name = ent_name;
@@ -388,7 +272,7 @@ private cmd_editorspawnheldmodel_f( param )
 	self thread scripts\cmd\modules\entity_helpers::take_player_turret_thread( held_ent );
 	self thread scripts\cmd\modules\entity_helpers::editor_held_model_thread( held_ent, "spawn" );
 
-	return result_cmdinfo( "Successfully set your carried model to " + model );
+	param add_executor_cmdinfo( "Successfully set your carried model to " + model );
 }
 
 private cmd_editorspawn_f( param )
@@ -405,7 +289,7 @@ private cmd_editorpickup_f( param )
 	editor_held_ent = self hud_binding_get_subscribed_entity( "editor_held_context" );
 	if ( isdefined( editor_held_ent ) )
 	{
-		return result_cmderror( "You are already holding a model!" );
+		return param add_executor_cmderror( "You are already holding a model!" );
 	}
 
 	if ( !isdefined( target_entity ) )
@@ -413,7 +297,7 @@ private cmd_editorpickup_f( param )
 		trace = self scripts\cmd\modules\entity_helpers::cast_entity_raycast_from_player_eye();
 		if ( !isdefined( trace[ "entity" ] ) )
 		{
-			return result_cmderror( "Not looking at an entity!" );
+			return param add_executor_cmderror( "Not looking at an entity!" );
 		}
 
 		target_entity = trace[ "entity" ];
@@ -426,7 +310,7 @@ private cmd_editorpickup_f( param )
 	held_ent = scripts\cmd\modules\entity_helpers::give_player_turret( target_entity.model, "auto_turret", "equip_turbine_zm_turret", "", true, carry_offset, carry_angles );
 	self thread scripts\cmd\modules\entity_helpers::take_player_turret_thread( held_ent );
 	self thread scripts\cmd\modules\entity_helpers::editor_held_model_thread( held_ent, "move" );
-	return result_cmdinfo( "Picked up target entity: " + target_entity.classname );
+	param add_executor_cmdinfo( "Picked up target entity: " + target_entity.classname );
 }
 
 private cmd_editorcontextmodifyentity_f( param )
@@ -438,13 +322,13 @@ private cmd_editorcontextmodifyentity_f( param )
 
 	if ( context_scale == 0.0 )
 	{
-		return result_cmderror( "<scale> cannot be 0!" );
+		return param add_executor_cmderror( "<scale> cannot be 0!" );
 	}
 
 	editor_context = self hud_binding_get( "editor_mode_context" ).binding_val;
 	if ( editor_context.binding_val == "none" )
 	{
-		return result_cmderror( "You must set the context using the command 'editorsetmodifycontext' first!" );
+		return param add_executor_cmderror( "You must set the context using the command 'editorsetmodifycontext' first!" );
 	}
 
 	base_delta = 1;
@@ -471,7 +355,7 @@ private cmd_editorcontextmodifyentity_f( param )
 			ent moveto( ent.origin + ( 0, 0, delta ), total_time, accel_time, decel_time );
 			break;
 		default:
-			return result_cmderror( "'editor_mode_context' must be one of 'pitch', 'yaw', 'roll', 'x', 'y', 'z'!" );
+			return param add_executor_cmderror( "'editor_mode_context' must be one of 'pitch', 'yaw', 'roll', 'x', 'y', 'z'!" );
 	}
 }
 
@@ -481,14 +365,12 @@ private cmd_editorsetcontext_f( param )
 	current_scale = float( self hud_binding_get( "editor_scale_context" ).binding_val );
 	context_scale = _DEFAULT( current_scale, param.a[ 1 ] );
 
-	if ( context_scale > 0.0 || context_scale < 0.0 )
+	if ( context_scale == 0.0 )
 	{
-		self hud_binding_set( "editor_scale_context", context_scale );
+		return param add_executor_cmderror( "<context_scale> cannot be 0.0!" );
 	}
-	else
-	{
-		return result_cmderror( "<context_scale> cannot be 0.0!" );
-	}
+
+	self hud_binding_set( "editor_scale_context", context_scale );
 
 	switch ( context_mode )
 	{
@@ -507,7 +389,7 @@ private cmd_editorsetcontext_f( param )
 		case "none":
 			break;
 		default:
-			return result_cmderror( "<context> must be one of 'pitch', 'yaw', 'roll', 'x', 'y', 'z', 'none'!" );
+			return param add_executor_cmderror( "<context> must be one of 'pitch', 'yaw', 'roll', 'x', 'y', 'z', 'none'!" );
 	}
 	
 	self hud_binding_set( "editor_mode_context", context_mode );
@@ -552,7 +434,7 @@ private cmd_spawn_f( param )
 		case "info_notnull_big":
 		case "info_volume":
 		default:
-			return result_cmderror( "Unsupported classname: " + classname );
+			return param add_executor_cmderror( "Unsupported classname: " + classname );
 	}
 }
 
@@ -570,48 +452,45 @@ private cmd_dumpent_f( param )
 	{
 		case "dogs":
 			valid_type = true;
-			result = result_cmdinfo( "Successfully added a dog spawner!" );
+			param add_executor_cmdinfo( "Successfully added a dog spawner!" );
 			break;
 
 		case "minimap":
 			valid_type = true;
-			result = result_cmdinfo( "Successfully added a minimap corner!" );
+			param add_executor_cmdinfo( "Successfully added a minimap corner!" );
 			break;
 
 		case "player_spawn":
 			if ( !isdefined( classname ) )
 			{
-				return result_cmderror( "player_spawn type requires a classname!" );
+				return param add_executor_cmderror( "player_spawn type requires a classname!" );
 			}
 
 			valid_type = true;
-			result = result_cmdinfo( "Successfully added a player spawnpoint!" );
+			param add_executor_cmdinfo( "Successfully added a player spawnpoint!" );
 			break;
 	}
 
-	if ( valid_type )
+	if ( !valid_type )
 	{
-		switch ( type )
-		{
-			case "dogs":
-				level scripts\cmd\modules\entity_helpers::dump_mapents_dog_actor_spawner( player.angles, player.origin );
-				break;
-
-			case "minimap":
-				level scripts\cmd\modules\entity_helpers::dump_mapents_minimap_corner( player.angles, player.origin );
-				break;
-
-			case "player_spawn":
-				level scripts\cmd\modules\entity_helpers::dump_gsc_spawnpoint( classname, player.angles, player.origin );
-				level scripts\cmd\modules\entity_helpers::dump_mapents_spawnpoint( classname, player.angles, player.origin );
-				break;
-		}
-
-		scripts\cmd\modules\entity_helpers::create_entity_location_screenshot( type, player.name, player.angles, player.origin, classname );
-		return result;
+		return param add_executor_cmderror( "Type " + type + " is unsupported!" );
 	}
-	else
+
+	switch ( type )
 	{
-		return result_cmderror( "Type " + type + " is unsupported!" );
+		case "dogs":
+			level scripts\cmd\modules\entity_helpers::dump_mapents_dog_actor_spawner( player.angles, player.origin );
+			break;
+
+		case "minimap":
+			level scripts\cmd\modules\entity_helpers::dump_mapents_minimap_corner( player.angles, player.origin );
+			break;
+
+		case "player_spawn":
+			level scripts\cmd\modules\entity_helpers::dump_gsc_spawnpoint( classname, player.angles, player.origin );
+			level scripts\cmd\modules\entity_helpers::dump_mapents_spawnpoint( classname, player.angles, player.origin );
+			break;
 	}
+
+	scripts\cmd\modules\entity_helpers::create_entity_location_screenshot( type, player.name, player.angles, player.origin, classname );
 }

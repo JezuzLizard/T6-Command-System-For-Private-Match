@@ -22,45 +22,44 @@ autoexec add_cmds()
 	cmd_block_set_module_group( "core_zm" );
 	cmd_block_set_rank_group( "cheat" );
 	spectator_cmd = cmd_add( "spectator", ::cmd_spectator_f, "spectator {player}" );
-	spectator_cmd target_type_add_cmd( "player", true, "Player to force into spectate state" );
+	spectator_cmd target_add_required( 1, "player", "player", "Player to force into spectate state" );
 	
 	togglerespawn_cmd = cmd_add( "togglerespawn", ::cmd_togglerespawn_f, "togglerespawn {player}" );
-	togglerespawn_cmd target_type_add_cmd( "player", false, "Player to disable respawning for" );
+	togglerespawn_cmd target_add_optional( 1, "player", "player", "Player to disable respawning for" );
 
 	killactors_cmd = cmd_add( "killactors", ::cmd_killactors_f, "killactors {actor_targets}" );
-	killactors_cmd target_type_add_cmd( "actor", false, "Actor to kill" );
+	killactors_cmd target_add_optional( 1, "actor_targets", "actor", "Actors to kill" );
 
 	respawnspectators_cmd = cmd_add( "spawnspectator", ::cmd_spawnspectator_f, "spawnspectator {player}" );
-	respawnspectators_cmd target_type_add_cmd( "player", false, "Spectators to respawn" );
+	respawnspectators_cmd target_add_optional( 1, "player", "player", "Spectators to respawn" );
 
 	pause_cmd = cmd_add( "pause", ::cmd_pause_f, "pause [minutes]" );
-	pause_cmd arg_obj_add_cmd( "natural_int", 0, 1 );
+	pause_cmd arg_add_optional( 1, "minutes", "natural_int", "Duration minutes until the pause automatically expires" );
 
 	unpause_cmd = cmd_add( "unpause", ::cmd_unpause_f );
-	unpause_cmd arg_obj_add_cmd( "", 0, 0 );
 
 	giveperk_cmd = cmd_add( "perk", ::cmd_perk_f, "perk <perk|all>" );
-	giveperk_cmd arg_obj_add_cmd( "perk", 1, 1 );
+	giveperk_cmd arg_add_required( 1, "perk", "perk", "Perk to give; can be literal 'all'" );
 	giveperk_cmd executor_obj_add_cmd( "Player to give a perk to" );
 
 	takeperk_cmd = cmd_add( "takeperk", ::cmd_takeperk_f, "takeperk <perk|all>" );
-	takeperk_cmd arg_obj_add_cmd( "perk", 1, 1 );
+	takeperk_cmd arg_add_required( 1, "perk", "perk", "Perk to take; can be literal 'all'" );
 	takeperk_cmd executor_obj_add_cmd( "Player to take a perk from" );
 
 	givepermaperk_cmd = cmd_add( "permaperk", ::cmd_permaperk_f, "permaperk <permaperk|all>" );
-	givepermaperk_cmd arg_obj_add_cmd( "permaperk", 1, 1 );
+	givepermaperk_cmd arg_add_required( 1, "permaperk", "permaperk", "Permaperk to give; can be literal 'all'" );
 	givepermaperk_cmd executor_obj_add_cmd( "Player to give a perma perk to" );
 
 	givepoints_cmd = cmd_add( "points", ::cmd_points_f, "points <amount>" );
-	givepoints_cmd arg_obj_add_cmd( "int", 1, 1 );
+	givepoints_cmd arg_add_required( 1, "amount", "int", "Points to give" );
 	givepoints_cmd executor_obj_add_cmd( "Player to give points to" );
 
 	givepowerup_cmd = cmd_add( "powerup", ::cmd_powerup_f, "powerup <powerup>" );
-	givepowerup_cmd arg_obj_add_cmd( "powerup", 1, 1 );
+	givepowerup_cmd arg_add_required( 1, "powerup", "powerup", "Powerup to spawn" );
 	givepowerup_cmd executor_obj_add_cmd( "Player to give a powerup to" );
 
 	giveweapon_cmd = cmd_add( "weapon", ::cmd_weapon_f, "weapon <weapon>" );
-	giveweapon_cmd arg_obj_add_cmd( "weapon", 1, 1 );
+	giveweapon_cmd arg_add_required( 1, "weapon", "weapon", "Weapon to give" );
 	giveweapon_cmd executor_obj_add_cmd( "Player to give a weapon to" );
 
 	toggleperssystemforplayer_cmd = cmd_add( "toggleperssystemforplayer", ::cmd_toggleperssystemforplayer_f, "toggleperssystemforplayer" );
@@ -71,20 +70,21 @@ autoexec add_cmds()
 	openalldoors_cmd = cmd_add( "openalldoors", ::cmd_openalldoors_f );
 
 	setround_cmd = cmd_add( "setround", ::cmd_setround_f, "setround <round_number>" );
-	setround_cmd arg_obj_add_cmd( "positive_int", 1, 1 );
+	setround_cmd arg_add_required( 1, "round_number", "positive_int", "Force change round to <round_number>" );
 
 	nextround_cmd = cmd_add( "nextround", ::cmd_nextround_f );
 
 	prevround_cmd = cmd_add( "prevround", ::cmd_prevround_f );
 
 	setglobalzombiestat_cmd = cmd_add( "setglobalzombiestat", ::cmd_setglobalzombiestat_f, "setglobalzombiestat <statname> <value>" );
-	setglobalzombiestat_cmd arg_obj_add_cmd( "string string", 2, 2 );
+	setglobalzombiestat_cmd arg_add_required( 1, "statname", "string", "Statname to change" );
+	setglobalzombiestat_cmd arg_add_required( 2, "value", "string", "Value to assign to" );
 
 	listglobalzombiestats_cmd = cmd_add( "listglobalzombiestats", ::cmd_listglobalzombiestats_f );
 
 	setallphysparams_cmd = cmd_add( "setallphysparams", ::cmd_setallphysparams_f, "setallphysparams {actor} <vector>" );
-	setallphysparams_cmd arg_obj_add_cmd( "vector", 1, 1 );
-	setallphysparams_cmd target_type_add_cmd( "actor", false, "Actor to modify phys params for" );
+	setallphysparams_cmd arg_add_required( 1, "physparams", "vector", "Vector {actor} target will use for phyparams" );
+	setallphysparams_cmd target_add_optional( 1, "actor", "actor", "Actor to modify phys params for" );
 
 	cmd_block_set_rank_group( "none" );
 	weaponlist_cmd = cmd_add( "weaponlist", ::cmd_weaponlist_f );
@@ -96,10 +96,9 @@ autoexec add_cmds()
 
 private cmd_spectator_f( param )
 {
-	result = result_cmdinfo( "" );
 	targets = param.t[ 0 ];
 
-	for ( i = 0; i < targets.size; i++ )
+	for ( i = 0; i < _SIZE( targets.size ); i++ )
 	{
 		target = targets[ i ];
 		target spawnspectator();
@@ -109,28 +108,18 @@ private cmd_spectator_f( param )
 		}
 		target.spectator_respawn = undefined;
 
-		add_result_executor_msg( result, "Successfully made " + target.name + " a spectator" );
-		add_result_player_msg( result, target, "You are now a spectator" );
+		param add_executor_cmdinfo( "Successfully made " + target.name + " a spectator" );
+		param add_player_msg( target, "You are now a spectator" );
 	}
 
-	result.msg = "Made '" + targets.size + "' players into spectators";
-
-	return result;
+	param add_executor_cmdinfo( "Made '" + targets.size + "' players into spectators" );
 }
 
 private cmd_togglerespawn_f( param )
 {
-	result = result_cmdinfo( "" );
 	targets = param.t[ 0 ];
 
-	assert( isdefined( targets ) );
-
-	if ( !isdefined( targets ) )
-	{
-		return result;
-	}
-
-	for ( i = 0; i < targets.size; i++ )
+	for ( i = 0; i < _SIZE( targets.size ); i++ )
 	{
 		target = targets[ i ];
 		currently_respawning = isDefined( target.spectator_respawn );
@@ -147,13 +136,11 @@ private cmd_togglerespawn_f( param )
 			target.spectator_respawn = target.tcs_original_respawn;
 		}
 
-		add_result_executor_msg( result, target.name + " has their respawn toggled" );
-		add_result_player_msg( result, target, "You will no longer respawn" );
+		param add_executor_cmdinfo( target.name + " has their respawn toggled" );
+		param add_player_msg( target, "You will no longer respawn" );
 	}
 
-	result.msg = "Disable respawning for '" + targets.size + "' players";
-
-	return result;
+	param add_executor_cmdinfo( "Disabled respawning for '" + targets.size + "' players" );
 }
 
 private cmd_killactors_f( param )
@@ -163,7 +150,7 @@ private cmd_killactors_f( param )
 	{
 		targets = getaiarray( level.zombie_team );
 	}
-	for ( i = 0; i < targets.size; i++ )
+	for ( i = 0; i < _SIZE( targets.size ); i++ )
 	{
 		zombie = targets[ i ];
 		if ( isdefined( zombie ) )
@@ -172,21 +159,15 @@ private cmd_killactors_f( param )
 		}
 	}
 
-	return result_cmdinfo( "Killed all zombies" );
+	return param add_executor_cmdinfo( "Killed all zombies" );
 }
 
 private cmd_spawnspectator_f( param )
 {
-	result = result_cmdinfo( "" );
-	targets = param.t[ 0 ];
-
-	if ( !array_validate( targets ) )
-	{
-		targets = level.players;
-	}
+	targets = _DEFAULT( param.t[ 0 ], level.players );
 
 	respawn_count = 0;
-	for ( i = 0; i < targets.size; i++ )
+	for ( i = 0; i < _SIZE( targets.size ); i++ )
 	{
 		player = targets[ i ];
 		if ( player.sessionstate == "spectator" && isDefined( player.spectator_respawn ) )
@@ -205,14 +186,12 @@ private cmd_spawnspectator_f( param )
 			}
 
 			respawn_count++;
-			add_result_executor_msg( result, "Respawned '" + player.name + "'" );
-			add_result_player_msg( result, player, "You have been respawned" );
+			param add_executor_cmdinfo( "Respawned '" + player.name + "'" );
+			param add_player_msg( player, "You have been respawned" );
 		}
 	}
 
-	result.msg = "Successfully respawned '" + respawn_count + "' players";
-
-	return result;
+	param add_executor_cmdinfo( "Successfully respawned '" + respawn_count + "' players" );
 }
 
 // TODO: stop the zombies from dying due to g_ai preventing movement
@@ -222,12 +201,12 @@ private cmd_pause_f( param )
 	if ( duration > 0 )
 	{
 		level thread scripts\zm\cmd\modules\zm_core_helpers::game_pause( duration );
-		return result_cmdinfo( "Game paused for " + duration + " minutes" );
+		return param add_executor_cmdinfo( "Game paused for " + duration + " minutes" );
 	}
 	else 
 	{
 		level thread scripts\zm\cmd\modules\zm_core_helpers::game_pause( -1 );
-		return result_cmdinfo( "Game paused indefinitely use unpause to end the pause" );
+		return param add_executor_cmdinfo( "Game paused indefinitely use unpause to end the pause" );
 	}
 }
 
@@ -235,7 +214,7 @@ private cmd_unpause_f( param )
 {
 	scripts\zm\cmd\modules\zm_core_helpers::game_unpause();
 
-	return result_cmdinfo( "Game unpaused" );
+	return param add_executor_cmdinfo( "Game unpaused" );
 }
 
 private cmd_perk_f( param )
@@ -244,7 +223,7 @@ private cmd_perk_f( param )
 	if ( perk_name != "all" )
 	{
 		self scripts\zm\cmd\modules\zm_core_helpers::give_perk_zm( perk_name );
-		return result_cmdinfo( "Gave perk " + perk_name + " to you" );
+		return param add_executor_cmdinfo( "Gave perk " + perk_name + " to you" );
 	}
 	else 
 	{
@@ -254,7 +233,7 @@ private cmd_perk_f( param )
 			self scripts\zm\cmd\modules\zm_core_helpers::give_perk_zm( perk );
 		}
 
-		return result_cmdinfo( "Gave you all perks" );
+		return param add_executor_cmdinfo( "Gave you all perks" );
 	}
 }
 
@@ -264,7 +243,7 @@ private cmd_takeperk_f( param )
 	if ( perk_name != "all" )
 	{
 		self notify( perk_name + "_stop" );
-		return result_cmdinfo( "Took perk " + perk_name + " from you" );
+		return param add_executor_cmdinfo( "Took perk " + perk_name + " from you" );
 	}
 	else 
 	{
@@ -274,7 +253,7 @@ private cmd_takeperk_f( param )
 			self notify( perk + "_stop" );
 		}
 
-		return result_cmdinfo( "Took all perks from you" );
+		return param add_executor_cmdinfo( "Took all perks from you" );
 	}
 }
 
@@ -284,12 +263,12 @@ private cmd_permaperk_f( param )
 	if ( perma_perk_name != "all" )
 	{
 		self scripts\zm\cmd\modules\zm_core_helpers::give_perma_perk( perma_perk_name );
-		return result_cmdinfo( "Gave you " + perma_perk_name );
+		return param add_executor_cmdinfo( "Gave you " + perma_perk_name );
 	}
 	else
 	{
 		self scripts\zm\cmd\modules\zm_core_helpers::give_all_perma_perks();
-		return result_cmdinfo( "Gave you all perma perks" );
+		return param add_executor_cmdinfo( "Gave you all perma perks" );
 	}
 }
 
@@ -298,17 +277,19 @@ private cmd_points_f( param )
 	points = param.a[ 0 ];
 	self add_to_player_score( points );
 
-	return result_cmdinfo( "Gave you '" + points + "' points" );
+	return param add_executor_cmdinfo( "Gave you '" + points + "' points" );
 }
 
 private cmd_powerup_f( param )
 {
 	powerup_name = param.a[ 0 ];
 	success = self scripts\zm\cmd\modules\zm_core_helpers::give_powerup_zm( powerup_name );
-	if ( success )
+	if ( !success )
 	{
-		return result_cmdinfo( "Spawned '" + powerup_name + "' for you" );
+		return param add_executor_cmderror( "Could not spawn powerup: '" + powerup_name + "'" );
 	}
+
+	return param add_executor_cmdinfo( "Spawned '" + powerup_name + "' for you" );
 }
 
 private cmd_weapon_f( param )
@@ -316,7 +297,7 @@ private cmd_weapon_f( param )
 	weapon = param.a[ 0 ];
 	self thread scripts\zm\cmd\modules\zm_core_helpers::weapon_give_custom( weapon, weapon_is_upgrade( weapon ), true );
 
-	return result_cmdinfo( "Gave you '" + weapon + "'" );
+	param add_executor_cmdinfo( "Gave you '" + weapon + "'" );
 }
 
 private cmd_toggleperssystemforplayer_f( param )
@@ -324,7 +305,7 @@ private cmd_toggleperssystemforplayer_f( param )
 	on_off = cast_bool_to_str( is_true( self.tcs_disable_pers_system ), "on off" );
 	self.tcs_disable_pers_system = !is_true( self.tcs_disable_pers_system );
 
-	return result_cmdinfo( "Toggled pers system for " + self.name + " " + on_off );
+	param add_executor_cmdinfo( "Toggled pers system for " + self.name + " " + on_off );
 }
 
 private cmd_toggleoutofplayableareamonitor_f( param )
@@ -346,18 +327,18 @@ private cmd_toggleoutofplayableareamonitor_f( param )
 		}
 	}
 
-	return result_cmdinfo( "Out of playable area monitor " + on_off );
+	param add_executor_cmdinfo( "Out of playable area monitor " + on_off );
 }
 
 private cmd_openalldoors_f( param )
 {
 	if ( is_true( level.tcs_doors_all_opened ) )
 	{
-		return result_cmdinfo( "All doors are already open" );
+		return param add_executor_cmdinfo( "All doors are already open" );
 	}
 	level thread scripts\zm\cmd\modules\zm_core_helpers::open_seseme();
 
-	return result_cmdinfo( "All doors are now open" );
+	param add_executor_cmdinfo( "All doors are now open" );
 }
 
 private cmd_setround_f( param )
@@ -367,7 +348,7 @@ private cmd_setround_f( param )
 	level.round_number = round_number;
 	scripts\zm\cmd\modules\zm_core_helpers::change_round( round_number );
 
-	return result_cmdinfo( "Round set to " + round_number );
+	param add_executor_cmdinfo( "Round set to " + round_number );
 }
 
 private cmd_nextround_f( param )
@@ -375,7 +356,7 @@ private cmd_nextround_f( param )
 	level.round_number++;
 	scripts\zm\cmd\modules\zm_core_helpers::change_round( level.round_number );
 
-	return result_cmdinfo( "Round set to " + level.round_number );
+	param add_executor_cmdinfo( "Round set to " + level.round_number );
 }
 
 private cmd_prevround_f( param )
@@ -383,7 +364,7 @@ private cmd_prevround_f( param )
 	level.round_number--;
 	scripts\zm\cmd\modules\zm_core_helpers::change_round( level.round_number );
 
-	return result_cmdinfo( "Round set to " + level.round_number );
+	param add_executor_cmdinfo( "Round set to " + level.round_number );
 }
 
 private cmd_setglobalzombiestat_f( param )
@@ -392,7 +373,7 @@ private cmd_setglobalzombiestat_f( param )
 	stat = level.tcs_modifiable_zombie_stats[ stat_name ];
 	if ( !isDefined( stat ) )
 	{
-		return result_cmderror( "1Invalid zombie stat " + stat_name + ", use listglobalzombiestats to see modifiable stats" );
+		return param add_executor_cmderror( "1Invalid zombie stat " + stat_name + ", use listglobalzombiestats to see modifiable stats" );
 	}
 
 	value = param.a[ 1 ];
@@ -401,9 +382,9 @@ private cmd_setglobalzombiestat_f( param )
 	{
 		if ( !scripts\zm\cmd\modules\zm_core_helpers::set_global_zombie_stat( stat, stat_name, stat.reset_value ) )
 		{
-			return result_cmderror( "2Invalid zombie stat " + stat_name + " , use listglobalzombiestats to see modifiable stats" );
+			return param add_executor_cmderror( "2Invalid zombie stat " + stat_name + " , use listglobalzombiestats to see modifiable stats" );
 		}
-		return result_cmdinfo( "Successfully reset " + stat_name + " to its original value" );
+		return param add_executor_cmdinfo( "Successfully reset " + stat_name + " to its original value" );
 	}
 
 	if ( isDefined( level.tcs_arg_type_handlers[ stat.type ] ) )
@@ -412,19 +393,19 @@ private cmd_setglobalzombiestat_f( param )
 
 		if ( !scripts\zm\cmd\modules\zm_core_helpers::set_global_zombie_stat( stat, stat_name, casted_value ) )
 		{
-			return result_cmderror( "3Invalid zombie stat " + stat_name + " , use listglobalzombiestats to see modifiable stats" );
+			return param add_executor_cmderror( "3Invalid zombie stat " + stat_name + " , use listglobalzombiestats to see modifiable stats" );
 		}
 
-		return result_cmdinfo( "Successfully set " + stat_name + " to " + value );
+		return param add_executor_cmdinfo( "Successfully set " + stat_name + " to " + value );
 	}
 
-	return result_cmderror( "Expected positive_int or positive_float, got: " + value );
+	return param add_executor_cmderror( "Expected positive_int or positive_float, got: " + value );
 }
 
 private cmd_listglobalzombiestats_f( param )
 {
 	self thread scripts\zm\cmd\modules\zm_core_helpers::list_zombie_stats_throttled();
-	return result_cmderror( "" );
+	return param add_executor_cmderror( "" );
 }
 
 private cmd_setallphysparams_f( param )
@@ -442,25 +423,20 @@ private cmd_setallphysparams_f( param )
 		zombie setphysparams( phys_params[ 0 ], phys_params[ 1 ], phys_params[ 2 ] );
 	}
 
-	return result_cmdinfo( "Set all zombies phys params to " + phys_params );
+	param add_executor_cmdinfo( "Set all zombies phys params to " + phys_params );
 }
 
 private cmd_weaponlist_f( param )
 {
 	self thread scripts\zm\cmd\modules\zm_core_helpers::list_weapons_throttled();
-	return result_cmdinfo( "" );
 }
 
 private cmd_poweruplist_f( param )
 {
 	self thread scripts\zm\cmd\modules\zm_core_helpers::list_powerups_throttled();
-
-	return result_cmdinfo( "" );
 }
 
 private cmd_perklist_f( param )
 {
 	self thread scripts\zm\cmd\modules\zm_core_helpers::list_perks_throttled();
-
-	return result_cmdinfo( "" );
 }

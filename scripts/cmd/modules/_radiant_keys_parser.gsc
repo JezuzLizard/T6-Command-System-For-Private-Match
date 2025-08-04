@@ -8,7 +8,7 @@
 	return radiant_keys_obj;
 }
 
-/*radiant_key_obj_t*/ private radiant_key_obj_t_new( key, type, desc = undefined )
+/*radiant_key_obj_t*/ private radiant_key_obj_t_new( key, type, desc )
 {
 	desc = _DEFAULT( desc, "No description" );
 	struc = spawnstruct();
@@ -43,7 +43,7 @@ parse_radiant_keys()
 		end_pos = start_pos;
 		found_token = false;
 		tokens = [];
-		for ( i = 0; i < line.size; i++ )
+		for ( i = 0; i < _SIZE( line.size ); i++ )
 		{
 			token = line[ i ];
 			if ( token == " " )
@@ -67,7 +67,7 @@ parse_radiant_keys()
 			if ( token == "/" )
 			{
 				j = i;
-				for ( ; j < line.size; j++ )
+				for ( ; j < _SIZE( line.size ); j++ )
 				{
 					if ( token == "/" || token = " " )
 					{

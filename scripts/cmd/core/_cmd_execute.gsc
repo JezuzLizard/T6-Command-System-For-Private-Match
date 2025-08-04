@@ -76,19 +76,19 @@ private debug_print_execute( index, cmd_obj )
 	self com_printdebuginfo( "Printing info for cmd index '" + index + "'" );
 	self com_printdebuginfo( "cmd_name: '" + cmd_obj.cmd_data_source.cmd_name + "'" );
 	self com_printdebuginfo( "cmd_string: '" + cmd_obj.cmd_string + "'" );
-	for ( i = 0; i < cmd_obj.args.size; i++ )
+	for ( i = 0; i < _SIZE( cmd_obj.args.size ); i++ )
 	{
 		self com_printdebuginfo( "args[ '" + i + "' ]: " + cmd_obj.args[ i ] );
 	}
 
 	foreach ( key, value in cmd_obj.kvps )
 	{
-		self com_printdebuginfo( "kvps[ '" + key + "']:" );
+		self com_printdebuginfo( "kvps[ '" + key + "' ]:" );
 		self com_printdebuginfo( "base_key: " + value.base_key );
 		self com_printdebuginfo( "type: " + value.type );
-		for ( i = 0; i < value.v.size; i++ )
+		for ( i = 0; i < _SIZE( value.v.size ); i++ )
 		{
-			self com_printdebuginfo( "v[ '" + i + "']: " + value.v[ i ] );
+			self com_printdebuginfo( "v[ '" + i + "' ]: " + value.v[ i ] );
 		}
 	}
 }
@@ -149,7 +149,7 @@ private cmd_execute( message, initiator, is_hidden, is_team_chat, from_rcon )
 		executors = initiator get_executors( executor_directive );
 		debug_print_execute( i, cmd_obj );
 
-		for ( executor_index = 0; executor_index < executors.size; executor_index++ )
+		for ( executor_index = 0; executor_index < _SIZE( executors.size ); executor_index++ )
 		{
 			executor = executors[ executor_index ];
 
@@ -168,7 +168,7 @@ private cmd_execute( message, initiator, is_hidden, is_team_chat, from_rcon )
 
 			initiator.tcs_silent_cmds = getdvarintdefault( "tcs_silent_cmds", 0 );
 			initiator.tcs_logprint_cmd_usage = getdvarintdefault( "tcs_logprint_cmd_usage", 1 );
-			initiator.tcs_feedback_mode = getdvarintdefault( "tcs_feedback_mode", 1 ); // 0 == executor receives cmd feedback, 1 == initiator receives cmd feedback, 2 == initiator and executor receives cmd feedback
+			initiator.tcs_feedback_mode = getdvarintdefault( "tcs_feedback_mode", 1 ); // 0 == executor receives cmd feedback, 1 == initiator receives cmd feedback, 2 == initiator and executor receives cmd feedback, 3 == same as 2 but also print the additional msgs to the initiator/executor
 			executor cmd_execute_internal( initiator, cmd_obj );
 		}
 
@@ -181,64 +181,58 @@ private cmd_execute( message, initiator, is_hidden, is_team_chat, from_rcon )
 	}
 }
 
-private test_cmd_is_valid( cmd_object, args )
+private arg_cast( arg_type, arg )
 {
-	//self com_printcmd( cmd_object );
-	if ( args.size < cmd_object.min_args )
+	msgs = [];
+	foreach ( atype, val in arg_type.overloads )
 	{
-		self throw_exception( "Too few args: usage: " + cmd_object.usage );
-	}
-	if ( args.size > cmd_object.max_args )
-	{
-		self throw_exception( "Too many args: usage: " + cmd_object.usage );
-	}
+		if ( !isDefined( level.tcs_arg_type_handlers[ atype ] ) || !isDefined( level.tcs_arg_type_handlers[ atype ].cast_func ) )
+		{
+			return arg;
+		}
 
-	return true;
-}
+		cast_result = self [[ level.tcs_arg_type_handlers[ atype ].cast_func ]]( arg );
 
-private arg_cast( arg_type, arg, arg_index )
-{
-	cast_result = result_obj_new( "argtype", "struct" );
-	if ( isDefined( level.tcs_arg_type_handlers[ arg_type ] ) && isDefined( level.tcs_arg_type_handlers[ arg_type ].cast_func ) )
-	{
-		cast_result = self [[ level.tcs_arg_type_handlers[ arg_type ].cast_func ]]( arg );
+		if ( cast_result.errored )
+		{
+			msgs[ msgs.size ] = cast_result.msg;
+			continue;
+		}
 			
-		return cast_result;
+		return cast_result.value;
 	}
 
-	return set_cast_success( cast_result, arg, "no argtype defined" );
+	self throw_exception( "Failed to cast to one of the valid overloads for arg_type" );
 }
 
-private target_cast( ordinal, target_type, executor_directive )
+private target_cast( cmd_data_source, ordinal, target_type, target_kvp )
 {
-	obj = generic_obj_t_new( "target_cast" );
-
-	obj.value = self get_entity_targets( target_type.etype, executor_directive );
-	if ( ( executor_directive.type != "undefined" && executor_directive.type != "default" ) && ( !isdefined( obj.value ) || obj.value.size == 0 ) )
+	foreach ( etype, val in target_type.overloads )
 	{
-		obj.errored = true;
-		obj.msg = "Failed to find any compatible entities";
+		value = self get_entity_targets( val.etype, target_kvp );
+
+		if ( array_validate( value ) )
+		{
+			if ( value.size > val.max_targets )
+			{
+				self throw_exception( "Command '" + cmd_data_source.cmd_name + "' expects a maximum of '" + val.max_targets + "' targets, for '" + target_type.name + "' got '" + value.size + "' instead" );
+			}
+
+			return value;
+		}
+	}
+	
+	if ( ( target_kvp.type != "undefined" && target_kvp.type != "default" ) )
+	{
+		self throw_exception( "Failed to find any compatible entities" );
 	}
 
-	if ( isstring( obj.value[ 0 ] ) && obj.value[ 0 ] == "#default" && target_type.is_required )
+	if ( target_type.is_required )
 	{
-		self throw_exception( "Cannot specify explicit default targets for 'target" + ordinal + "'" );
+		self throw_exception( "'target" + ordinal + "' is required" );
 	}
 
-	// clear the array for _DEFAULT to work automatically
-	if ( isstring( obj.value[ 0 ] ) && obj.value[ 0 ] == "#default" )
-	{
-		obj.value = [];
-	}
-
-	return obj;
-}
-
-private cast_to_array( item )
-{
-	new_array = [];
-	new_array[ new_array.size ] = item;
-	return new_array;
+	return [];
 }
 
 private get_random_limited_array( array, limit )
@@ -253,57 +247,79 @@ private get_random_limited_array( array, limit )
 	return new_array;
 }
 
-private get_executors( executor_directive )
+private get_array_entities( directive, etype )
 {
-	executors = [];
+	values = strtok( directive.v[ 0 ], "," );
+	ents = [];
+	foreach ( presumed_ent in values )
+	{
+		ent_obj = cast_str_to_entity( presumed_ent, etype );
+		if ( ent_obj.errored )
+		{
+			return [];
+		}
 
-	if ( !isdefined( executor_directive ) )
+		ents[ ents.size ] = ent_obj.value;
+	}
+
+	// no point in doing further randomization...
+	if ( directive.type == "array" || ents.size == 1 )
+	{
+		return ents;
+	}
+
+	return add_to_array( undefined, random_val( ents ) );
+}
+
+private get_name_entities( directive, etype )
+{
+	ents = [];
+	ent_obj = cast_str_to_entity( directive.v[ 0 ], etype );
+	if ( ent_obj.errored )
+	{
+		return [];
+	}
+
+	ents[ 0 ] = ent_obj.value;
+	return ents;
+}
+
+private get_executors( directive )
+{
+	if ( !isdefined( directive ) )
 	{
 		return self.default_executors;
 	}
-	switch ( executor_directive.type )
+	switch ( directive.type )
 	{
 		case "all":
-			executors = level.players;
-			return executors;
+			return level.players;
 		case "undefined": // error
 			return [];
 		case "random":
 			limit = 1;
-			if ( isdefined( executor_directive.v[ 0 ] ) )
+			if ( isdefined( directive.v[ 0 ] ) )
 			{
-				limit = int( executor_directive.v[ 0 ] );
+				limit = int( directive.v[ 0 ] );
 			}
 			
 			return get_random_limited_array( level.players, limit );
 		case "array":
-			values = strtok( executor_directive.v[ 0 ], "," );
-			players = [];
-			foreach ( presumed_player in values )
-			{
-				players[ players.size ] = cast_str_to_entity( presumed_player, "player" );
-			}
-
-			return players;
 		case "array_random":
-			values = strtok( executor_directive.v[ 0 ], "," );
-			players = [];
-			foreach ( presumed_player in values )
-			{
-				players[ players.size ] = cast_str_to_entity( presumed_player, "player" );
-			}
-
-			return add_to_array( executors, random_val( players ) );
+			return get_array_entities( directive, "player" );
 		case "self":
-			return add_to_array( executors, self );
+			return add_to_array( undefined, self );
 		case "default":
 			return self.default_executors;
+		case "name":
+			return get_name_entities( directive, "player" );
 	}
 
+	self throw_exception( "Unknown directive.type: '" + directive.type + "'" );
 	return [];
 }
 
-private get_entity_targets( etype, executor_directive )
+private get_entity_targets( etype, directive )
 {
 	getter_func = undefined;
 	if ( isdefined( level._entity_type_funcs[ etype ] ) )
@@ -320,66 +336,51 @@ private get_entity_targets( etype, executor_directive )
 		return [];
 	}
 
-	ents = undefined;
-	switch ( executor_directive.type )
+	switch ( directive.type )
 	{
 		case "all":
-			ents = [[ getter_func ]]();
-			return ents;
+			return self [[ getter_func ]]();
 		case "undefined":
+		case "default":
 			return [];
 		case "random":
 			ents = [[ getter_func ]]();
 			limit = 1;
-			if ( isdefined( executor_directive.v[ 0 ] ) )
+			if ( isdefined( directive.v[ 0 ] ) )
 			{
-				limit = int( executor_directive.v[ 0 ] );
+				limit = int( directive.v[ 0 ] );
 			}
 			
 			return get_random_limited_array( ents, limit );
 		case "array":
 		case "array_random":
-			values = strtok( executor_directive.v[ 0 ], "," );
-			ents = [];
-			foreach ( presumed_ent in values )
-			{
-				ents[ ents.size ] = cast_str_to_entity( presumed_ent, etype );
-			}
-
-			if ( executor_directive.type == "array" )
-			{
-				return ents;
-			}
-			else
-			{
-				return add_to_array( undefined, random_val( ents ) );
-			}
-			
+			return get_array_entities( directive, etype );
 		case "self":
 			return add_to_array( undefined, self );
-		case "default":
-			return [];
 		case "function_call":
-			if ( executor_directive.v[ 0 ] == "" )
+			if ( directive.v[ 0 ] == "" )
 			{
 				// TODO: search paths
 				return [];
 			}
 
-			func = getfunction( executor_directive.v[ 0 ], executor_directive.v[ 1 ] );
+			func = getfunction( directive.v[ 0 ], directive.v[ 1 ] );
 			if ( isdefined( func ) )
 			{
 				// structure of arguments:
 				// 0 = caller
 				// > 0 = regular arguments
 				// caller must always be defined, but it can be level or '#' for default which would use the normal argument casting logic
-				args = strtok( executor_directive.v[ 2 ], "," );
+				args = strtok( directive.v[ 2 ], "," );
 				// requires casting without millions of script errors
 			}
 			// TODO: check entities to match the expected etype
 			return [];
+		case "name":
+			return get_name_entities( directive, etype );
 	}
 
+	self throw_exception( "Unknown directive.type: '" + directive.type + "'" );
 	return [];
 }
 
@@ -387,7 +388,14 @@ private cmd_execute_internal( initiator, cmd_obj )
 {
 	cmd_data_source = cmd_obj.cmd_data_source;
 
-	initiator test_cmd_is_valid( cmd_data_source, cmd_obj.args );
+	if ( cmd_obj.args.size < cmd_data_source get_min_args() )
+	{
+		initiator throw_exception( "Too few args: usage: " + cmd_data_source.usage );
+	}
+	if ( cmd_obj.args.size > cmd_data_source get_max_args() )
+	{
+		initiator throw_exception( "Too many args: usage: " + cmd_data_source.usage );
+	}
 
 	if ( self == level.server && cmd_data_source.requires_player_executor )
 	{
@@ -403,11 +411,18 @@ private cmd_execute_internal( initiator, cmd_obj )
 	// Leaving the casting up to the cmd itself
 	if ( array_validate( cmd_obj.args ) && array_validate( cmd_data_source.arg_types ) )
 	{
-		for ( i = 0; i < cmd_obj.args.size; i++ )
+		i = 0;
+		foreach ( key, val in cmd_data_source.arg_types )
 		{
 			arg = cmd_obj.args[ i ];
-			arg_type = cmd_data_source.arg_types[ i ];
-			if ( arg_type == "..." )
+			if ( !isdefined( arg ) )
+			{
+				// arguments sent is less than max possible arguments
+				break;
+			}
+
+			arg_type = val;
+			if ( is_true( arg_type.overloads[ "..." ] ) )
 			{
 				// consume rest of arguments
 				for ( j = i; j < cmd_obj.args.size; j++ )
@@ -417,151 +432,117 @@ private cmd_execute_internal( initiator, cmd_obj )
 
 				break;
 			}
-			cast_result = initiator arg_cast( arg_type, arg, i );
-			if ( cast_result.errored )
-			{
-				initiator throw_exception( cast_result.msg, cmd_obj );
-			}
-			else
-			{
-				param.a[ i ] = cast_result.value;
-			}
+
+			param.a[ i ] = initiator arg_cast( arg_type, arg );
+			i++;
 		}
 	}
 
 	if ( array_validate( cmd_obj.kvps ) && array_validate( cmd_data_source.target_types ) )
 	{
 		// find target kvps
-		targets = [];
-		foreach ( key, value in cmd_obj.kvps )
+		cmd_target_keys = getarraykeys( cmd_obj.kvps );
+		for ( i = 0; i < _SIZE( cmd_target_keys.size ); i++ )
 		{
-			if ( value.base_key[ 0 ] == "t" || value.base_key == "target" )
+			target_kvp = cmd_obj.kvps[ cmd_target_keys[ i ] ];
+			if ( target_kvp.base_key[ 0 ] != "t" && target_kvp.base_key != "target" )
 			{
-				index_str = getsubstr( key, key.size - 1 );
-				index = int( index_str );
-				if ( index <= 0 )
-				{
-					initiator throw_exception( "Target ordinal must be an integer greater than 0" );
-				}
-				targets[ index - 1 ] = value;
+				continue;
 			}
-		}
 
-		for ( i = 0; i < targets.size; i++ )
-		{
-			param.t[ i ] = []; // this is so derefs on the array do not script error if the target was optional
-			target_type = cmd_data_source.target_types[ i ];
-			cast_result = initiator target_cast( ( i + 1 ), target_type, targets[ i ] );
-			if ( cast_result.errored )
+			ordinal_str = getsubstr( cmd_target_keys[ i ], cmd_target_keys[ i ].size - 1 );
+			ordinal = int( ordinal_str );
+			if ( ordinal <= 0 )
 			{
-				if ( !target_type.is_required )
-				{
-					continue;
-				}
-
-				initiator throw_exception( cast_result.msg, cmd_obj );
+				initiator throw_exception( "Target ordinal must be an integer greater than 0" );
 			}
-			else
-			{
-				if ( cast_result.value.size > target_type.max_targets )
-				{
-					initiator throw_exception( "Command '" + cmd_obj.cmd_name + "' expects a maximum of '" + target_type.max_targets + "' got '" + cast_result.value.size + "' instead" , cmd_obj );
-				}
 
-				param.t[ i ] = cast_result.value;
-			}
+			target_type = get_target_from_ordinal( cmd_data_source, ordinal );
+			param.t[ i ] = initiator target_cast( cmd_data_source, ordinal, target_type, target_kvp );
 		}
 	}
 
-	result = self [[ cmd_data_source.func ]]( param );
+	for ( i = 0; i < _SIZE( cmd_data_source.target_types.size ); i++ )
+	{
+		// initialize the arrays for the targets for [ 0 ] deref in _DEFAULT to not script error
+		if ( !isdefined( param.t[ i ] ) )
+		{
+			param.t[ i ] = [];
+		}
+	}
 
-	self handle_result_feedback( initiator, result, cmd_obj.cmd_name, cmd_obj.cmd_string );
+	param.executor = self;
+	param.initiator = initiator;
+	self [[ cmd_data_source.func ]]( param );
+
+	self handle_feedback( initiator, cmd_obj, param );
 }
 
-private handle_result_feedback( initiator, result, cmd_name, cmd_string )
+private handle_feedback( initiator, cmd_obj, param )
 {
 	if ( is_true( initiator.tcs_logprint_cmd_usage ) && !is_true( level.doing_cmd_system_unittest ) )
 	{
 		cmd_log = "";
 		if ( self != initiator )
 		{
-			cmd_log = initiator.name + " executed '" + cmd_string + "' on behalf of " + self.name;
+			cmd_log = "'" + initiator.name + " executed '" + cmd_obj.cmd_string + "', on behalf of '" + self.name + "'";
 		}
 		else
 		{
-			cmd_log = initiator.name + " executed '" + cmd_string + "'";
+			cmd_log = "'" + initiator.name + "' executed '" + cmd_obj.cmd_string + "'";
 		}
 		
-		com_printinfo( cmd_log );
+		initiator com_printinfo( cmd_log );
 	}
-	if ( !isDefined( result ) || is_true( initiator.tcs_silent_cmds ) )
-	{
-		return;
-	}
-	if ( !isDefined( result.filter ) || result.filter == "" )
-	{
-		com_printerror( "Attempted to print feedback for " + cmd_name + " but no filter exists in the result" );
-		return;
-	}
-	if ( !isDefined( result.msg ) )
-	{
-		com_printerror( "Attempted to print feedback for " + cmd_name + " but no message exists in the result" );
-		return;
-	}
-	if ( result.msg == "" )
+	if ( !array_validate( param.result_array ) || is_true( initiator.tcs_silent_cmds ) )
 	{
 		return;
 	}
 
-	executor_channel = self com_get_cmd_feedback_channel();
-	if ( result.channels != "" )
+	for ( i = 0; i < _SIZE( param.result_array.size ); i++ )
 	{
-		executor_channel = result.channels;
-	}
+		player = param.result_array[ i ].player;
+		if ( player == param.executor || player == param.initiator )
+		{
+			if ( initiator.tcs_feedback_mode < 3 )
+			{
+				continue;
+			}
+		}
 
-	initiator_channel = initiator com_get_cmd_feedback_channel();
-	if ( result.channels != "" )
-	{
-		initiator_channel = result.channels;
-	}
-
-	for ( i = 0; i < result.player_msg_array.size; i++ )
-	{
-		result.player_msg_array[ i ].player com_printinfo( result.player_msg_array[ i ].msg );
+		level com_printf( param.result_array[ i ].channels, param.result_array[ i ].filter, param.result_array[ i ].msg, player );
 	}
 
 	if ( initiator.tcs_feedback_mode == 2 )
 	{
 		if ( initiator != self )
 		{
-			for ( i = 0; i < result.executor_msg_array.size; i++ )
-			{
-				level com_printf( initiator_channel, result.filter, result.msg, initiator );
-			}
-			level com_printf( initiator_channel, result.filter, result.msg, initiator );
+			initiator print_feedback( param );
 		}
 		
-		for ( i = 0; i < result.executor_msg_array.size; i++ )
-		{
-			level com_printf( executor_channel, result.filter, result.msg, initiator );
-		}
-		level com_printf( executor_channel, result.filter, result.msg, self );
+		self print_feedback( param );
 	}
 	else if ( initiator.tcs_feedback_mode == 1 )
 	{
-		for ( i = 0; i < result.executor_msg_array.size; i++ )
-		{
-			level com_printf( initiator_channel, result.filter, result.msg, initiator );
-		}
-		level com_printf( initiator_channel, result.filter, result.msg, initiator );
+		initiator print_feedback( param );
 	}
 	else if ( initiator.tcs_feedback_mode == 0 )
 	{
-		for ( i = 0; i < result.executor_msg_array.size; i++ )
+		self print_feedback( param );
+	}
+}
+
+private print_feedback( param )
+{
+	for ( i = 0; i < _SIZE( param.result_array.size ); i++ )
+	{
+		player = param.result_array[ i ].player;
+		if ( player != self )
 		{
-			level com_printf( executor_channel, result.filter, result.msg, initiator );
+			continue;
 		}
-		level com_printf( executor_channel, result.filter, result.msg, self );
+
+		level com_printf( param.result_array[ i ].channels, param.result_array[ i ].filter, param.result_array[ i ].msg, self );
 	}
 }
 

@@ -30,16 +30,16 @@ monitor_stub()
 	{
 		wait 0.05;
 		waittillframeend;
-		players = getPlayers();
+		players = getplayers();
 
-		for ( type_index = 0; type_index < typekeys.size; type_index++ )
+		for ( type_index = 0; type_index < _SIZE( typekeys.size ); type_index++ )
 		{
 			type = typekeys[type_index];
 
 			if ( !level.vsmgr[type].in_use )
 				continue;
 
-			for ( player_index = 0; player_index < players.size; player_index++ )
+			for ( player_index = 0; player_index < _SIZE( players.size ); player_index++ )
 			{
 				if ( players[ player_index ] istestclient() )
 					continue;

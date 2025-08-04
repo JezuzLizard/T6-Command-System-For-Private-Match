@@ -19,7 +19,8 @@ private parse_array()
 
 	// trim the opening '[' and closing ']'
 	level._parse_obj.current_value_string = getsubstr( level._parse_obj.current_value_string, 1, level._parse_obj.current_value_string.size - 1 );
-	level._parse_obj.kvps[ level._parse_obj.current_key_string ].v[ level._parse_obj.current_value_index ] = level._parse_obj.current_value_string;
+	str = level._parse_obj.current_value_string;
+	level._parse_obj.kvps[ level._parse_obj.current_key_string ].v[ level._parse_obj.current_value_index ] = str;
 
 	set_type( "array" );
 }
@@ -35,6 +36,7 @@ private parse_target_random()
 	{
 		level._parse_obj.current_value_string = getsubstr( level._parse_obj.current_value_string, 2 );
 		parse_array();
+		set_type( "array_random" );
 		return;
 	}
 
@@ -45,9 +47,9 @@ private parse_target_random()
 
 	level._parse_obj.current_value_string = getsubstr( level._parse_obj.current_value_string, 1 );
 
-	if ( int( level._parse_obj.current_value_string ) <= 0 )
+	if ( int( level._parse_obj.current_value_string ) <= 1 )
 	{
-		throw_parse_exception( "Random target pool limit must be a number and greater than '0'" );
+		throw_parse_exception( "Random target pool limit must be a number and greater than '1'" );
 	}
 
 	level._parse_obj.kvps[ level._parse_obj.current_key_string ].v[ level._parse_obj.current_value_index ] = level._parse_obj.current_value_string;
@@ -61,7 +63,7 @@ private try_parse_function()
 	path_end_pos = -1;
 	name_end_pos = -1;
 	str = level._parse_obj.current_value_string;
-	for ( i = 0; i < str.size; i++ )
+	for ( i = 0; i < _SIZE( str.size ); i++ )
 	{
 		if ( str[ i ] == "(" ) // function start
 		{
@@ -247,7 +249,7 @@ private split_combined_kvps()
 		throw_parse_exception( "Key value pairs are not matching" );
 	}
 
-	for ( i = 0; i < kvps.size; i += 2 )
+	for ( i = 0; i < _SIZE( kvps.size ); i += 2 )
 	{
 		switch ( kvps[ i + 1 ][ 0 ] )
 		{
@@ -270,6 +272,7 @@ private split_kvps()
 	func_needs_closed = 0;
 	array_needs_closed = 0;
 	key_needs_closed = 0;
+	is_single_kvp = true;
 
 	str = level._parse_obj.current_token;
 
@@ -314,14 +317,25 @@ private split_kvps()
 
 		if ( commas_delimit && str[ pos ] == "," )
 		{
-			combined_kvps[ combined_kvps.size ] = getsubstr( str, start_pos, pos );
+			is_single_kvp = false;
+			index = combined_kvps.size;
+			combined_kvps[ index ] = getsubstr( str, start_pos, pos );
 			start_pos = pos + 1; // start after the separating comma
+			com_printdebugwarning( "split_kvps() Delimited '" + index + "' key: '" + combined_kvps[ index ] + "'" );
 		}
 
 		if ( ( pos + 1 ) >= str.size )
 		{
 			combined_kvps[ combined_kvps.size ] = getsubstr( str, start_pos );
+			com_printdebugwarning( "split_kvps() Terminating key: '" + combined_kvps[ combined_kvps.size - 1 ] + "'" );
+			break;
 		}
+	}
+
+	if ( is_single_kvp )
+	{
+		combined_kvps[ 0 ] = getsubstr( str, start_pos );
+		com_printdebugwarning( "split_kvps() is_single_kvp key: '" + combined_kvps[ 0 ] + "'" );
 	}
 
 	return combined_kvps;
@@ -422,7 +436,7 @@ private parse_token_until_delimiter( str, start, delimiter = " " )
 {
 	delimited_obj = spawnstruct();
 	delimited_obj.end = start;
-	for ( i = start; i < str.size; i++ )
+	for ( i = start; i < _SIZE( str.size ); i++ )
 	{
 		if ( ( i + 1 ) >= str.size )
 		{
@@ -454,7 +468,7 @@ private custom_split( str )
 	split_start = 0;
 	was_in_identifier = false;
 	spaces_delimit = true;
-	for ( i = 0; i < str.size; i++ )
+	for ( i = 0; i < _SIZE( str.size ); i++ )
 	{
 		if ( str[ i ] == "@" )
 		{
@@ -528,7 +542,7 @@ private custom_split( str )
 	com_printdebugwarning( message );
 
 	multiple_cmds_keys = strtok( message, "^" );
-	for ( i = 0; i < multiple_cmds_keys.size; i++ )
+	for ( i = 0; i < _SIZE( multiple_cmds_keys.size ); i++ )
 	{
 		cmd_strings = custom_split( multiple_cmds_keys[ i ] );
 		cmd_find_result = cast_str_to_cmd( cmd_strings[ 0 ] );
@@ -539,7 +553,7 @@ private custom_split( str )
 
 		parse_obj_t_new( multiple_cmds_keys[ i ], cmd_find_result.value );
 
-		for ( j = 1; j < cmd_strings.size; j++ )
+		for ( j = 1; j < _SIZE( cmd_strings.size ); j++ )
 		{
 			level._parse_obj.current_token = cmd_strings[ j ];
 			com_printdebugwarning( level._parse_obj.current_token );
@@ -559,10 +573,10 @@ private custom_split( str )
 				level._parse_obj.current_token = getsubstr( level._parse_obj.current_token, 2, ( level._parse_obj.current_token.size - 1 ) );
 				
 
-				kvps = split_kvps();
-				for ( k = 0; k < kvps.size; k += 2 )
+				combined_kvps = split_kvps();
+				for ( k = 0; k < _SIZE( combined_kvps.size ); k++ )
 				{
-					kvps = strtok( kvps[ k ], "=" );
+					kvps = strtok( combined_kvps[ k ], "=" );
 					key = kvps[ 0 ];
 					value = kvps[ 1 ];
 
@@ -577,9 +591,9 @@ private custom_split( str )
 					}
 
 					add_key( key );
-					com_printdebugwarning( "key: '" + key + "'" );
+					com_printdebugwarning( "parse_cmd_message() key: '" + key + "'" );
 					add_value( value );
-					com_printdebugwarning( "value: '" + value + "'" );
+					com_printdebugwarning( "parse_cmd_message() value: '" + value + "'" );
 					parse_directive();
 				}
 			}

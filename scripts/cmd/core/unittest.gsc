@@ -10,11 +10,15 @@ autoexec start_unittest()
 	cmd_block_set_module_group( "unittest" );
 	cmd_block_set_rank_group( "cheat" );
 	unittest_cmd = cmd_add( "unittest", ::cmd_unittest_validargs_f, "unittest [botcount] [duration] [rate]" );
-	unittest_cmd arg_obj_add_cmd( "positive_int positive_int positive_float", 0, 3 );
+	unittest_cmd arg_add_optional( 1, "botcount", "positive_int", "Number of bots to spawn for spamming commands" );
+	unittest_cmd arg_add_optional( 2, "duration", "positive_int", "Duration of unittest" );
+	unittest_cmd arg_add_optional( 3, "rate", "positive_float", "Rate of command execution" );
 	unittest_cmd make_cmd_immune_to_unittest();
 
 	testcmd_cmd = cmd_add( "testcmd", ::cmd_testcmd_f, "testcmd <cmdalias> [threadcount] [duration]" );
-	testcmd_cmd arg_obj_add_cmd( "cmdalias positive_int positive_int", 1, 3 );
+	testcmd_cmd arg_add_required( 1, "cmdalias", "cmdalias", "Command to stress test" );
+	testcmd_cmd arg_add_optional( 2, "threadcount", "positive_int", "Number of threads to execute the command on" );
+	testcmd_cmd arg_add_optional( 3, "duration", "positive_int", "Duration of testcmd unittesting" );
 	testcmd_cmd make_cmd_immune_to_unittest();
 }
 
@@ -65,7 +69,7 @@ private cmd_unittest_validargs_f( param )
 		setDvar( "tcs_unittest", 0 );
 	}
 
-	return result_cmdinfo( "Cmd system unit test activated" );
+	param add_executor_cmdinfo( "Cmd system unit test activated" );
 }
 
 private cmd_testcmd_f( param )
@@ -86,7 +90,7 @@ private cmd_testcmd_f( param )
 		level notify( "stop_testcmd" );
 	}
 
-	return result_cmdinfo( "Testcmd " + cast_bool_to_str( level.doing_cmd_system_testcmd, "activated deactivated" ) + " for cmd " + cmd );
+	param add_executor_cmdinfo( "Testcmd " + cast_bool_to_str( level.doing_cmd_system_testcmd, "activated deactivated" ) + " for cmd " + cmd );
 }
 
 private set_cmd_rate( rate )
@@ -111,7 +115,7 @@ private do_unit_test()
 		manage_unittest_bots( required_bots );
 		wait 1;
 	}
-	for ( i = 0; i < level.players.size; i++ )
+	for ( i = 0; i < _SIZE( level.players.size ); i++ )
 	{
 		if ( is_true( level.players[ i ].pers["isBot"] ) )
 		{
@@ -124,7 +128,7 @@ private do_unit_test()
 private manage_unittest_bots( required_bots, cmd )
 {
 	bot_count = 0;
-	for ( i = 0; i < level.players.size; i++ )
+	for ( i = 0; i < _SIZE( level.players.size ); i++ )
 	{
 		if ( is_true( level.players[ i ].pers["isBot"] ) )
 		{
@@ -144,7 +148,12 @@ private manage_unittest_bots( required_bots, cmd )
 			return;
 		}
 		bot.pers[ "isBot" ] = true;
-		bot maps\mp\zombies\_zm::reset_rampage_bookmark_kill_times();
+		
+		reset_rampage_func = getfunction( "maps/mp/zombies/_zm", "reset_rampage_bookmark_kill_times" );
+		if ( isdefined( reset_rampage_func ) )
+		{
+			bot [[ reset_rampage_func ]]();
+		}
 		if ( isDefined( cmd ) )
 		{
 			bot.specific_cmd = cmd;
@@ -195,26 +204,30 @@ private activate_random_cmds()
 
 private create_random_valid_targets( cmd )
 {
+	target_gen_obj = generic_obj_t_new( "target_gen" );
 	targets = "";
+	target_gen_obj.value = targets;
 	types = cmd.target_types;
 
 	if ( types.size <= 0 )
 	{
-		return "";
+		return target_gen_obj;
 	}
-	for ( i = 0; i < types.size; i++ )
+
+	foreach ( ordinal, val in types )
 	{
-		ordinal = ( i + 1 );
-		if ( !types[ i ].is_required && cointoss() )
+		if ( !val.is_required && cointoss() )
 		{
 			continue;
 		}
 
-		if ( !isdefined( level._entity_type_funcs[ types[ i ].etype ] ) )
+		random_overload = random_val( val.overloads );
+		if ( !isdefined( level._entity_type_funcs[ random_overload.etype ] ) )
 		{
 			assert( false );
-			com_printdebugerror( "Unknown entity type: '" + types[ i ].etype + "' registered for command: '" + cmd.cmd_name + "'" );
-			return "";
+			com_printdebugerror( "Unknown entity type: '" + random_overload.etype + "' registered for command: '" + cmd.cmd_name + "'" );
+			target_gen_obj.errored = true;
+			return target_gen_obj;
 		}
 
 		if ( targets == "" )
@@ -222,8 +235,27 @@ private create_random_valid_targets( cmd )
 			targets += "@{";
 		}
 
-		targets += "target" + ordinal;
-		targets += self [[ level._target_obj_generate ]]( types[ i ].etype );
+		if ( cointoss() )
+		{
+			targets += "target";
+		}
+		else
+		{
+			targets += "t";
+		}
+
+		targets += ordinal;
+		targets += "=";
+
+		target_str = self [[ level._target_obj_generate ]]( random_overload );
+		if ( target_str == "" )
+		{
+			com_printdebugerror( "Could not generate entities of etype: '" + random_overload.etype + "' max_targets: '" + random_overload.max_targets + "'" );
+			target_gen_obj.errored = true;
+			return target_gen_obj;
+		}
+		targets += target_str;
+
 		targets += ",";
 	}
 
@@ -237,7 +269,9 @@ private create_random_valid_targets( cmd )
 		targets += "}";
 	}
 
-	return targets;
+	target_gen_obj.value = targets;
+
+	return target_gen_obj;
 }
 
 private construct_chat_message_for_unittest()
@@ -254,22 +288,31 @@ private construct_chat_message_for_unittest()
 	{
 		return;
 	}
-	cmdargs = self create_random_valid_args2( cmd_object );
-	targets = self create_random_valid_targets( cmd_object );
+	arg_gen_obj = self create_random_valid_args2( cmd_object );
+	if ( arg_gen_obj.errored )
+	{
+		return;
+	}
+
+	target_gen_obj = self create_random_valid_targets( cmd_object );
+	if ( target_gen_obj.errored )
+	{
+		return;
+	}
 
 	message = cmd_object.cmd_name;
-	if ( targets != "" )
+	if ( target_gen_obj.value != "" )
 	{
-		message += " " + targets;
+		message += " " + target_gen_obj.value;
 	}
-	if ( cmdargs.size > 0 )
+	else if ( cmd_object.has_required_target )
 	{
-		message += " " + repackage_args( cmdargs );
+		return; // something went wrong
 	}
-
-	if ( cmdargs.size < cmd_object.min_args )
+	
+	if ( arg_gen_obj.value.size > 0 )
 	{
-		return; // this only happens on unimplemented arg types
+		message += " " + repackage_args( arg_gen_obj.value );
 	}
 
 	cmd_log = self.name + " executed " + message + " count " + level.unittest_total_cmds_used;
@@ -280,53 +323,45 @@ private construct_chat_message_for_unittest()
 
 private create_random_valid_args2( cmd_object )
 {
-	args = [];
+	arg_gen_obj = generic_obj_t_new( "arg_gen" );
+	arg_gen_obj.value = [];
 	types = cmd_object.arg_types;
 
 	if ( !isDefined( types ) )
 	{
-		return args;
+		return arg_gen_obj;
 	}
-	min_args = cmd_object.min_args;
-	for ( i = 0; i < min_args; i++ )
+
+	i = 0;
+	foreach ( ordinal, type in types )
 	{
-		arg = self generate_args_from_type( types[ i ] );
+		if ( !type.is_required )
+		{
+			if ( cointoss() )
+			{
+				break;
+			}
+		}
+
+		random_overloaded_type = random_key( type.overloads );
+		arg = self generate_args_from_type( random_overloaded_type );
 		if ( arg.errored || is_true( arg.rand_gen_unimplemented ) )
 		{
-			return [];
+			arg_gen_obj.errored = true;
+			return arg_gen_obj;
 		}
 
-		args[ i ] = arg.str_value;
+		arg_gen_obj.value[ i ] = arg.str_value;
+		i++;
 	}
 
-	for ( i = min_args; i < cmd_object.max_args; i++ )
-	{
-		if ( cointoss() )
-		{
-			break;
-		}
-
-		if ( !isdefined( types[ i ] ) || types[ i ] == "..." )
-		{
-			break;
-		}
-
-		arg = self generate_args_from_type( types[ i ] );
-		if ( arg.errored || is_true( arg.rand_gen_unimplemented ) )
-		{
-			return [];
-		}
-
-		args[ i ] = arg.str_value;
-	}
-
-	return args;
+	return arg_gen_obj;
 }
 
 private generate_args_from_type( type )
 {
 	rand_obj = generic_obj_t_new();
-	if ( isDefined( level.tcs_arg_type_handlers[ type ] ) )
+	if ( isDefined( level.tcs_arg_type_handlers[ type ] ) && isdefined( level.tcs_arg_type_handlers[ type ].rand_gen_func ) )
 	{
 		com_printdebugwarning( "generate_args_from_type: '" + type + "'" );
 		rand_obj = self [[ level.tcs_arg_type_handlers[ type ].rand_gen_func ]]();
@@ -373,7 +408,7 @@ private test_cmd_for_time( cmd, threadcount, duration )
 	{
 		manage_unittest_bots( 1 );
 	}
-	for ( i = 0; i < threadcount; i++ )
+	for ( i = 0; i < _SIZE( threadcount ); i++ )
 	{
 		cmd_object = level.tcs_cmds[ cmd ];
 		if ( level.players.size < getDvarInt( "sv_maxclients" ) )
@@ -388,7 +423,7 @@ private test_cmd_for_time( cmd, threadcount, duration )
 private end_testcmd_after_time( time_in_minutes )
 {
 	level endon( "stop_testcmd" );
-	for ( i = 0; i < ( time_in_minutes * 60 ); i++ )
+	for ( i = 0; i < ( _SIZE( time_in_minutes ) * 60 ); i++ )
 	{
 		wait 1;
 	}
@@ -438,7 +473,7 @@ private activate_specific_cmd()
 private test_cmd_kick_bots_at_end()
 {
 	level waittill( "stop_testcmd" );
-	for ( i = 0; i < level.players.size; i++ )
+	for ( i = 0; i < _SIZE( level.players.size ); i++ )
 	{
 		if ( is_true( level.players[ i ].pers["isBot"] ) )
 		{

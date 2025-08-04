@@ -189,7 +189,7 @@ hud_bindings_update_loop()
 	for ( ;; )
 	{
 		keys = getarraykeys( self._hud_bindings );
-		for ( i = 0; i < keys.size; i++ )
+		for ( i = 0; i < _SIZE( keys.size ); i++ )
 		{
 			hud_binding_obj = self._hud_bindings[ keys[ i ] ];
 			entity = hud_binding_obj.binding_subscribed_entity;
@@ -252,7 +252,7 @@ vertical_text_list_add_member( parent, new_member )
 
 vertical_text_list_update_members( parent )
 {
-	for ( i = 0; i < parent.members.size; i++ )
+	for ( i = 0; i < _SIZE( parent.members.size ); i++ )
 	{
 		member = parent.members[ i ];
 		vertical_text_list_update_member( parent, member, i );

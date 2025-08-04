@@ -171,8 +171,12 @@ autoexec init_consts()
 	level._target_obj_generate = ::target_obj_generate;
 }
 
-get_entities_by_etype( etype, start = 0, end = 1024 )
+get_entities_by_etype( etype, start, end  )
 {
+	start = _DEFAULT( start, 0 );
+	start = _CLAMP( start, 0, 1024 );
+	end = _DEFAULT( ent, 1024 );
+	end = _CLAMP( end, 1, 1024 );
 	ents = [];
 
 	if ( !isdefined( etype ) || !isdefined( level._entity_types[ etype ] ) )
@@ -275,7 +279,7 @@ get_missile_array( classnames_str )
 	classnames = strtok( classnames_str, " " );
 
 	entities = [];
-	for ( i = 0; i < classnames.size; i++ )
+	for ( i = 0; i < _SIZE( classnames.size ); i++ )
 	{
 		missile_entities = getentarray( classnames[ i ], "classname" );
 
@@ -324,7 +328,7 @@ get_helicopter_array()
 	vehicles = get_entities_by_static_range( "vehicle" );
 
 	helicopters = [];
-	for ( i = 0; i < vehicles.size; i++ )
+	for ( i = 0; i < _SIZE( vehicles.size ); i++ )
 	{
 		if ( vehicles[ i ] getentitytype() == level._entity_types[ "helicopter" ] )
 		{
@@ -388,7 +392,7 @@ get_bot_array()
 	players = get_player_array();
 
 	bots = [];
-	for ( i = 0; i < players.size; i++ )
+	for ( i = 0; i < _SIZE( players.size ); i++ )
 	{
 		player = players[ i ];
 		if ( !player istestclient() )
@@ -425,8 +429,9 @@ private register_entity_string_type( classname, required_fields, optional_fields
 	level._entity_string_types[ classname ].optional_fields = optional_fields;
 }
 
-private register_entity_string_field( field_name, type_value, readonly = false )
+private register_entity_string_field( field_name, type_value, readonly )
 {
+	readonly = _DEFAULT( readonly, false );
 	if ( !isdefined( level._entity_string_fields ) )
 	{
 		level._entity_string_fields = [];
@@ -906,7 +911,7 @@ arg_obj_idflags_generate( arg1, arg2, arg3 )
 	max_flags_to_add = randomint( idflags_array.size );
 
 	find.str_value = "";
-	for ( i = 0; i < max_flags_to_add; i++ )
+	for ( i = 0; i < _SIZE( max_flags_to_add ); i++ )
 	{
 		random_flag_index = randomint( idflags_array.size );
 		flags |= level.tcs_idflags[ idflags_array[ random_flag_index ] ];
@@ -937,7 +942,7 @@ arg_obj_idflags_cast( arg )
 		return set_cast_success( find, flags, "flags==all" );
 	}
 
-	for ( i = 0; i < flag_strs.size; i++ )
+	for ( i = 0; i < _SIZE( flag_strs.size ); i++ )
 	{
 		if ( !isdefined( level.tcs_idflags[ flag_strs[ i ] ] ) )
 		{
@@ -1020,25 +1025,53 @@ arg_obj_spawnable_classname_cast( arg )
 	return set_cast_success( find, arg, "classname==" + arg );
 }
 
-target_obj_generate( etype )
+clamp_array( arr, limit )
 {
-	find = generic_obj_t_new();
+	if ( limit >= arr.size )
+	{
+		return arr;
+	}
 
-	target_str = "=";
+	new_arr = [];
+	i = 0;
+	foreach ( key, val in arr )
+	{
+		if ( i >= limit )
+		{
+			break;
+		}
+
+		new_arr[ key ] = val;
+		i++;
+	}
+
+	return new_arr;
+}
+
+target_obj_generate( target_type )
+{
+	max_targets = _DEFAULT( target_type.max_targets, 1024 );
+	etype = target_type.etype;
+	find = generic_obj_t_new( "target_gen" );
+
+	target_str = "";
 	if ( cointoss() )
 	{
-		rand = randomint( 3 );
+		rand = randomint( 4 );
 
 		switch ( rand )
 		{
 			case 0:
-				target_str += "!";
+				target_str += "!"; // undefined
 				break;
 			case 1:
-				target_str += "*";
+				target_str += "*"; // all
 				break;
 			case 2:
-				target_str += "#";
+				target_str += "#"; // default
+				break;
+			case 3:
+				target_str += "&"; // self
 				break;
 		}
 
@@ -1051,26 +1084,45 @@ target_obj_generate( etype )
 		return "";
 	}
 
+	max_targets = _CLAMP( max_targets, 1, ents.size );
+
 	ents = array_randomize( ents );
+	ents = clamp_array( ents, max_targets );
+	if ( ents.size == 0 )
+	{
+		return "";
+	}
+
+	// no point in continuing if we only have one entity to work with
+	if ( ents.size == 1 )
+	{
+		return target_str + ents[ 0 ] getentitynumber();
+	}
 
 	rand = randomint( 3 );
 
+	// it doesn't exactly make sense to generate rand_limits of 1
+	if ( ents.size <= 2 )
+	{
+		rand = 2;
+	}
+
 	switch ( rand )
 	{
-		case 0:
+		case 0: // random
 			target_str += "$";
-			rand_limit = randomintrange( 1, ( ents.size + 1 ) );
+			rand_limit = randomintrange( 2, ( ents.size + 1 ) );
 			target_str += rand_limit;
 			break;
-		case 1:
+		case 1: // array
 			if ( cointoss() )
 			{
 				target_str += "$";
 			}
 			target_str += "[";
-			rand_limit = randomintrange( 1, ( ents.size + 1 ) );
+			rand_limit = randomintrange( 2, ( ents.size + 1 ) );
 
-			for ( i = 0; i < rand_limit; i++ )
+			for ( i = 0; i < _SIZE( rand_limit ); i++ )
 			{
 				if ( ( etype == "player" || etype == "bot" ) && cointoss() )
 				{
@@ -1100,7 +1152,7 @@ target_obj_generate( etype )
 
 			target_str += "]";
 			break;
-		case 2:
+		case 2: // name
 			rand = randomint( 100 );
 			if ( rand == 0 )
 			{

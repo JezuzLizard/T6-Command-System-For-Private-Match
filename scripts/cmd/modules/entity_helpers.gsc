@@ -33,11 +33,6 @@ private on_editor_connect()
 		level._baseline_text_hud settext( "REEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE" );
 	}
 
-	if ( !isdefined( self._cmds_cameras ) )
-	{
-		self._cmds_cameras = [];
-	}
-
 	if ( !isdefined( self._editor_placed_ents ) )
 	{
 		self._editor_placed_ents = [];
@@ -70,19 +65,6 @@ private on_editor_connect()
 	self hud_binding_set( "editor_scale_context", 1.0 );
 
 	self thread hud_bindings_update_loop();
-}
-
-link_camera_to_ent( camera_name, ent, tag_name, origin_offset = undefined, angles_offset = undefined )
-{
-	origin_offset = _DEFAULT( origin_offset, ( 0, 0, 0 ) );
-	angles_offset = _DEFAULT( angles_offset, ( 0, 0, 0 ) );
-	if ( !isdefined( self._cmds_cameras[ camera_name ] ) )
-	{
-		return;
-	}
-
-	camera_ent = self._cmds_cameras[ camera_name ];
-	camera_ent linkto( ent, tag_name, origin_offset, angles_offset );
 }
 
 cast_entity_raycast_from_player_eye()
@@ -227,7 +209,7 @@ add_field_history( entfield_name, new_value )
 
 set_entfield_relative( entfield_name, new_value )
 {
-	result_obj = result_obj_new( "entfield" );
+	result_obj = generic_obj_t_new( "entfield" );
 	switch ( entfield_name )
 	{
 		case "classname":
@@ -277,7 +259,7 @@ set_entfield_relative( entfield_name, new_value )
 
 set_entfield( entfield_name, new_value )
 {
-	result_obj = result_obj_new( "entfield" );
+	result_obj = generic_obj_t_new( "entfield" );
 	switch ( entfield_name )
 	{
 		case "classname":
@@ -351,7 +333,7 @@ set_entfield( entfield_name, new_value )
 
 get_entfield( entfield_name )
 {
-	result_obj = result_obj_new( "entfield" );
+	result_obj = generic_obj_t_new( "entfield" );
 	switch ( entfield_name )
 	{
 		case "classname":
@@ -1003,7 +985,7 @@ hash_ent( entity )
 	new_string = "";
 
 	full_string = classname + "!" + model + "!" + origin + "!" + angles + "!" + spawnflags + "!" + health + "!" + birthtime;
-	for ( i = 0; i < full_string.size; i++ )
+	for ( i = 0; i < _SIZE( full_string.size ); i++ )
 	{
 		if ( full_string[ i ] == "(" || full_string[ i ] == ")" )
 		{
@@ -1059,7 +1041,7 @@ new_debug_hud( x, y_offset, multi_hud = false )
 get_mapents_vector( vector_str )
 {
 	final_vector_str = "";
-	for ( i = 0; i < vector_str.size; i++ )
+	for ( i = 0; i < _SIZE( vector_str.size ); i++ )
 	{
 		if ( vector_str[ i ] == "(" || vector_str[ i ] == ")" || vector_str[ i ] == "," )
 		{
@@ -1084,7 +1066,7 @@ get_vector_filename( vector )
 	vector_str = vector + "";
 
 	final_vector_str = "";
-	for ( i = 0; i < vector_str.size; i++ )
+	for ( i = 0; i < _SIZE( vector_str.size ); i++ )
 	{
 		if ( vector_str[ i ] == "(" || vector_str[ i ] == ")" )
 		{
@@ -1231,6 +1213,7 @@ dump_mapents_perk_machine( angles, origin, location, gametype, perk, modelm )
 
 create_entity_location_screenshot( type, player_name, angles, origin, classname = undefined, location = undefined, gamemodegroup = undefined )
 {
+	classname = _DEFAULT( classname, undefined );
 	angles_str = get_vector_filename( angles );
 	origin_str = get_vector_filename( origin );
 

@@ -13,22 +13,22 @@ autoexec cmd_init_perms()
 	for ( i = 0; i < tcs_default_ranks.size; i++ )
 	{
 		rank = tcs_default_ranks[ i ];
-		allowedcmds_dvar = getdvarstringdefault( "tcs_rank_" + rank + "_allowedcmds", "" );
-		disallowedcmds_dvar = getdvarstringdefault( "tcs_rank_" + rank + "_disallowedcmds", "" );
+		allowedcmds_dvar = get_dvar_string_default( "tcs_rank_" + rank + "_allowedcmds", "" );
+		disallowedcmds_dvar = get_dvar_string_default( "tcs_rank_" + rank + "_disallowedcmds", "" );
 		tcs_perms.ranks[ rank ] = spawnStruct();
 		tcs_perms.ranks[ rank ].allowedcmds = allowedcmds_dvar != "" ? strtok( allowedcmds_dvar, " " ) : undefined;
 		tcs_perms.ranks[ rank ].disallowedcmds = disallowedcmds_dvar != "" ? strtok( disallowedcmds_dvar, " " ) : undefined;
 	}
 
-	custom_ranks_str = getdvarstringdefault( "tcs_custom_rank_names", "" );
+	custom_ranks_str = get_dvar_string_default( "tcs_custom_rank_names", "" );
 	custom_ranks = custom_ranks_str != "" ? strtok( custom_ranks_str, " " ) : undefined;
 	if ( isdefined( custom_ranks ) )
 	{
-		for ( i = 0; i < custom_ranks.size; i++ )
+		for ( i = 0; i < _SIZE( custom_ranks.size ); i++ )
 		{
 			rank = custom_ranks[ i ];
-			allowedcmds_dvar = getdvarstringdefault( "tcs_rank_" + rank + "_allowedcmds", "" );
-			disallowedcmds_dvar = getdvarstringdefault( "tcs_rank_" + rank + "_disallowedcmds", "" );
+			allowedcmds_dvar = get_dvar_string_default( "tcs_rank_" + rank + "_allowedcmds", "" );
+			disallowedcmds_dvar = get_dvar_string_default( "tcs_rank_" + rank + "_disallowedcmds", "" );
 			tcs_perms.ranks[ rank ] = spawnstruct();
 			tcs_perms.ranks[ rank ].allowedcmds = allowedcmds_dvar != "" ? strtok( allowedcmds_dvar, " " ) : undefined;
 			tcs_perms.ranks[ rank ].disallowedcmds = disallowedcmds_dvar != "" ? strtok( disallowedcmds_dvar, " " ) : undefined;
@@ -41,7 +41,7 @@ autoexec cmd_init_perms()
 	{
 		player_entries = strTok( player_perm_list, "|" );
 		index = 0;
-		for ( i = 0; i < player_entries.size; i++ )
+		for ( i = 0; i < _SIZE( player_entries.size ); i++ )
 		{
 			player_entry = player_entries[ i ];
 			player_entry_array = strTok( player_entry, " " );
@@ -97,7 +97,7 @@ private set_player_perms_entry( player )
 		player_entries = strTok( player_perm_list, "|" );
 		index = 0;
 		found_player = false;
-		for ( i = 0; i < player_entries.size; i++ )
+		for ( i = 0; i < _SIZE( player_entries.size ); i++ )
 		{
 			player_entry = player_entries[ i ];
 			player_entry_array = strTok( player_entry, " " );
@@ -117,7 +117,7 @@ private set_player_perms_entry( player )
 		{
 			player_entries[ index ] = player_entry_array[ 0 ] + " " + player_entry_array[ 1 ] + " " + player_entry_array[ 2 ];
 			new_perms_list = "";
-			for ( i = 0; i < player_entries.size; i++ )
+			for ( i = 0; i < _SIZE( player_entries.size ); i++ )
 			{
 				new_perms_list += player_entries[ i ] + ",";
 			}
@@ -134,7 +134,7 @@ private set_player_perms_entry( player )
 
 private player_exists_in_perms_system( player )
 {
-	for ( i = 0; i < level.tcs_player_entries.size; i++ )
+	for ( i = 0; i < _SIZE( level.tcs_player_entries.size ); i++ )
 	{
 		player_in_server = level.server cast_str_to_entity( level.tcs_player_entries[ i ].player_entry, "player" );
 		if ( !player_in_server.errored && player_in_server.value == player )

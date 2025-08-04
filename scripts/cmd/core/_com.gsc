@@ -38,8 +38,9 @@ private com_channel_is_active( channel )
 	return isDefined( level.com_channels[ channel ] );
 }
 
-private com_caps_msg_title( channel, filter, allow_custom_colors = false )
+private com_caps_msg_title( channel, filter, allow_custom_colors )
 {
+	allow_custom_colors = _DEFAULT( allow_custom_colors, false );
 	if ( filter == "notitle" )
 	{
 		return "";
@@ -98,7 +99,7 @@ private com_iprintln_array( message, players )
 	{
 		return;
 	}
-	for ( i = 0; i < players.size; i++ )
+	for ( i = 0; i < _SIZE( players.size ); i++ )
 	{
 		players[ i ] iPrintLn( message );
 	}
@@ -110,7 +111,7 @@ private com_iprintlnbold( message, players )
 	{
 		return;
 	}
-	for ( i = 0; i < level.players.size; i++ )
+	for ( i = 0; i < _SIZE( level.players.size ); i++ )
 	{
 		level.players[ i ] iprintlnbold( message );
 	}
@@ -120,18 +121,21 @@ com_printf_internal( channels, filter, message, players )
 {
 	if ( !isDefined( channels ) )
 	{
+		assert( false );
 		return;
 	}
 	if ( !isDefined( filter ) )
 	{
+		assert( false );
 		return;
 	}
 	if ( !isDefined( message ) || isstring( message ) && message == "" )
 	{
+		assert( false );
 		return;
 	}
 	channel_keys = strTok( channels, "|" );
-	for ( i = 0; i < channel_keys.size; i++ )
+	for ( i = 0; i < _SIZE( channel_keys.size ); i++ )
 	{
 		channel = channel_keys[ i ];
 		if ( com_channel_is_active( channel ) && com_filter_is_active( filter ) )

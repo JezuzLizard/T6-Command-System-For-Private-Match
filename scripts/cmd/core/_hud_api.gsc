@@ -255,7 +255,7 @@ set_hud_field( field_name, val )
 		return;
 	}
 
-	for ( i = 0; i < self.children.size; i++ )
+	for ( i = 0; i < _SIZE( self.children.size ); i++ )
 	{
 		child = self.children[ i ];
 
@@ -263,13 +263,15 @@ set_hud_field( field_name, val )
 	}
 }
 
-set_safe_text( text, is_label = false )
+set_safe_text( text, is_label )
 {
+	is_label = _DEFAULT( is_label, false );
+
 	if ( level._text_count >= level._text_limit )
 	{
 		// clear all strings
 		level._baseline_text_hud clearalltextafterhudelem();
-		for ( i = 0; i < level._text_huds.size; i++ )
+		for ( i = 0; i < _SIZE( level._text_huds.size ); i++ )
 		{
 			text_hud = level._text_huds[ i ];
 			text_hud.label = "";
@@ -279,7 +281,7 @@ set_safe_text( text, is_label = false )
 		level._text_count = 0;
 
 		// restore previous text for active huds
-		for ( i = 0; i < level._text_huds.size; i++ )
+		for ( i = 0; i < _SIZE( level._text_huds.size ); i++ )
 		{
 			text_hud = level._text_huds[ i ];
 			if ( isdefined( level._text_huds[ i ].save_label ) )
@@ -317,19 +319,19 @@ set_safe_text( text, is_label = false )
 	}
 }
 
-call_hud_method( call_name, arg1 = undefined, arg2 = undefined, arg3 = undefined, arg4 = undefined, arg5 = undefined )
+call_hud_method( call_name, args )
 {
 	switch ( call_name )
 	{
 		case "fadeovertime":
-			time = arg1;
+			time = args[ 0 ];
 			self fadeovertime( time );
 			break;
 		case "setshader":
-			material = arg1;
-			width = arg2;
-			height = arg3;
-			if ( isdefined( arg3 ) )
+			material = args[ 0 ];
+			width = args[ 1 ];
+			height = args[ 2 ];
+			if ( isdefined( height ) )
 			{
 				self setshader( material, width, height );
 			}
@@ -339,34 +341,34 @@ call_hud_method( call_name, arg1 = undefined, arg2 = undefined, arg3 = undefined
 			}
 			break;
 		case "settargetent":
-			ent = arg1;
+			ent = args[ 0 ];
 			self settargetent( ent );
 			break;
 		case "cleartargetent":
 			self cleartargetent();
 			break;
 		case "settimer":
-			time = arg1;
+			time = args[ 0 ];
 			self settimer( time );
 			break;
 		case "settimerup":
-			time = arg1;
+			time = args[ 0 ];
 			self settimerup( time );
 			break;
 		case "settenthstimer":
-			time = arg1;
+			time = args[ 0 ];
 			self settenthstimer( time );
 			break;
 		case "settenthstimerup":
-			time = arg1;
+			time = args[ 0 ];
 			self settenthstimerup( time );
 			break;
 		case "setclock":
-			time = arg1;
-			duration = arg2;
-			material = arg3;
-			width = arg4;
-			height = arg5;
+			time = args[ 0 ];
+			duration = args[ 1 ];
+			material = args[ 2 ];
+			width = args[ 3 ];
+			height = args[ 4 ];
 			if ( isdefined( height ) )
 			{
 				self setclock( time, duration, material, width, height );
@@ -377,11 +379,11 @@ call_hud_method( call_name, arg1 = undefined, arg2 = undefined, arg3 = undefined
 			}
 			break;
 		case "setclockup":
-			time = arg1;
-			duration = arg2;
-			material = arg3;
-			width = arg4;
-			height = arg5;
+			time = args[ 0 ];
+			duration = args[ 1 ];
+			material = args[ 2 ];
+			width = args[ 3 ];
+			height = args[ 4 ];
 			if ( isdefined( height ) )
 			{
 				self setclockup( time, duration, material, width, height );
@@ -392,14 +394,14 @@ call_hud_method( call_name, arg1 = undefined, arg2 = undefined, arg3 = undefined
 			}
 			break;
 		case "setvalue":
-			value = arg1;
+			value = args[ 0 ];
 			self setvalue( value );
 			break;
 		case "setwaypoint":
-			constant_size = arg1;
-			offscreen_material = arg2;
-			unk1 = arg3;
-			unk2 = arg4;
+			constant_size = args[ 0 ];
+			offscreen_material = args[ 1 ];
+			unk1 = args[ 2 ];
+			unk2 = args[ 3 ];
 			if ( isdefined( unk2 ) )
 			{
 				self setwaypoint( constant_size, offscreen_material, unk1, unk2 );
@@ -418,13 +420,13 @@ call_hud_method( call_name, arg1 = undefined, arg2 = undefined, arg3 = undefined
 			}
 			break;
 		case "scaleovertime":
-			scale_time = arg1;
-			scale_width = arg2;
-			scale_height = arg3;
+			scale_time = args[ 0 ];
+			scale_width = args[ 1 ];
+			scale_height = args[ 2 ];
 			self scaleovertime( scale_time, scale_width, scale_height );
 			break;
 		case "moveovertime":
-			move_time = arg1;
+			move_time = args[ 0 ];
 			self moveovertime( move_time );
 			break;
 		case "reset":
@@ -434,44 +436,44 @@ call_hud_method( call_name, arg1 = undefined, arg2 = undefined, arg3 = undefined
 			self destroy();
 			break;
 		case "setpulsefx":
-			letter_time = arg1;
-			decay_start_time = arg2;
-			decay_duration = arg3;
+			letter_time = args[ 0 ];
+			decay_start_time = args[ 1 ];
+			decay_duration = args[ 2 ];
 			self setpulsefx( letter_time, decay_start_time, decay_duration );
 			break;
 		case "setcod7decodefx":
-			letter_time = arg1;
-			decay_start_time = arg2;
-			decay_duration = arg3;
+			letter_time = args[ 0 ];
+			decay_start_time = args[ 1 ];
+			decay_duration = args[ 2 ];
 			self setcod7decodefx( letter_time, decay_start_time, decay_duration );
 			break;
 		case "setredactfx":
-			decay_start_time = arg1;
-			decay_duration = arg2;
-			redact_decay_start_time = arg3;
-			redact_decay_duration = arg4;
+			decay_start_time = args[ 0 ];
+			decay_duration = args[ 1 ];
+			redact_decay_start_time = args[ 2 ];
+			redact_decay_duration = args[ 3 ];
 			self setredactfx( decay_start_time, decay_duration, redact_decay_start_time, redact_decay_duration );
 			break;
 		case "settypewriterfx":
-			letter_time = arg1;
-			decay_start_time = arg2;
-			decay_duration = arg3;
+			letter_time = args[ 0 ];
+			decay_start_time = args[ 1 ];
+			decay_duration = args[ 2 ];
 			self settypewriterfx( letter_time, decay_start_time, decay_duration );
 			break;
 		case "setplayernamestring":
-			ent = arg1;
+			ent = args[ 0 ];
 			self setplayernamestring( ent );
 			break;
 		case "setmapnamestring":
-			mapname = arg1;
+			mapname = args[ 0 ];
 			self setmapnamestring( mapname );
 			break;
 		case "setgametypestring":
-			gametype = arg1;
+			gametype = args[ 0 ];
 			self setmapnamestring( gametype );
 			break;
 		case "changefontscaleovertime":
-			scale_time = arg1;
+			scale_time = args[ 0 ];
 			self changefontscaleovertime( scale_time );
 			break;
 		default:
@@ -483,10 +485,10 @@ call_hud_method( call_name, arg1 = undefined, arg2 = undefined, arg3 = undefined
 		return;
 	}
 
-	for ( i = 0; i < self.children.size; i++ )
+	for ( i = 0; i < _SIZE( self.children.size ); i++ )
 	{
 		child = self.children[ i ];
 
-		child call_hud_method( call_name, arg1, arg2, arg3, arg4, arg5 );
+		child call_hud_method( call_name, args );
 	}
 }

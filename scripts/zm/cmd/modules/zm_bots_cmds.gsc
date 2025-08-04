@@ -15,17 +15,16 @@ autoexec add_cmds()
 	waittillframeend;
 	cmd_block_set_module_group( "core_common" );
 	cmd_block_set_rank_group( "cheat" );
-	setscriptgoal = cmd_add( "setscriptgoal", "scriptgoal {bot} <goal|entity> [dist]", ::cmd_setscriptgoal_f );
-	setscriptgoal arg_obj_add_cmd( "goal", 1, 2 );
-	setscriptgoal target_type_add_cmd( "bot", true, "Bot to set goal for" );
+	setscriptgoal = cmd_add( "setscriptgoal", "scriptgoal {<bot>} <goal|entity> [dist]", ::cmd_setscriptgoal_f );
+	setscriptgoal arg_add_required( 1, "goal", "goal", "Goal to force the bot to go to" );
+	setscriptgoal arg_add_required( 2, "dist", "positive_float", "Distance from <goal> until bot considers goal reached" );
+	setscriptgoal target_add_required( 1, "bot", "bot", "Bot to set goal for" );
 
-	clearscriptgoal = cmd_add( "clearscriptgoal", "clearscriptgoal {bot}", ::cmd_clearscriptgoal_f );
-	clearscriptgoal arg_obj_add_cmd( "", 0, 0 );
-	setscriptgoal target_type_add_cmd( "bot", true, "Bot to clear goal for" );
+	clearscriptgoal = cmd_add( "clearscriptgoal", "clearscriptgoal {<bot>}", ::cmd_clearscriptgoal_f );
+	setscriptgoal target_add_required( 1, "bot", "bot", "Bot to clear goal for" );
 
-	hasscriptgoal = cmd_add( "hasscriptgoal", "hasscriptgoal {bot}", ::cmd_hasscriptgoal_f );
-	hasscriptgoal arg_obj_add_cmd( "", 0, 0 );
-	hasscriptgoal target_type_add_cmd( "bot", true, "Bot to print goal for" );
+	hasscriptgoal = cmd_add( "hasscriptgoal", "hasscriptgoal {<bot>}", ::cmd_hasscriptgoal_f );
+	hasscriptgoal target_add_required( 1, "bot", "bot", "Bot to print goal for" );
 }
 
 private cmd_setscriptgoal_f( param )
@@ -59,7 +58,7 @@ private cmd_setscriptgoal_f( param )
 			ent = arg_obj_entity_cast( goal );
 			if ( !isdefined( ent ) )
 			{
-				return result_cmderror( "Invalid entity for bot goal" );
+				return param add_executor_cmderror( "Invalid entity for bot goal" );
 			}
 			else
 			{
@@ -74,19 +73,19 @@ private cmd_setscriptgoal_f( param )
 		}
 	}
 
-	return result_cmdinfo( "Set " + bot.name + " goal to " + goal );
+	param add_executor_cmdinfo( "Set " + bot.name + " goal to " + goal );
 }
 
 private cmd_clearscriptgoal_f( param )
 {
 	bot = param.t[ 0 ][ 0 ];
 	bot ClearScriptGoal();
-	return result_cmdinfo( "Cleared " + bot.name + " goal" );
+	param add_executor_cmdinfo( "Cleared " + bot.name + " goal" );
 }
 
 private cmd_hasscriptgoal_f( param )
 {
 	bot = param.t[ 0 ][ 0 ];
 	bot ClearScriptGoal();
-	return result_cmdinfo( "Bot " + bot.name + " has goal: " + cast_bool_to_str( bot HasScriptGoal(), "yes no" ) );
+	param add_executor_cmdinfo( "Bot " + bot.name + " has goal: " + cast_bool_to_str( bot HasScriptGoal(), "yes no" ) );
 }
