@@ -3,6 +3,14 @@
 
 #include scripts\cmd\core\_utility;
 
+private com_printparse( msg )
+{
+	if ( getdvarint( "tcs_debug_parser" ) == 1 )
+	{
+		com_printinfo( "Custom split for arg: tok: " + tokens[ tokens.size - 1 ] + " start: " + i + " end: " + delimited_str_obj.end );
+	}
+}
+
 private throw_parse_exception( msg )
 {
 	throw_exception( msg, level._parse_obj );

@@ -1048,16 +1048,26 @@ clamp_array( arr, limit )
 	return new_arr;
 }
 
-target_obj_generate( target_type )
+target_obj_generate( target_type, overload )
 {
-	max_targets = _DEFAULT( target_type.max_targets, 1024 );
-	etype = target_type.etype;
+	is_required = target_type.is_required;
+	max_targets = _DEFAULT( overload.max_targets, 1024 );
+	etype = overload.etype;
 	find = generic_obj_t_new( "target_gen" );
 
 	target_str = "";
-	if ( cointoss() )
+	rand = randomint( 10 );
+	if ( rand < 2 )
 	{
-		rand = randomint( 4 );
+		// prevent script error in situation where argument is required
+		if ( is_required )
+		{
+			rand = randomintrange( 2, 3 );
+		}
+		else
+		{
+			rand = randomintrange( 0, 3 );
+		}
 
 		switch ( rand )
 		{
@@ -1065,10 +1075,10 @@ target_obj_generate( target_type )
 				target_str += "!"; // undefined
 				break;
 			case 1:
-				target_str += "*"; // all
+				target_str += "#"; // default
 				break;
 			case 2:
-				target_str += "#"; // default
+				target_str += "*"; // all
 				break;
 			case 3:
 				target_str += "&"; // self

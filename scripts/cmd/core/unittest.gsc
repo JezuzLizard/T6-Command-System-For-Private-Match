@@ -247,7 +247,7 @@ private create_random_valid_targets( cmd )
 		targets += ordinal;
 		targets += "=";
 
-		target_str = self [[ level._target_obj_generate ]]( random_overload );
+		target_str = self [[ level._target_obj_generate ]]( val, random_overload );
 		if ( target_str == "" )
 		{
 			com_printdebugerror( "Could not generate entities of etype: '" + random_overload.etype + "' max_targets: '" + random_overload.max_targets + "'" );
@@ -309,7 +309,7 @@ private construct_chat_message_for_unittest()
 	{
 		return; // something went wrong
 	}
-	
+
 	if ( arg_gen_obj.value.size > 0 )
 	{
 		message += " " + repackage_args( arg_gen_obj.value );

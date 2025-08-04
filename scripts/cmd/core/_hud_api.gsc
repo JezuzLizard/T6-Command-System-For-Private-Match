@@ -263,6 +263,20 @@ set_hud_field( field_name, val )
 	}
 }
 
+set_safe_text_internal( text )
+{
+	level._text_count++;
+	self.save_text = text;
+	self settext( text );
+}
+
+set_safe_label_internal( text )
+{
+	level._text_count++;
+	self.save_label = text;
+	self.label = istring( text );
+}
+
 set_safe_text( text, is_label )
 {
 	is_label = _DEFAULT( is_label, false );
@@ -274,7 +288,7 @@ set_safe_text( text, is_label )
 		for ( i = 0; i < _SIZE( level._text_huds.size ); i++ )
 		{
 			text_hud = level._text_huds[ i ];
-			text_hud.label = "";
+			text_hud.label = &"";
 			text_hud settext( "" );
 		}
 
@@ -299,23 +313,21 @@ set_safe_text( text, is_label )
 		com_printdebugerror( "Had to clear the text cache..." );
 	}
 
-	if ( isdefined( self.save_text ) && self.save_text == text )
-	{
-		return;
-	}
-
-	level._text_count++;
-
-	
 	if ( is_label )
 	{
-		self.save_label = text;
-		self.label = text;
+		if ( !isdefined( self.save_label ) || self.save_label != text )
+		{
+			self set_safe_label_internal( text );
+			return;
+		}
 	}
 	else
 	{
-		self.save_text = text;
-		self settext( text );
+		if ( !isdefined( self.save_text ) || self.save_text != text )
+		{
+			self set_safe_text_internal( text );
+			return;
+		}
 	}
 }
 

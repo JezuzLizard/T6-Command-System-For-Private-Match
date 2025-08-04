@@ -1311,3 +1311,29 @@ create_entity_location_screenshot( type, player_name, angles, origin, classname 
 	entity_string_obj.kvps[ "origin" ] = origin;
 	entity_string_obj.kvps[ "angles" ] = angles;
 }
+
+
+assign_editor_move_ent( target_entity )
+{
+	if ( !isdefined( target_entity._associated_ents ) )
+	{
+		target_entity._associated_ents = [];
+	}
+
+	if ( isdefined( target_entity.clip ) )
+	{
+		target_entity._associated_ents[ "clip" ] = target_entity.clip;
+	}
+	if ( isdefined( target_entity._perk_trigger ) )
+	{
+		target_entity._associated_ents[ "perk_trigger" ] = target_entity._perk_trigger;
+	}
+	if ( isdefined( target_entity.bump ) )
+	{
+		target_entity._associated_ents[ "bump" ] = target_entity.bump;
+	}
+	if ( isdefined( target_entity.blocker_model ) )
+	{
+		target_entity._associated_ents[ "blocker_model" ] = target_entity.blocker_model;
+	}
+}

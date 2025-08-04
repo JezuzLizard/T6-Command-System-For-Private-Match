@@ -14,6 +14,8 @@
 #include scripts\cmd\modules\core_cmds;
 // entity cmds
 #include scripts\cmd\modules\entity_cmds;
+// filmmaker cmds
+//#include scripts\cmd\modules\filmmaker\camera_cmds;
 
 main()
 {

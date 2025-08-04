@@ -1041,9 +1041,10 @@ get_min_args()
 	}
 
 	count = 0;
-	for ( i = 1; i < _SIZE( self.arg_types.size ); i++ )
+	for ( i = 0; i < _SIZE( self.arg_types.size ); i++ )
 	{
-		if ( isdefined( self.arg_types[ i + "" ] ) && self.arg_types[ i + "" ].is_required )
+		ordinal = ( i + 1 ) + "";
+		if ( isdefined( self.arg_types[ ordinal ] ) && self.arg_types[ ordinal ].is_required )
 		{
 			count++;
 		}
@@ -1333,7 +1334,7 @@ remove_notify_callback( notify_name, ent )
 		if ( level._developer )
 		{
 			assert( false );
-			generic_obj print_obj();
+			//generic_obj print_obj();
 		}
 		self notify( "cmd_exception", generic_obj );
 	}

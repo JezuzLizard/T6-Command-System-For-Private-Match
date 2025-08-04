@@ -25,6 +25,8 @@ autoexec init_helpers()
 	level.tcs_additional_help_prints_func = ::zm_help_prints;
 
 	level thread on_unittest();
+
+	registerclientsys( "zm_cmds" );
 }
 
 zm_help_prints()

@@ -128,6 +128,8 @@ autoexec add_cmds()
 	setviewpos_cmd arg_add_required( 1, "origin", "vector", "New origin for you to be moved to" );
 	setviewpos_cmd arg_add_optional( 2, "angles", "vector", "New angles for you to have" );
 
+	editorputdown_cmd = cmd_add( "editorputdown", ::cmd_editorputdown_f, "editorputdown" );
+
 	//spawn_cmd = cmd_add( "spawn", ::cmd_spawn_f, "spawn <classname> <origin> [spawnflags] [contextual1] [contextual2] [contextual3]" );
 	//spawn_cmd arg_add( "spawnable_classname vector string string string string", 2, 6 );
 
@@ -310,7 +312,7 @@ private cmd_editorpickup_f( param )
 	held_ent = scripts\cmd\modules\entity_helpers::give_player_turret( target_entity.model, "auto_turret", "equip_turbine_zm_turret", "", true, carry_offset, carry_angles );
 	self thread scripts\cmd\modules\entity_helpers::take_player_turret_thread( held_ent );
 	self thread scripts\cmd\modules\entity_helpers::editor_held_model_thread( held_ent, "move" );
-	param add_executor_cmdinfo( "Picked up target entity: " + target_entity.classname );
+	param add_executor_cmdinfo( "You picked up target entity: " + target_entity.classname );
 }
 
 private cmd_editorcontextmodifyentity_f( param )
@@ -493,4 +495,10 @@ private cmd_dumpent_f( param )
 	}
 
 	scripts\cmd\modules\entity_helpers::create_entity_location_screenshot( type, player.name, player.angles, player.origin, classname );
+}
+
+private cmd_editorputdown_f( param )
+{
+	self notify( "editor_place_held" );
+	param add_executor_cmdinfo( "You put down held entity" );
 }

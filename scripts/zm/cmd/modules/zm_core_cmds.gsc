@@ -92,6 +92,15 @@ autoexec add_cmds()
 	poweruplist_cmd = cmd_add( "poweruplist", ::cmd_poweruplist_f );
 
 	perklist_cmd = cmd_add( "perklist", ::cmd_perklist_f );
+
+	spawnperkmachine_cmd = cmd_add( "spawnperkmachine", ::cmd_spawnperkmachine_f, "spawnperkmachine <perk_specialty> <model> [origin] [angles] [blocker_model]" );
+	spawnperkmachine_cmd arg_add_required( 1, "perk_specialty", "perk", "Perk machine to spawn in" );
+	spawnperkmachine_cmd arg_add_optional( 2, "model", "model", "Model to use for perk machine" );
+	spawnperkmachine_cmd arg_add_optional( 3, "origin", "vector", "Origin to spawn at" );
+	spawnperkmachine_cmd arg_add_optional( 4, "angles", "vector", "Angles to spawn at" );
+	spawnperkmachine_cmd arg_add_optional( 5, "blocker_model", "entity", "Blocker model to use" );
+
+	spawnwallbuy_cmd = cmd_add( "spawnwallbuy", ::cmd_spawnwallbuy_f, "spawnwallbuy" );
 }
 
 private cmd_spectator_f( param )
@@ -384,6 +393,7 @@ private cmd_setglobalzombiestat_f( param )
 		{
 			return param add_executor_cmderror( "2Invalid zombie stat " + stat_name + " , use listglobalzombiestats to see modifiable stats" );
 		}
+
 		return param add_executor_cmdinfo( "Successfully reset " + stat_name + " to its original value" );
 	}
 
@@ -439,4 +449,27 @@ private cmd_poweruplist_f( param )
 private cmd_perklist_f( param )
 {
 	self thread scripts\zm\cmd\modules\zm_core_helpers::list_perks_throttled();
+}
+
+private cmd_spawnperkmachine_f( param )
+{
+	perk_specialty = param.a[ 0 ];
+	if ( !isdefined( level._spawnable_perk_machines[ perk_specialty ] ) )
+	{
+		return param add_executor_cmderror( "Unknown perk specialty: '" + perk_specialty + "'" );
+	}
+
+	model = _DEFAULT( param.a[ 1 ], level._spawnable_perk_machines[ perk_specialty ].model );
+	origin = _DEFAULT( param.a[ 2 ], isdefined( self.origin ) ? self.origin : ( 0, 0, 0 ) );
+	angles = _DEFAULT( param.a[ 3 ], isdefined( self.angles ) ? self.angles : ( 0, 0, 0 ) );
+	clip_model = _DEFAULT( param.a[ 4 ], undefined );
+
+	perk_trigger = _spawn_perk_machine( perk_specialty, model, origin, angles, undefined, clip_model );
+	_power_on_machine( perk_trigger._perk_machine );
+	param add_executor_cmdinfo( "Successfully spawned in '" + perk_specialty + "' perk machine" );
+}
+
+private cmd_spawnwallbuy_f( param )
+{
+	setclientsysstate( "zm_cmds", "spawnwallbuy" );
 }
