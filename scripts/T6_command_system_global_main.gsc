@@ -69,6 +69,7 @@ main()
 	// Player{Bot}, Sentient{Actor, Bot}
 	
 	addcallback( "on_player_connect", ::tcs_on_connect );
+	maps\mp\_utility::registerclientsys( "cl_tcs" );
 
 	level thread drive_connected_notifies_for_mp();
 	level thread drive_disconnected_notifies();

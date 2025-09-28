@@ -363,7 +363,7 @@ mod_vending_precache()
 	{
 		a_keys = getarraykeys( level._custom_perks );
 		
-		for ( i = 0; i < a_keys.size; i++ )
+		for ( i = 0; i < _SIZE( a_keys.size ); i++ )
 		{
 			if ( isdefined( level._custom_perks[a_keys[i]].precache_func ) )
 			{
@@ -374,7 +374,7 @@ mod_vending_precache()
 	
 	keys = getarraykeys( level.machine_assets );
 	
-	for ( i = 0; i < keys.size; i++ )
+	for ( i = 0; i < _SIZE( keys.size ); i++ )
 	{
 		if ( !is_true( level.machine_assets[ keys[ i ] ].no_power_on_callback ) )
 		{

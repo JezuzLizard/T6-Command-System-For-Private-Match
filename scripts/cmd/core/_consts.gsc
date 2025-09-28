@@ -150,6 +150,7 @@ autoexec init_consts()
 	arg_type_register( "string", ::arg_obj_string_generate, ::arg_obj_string_cast );
 	arg_type_register( "model", ::arg_obj_model_generate, ::arg_obj_model_cast );
 	arg_type_register( "spawnable_classname", ::arg_obj_spawnable_classname_generate, ::arg_obj_spawnable_classname_cast );
+	arg_type_register( "weapon", ::arg_obj_weapon_generate, ::arg_obj_weapon_cast );
 	arg_type_register( "...", undefined, undefined );
 
 	register_entity_string_field( "classname", "string", true );
@@ -1023,6 +1024,27 @@ arg_obj_spawnable_classname_cast( arg )
 	}
 
 	return set_cast_success( find, arg, "classname==" + arg );
+}
+
+arg_obj_weapon_generate( arg1, arg2, arg3 )
+{
+	find = generic_obj_t_new();
+	find.rand_gen_unimplemented = true;
+	return set_cast_success( find, "Unimplemented", "model==" + "null" );
+}
+
+arg_obj_weapon_cast( arg )
+{
+	find = generic_obj_t_new();
+
+	exists = _WEAPON_EXISTS( arg );
+
+	if ( !exists )
+	{
+		return set_cast_error( find, "Weapon: '" + arg + "' not precached" );
+	}
+
+	return set_cast_success( find, arg, "weapon==" + arg );
 }
 
 clamp_array( arr, limit )

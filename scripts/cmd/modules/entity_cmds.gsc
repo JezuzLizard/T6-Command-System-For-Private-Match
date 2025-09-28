@@ -15,6 +15,13 @@ autoexec add_cmds()
 	seteditortargetent_cmd = cmd_add( "seteditortargetent", ::cmd_seteditortargetent_f, "seteditortargetent {entity}" );
 	seteditortargetent_cmd target_add_required( 1, "entity", "general", "Manual entity to target for editing", 1 );
 
+	editentfield_cmd = cmd_add( "editentfield", ::cmd_editentfield_f, "editentfield {[entity]} <fieldname> <fieldvalue> [scale] [relative]" );
+	editentfield_cmd arg_add_required( 1, "fieldname", "entfield", "New angles to set the target entity to" );
+	editentfield_cmd arg_add_optional( 2, "fieldvalue", "string", "Causes the entity angles to be modified by <angles> instead of assigned" );
+	editentfield_cmd arg_add_optional( 3, "scale", "float", "The scale of the angle modification" );
+	editentfield_cmd arg_add_optional( 4, "relative", "boolean", "The scale of the angle modification" );
+	editentfield_cmd target_add_optional( 1, "entity", "general", "Manual entity to target for editing" );
+
 	seteditortargetangles_cmd = cmd_add( "seteditortargetangles", ::cmd_seteditortargetangles_f, "seteditortargetangles {[entity]} <angles> [relative] [scale]" );
 	seteditortargetangles_cmd arg_add_required( 1, "angles", "vector", "New angles to set the target entity to" );
 	seteditortargetangles_cmd arg_add_optional( 2, "relative", "boolean", "Causes the entity angles to be modified by <angles> instead of assigned" );
@@ -501,4 +508,48 @@ private cmd_editorputdown_f( param )
 {
 	self notify( "editor_place_held" );
 	param add_executor_cmdinfo( "You put down held entity" );
+}
+
+private cmd_editentfield_f( param )
+{
+	targets = _DEFAULT( param.t[ 0 ], [] );
+	fieldname = param.a[ 0 ];
+	fieldvalue = param.a[ 1 ];
+	scale = _DEFAULT( param.a[ 2 ], 1.0 );
+	is_relative = _DEFAULT( param.a[ 3 ], false );
+
+	editor_ent = self hud_binding_get_subscribed_entity( "editor_selected_ent_context" );
+	if ( targets.size == 0 )
+	{
+		targets[ 0 ] = editor_ent;
+		if ( targets.size == 0 )
+		{
+			return param add_executor_cmderror( "No target entity selected!" );
+		}
+	}
+
+	if ( is_relative )
+	{
+		for ( i = 0; i < targets.size; i++ )
+		{
+			targ = targets[ i ];
+			assign_result = targ set_entfield( fieldname, fieldvalue, scale );
+			if ( assign_result.errored )
+			{
+				param add_executor_cmderror( assign_result.msg );
+			}
+		}
+	}
+	else
+	{
+		for ( i = 0; i < targets.size; i++ )
+		{
+			targ = targets[ i ];
+			assign_result = targ set_entfield_relative( fieldname, fieldvalue, scale );
+			if ( assign_result.errored )
+			{
+				param add_executor_cmderror( assign_result.msg );
+			}
+		}
+	}
 }

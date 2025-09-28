@@ -546,33 +546,21 @@ cast_origin_to_ent_array( result_obj, origin, maxdist, max )
 			}
 		}
 
-		// check guid and name first if player
-		if ( etype == "player" )
-		{
-			for ( i = 0; i < _SIZE( entities.size ); i++ )
-			{
-				ent = entities[ i ];
-				if ( !ent istestclient() && ent getGUID() == entnum )
-				{
-					return set_cast_success( entity_obj, ent, "ent==GUID" );
-				}
-
-				target_playername = tolower( ent.name );
-				if ( issubstr( target_playername, str ) )
-				{
-					return set_cast_success( entity_obj, ent, "player==name" );
-				}
-			}
-		}
-
 		for ( i = 0; i < _SIZE( entities.size ); i++ )
 		{
 			ent = entities[ i ];
-			ent_exists_for_entnum = isdefined( getentbynum( entnum ) );
 
-			if ( ent_exists_for_entnum )
+			if ( ent getentitynumber() == entnum )
 			{
 				return set_cast_success( entity_obj, ent, "ent==entnum" );
+			}
+
+			if ( etype == "player" && !ent istestclient() )
+			{
+				if ( ent getGUID() == entnum )
+				{
+					return set_cast_success( entity_obj, ent, "ent==GUID" );
+				}
 			}
 		}
 
@@ -1457,17 +1445,10 @@ _SIZE( arr_size )
 	if ( !isdefined( arr_size ) )
 	{
 		// exits the loop as undefined is used in a truthy way
-		assert( false );
 		return 0;
 	}
 
 	return arr_size;
-}
-
-_WEAPON_EXISTS( name )
-{
-	// function returns undefined if the weapon doesn't exist and doesn't scr_error
-	return isdefined( isweaponprimary( name ) );
 }
 
 array_validate( array )
@@ -1481,58 +1462,12 @@ server_safe_notify_thread( notify_name, index )
 	level notify( notify_name );
 }
 
-/@
-"Name: timescale_tween( <start>, <end>, <time>, [delay], [step_time] )"
-"Summary: Tweens timescale from a starting value to an ending value over time."
-"Module: Utility"
-"MandatoryArg: start: Starting timescale."
-"MandatoryArg: end: Ending timescale."
-"MandatoryArg: time: Time to get form start to end."
-"OptionalArg: delay: time delay before starting."
-"OptionalArg: step_time: time delay between setting timescale values (how smoothly you want to step)."
-"Example: level thread timescale_tween(.06, 1, tween_time);"
-"SPMP: SP"
-@/
-timescale_tween(start, end, time, delay = 0.0, step_time = 0.1 )
+register_tcs_handler( name, func )
 {
-	if ( !IsDefined( start ) )
+	if ( !isdefined( level._tcs_client_handlers ) )
 	{
-		start = GetTimeScale();
-	}
-	
-	num_steps = time / step_time;
-	time_scale_range = end - start;
-
-	time_scale_step = 0;
-	if (num_steps > 0)
-	{
-		time_scale_step = abs(time_scale_range) / num_steps;
+		level._tcs_client_handlers = [];
 	}
 
-	if ( delay > 0.0 )
-	{
-		wait delay;
-	}
-
-	level notify("timescale_tween");
-	level endon("timescale_tween");
-
-	time_scale = start;
-	SetTimeScale(time_scale);
-
-	while (time_scale != end)
-	{
-		wait(step_time);
-
-		if (time_scale_range > 0)
-		{
-			time_scale = min(time_scale + time_scale_step, end);
-		}
-		else if (time_scale_range < 0)
-		{
-			time_scale = max(time_scale - time_scale_step, end);
-		}
-
-		SetTimeScale(time_scale);
-	}
+	level._tcs_client_handlers[ name ] = func;
 }

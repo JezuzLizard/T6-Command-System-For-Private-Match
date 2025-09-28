@@ -7,7 +7,7 @@ private com_printparse( msg )
 {
 	if ( getdvarint( "tcs_debug_parser" ) == 1 )
 	{
-		com_printinfo( "Custom split for arg: tok: " + tokens[ tokens.size - 1 ] + " start: " + i + " end: " + delimited_str_obj.end );
+		com_printinfo( msg );
 	}
 }
 
@@ -189,7 +189,7 @@ private parse_directive()
 		check_str = level._parse_obj.current_base_key_string;
 	}
 	
-	com_printdebugwarning( "parse_directive: '" + check_str + "'" );
+	com_printparse( "parse_directive: '" + check_str + "'" );
 
 	if ( check_str[ 0 ] == "t" || check_str == "target" )
 	{
@@ -329,13 +329,13 @@ private split_kvps()
 			index = combined_kvps.size;
 			combined_kvps[ index ] = getsubstr( str, start_pos, pos );
 			start_pos = pos + 1; // start after the separating comma
-			com_printdebugwarning( "split_kvps() Delimited '" + index + "' key: '" + combined_kvps[ index ] + "'" );
+			com_printparse( "split_kvps() Delimited '" + index + "' key: '" + combined_kvps[ index ] + "'" );
 		}
 
 		if ( ( pos + 1 ) >= str.size )
 		{
 			combined_kvps[ combined_kvps.size ] = getsubstr( str, start_pos );
-			com_printdebugwarning( "split_kvps() Terminating key: '" + combined_kvps[ combined_kvps.size - 1 ] + "'" );
+			com_printparse( "split_kvps() Terminating key: '" + combined_kvps[ combined_kvps.size - 1 ] + "'" );
 			break;
 		}
 	}
@@ -343,7 +343,7 @@ private split_kvps()
 	if ( is_single_kvp )
 	{
 		combined_kvps[ 0 ] = getsubstr( str, start_pos );
-		com_printdebugwarning( "split_kvps() is_single_kvp key: '" + combined_kvps[ 0 ] + "'" );
+		com_printparse( "split_kvps() is_single_kvp key: '" + combined_kvps[ 0 ] + "'" );
 	}
 
 	return combined_kvps;
@@ -515,7 +515,7 @@ private custom_split( str )
 
 			split_end = i + 1;
 			tokens[ tokens.size ] = getsubstr( str, split_start, split_end );
-			com_printdebugwarning( "Custom split for directive: tok: " + tokens[ tokens.size - 1 ] + " start: " + split_start + " end: " + split_end );
+			com_printparse( "Custom split for directive: tok: " + tokens[ tokens.size - 1 ] + " start: " + split_start + " end: " + split_end );
 			split_start = split_end;
 			i = split_end;
 
@@ -525,7 +525,7 @@ private custom_split( str )
 		{
 			delimited_str_obj = parse_token_until_delimiter( str, i, " " );
 			tokens[ tokens.size ] = delimited_str_obj.identifier_str;
-			com_printdebugwarning( "Custom split for arg: tok: " + tokens[ tokens.size - 1 ] + " start: " + i + " end: " + delimited_str_obj.end );
+			com_printparse( "Custom split for arg: tok: " + tokens[ tokens.size - 1 ] + " start: " + i + " end: " + delimited_str_obj.end );
 			i = delimited_str_obj.end;
 		}
 	}
@@ -547,7 +547,7 @@ private custom_split( str )
 		throw_parse_exception( "Command string is empty" );
 	}
 
-	com_printdebugwarning( message );
+	com_printparse( message );
 
 	multiple_cmds_keys = strtok( message, "^" );
 	for ( i = 0; i < _SIZE( multiple_cmds_keys.size ); i++ )
@@ -564,7 +564,7 @@ private custom_split( str )
 		for ( j = 1; j < _SIZE( cmd_strings.size ); j++ )
 		{
 			level._parse_obj.current_token = cmd_strings[ j ];
-			com_printdebugwarning( level._parse_obj.current_token );
+			com_printparse( level._parse_obj.current_token );
 			if ( level._parse_obj.current_token[ 0 ] == "@" )
 			{
 				if ( level._parse_obj.current_token[ 1 ] != "{" )
@@ -599,9 +599,9 @@ private custom_split( str )
 					}
 
 					add_key( key );
-					com_printdebugwarning( "parse_cmd_message() key: '" + key + "'" );
+					com_printparse( "parse_cmd_message() key: '" + key + "'" );
 					add_value( value );
-					com_printdebugwarning( "parse_cmd_message() value: '" + value + "'" );
+					com_printparse( "parse_cmd_message() value: '" + value + "'" );
 					parse_directive();
 				}
 			}

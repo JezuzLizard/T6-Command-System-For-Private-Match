@@ -468,284 +468,183 @@ is_specialty_in_use( perk )
 	}
 }
 
-init_spawnable_weapon_upgrade()
+// supported targetnames
+/*
+	weapon_upgrade
+
+	bowie_upgrade
+	sickle_upgrade
+	tazer_upgrade
+	buildable_wallbuy
+	claymore_purchase
+
+*/
+/*
+targetname supported_keys = 
+	script_noteworthy - location
+	script_width - adjusts unitrigger
+	script_length
+	script_height
+	script_int
+	script_vector
+	angles
+	origin
+	zombie_weapon_upgrade - weapon_name
+	keys for target
+		script_noteworthy - location
+		model
+		angles
+		origin
+
+buildable wallbuy keys = 
+	script_noteworthy - location
+	script_location
+	script_width - adjusts unitrigger
+	script_length
+	script_height
+	angles
+	origin
+	org_model
+	keys for target
+		script_noteworthy
+		model
+		angles
+		origin
+		script_width - adjusts unitrigger
+		script_length
+		script_height
+		script_location
+		script_angles
+		targetname
+		org_model
+*/
+
+copy_additional_keys( keys )
 {
-	spawn_list = [];
-	spawnable_weapon_spawns = getstructarray( "weapon_upgrade", "targetname" );
-	spawnable_weapon_spawns = arraycombine( spawnable_weapon_spawns, getstructarray( "bowie_upgrade", "targetname" ), 1, 0 );
-	spawnable_weapon_spawns = arraycombine( spawnable_weapon_spawns, getstructarray( "sickle_upgrade", "targetname" ), 1, 0 );
-	spawnable_weapon_spawns = arraycombine( spawnable_weapon_spawns, getstructarray( "tazer_upgrade", "targetname" ), 1, 0 );
-	spawnable_weapon_spawns = arraycombine( spawnable_weapon_spawns, getstructarray( "buildable_wallbuy", "targetname" ), 1, 0 );
+	// common keys
+	self.script_noteworthy = _DEFAULT( keys[ "script_noteworthy" ], level.scr_zm_ui_gametype + "_" + level.scr_zm_map_start_location );
+	
+	self.script_length = _OPTIONAL( keys[ "script_length" ] );
+	self.script_width = _OPTIONAL( keys[ "script_width" ] );
+	self.script_height = _OPTIONAL( keys[ "script_height" ] );
+	self.script_int = _OPTIONAL( keys[ "script_int" ] );
+	self.script_vector = _OPTIONAL( keys[ "script_vector" ] );
+	self.script_angles = _OPTIONAL( keys[ "script_angles" ] );
 
-	if ( !is_true( level.headshots_only ) )
-		spawnable_weapon_spawns = arraycombine( spawnable_weapon_spawns, getstructarray( "claymore_purchase", "targetname" ), 1, 0 );
+	// dynamic buildable keys
+	self.script_location = _DEFAULT( keys[ "script_location" ], "" );
+	self.org_model = _DEFAULT( keys[ "org_model" ], "" );
+}
 
-	match_string = "";
-	location = level.scr_zm_map_start_location;
-
-	if ( ( location == "default" || location == "" ) && isdefined( level.default_start_location ) )
-		location = level.default_start_location;
-
-	match_string = level.scr_zm_ui_gametype;
-
-	if ( "" != location )
-		match_string = match_string + "_" + location;
-
-	match_string_plus_space = " " + match_string;
-
-	for ( i = 0; i < spawnable_weapon_spawns.size; i++ )
-	{
-		spawnable_weapon = spawnable_weapon_spawns[i];
-
-		if ( isdefined( spawnable_weapon.zombie_weapon_upgrade ) && spawnable_weapon.zombie_weapon_upgrade == "sticky_grenade_zm" && is_true( level.headshots_only ) )
-			continue;
-
-		if ( !isdefined( spawnable_weapon.script_noteworthy ) || spawnable_weapon.script_noteworthy == "" )
-		{
-			spawn_list[spawn_list.size] = spawnable_weapon;
-			continue;
-		}
-
-		matches = strtok( spawnable_weapon.script_noteworthy, "," );
-
-		for ( j = 0; j < matches.size; j++ )
-		{
-			if ( matches[j] == match_string || matches[j] == match_string_plus_space )
-				spawn_list[spawn_list.size] = spawnable_weapon;
-		}
-	}
-
+spawn_wallbuy_trigger_stub( model )
+{
 	tempmodel = spawn( "script_model", ( 0, 0, 0 ) );
 
-	for ( i = 0; i < spawn_list.size; i++ )
-	{
-		clientfieldname = spawn_list[i].zombie_weapon_upgrade + "_" + spawn_list[i].origin;
-		numbits = 2;
-
-		if ( isdefined( level._wallbuy_override_num_bits ) )
-			numbits = level._wallbuy_override_num_bits;
-
-		registerclientfield( "world", clientfieldname, 1, numbits, "int" );
-		target_struct = getstruct( spawn_list[i].target, "targetname" );
-
-		if ( spawn_list[i].targetname == "buildable_wallbuy" )
-		{
-			bits = 4;
-
-			if ( isdefined( level.buildable_wallbuy_weapons ) )
-				bits = getminbitcountfornum( level.buildable_wallbuy_weapons.size + 1 );
-
-			registerclientfield( "world", clientfieldname + "_idx", 12000, bits, "int" );
-			spawn_list[i].clientfieldname = clientfieldname;
-			continue;
-		}
-
-		precachemodel( target_struct.model );
-		unitrigger_stub = spawnstruct();
-		unitrigger_stub.origin = spawn_list[i].origin;
-		unitrigger_stub.angles = spawn_list[i].angles;
-		tempmodel.origin = spawn_list[i].origin;
-		tempmodel.angles = spawn_list[i].angles;
-		mins = undefined;
-		maxs = undefined;
-		absmins = undefined;
-		absmaxs = undefined;
-		tempmodel setmodel( target_struct.model );
-		tempmodel useweaponhidetags( spawn_list[i].zombie_weapon_upgrade );
-		mins = tempmodel getmins();
-		maxs = tempmodel getmaxs();
-		absmins = tempmodel getabsmins();
-		absmaxs = tempmodel getabsmaxs();
-		bounds = absmaxs - absmins;
-		unitrigger_stub.script_length = bounds[0] * 0.25;
-		unitrigger_stub.script_width = bounds[1];
-		unitrigger_stub.script_height = bounds[2];
-		unitrigger_stub.origin = unitrigger_stub.origin - anglestoright( unitrigger_stub.angles ) * ( unitrigger_stub.script_length * 0.4 );
-		unitrigger_stub.target = spawn_list[i].target;
-		unitrigger_stub.targetname = spawn_list[i].targetname;
-		unitrigger_stub.cursor_hint = "HINT_NOICON";
-
-		if ( spawn_list[i].targetname == "weapon_upgrade" )
-		{
-			unitrigger_stub.cost = get_weapon_cost( spawn_list[i].zombie_weapon_upgrade );
-
-			if ( !( isdefined( level.monolingustic_prompt_format ) && level.monolingustic_prompt_format ) )
-			{
-				unitrigger_stub.hint_string = get_weapon_hint( spawn_list[i].zombie_weapon_upgrade );
-				unitrigger_stub.hint_parm1 = unitrigger_stub.cost;
-			}
-			else
-			{
-				unitrigger_stub.hint_parm1 = get_weapon_display_name( spawn_list[i].zombie_weapon_upgrade );
-
-				if ( !isdefined( unitrigger_stub.hint_parm1 ) || unitrigger_stub.hint_parm1 == "" || unitrigger_stub.hint_parm1 == "none" )
-					unitrigger_stub.hint_parm1 = "missing weapon name " + spawn_list[i].zombie_weapon_upgrade;
-
-				unitrigger_stub.hint_parm2 = unitrigger_stub.cost;
-				unitrigger_stub.hint_string = &"ZOMBIE_WEAPONCOSTONLY";
-			}
-		}
-
-		unitrigger_stub.weapon_upgrade = spawn_list[i].zombie_weapon_upgrade;
-		unitrigger_stub.script_unitrigger_type = "unitrigger_box_use";
-		unitrigger_stub.require_look_at = 1;
-
-		if ( isdefined( spawn_list[i].require_look_from ) && spawn_list[i].require_look_from )
-			unitrigger_stub.require_look_from = 1;
-
-		unitrigger_stub.zombie_weapon_upgrade = spawn_list[i].zombie_weapon_upgrade;
-		unitrigger_stub.clientfieldname = clientfieldname;
-		maps\mp\zombies\_zm_unitrigger::unitrigger_force_per_player_triggers( unitrigger_stub, 1 );
-
-		if ( is_melee_weapon( unitrigger_stub.zombie_weapon_upgrade ) )
-		{
-			if ( unitrigger_stub.zombie_weapon_upgrade == "tazer_knuckles_zm" && isdefined( level.taser_trig_adjustment ) )
-				unitrigger_stub.origin = unitrigger_stub.origin + level.taser_trig_adjustment;
-
-			maps\mp\zombies\_zm_unitrigger::register_static_unitrigger( unitrigger_stub, ::weapon_spawn_think );
-		}
-		else if ( unitrigger_stub.zombie_weapon_upgrade == "claymore_zm" )
-		{
-			unitrigger_stub.prompt_and_visibility_func = maps\mp\zombies\_zm_weap_claymore::claymore_unitrigger_update_prompt;
-			maps\mp\zombies\_zm_unitrigger::register_static_unitrigger( unitrigger_stub, maps\mp\zombies\_zm_weap_claymore::buy_claymores );
-		}
-		else
-		{
-			unitrigger_stub.prompt_and_visibility_func = ::wall_weapon_update_prompt;
-			maps\mp\zombies\_zm_unitrigger::register_static_unitrigger( unitrigger_stub, ::weapon_spawn_think );
-		}
-
-		spawn_list[i].trigger_stub = unitrigger_stub;
-	}
-
-	level._spawned_wallbuys = spawn_list;
-	tempmodel delete();
-}
-
-init_weapon_upgrade()
-{
-	init_spawnable_weapon_upgrade();
-	weapon_spawns = [];
-	weapon_spawns = getentarray( "weapon_upgrade", "targetname" );
-
-	for ( i = 0; i < weapon_spawns.size; i++ )
-	{
-		if ( !( isdefined( level.monolingustic_prompt_format ) && level.monolingustic_prompt_format ) )
-		{
-			hint_string = get_weapon_hint( weapon_spawns[i].zombie_weapon_upgrade );
-			cost = get_weapon_cost( weapon_spawns[i].zombie_weapon_upgrade );
-			weapon_spawns[i] sethintstring( hint_string, cost );
-			weapon_spawns[i] setcursorhint( "HINT_NOICON" );
-		}
-		else
-		{
-			cost = get_weapon_cost( weapon_spawns[i].zombie_weapon_upgrade );
-			weapon_display = get_weapon_display_name( weapon_spawns[i].zombie_weapon_upgrade );
-
-			if ( !isdefined( weapon_display ) || weapon_display == "" || weapon_display == "none" )
-				weapon_display = "missing weapon name " + weapon_spawns[i].zombie_weapon_upgrade;
-
-			hint_string = &"ZOMBIE_WEAPONCOSTONLY";
-			weapon_spawns[i] sethintstring( hint_string, weapon_display, cost );
-		}
-
-		weapon_spawns[i] usetriggerrequirelookat();
-		weapon_spawns[i] thread weapon_spawn_think();
-		model = getent( weapon_spawns[i].target, "targetname" );
-
-		if ( isdefined( model ) )
-		{
-			model useweaponhidetags( weapon_spawns[i].zombie_weapon_upgrade );
-			model hide();
-		}
-	}
-}
-
-add_dynamic_wallbuy( weapon, wallbuy, pristine )
-{
-	spawned_wallbuy = undefined;
-
-	for ( i = 0; i < level._spawned_wallbuys.size; i++ )
-	{
-		if ( level._spawned_wallbuys[i].target == wallbuy )
-		{
-			spawned_wallbuy = level._spawned_wallbuys[i];
-			break;
-		}
-	}
-
-	if ( !isdefined( spawned_wallbuy ) )
-	{
-/#
-		assertmsg( "Cannot find dynamic wallbuy" );
-#/
-		return;
-	}
-
-	if ( isdefined( spawned_wallbuy.trigger_stub ) )
-	{
-/#
-		assertmsg( "Dynamic wallbuy already added" );
-#/
-		return;
-	}
-
-	target_struct = getstruct( wallbuy, "targetname" );
-	wallmodel = spawn_weapon_model( weapon, undefined, target_struct.origin, target_struct.angles );
-	clientfieldname = spawned_wallbuy.clientfieldname;
-	model = getweaponmodel( weapon );
 	unitrigger_stub = spawnstruct();
-	unitrigger_stub.origin = target_struct.origin;
-	unitrigger_stub.angles = target_struct.angles;
-	wallmodel.origin = target_struct.origin;
-	wallmodel.angles = target_struct.angles;
+	unitrigger_stub.origin = self.origin;
+	unitrigger_stub.angles = self.angles;
+	tempmodel.origin = self.origin;
+	tempmodel.angles = self.angles;
 	mins = undefined;
 	maxs = undefined;
 	absmins = undefined;
 	absmaxs = undefined;
-	wallmodel setmodel( model );
-	wallmodel useweaponhidetags( weapon );
-	mins = wallmodel getmins();
-	maxs = wallmodel getmaxs();
-	absmins = wallmodel getabsmins();
-	absmaxs = wallmodel getabsmaxs();
+	tempmodel setmodel( model );
+	tempmodel useweaponhidetags( self.zombie_weapon_upgrade );
+	mins = tempmodel getmins();
+	maxs = tempmodel getmaxs();
+	absmins = tempmodel getabsmins();
+	absmaxs = tempmodel getabsmaxs();
 	bounds = absmaxs - absmins;
 	unitrigger_stub.script_length = bounds[0] * 0.25;
 	unitrigger_stub.script_width = bounds[1];
 	unitrigger_stub.script_height = bounds[2];
 	unitrigger_stub.origin = unitrigger_stub.origin - anglestoright( unitrigger_stub.angles ) * ( unitrigger_stub.script_length * 0.4 );
-	unitrigger_stub.target = spawned_wallbuy.target;
-	unitrigger_stub.targetname = "weapon_upgrade";
+	unitrigger_stub.target = self.target;
+	unitrigger_stub.targetname = self.targetname;
 	unitrigger_stub.cursor_hint = "HINT_NOICON";
-	unitrigger_stub.first_time_triggered = !pristine;
 
-	if ( !is_melee_weapon( weapon ) )
+	if ( self.targetname == "weapon_upgrade" )
 	{
-		if ( pristine || weapon == "claymore_zm" )
-			unitrigger_stub.hint_string = get_weapon_hint( weapon );
-		else
-			unitrigger_stub.hint_string = get_weapon_hint_ammo();
+		unitrigger_stub.cost = get_weapon_cost( self.zombie_weapon_upgrade );
 
-		unitrigger_stub.cost = get_weapon_cost( weapon );
-		unitrigger_stub.hint_parm1 = unitrigger_stub.cost;
+		if ( !( isdefined( level.monolingustic_prompt_format ) && level.monolingustic_prompt_format ) )
+		{
+			unitrigger_stub.hint_string = get_weapon_hint( self.zombie_weapon_upgrade );
+			unitrigger_stub.hint_parm1 = unitrigger_stub.cost;
+		}
+		else
+		{
+			unitrigger_stub.hint_parm1 = get_weapon_display_name( self.zombie_weapon_upgrade );
+
+			if ( !isdefined( unitrigger_stub.hint_parm1 ) || unitrigger_stub.hint_parm1 == "" || unitrigger_stub.hint_parm1 == "none" )
+				unitrigger_stub.hint_parm1 = "missing weapon name " + self.zombie_weapon_upgrade;
+
+			unitrigger_stub.hint_parm2 = unitrigger_stub.cost;
+			unitrigger_stub.hint_string = &"ZOMBIE_WEAPONCOSTONLY";
+		}
 	}
 
-	unitrigger_stub.weapon_upgrade = weapon;
+	unitrigger_stub.weapon_upgrade = self.zombie_weapon_upgrade;
 	unitrigger_stub.script_unitrigger_type = "unitrigger_box_use";
 	unitrigger_stub.require_look_at = 1;
-	unitrigger_stub.zombie_weapon_upgrade = weapon;
-	unitrigger_stub.clientfieldname = clientfieldname;
-	unitrigger_force_per_player_triggers( unitrigger_stub, 1 );
 
-	if ( is_melee_weapon( weapon ) )
+	if ( isdefined( self.require_look_from ) && self.require_look_from )
+		unitrigger_stub.require_look_from = 1;
+
+	unitrigger_stub.zombie_weapon_upgrade = self.zombie_weapon_upgrade;
+	unitrigger_stub.clientfieldname = self.clientfieldname;
+	maps\mp\zombies\_zm_unitrigger::unitrigger_force_per_player_triggers( unitrigger_stub, 1 );
+
+	if ( is_melee_weapon( unitrigger_stub.zombie_weapon_upgrade ) )
 	{
-		if ( weapon == "tazer_knuckles_zm" && isdefined( level.taser_trig_adjustment ) )
+		melee_weapon = undefined;
+		foreach ( melee_weap in level._melee_weapons )
+		{
+			if ( melee_weap.weapon_name == weapon_name )
+			{
+				melee_weapon = melee_weap;
+				break;
+			}
+		}
+
+		if ( isDefined( melee_weapon ) )
+		{
+			unitrigger_stub.cost = melee_weapon.cost;
+			unitrigger_stub.hint_string = melee_weapon.hint_string;
+			unitrigger_stub.weapon_name = melee_weapon.weapon_name;
+			unitrigger_stub.flourish_weapon_name = melee_weapon.flourish_weapon_name;
+			unitrigger_stub.ballistic_weapon_name = melee_weapon.ballistic_weapon_name;
+			unitrigger_stub.ballistic_upgraded_weapon_name = melee_weapon.ballistic_upgraded_weapon_name;
+			unitrigger_stub.vo_dialog_id = melee_weapon.vo_dialog_id;
+			unitrigger_stub.flourish_fn = melee_weapon.flourish_fn;
+
+			if ( is_true( level.disable_melee_wallbuy_icons ) )
+			{
+				unitrigger_stub.cursor_hint = "HINT_NOICON";
+				unitrigger_stub.cursor_hint_weapon = undefined;
+			}
+			else
+			{
+				unitrigger_stub.cursor_hint = "HINT_WEAPON";
+				unitrigger_stub.cursor_hint_weapon = melee_weapon.weapon_name;
+			}
+		}
+
+		if ( weapon_name == "tazer_knuckles_zm" )
+		{
+			unitrigger_stub.origin += anglestoforward( self.angles ) * -7;
+			unitrigger_stub.origin += anglestoright( self.angles ) * -2;
+		}
+
+		self.wall_model.origin += anglestoforward( self.angles ) * -8; // _zm_melee_weapon::melee_weapon_show moves this back
+
+		if ( unitrigger_stub.zombie_weapon_upgrade == "tazer_knuckles_zm" && isdefined( level.taser_trig_adjustment ) )
 			unitrigger_stub.origin = unitrigger_stub.origin + level.taser_trig_adjustment;
 
-		maps\mp\zombies\_zm_melee_weapon::add_stub( unitrigger_stub, weapon );
-		maps\mp\zombies\_zm_unitrigger::register_static_unitrigger( unitrigger_stub, maps\mp\zombies\_zm_melee_weapon::melee_weapon_think );
+		maps\mp\zombies\_zm_unitrigger::register_static_unitrigger( unitrigger_stub, ::weapon_spawn_think );
 	}
-	else if ( weapon == "claymore_zm" )
+	else if ( unitrigger_stub.zombie_weapon_upgrade == "claymore_zm" )
 	{
 		unitrigger_stub.prompt_and_visibility_func = maps\mp\zombies\_zm_weap_claymore::claymore_unitrigger_update_prompt;
 		maps\mp\zombies\_zm_unitrigger::register_static_unitrigger( unitrigger_stub, maps\mp\zombies\_zm_weap_claymore::buy_claymores );
@@ -756,32 +655,121 @@ add_dynamic_wallbuy( weapon, wallbuy, pristine )
 		maps\mp\zombies\_zm_unitrigger::register_static_unitrigger( unitrigger_stub, ::weapon_spawn_think );
 	}
 
-	spawned_wallbuy.trigger_stub = unitrigger_stub;
-	weaponidx = undefined;
+	self.trigger_stub = unitrigger_stub;
 
-	if ( isdefined( level.buildable_wallbuy_weapons ) )
+	tempmodel delete();
+}
+
+spawn_wallbuy_dynamically( targetname, weapon_name, origin, angles, additional_targetname_keys, additional_target_keys )
+{
+	additional_keys = _DEFAULT( additional_keys, [] );
+
+	// TODO: make a database of wallbuys so that it would be possible to prevent collisions when loading saved weapon placements
+	if ( !isdefined( level._dynamic_wallbuy_id ) )
 	{
-		for ( i = 0; i < level.buildable_wallbuy_weapons.size; i++ )
+		level._dynamically_spawned_active_wallbuys = [];
+		level._dynamic_wallbuy_id = 0;
+		level thread chalk_manager();
+	}
+
+	level._dynamic_wallbuy_id++;
+
+	wallbuy_struc = spawnstruct();
+	wallbuy_struc.invalid = false;
+	switch ( targetname )
+	{
+		case "weapon_upgrade":
+			break;
+		case "bowie_upgrade":
+			break;
+		case "sickle_upgrade":
+			break;
+		case "tazer_upgrade":
+			break;
+		case "buildable_wallbuy":
+			break;
+		case "claymore_purchase":
+			break;
+		default:
+			wallbuy_struc.invalid = true;
+			return wallbuy_struc;
+	}
+
+	if ( !_WEAPON_EXISTS( weapon_name ) )
+	{
+		wallbuy_struc.invalid = true;
+		return wallbuy_struc;
+	}
+
+	wallbuy_struc.origin = origin;
+	wallbuy_struc.angles = angles;
+	wallbuy_struc.targetname = targetname;
+	wallbuy_struc.zombie_weapon_upgrade = weapon_name;
+	wallbuy_struc.target = level._dynamic_wallbuy_id + "";
+	wallbuy_struc copy_additional_keys( additional_targetname_keys );
+
+	model_name = _OPTIONAL( additional_target_keys[ "model" ] );
+	if ( weapon_name == "sticky_grenade_zm" )
+	{
+		model_name = "semtex_bag";
+	}
+	else if ( weapon_name == "claymore_zm" )
+	{
+		model_name = "t6_wpn_claymore_world";
+	}
+
+	model_ent = spawn_weapon_model( weapon_name, model_name, origin, angles );
+	model_ent useweaponhidetags( weapon_name );
+	model_ent hide();
+	model_ent.targetname = wallbuy_struc.target;
+	model_ent.zombie_weapon_upgrade = weapon_name;
+	model_ent copy_additional_keys( additional_target_keys );
+	if ( weapon_name == "claymore_zm" )
+	{
+		model_ent.angles += ( 0, 90, 0 );
+		model_ent.script_int = 90; // fix for model sliding right to left
+	}
+
+	// move model forward so it always shows in front of chalk
+	move_amount = anglestoright( model_ent.angles ) * -0.3;
+	model_ent.origin += move_amount;
+	wallbuy_struc.origin += move_amount;
+
+	clientfieldname = model_ent.zombie_weapon_upgrade + "_" + model_ent.origin;
+	if ( targetname == "buildable_wallbuy" )
+	{
+		clientfieldname += "_idx";
+	}
+	model_ent.clientfieldname = clientfieldname;
+
+	wallbuy_struc spawn_wallbuy_trigger_stub( model_ent.model );
+	wallbuy_struc.wall_model = model_ent;
+
+	level._dynamically_spawned_active_wallbuys[ level._dynamically_spawned_active_wallbuys.size ] = model_ent;
+	level notify( "refresh_wall_buys" );
+
+	return wallbuy_struc;
+}
+
+chalk_manager()
+{
+	level waittill( "refresh_wall_buys" );
+
+	for ( ;; )
+	{
+		for ( i = 0; i < level._dynamically_spawned_active_wallbuys.size; i++ )
 		{
-			if ( weapon == level.buildable_wallbuy_weapons[i] )
-			{
-				weaponidx = i;
-				break;
-			}
+			model_ent = level._dynamically_spawned_active_wallbuys[ i ];
+			model_ent.fx = spawnfx( level._effect[ self.zombie_weapon_upgrade + "_fx" ], self.origin, anglestoforward( self.angles ), anglestoup( self.angles ) );
+			triggerfx( model_ent.fx );
 		}
-	}
 
-	if ( isdefined( weaponidx ) )
-	{
-		level setclientfield( clientfieldname + "_idx", weaponidx + 1 );
-		wallmodel delete();
+		level waittill( "refresh_wall_buys" );
 
-		if ( !pristine )
-			level setclientfield( clientfieldname, 1 );
-	}
-	else
-	{
-		level setclientfield( clientfieldname, 1 );
-		wallmodel show();
+		for ( i = 0; i < level._dynamically_spawned_active_wallbuys.size; i++ )
+		{
+			model_ent = level._dynamically_spawned_active_wallbuys[ i ];
+			model_ent.fx delete();
+		}
 	}
 }

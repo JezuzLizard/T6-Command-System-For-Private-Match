@@ -202,13 +202,41 @@ editor_held_model_thread( held_ent, place_mode )
 	self notify( "editor_place_success" );
 }
 
-add_field_history( entfield_name, new_value )
+// maybe budget only 32 per ent
+add_change_history( entfield_name, old_value, new_value )
 {
+	if ( !isdefined( self._change_history ) )
+	{
+		self._change_history = [];
+	}
 
+	if ( !isdefined( level._change_history ) )
+	{
+		level._change_history = [];
+	}
+
+	hist_obj = spawnstruct();
+	hist_obj.field = entfield_name;
+	hist_obj.value = new_value;
+
+	limit = get_dvar_int_default( "editor_ent_history_limit", 32 );
+	limit = clamp( limit, 0, 1024 );
+	while ( _SIZE( self._change_history.size ) > limit )
+	{
+		// remove oldest
+		arrayremoveindex( self._change_history, 0 );
+	}
+
+	self._change_history[ self._change_history.size ] = hist_obj;
+	if ( !isinarray( level._change_history, self ) )
+	{
+		level._change_history[ level._change_history.size ] = self;
+	}
 }
 
-set_entfield_relative( entfield_name, new_value )
+set_entfield_relative( entfield_name, new_value, scale )
 {
+	scale = _DEFAULT( scale, 1.0 );
 	result_obj = generic_obj_t_new( "entfield" );
 	switch ( entfield_name )
 	{
@@ -222,29 +250,31 @@ set_entfield_relative( entfield_name, new_value )
 		case "script_noteworthy":
 			return set_cast_error( result_obj, entfield_name + " cannot be changed relatively!" );
 		case "count":
-			self.count += int( new_value );
+			self.count += int( int( new_value ) * scale );
 			break;
 		case "health":
-			self.health += int( new_value );
+			self.health += int( int( new_value ) * scale );
 			break;
 		case "dmg":
-			self.dmg += int( new_value );
+			self.dmg += int( int( new_value ) * scale );
 			break;
 		case "index":
-			self.index += int( new_value );
+			self.index += int( int( new_value ) * scale );
 			break;
 		case "lerp_to_lighter":
-			self.lerp_to_lighter += float( new_value );
+			self.lerp_to_lighter += float( new_value ) * scale;
 			break;
 		case "lerp_to_dark":
-			self.lerp_to_dark += float( new_value );
+			self.lerp_to_dark += float( new_value ) * scale;
 			break;
 		case "origin":
-			vector_origin += cast_str_to_vector( new_value );
+			vector_origin = self.origin;
+			vector_origin += cast_str_to_vector( new_value ) * scale;
 			self setorigin( vector_origin );
 			break;
 		case "angles":
-			vector_angles += cast_str_to_vector( new_value );
+			vector_angles = self.angles;
+			vector_angles += cast_str_to_vector( new_value ) * scale;
 			self.angles = vector_angles;
 			break;
 		default:
@@ -252,7 +282,7 @@ set_entfield_relative( entfield_name, new_value )
 			return set_cast_error( result_obj, entfield_name + " is unsupported!" );
 	}
 
-	self add_field_history( entfield_name, new_value );
+	self add_change_history( entfield_name, new_value );
 
 	return set_cast_success( result_obj, self, "Successfully set: " + entfield_name + " to value: " + new_value );
 }
@@ -322,11 +352,14 @@ set_entfield( entfield_name, new_value )
 		case "ignorecheapentityflag":
 			self ignorecheapentityflag( int( new_value ) );
 			break;
+		case "setzombieshrink":
+			self setzombieshrink( int( new_value ) );
+			break;
 		default:
 			return set_cast_error( result_obj, entfield_name + " is unsupported!" );
 	}
 
-	self add_field_history( entfield_name, new_value );
+	self add_change_history( entfield_name, new_value );
 
 	return set_cast_success( result_obj, self, "Successfully set: " + entfield_name + " to value: " + new_value );
 }
@@ -366,6 +399,28 @@ get_entfield( entfield_name )
 			return set_cast_success( result_obj, self.origin, "origin==" + self.origin, "vector" );
 		case "angles":
 			return set_cast_success( result_obj, self.angles, "angles==" + self.angles, "vector" );
+		case "contents":
+			old_contents = self setcontents( 1 );
+			self setcontents( old_contents );
+			return set_cast_success( result_obj, old_contents, "contents==" + old_contents, "contents" );
+		case "centroid":
+			centroid = self getcentroid();
+			return set_cast_success( result_obj, centroid, "centroid==" + centroid, "vector" );
+		case "mins":
+			mins = self getmins();
+			return set_cast_success( result_obj, mins, "mins==" + mins, "vector" );
+		case "maxs":
+			maxs = self getmaxs();
+			return set_cast_success( result_obj, maxs, "maxs==" + maxs, "vector" );
+		case "absmins":
+			absmins = self getabsmins();
+			return set_cast_success( result_obj, absmins, "absmins==" + absmins, "vector" );
+		case "absmaxs":
+			absmaxs = self getabsmaxs();
+			return set_cast_success( result_obj, absmaxs, "absmaxs==" + absmaxs, "vector" );
+		case "velocity":
+			velocity = self getvelocity();
+			return set_cast_success( result_obj, velocity, "velocity==" + velocity, "vector" );
 		case "takedamage":
 		default:
 			return set_cast_error( result_obj, entfield_name + " is unsupported!" );
@@ -392,14 +447,15 @@ get_entfield( entfield_name )
 #define SPAWNFLAG_ACTOR_SM_PRIORITY 32
 */
 
-load_script_origin()
+save_entity( optional_keys )
 {
+	required_keys = _DEFAULT( self._optional_keys, [] );
+	required_keys[ "origin" ] = self.origin;
+	required_keys[ "angles" ] = self.angles;
+	required_keys[ "classname" ] = self.classname;
 
-}
-
-save_script_origin()
-{
-
+	write_gsc( required_keys );
+	write_mapents( required_keys );
 }
 
 spawn_script_origin( origin, spawnflags )
@@ -408,33 +464,11 @@ spawn_script_origin( origin, spawnflags )
 	return ent;
 }
 
-load_script_model()
-{
-	//ent = spawn_script_model( origin, spawnflags );
-	//ent load_entfields();
-}
-
-save_script_model()
-{
-
-}
-
 spawn_script_model( origin, spawnflags )
 {
 	//#define SPAWNFLAG_MODEL_DYNAMIC_PATH 1
 	ent = spawn( "script_model", origin, spawnflags );
 	return ent;
-}
-
-load_trigger_damage()
-{
-	//ent = spawn_trigger_damage( origin, spawnflags, radius, height );
-	//ent load_entfields();
-}
-
-save_trigger_damage()
-{
-
 }
 
 spawn_trigger_damage( origin, spawnflags, radius, height )
@@ -448,17 +482,6 @@ spawn_trigger_damage( origin, spawnflags, radius, height )
 	ent setcandamage( true );
 	ent setcontents( 0x405C0008 );
 	return ent;
-}
-
-load_trigger_radius_use()
-{
-	//ent = spawn_trigger_radius_use( origin, spawnflags, radius, height );
-	//ent load_entfields();
-}
-
-save_trigger_radius_use()
-{
-
 }
 
 spawn_trigger_radius_use( origin, spawnflags, radius, height )
@@ -490,17 +513,6 @@ spawn_trigger_radius_use( origin, spawnflags, radius, height )
 	}
 	ent setcontents( contents | 0x200000 );
 	return ent;
-}
-
-load_trigger_box_use()
-{
-	//ent = spawn_trigger_box_use( origin, spawnflags, width, length, height );
-	//ent load_entfields();
-}
-
-save_trigger_box_use()
-{
-
 }
 
 spawn_trigger_box_use( origin, spawnflags, width, length, height )
@@ -536,17 +548,6 @@ spawn_trigger_box_use( origin, spawnflags, width, length, height )
 	return ent;
 }
 
-load_trigger_box()
-{
-	//ent = spawn_trigger_box( origin, spawnflags, width, length, height );
-	//ent load_entfields();
-}
-
-save_trigger_box()
-{
-
-}
-
 spawn_trigger_box( origin, spawnflags, width, length, height )
 {
 	//#define SPAWNFLAG_WAIT 64
@@ -578,17 +579,6 @@ spawn_trigger_box( origin, spawnflags, width, length, height )
 	}
 	ent setcontents( contents | 0x200000 );
 	return ent;
-}
-
-load_trigger_radius()
-{
-	//ent = spawn_trigger_radius( origin, spawnflags, radius, height );
-	//ent load_entfields();
-}
-
-save_trigger_radius()
-{
-
 }
 
 spawn_trigger_radius( origin, spawnflags, radius, height )
@@ -630,17 +620,6 @@ cast_str_to_actor_spawner( str, noprint = false, allow_null_actor_spawner = fals
 	return spawners[ 0 ];
 }
 
-load_actor()
-{
-	//ent = spawn_actor( actor_spawner, get_enemy_info, targetname );
-	//ent load_entfields();
-}
-
-save_actor()
-{
-
-}
-
 spawn_actor( actor_spawner, get_enemy_info, targetname )
 {
 	get_enemy_info = _DEFAULT( get_enemy_info, 0 );
@@ -654,17 +633,6 @@ cmd_spawnactor_f( target_obj, args )
 	actor_spawner = args[ 0 ];
 
 	actor = spawn_actor( actor_spawner, args[ 1 ], args[ 2 ] );
-}
-
-load_collision()
-{
-	//ent = spawn_collision( model, targetname, origin, angles );
-	//ent load_entfields();
-}
-
-save_collision()
-{
-
 }
 
 spawn_collision( model, targetname, origin, angles )
@@ -681,17 +649,6 @@ cmd_spawncollision_f( target_obj, args )
 	angles = args[ 3 ];
 
 	ent = spawn_collision( model, targetname, origin, angles );
-}
-
-load_plane()
-{
-	//ent = spawn_plane( classname, origin, spawnflags );
-	//ent load_entfields();
-}
-
-save_plane()
-{
-
 }
 
 spawn_plane( owner, classname, origin, spawnflags )
@@ -711,17 +668,6 @@ cmd_spawnplane_f( target_obj, args )
 	ent = spawn_plane( owner, classname, origin, spawnflags );
 }
 
-load_helicopter()
-{
-	//ent = spawn_helicopter( owner, origin, angles, vehicle_def_name, model );
-	//ent load_entfields();
-}
-
-save_helicopter()
-{
-
-}
-
 spawn_helicopter( owner, origin, angles, vehicle_def_name, model )
 {
 	spawnflags = _DEFAULT( spawnflags, 0 );
@@ -738,17 +684,6 @@ cmd_spawnhelicopter_f( target_obj, args )
 	model = args[ 4 ];
 
 	ent = spawn_helicopter( owner, origin, angles, vehicle_def_name, model );
-}
-
-load_vehicle()
-{
-	//ent = spawn_vehicle( model, targetname, vehicletype, origin, angles, destructible_name );
-	//ent load_entfields();
-}
-
-save_vehicle()
-{
-
 }
 
 spawn_vehicle( model, targetname, vehicletype, origin, angles, destructible_name )
@@ -778,17 +713,6 @@ cmd_spawnvehicle_f( target_obj, args )
 	ent = spawn_vehicle( model, targetname, vehicletype, origin, angles, destructible_name );
 }
 
-load_turret()
-{
-	//ent = spawn_turret( classname, origin, weapon );
-	//ent load_entfields();
-}
-
-save_turret()
-{
-
-}
-
 spawn_turret( classname, origin, weapon )
 {
 	ent = spawnturret( classname, origin, weapon );
@@ -805,17 +729,6 @@ cmd_spawnturret_f( target_obj, args )
 	ent = spawn_turret( classname, origin, weapon );
 }
 
-load_player_clone()
-{
-	//ent = spawn_player_clone( player, death_anim_duration );
-	//ent load_entfields();
-}
-
-save_player_clone()
-{
-
-}
-
 spawn_player_clone( player, death_anim_duration )
 {
 	ent = player cloneplayer( death_anim_duration );
@@ -829,17 +742,6 @@ cmd_cloneplayer_f( target_obj, args )
 	death_anim_duration = args[ 1 ];
 
 	ent = spawn_player_clone( player, death_anim_duration );
-}
-
-load_path_node()
-{
-	//ent = spawn_path_node( classname, origin, angles, key1, val1, key2, val2, key3, val3 );
-	//ent load_entfields();
-}
-
-save_path_node()
-{
-
 }
 
 spawn_path_node( classname, origin, angles, key1, val1, key2, val2, key3, val3 )
@@ -880,17 +782,6 @@ cmd_spawnpathnode_f( target_obj, args )
 	ent = spawn_path_node( classname, origin, angles, key1, val1, key2, val2, key3, val3 );
 }
 
-load_fx()
-{
-	//ent = spawn_fx( fx_id, origin, forward, up );
-	//ent load_entfields();
-}
-
-save_fx()
-{
-
-}
-
 spawn_fx( fx_id, origin, forward, up )
 {
 	ent = spawnfx( fx_id, origin, forward, up );
@@ -908,21 +799,6 @@ cmd_spawnfx_f( target_obj, args )
 	ent = spawn_fx( fx_id, origin, forward, up );
 }
 
-/*
-	level.tcs_dynamic_function_spawns = [];
-	level.tcs_dynamic_function_spawns[ "spawnnapalmgroundflame" ] = 4;
-*/
-load_timed_fx()
-{
-	//ent = spawn_timed_fx( weapon, origin, direction, time_seconds );
-	//ent load_entfields();
-}
-
-save_timed_fx()
-{
-
-}
-
 spawn_timed_fx( weapon, origin, direction, time_seconds )
 {
 	ent = spawntimedfx( weapon, origin, direction, time_seconds );
@@ -938,21 +814,6 @@ cmd_spawntimedfx_f( target_obj, args )
 	time_seconds = _DEFAULT( args[ 3 ], 10 );
 
 	ent = spawn_timed_fx( weapon, origin, direction, time_seconds );
-}
-
-/*
-	level.tcs_dynamic_function_spawns = [];
-	level.tcs_dynamic_function_spawns[ "spawnnapalmgroundflame" ] = 4;
-*/
-load_napalm_ground_flame()
-{
-	//ent = spawn_napalm_ground_flame( origin, weapon, direction, time_seconds );
-	//ent load_entfields();
-}
-
-save_napalm_ground_flame()
-{
-
 }
 
 spawn_napalm_ground_flame( origin, weapon, direction, time_seconds )
@@ -1091,100 +952,103 @@ get_vector_filename( vector )
 	return final_vector_str;
 }
 
-dump_mapents_angles_key( fh, angles )
+dump_mapents_kvp( fh, key, val )
 {
-	angles_str = get_mapents_vector( angles );
-	fs_writeline( fh, "\"angles\"" + " " + angles_str );
+	if ( isint( val ) || isfloat( val ) || isstring( val ) )
+	{
+		fs_writeline( fh, "\"" + key + "\"" + " " + "\"" + val + "\"" );
+	}
+	else if ( isvec( val ) )
+	{
+		vec_str = get_mapents_vector( val );
+		fs_writeline( fh, "\"" + key + "\"" + " " + "\"" + vec_str + "\"" );
+	}
 }
 
-dump_mapents_origin_key( fh, origin )
+dump_gsc_kvp( fh, ent_var_name, key, val )
 {
-	origin_str = get_mapents_vector( origin );
-	fs_writeline( fh, "\"origin\"" + " " + origin_str );
+	if ( isstring( val ) )
+	{
+		fs_writeline( fh, ent_var_name + "." + key + " = " + "\"" + val + "\"" );
+	}
+	else
+	{
+		fs_writeline( fh, ent_var_name + "." + key + " = " + val );
+	}
+
+	fs_writeline( fh, ";\n" );
 }
 
-dump_mapents_classname_key( fh, classname )
-{
-	fs_writeline( fh, "\"classname\"" + " " + "\"" + classname + "\"" );
-}
-
-// TODO: support script_gameobjectname space delimited array
-dump_mapents_script_gameobjectname_key( fh, script_gameobjectname )
-{
-	fs_writeline( fh, "\"script_gameobjectname\"" + " " + "\"" + script_gameobjectname + "\"" );
-}
-
-dump_mapents_model_key( fh, model )
-{
-	fs_writeline( fh, "\"model\"" + " " + "\"" + model + "\"" );
-}
-
-dump_mapents_export_key( fh, export )
-{
-	fs_writeline( fh, "\"export\"" + " " + "\"" + export + "\"" );
-}
-
-dump_mapents_targetname_key( fh, targetname )
-{
-	fs_writeline( fh, "\"targetname\"" + " " + "\"" + targetname + "\"" );
-}
-
-dump_mapents_spawnflags_key( fh, spawnflags )
-{
-	fs_writeline( fh, "\"spawnflags\"" + " " + "\"" + spawnflags + "\"" );
-}
-
-dump_mapents_spawnpoint( classname, angles, origin )
+generate_mapents_spawnpoint( classname, angles, origin )
 {
 	fh = level.spawnpoints_mapents_fh;
 
 	fs_writeline( fh, "{" );
 	level dump_mapents_classname_key( fh, classname );
-	level dump_mapents_script_gameobjectname_key( fh, level.gametype );
 	level dump_mapents_angles_key( fh, angles );
 	level dump_mapents_origin_key( fh, origin );
 	fs_writeline( fh, "}" );
 }
 
-dump_gsc_spawnpoint( classname, angles, origin )
+generate_gsc_spawnpoint( classname, angles, origin )
 {
 	fh = level.spawnpoints_gsc_fh;
 
-	func = "new_spawn = spawn( ";
-	classname_arg = "\"" + classname + "\"" + "," + " ";
-	origin_arg = origin + "," + " ";
-	spawnflags_arg = "0" + "," + " ";
-	angles_yaw_arg = angles[ 1 ] + "," + " ";
-	unk_last_arg = "0" + " );";
-	fs_writeline( fh, func + classname_arg + origin_arg + spawnflags_arg + angles_yaw_arg + unk_last_arg );
-	new_spawn_script_gameobjectname_field = "new_spawn.script_gameobjectname = " + "\"" + level.gametype + "\"" + ";";
-	fs_writeline( fh, new_spawn_script_gameobjectname_field );
+	args = array( classname, origin, 0, angles[ 1 ], 0 );
+	dump_gsc_func_call( fh, "spawn", args, "new_spawnpoint" );
+	dump_gsc_kvp( fh, "new_spawnpoint", "script_gameobjectname", level.gametype );
 }
 
-dump_mapents_dog_actor_spawner( angles, origin )
+dump_gsc_func_call( fh, func, args, return_val );
+{
+	if ( isdefined( return_val ) )
+	{
+		fs_writeline( fh, return_val + " = " );
+	}
+
+	fs_writeline( fh, func );
+	fs_writeline( fh, "( " );
+	for ( i = 0; i < args.size; i++ )
+	{
+		if ( isstring( val ) )
+		{
+			fs_writeline( fh, "\"" + args[ i ] + "\"" );
+		}
+		else
+		{
+			fs_writeline( fh, args[ i ] );
+		}
+
+		if ( ( i + 1 ) < args.size )
+		{
+			fs_writeline( fh, ", " );
+		}
+	}
+
+	fs_writeline( fh, " );\n" );
+}
+
+generate_dog_actor_spawner( angles, origin )
 {
 	fh = level.spawnpoints_mapents_fh;
-	spawner_classname = "actor_enemy_dog_mp";
 	fs_writeline( fh, "{" );
-	level dump_mapents_classname_key( fh, spawner_classname );
-	level dump_mapents_script_gameobjectname_key( fh, level.gametype );
-	level dump_mapents_angles_key( fh, angles );
-	level dump_mapents_origin_key( fh, origin );
-	level dump_mapents_model_key( fh, "tag_origin" );
-	level dump_mapents_targetname_key( fh, "dog_spawner" );
-	level dump_mapents_spawnflags_key( fh, "1" );
+	level dump_mapents_kvp( fh, "classname", "actor_enemy_dog_mp" );
+	level dump_mapents_kvp( fh, "angles", angles );
+	level dump_mapents_kvp( fh, "origin", origin );
+	level dump_mapents_kvp( fh, "model", "tag_origin" );
+	level dump_mapents_kvp( fh, "targetname", "dog_spawner" );
+	level dump_mapents_kvp( fh, "spawnflags" 1 );
 	fs_writeline( fh, "}" );
 }
 
-dump_mapents_minimap_corner( angles, origin )
+generate_minimap_corner( keys )
 {
 	fh = level.spawnpoints_mapents_fh;
 	fs_writeline( fh, "{" );
-	level dump_mapents_classname_key( fh, "script_origin" );
-	level dump_mapents_script_gameobjectname_key( fh, level.gametype );
-	level dump_mapents_targetname_key( fh, "minimap_corner" );
-	level dump_mapents_angles_key( fh, angles );
-	level dump_mapents_origin_key( fh, origin );
+	level dump_mapents_kvp( fh, "classname", "script_origin" );
+	level dump_mapents_kvp( fh, "targetname", "minimap_corner" );
+	level dump_mapents_kvp( fh, "angles", keys[ "angles" ] );
+	level dump_mapents_kvp( fh, "origin", keys[ "origin" ] );
 	fs_writeline( fh, "}" );
 }
 
@@ -1201,15 +1065,6 @@ dump_mapents_minimap_corner( angles, origin )
 "guid" "8A9A347E"
 }
 */
-dump_mapents_perk_machine( angles, origin, location, gametype, perk, modelm )
-{
-	fh = level.spawnpoints_mapents_fh;
-	level dump_mapents_classname_key( fh, "script_origin" );
-	level dump_mapents_script_gameobjectname_key( fh, level.gametype );
-	level dump_mapents_targetname_key( fh, "minimap_corner" );
-	level dump_mapents_angles_key( fh, angles );
-	level dump_mapents_origin_key( fh, origin );
-}
 
 create_entity_location_screenshot( type, player_name, angles, origin, classname = undefined, location = undefined, gamemodegroup = undefined )
 {

@@ -8,7 +8,7 @@
 autoexec init_consts()
 {
 	arg_type_register( "perk", ::arg_obj_perk_generate, ::arg_obj_perk_cast );
-	arg_type_register( "weapon", ::arg_obj_weapon_generate, ::arg_obj_weapon_cast );
+	arg_type_register( "zm_weapon", ::arg_obj_weapon_generate, ::arg_obj_weapon_cast );
 	arg_type_register( "powerup", ::arg_obj_powerup_generate, ::arg_obj_powerup_cast );
 
 	arg_type_register( "permaperk", ::arg_obj_permaperk_generate, ::arg_obj_permaperk_cast );

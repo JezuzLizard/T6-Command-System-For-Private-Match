@@ -425,7 +425,7 @@ private cmd_execute_internal( initiator, cmd_obj )
 			if ( is_true( arg_type.overloads[ "..." ] ) )
 			{
 				// consume rest of arguments
-				for ( j = i; j < cmd_obj.args.size; j++ )
+				for ( j = i; j < _SIZE( cmd_obj.args.size ); j++ )
 				{
 					param.a[ j ] = cmd_obj.args[ j ];
 				}
