@@ -38,32 +38,39 @@ autoexec add_cmds()
 
 	unpause_cmd = cmd_add( "unpause", ::cmd_unpause_f );
 
-	giveperk_cmd = cmd_add( "perk", ::cmd_perk_f, "perk <perk|all>" );
+	giveperk_cmd = cmd_add( "perk", ::cmd_perk_f, "perk <perk|all> {players}" );
 	giveperk_cmd arg_add_required( 1, "perk", "perk", "Perk to give; can be literal 'all'" );
+	giveperk_cmd target_add_optional( 1, "player", "player", "Players to give perks to" );
 	giveperk_cmd executor_obj_add_cmd( "Player to give a perk to" );
 
-	takeperk_cmd = cmd_add( "takeperk", ::cmd_takeperk_f, "takeperk <perk|all>" );
+	takeperk_cmd = cmd_add( "takeperk", ::cmd_takeperk_f, "takeperk <perk|all> {players}" );
 	takeperk_cmd arg_add_required( 1, "perk", "perk", "Perk to take; can be literal 'all'" );
+	takeperk_cmd target_add_optional( 1, "player", "player", "Players to takes perks from" );
 	takeperk_cmd executor_obj_add_cmd( "Player to take a perk from" );
 
-	givepermaperk_cmd = cmd_add( "permaperk", ::cmd_permaperk_f, "permaperk <permaperk|all>" );
+	givepermaperk_cmd = cmd_add( "permaperk", ::cmd_permaperk_f, "permaperk <permaperk|all> {players}" );
 	givepermaperk_cmd arg_add_required( 1, "permaperk", "permaperk", "Permaperk to give; can be literal 'all'" );
+	givepermaperk_cmd target_add_optional( 1, "player", "player", "Players to give perma perks" );
 	givepermaperk_cmd executor_obj_add_cmd( "Player to give a perma perk to" );
 
-	givepoints_cmd = cmd_add( "points", ::cmd_points_f, "points <amount>" );
+	givepoints_cmd = cmd_add( "points", ::cmd_points_f, "points <amount> {players}" );
 	givepoints_cmd arg_add_required( 1, "amount", "int", "Points to give" );
+	givepoints_cmd target_add_optional( 1, "player", "player", "Players to give points to" );
 	givepoints_cmd executor_obj_add_cmd( "Player to give points to" );
 
-	givepowerup_cmd = cmd_add( "powerup", ::cmd_powerup_f, "powerup <powerup>" );
+	givepowerup_cmd = cmd_add( "powerup", ::cmd_powerup_f, "powerup <powerup> {players}" );
 	givepowerup_cmd arg_add_required( 1, "powerup", "powerup", "Powerup to spawn" );
+	givepowerup_cmd target_add_optional( 1, "player", "player", "Players to give powerups to" );
 	givepowerup_cmd executor_obj_add_cmd( "Player to give a powerup to" );
 
-	giveweapon_cmd = cmd_add( "weapon", ::cmd_weapon_f, "weapon <weapon>" );
+	giveweapon_cmd = cmd_add( "weapon", ::cmd_weapon_f, "weapon <weapon> {players}" );
 	giveweapon_cmd arg_add_required( 1, "weapon", "weapon", "Weapon to give" );
+	giveweapon_cmd target_add_optional( 1, "player", "player", "Players to give weapons" );
 	giveweapon_cmd executor_obj_add_cmd( "Player to give a weapon to" );
 
-	toggleperssystemforplayer_cmd = cmd_add( "toggleperssystemforplayer", ::cmd_toggleperssystemforplayer_f, "toggleperssystemforplayer" );
-	toggleperssystemforplayer_cmd executor_obj_add_cmd( "Player to toggle the perma perks system for" );
+	toggleperssystem_cmd = cmd_add( "toggleperssystem", ::cmd_toggleperssystem_f, "toggleperssystem {players}" );
+	toggleperssystem_cmd target_add_optional( 1, "player", "player", "Players to disable the perma perks system for" );
+	toggleperssystem_cmd executor_obj_add_cmd( "Player to toggle the perma perks system for" );
 
 	toggleoutofplayableareamonitor_cmd = cmd_add( "toggleoutofplayableareamonitor", ::cmd_toggleoutofplayableareamonitor_f );
 
@@ -98,7 +105,7 @@ autoexec add_cmds()
 	spawnperkmachine_cmd arg_add_optional( 2, "model", "model", "Model to use for perk machine" );
 	spawnperkmachine_cmd arg_add_optional( 3, "origin", "vector", "Origin to spawn at" );
 	spawnperkmachine_cmd arg_add_optional( 4, "angles", "vector", "Angles to spawn at" );
-	spawnperkmachine_cmd arg_add_optional( 5, "blocker_model", "entity", "Blocker model to use" );
+	spawnperkmachine_cmd arg_add_optional( 5, "blocker_model", "model", "Blocker model to use" );
 
 	spawnwallbuy_cmd = cmd_add( "spawnwallbuy", ::cmd_spawnwallbuy_f, "spawnwallbuy" );
 }
@@ -118,7 +125,7 @@ private cmd_spectator_f( param )
 		target.spectator_respawn = undefined;
 
 		param add_executor_cmdinfo( "Successfully made " + target.name + " a spectator" );
-		param add_player_msg( target, "You are now a spectator" );
+		param add_player_cmdinfo( target, "You are now a spectator" );
 	}
 
 	param add_executor_cmdinfo( "Made '" + targets.size + "' players into spectators" );
@@ -146,7 +153,7 @@ private cmd_togglerespawn_f( param )
 		}
 
 		param add_executor_cmdinfo( target.name + " has their respawn toggled" );
-		param add_player_msg( target, "You will no longer respawn" );
+		param add_player_cmdinfo( target, "You will no longer respawn" );
 	}
 
 	param add_executor_cmdinfo( "Disabled respawning for '" + targets.size + "' players" );
@@ -196,7 +203,7 @@ private cmd_spawnspectator_f( param )
 
 			respawn_count++;
 			param add_executor_cmdinfo( "Respawned '" + player.name + "'" );
-			param add_player_msg( player, "You have been respawned" );
+			param add_player_cmdinfo( player, "You have been respawned" );
 		}
 	}
 
@@ -228,41 +235,39 @@ private cmd_unpause_f( param )
 
 private cmd_perk_f( param )
 {
-	perk_name = param.a[ 0 ];
-	if ( perk_name != "all" )
-	{
-		self scripts\zm\cmd\modules\zm_core_helpers::give_perk_zm( perk_name );
-		return param add_executor_cmdinfo( "Gave perk " + perk_name + " to you" );
-	}
-	else 
-	{
-		valid_perk_list = perk_list_zm();
-		foreach ( perk in valid_perk_list )
-		{
-			self scripts\zm\cmd\modules\zm_core_helpers::give_perk_zm( perk );
-		}
+	targets = param.t[ 0 ];
 
-		return param add_executor_cmdinfo( "Gave you all perks" );
+	perk_name = param.a[ 0 ];
+	if ( array_validate( targets ) )
+	{
+		for ( i = 0; i < _SIZE( targets.size ); i++ )
+		{
+			player = targets[ i ];
+			self give_perk_zm_wrapper_target( param, perk_name, player );
+		}
+	}
+	else
+	{
+		self give_perk_zm_wrapper_executor( param, perk_name );
 	}
 }
 
 private cmd_takeperk_f( param )
 {
-	perk_name = param.a[ 0 ];
-	if ( perk_name != "all" )
-	{
-		self notify( perk_name + "_stop" );
-		return param add_executor_cmdinfo( "Took perk " + perk_name + " from you" );
-	}
-	else 
-	{
-		valid_perk_list = perk_list_zm();
-		foreach ( perk in valid_perk_list )
-		{
-			self notify( perk + "_stop" );
-		}
+	targets = param.t[ 0 ];
 
-		return param add_executor_cmdinfo( "Took all perks from you" );
+	perk_name = param.a[ 0 ];
+	if ( array_validate( targets ) )
+	{
+		for ( i = 0; i < _SIZE( targets.size ); i++ )
+		{
+			player = targets[ i ];
+			self take_perk_zm_wrapper_target( param, perk_name, player );
+		}
+	}
+	else
+	{
+		self take_perk_zm_wrapper_executor( param, perk_name );
 	}
 }
 
@@ -283,38 +288,113 @@ private cmd_permaperk_f( param )
 
 private cmd_points_f( param )
 {
-	points = param.a[ 0 ];
-	self add_to_player_score( points );
+	targets = param.t[ 0 ];
 
-	return param add_executor_cmdinfo( "Gave you '" + points + "' points" );
+	points = param.a[ 0 ];
+	if ( array_validate( targets ) )
+	{
+		for ( i = 0; i < _SIZE( targets.size ); i++ )
+		{
+			player = targets[ i ];
+			player add_to_player_score( points );
+			param add_executor_cmdinfo( "Gave '" + player.name + "' '" + points + "' points" );
+			param add_player_cmdinfo( player, "Gave you '" + points + "' points" );
+		}
+	}
+	else
+	{
+		self add_to_player_score( points );
+		param add_executor_cmdinfo( "Gave you '" + points + "' points" );
+	}
 }
 
 private cmd_powerup_f( param )
 {
-	powerup_name = param.a[ 0 ];
-	success = self scripts\zm\cmd\modules\zm_core_helpers::give_powerup_zm( powerup_name );
-	if ( !success )
-	{
-		return param add_executor_cmderror( "Could not spawn powerup: '" + powerup_name + "'" );
-	}
+	targets = param.t[ 0 ];
 
-	return param add_executor_cmdinfo( "Spawned '" + powerup_name + "' for you" );
+	powerup_name = param.a[ 0 ];
+	if ( array_validate( targets ) )
+	{
+		for ( i = 0; i < _SIZE( targets.size ); i++ )
+		{
+			player = targets[ i ];
+			success = player scripts\zm\cmd\modules\zm_core_helpers::give_powerup_zm( powerup_name );
+			if ( !success )
+			{
+				param add_executor_cmderror( "Could not spawn powerup: '" + powerup_name + "' for '" + player.name + "'" );
+				continue;
+			}
+
+			param add_executor_cmdinfo( "Spawned '" + player.name + "' '" + powerup_name + "' a powerup" );
+			param add_player_cmdinfo( player, "Spawned you '" + powerup_name + "' powerup" );
+		}
+	}
+	else
+	{
+		success = self scripts\zm\cmd\modules\zm_core_helpers::give_powerup_zm( powerup_name );
+		if ( !success )
+		{
+			return param add_executor_cmderror( "Could not spawn powerup: '" + powerup_name + "'" );
+		}
+
+		return param add_executor_cmdinfo( "Spawned '" + powerup_name + "' for you" );
+	}
 }
 
 private cmd_weapon_f( param )
 {
-	weapon = param.a[ 0 ];
-	self thread scripts\zm\cmd\modules\zm_core_helpers::weapon_give_custom( weapon, weapon_is_upgrade( weapon ), true );
+	targets = param.t[ 0 ];
 
-	param add_executor_cmdinfo( "Gave you '" + weapon + "'" );
+	weapon = param.a[ 0 ];
+	if ( array_validate( targets ) )
+	{
+		for ( i = 0; i < _SIZE( targets.size ); i++ )
+		{
+			player = targets[ i ];
+			success = player scripts\zm\cmd\modules\zm_core_helpers::weapon_give_custom( weapon, weapon_is_upgrade( weapon ), true );
+			if ( !success )
+			{
+				param add_executor_cmderror( "Could not give: '" + weapon + "' to '" + player.name + "'" );
+				continue;
+			}
+
+			param add_executor_cmdinfo( "Gave " + player.name + "'" + weapon + "' weapon" );
+			param add_player_cmdinfo( player, "Gave you '" + weapon + "' weapon" );
+		}
+	}
+	else
+	{
+		success = self scripts\zm\cmd\modules\zm_core_helpers::weapon_give_custom( weapon, weapon_is_upgrade( weapon ), true );
+		if ( !success )
+		{
+			return param add_executor_cmderror( "Could not spawn weapon: '" + weapon + "'" );
+		}
+
+		param add_executor_cmdinfo( "Gave you '" + weapon + "'" );
+	}
 }
 
-private cmd_toggleperssystemforplayer_f( param )
+private cmd_toggleperssystem_f( param )
 {
-	on_off = cast_bool_to_str( is_true( self.tcs_disable_pers_system ), "on off" );
-	self.tcs_disable_pers_system = !is_true( self.tcs_disable_pers_system );
+	targets = param.t[ 0 ];
+	if ( array_validate( targets ) )
+	{
+		for ( i = 0; i < _SIZE( targets.size ); i++ )
+		{
+			player = targets[ i ];
+			on_off = cast_bool_to_str( is_true( self.tcs_disable_pers_system ), "on off" );
+			self.tcs_disable_pers_system = !is_true( self.tcs_disable_pers_system );
 
-	param add_executor_cmdinfo( "Toggled pers system for " + self.name + " " + on_off );
+			param add_executor_cmdinfo( "Toggled '" + player.name + "' perma perk system '" + on_off + "'" );
+			param add_player_cmdinfo( player, "Toggled your perma perk system '" + on_off + "'" );
+		}
+	}
+	else
+	{
+		on_off = cast_bool_to_str( is_true( self.tcs_disable_pers_system ), "on off" );
+		self.tcs_disable_pers_system = !is_true( self.tcs_disable_pers_system );
+		param add_executor_cmdinfo( "Toggled the perma perk system '" + on_off + "'" );
+	}
 }
 
 private cmd_toggleoutofplayableareamonitor_f( param )

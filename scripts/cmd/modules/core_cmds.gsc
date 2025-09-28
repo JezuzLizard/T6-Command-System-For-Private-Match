@@ -12,21 +12,27 @@ autoexec add_cmds()
 	setcvar_cmd = cmd_add( "cvar", ::cmd_setcvar_f, "cvar <cvarname> <newval>" );
 	setcvar_cmd arg_add_required( 1, "cvarname", "string", "Name of client dvar" );
 	setcvar_cmd arg_add_required( 2, "newval", "string", "New value to assign to client dvar" );
+	setcvar_cmd target_add_optional( 1, "player", "player", "Players to modify cvar for" );
 	setcvar_cmd executor_obj_add_cmd( "Player whos <cvarname> will be set to <newval>" );
 
 	givegod_cmd = cmd_add( "god", ::cmd_god_f, "god" );
+	givegod_cmd target_add_optional( 1, "player", "player", "Players to give god status" );
 	givegod_cmd executor_obj_add_cmd( "Player who will receive god status" );
 
 	givenotarget_cmd = cmd_add( "notarget", ::cmd_notarget_f, "notarget" );
+	givenotarget_cmd target_add_optional( 1, "player", "player", "Players to give notarget status" );
 	givenotarget_cmd executor_obj_add_cmd( "Player who will receive notarget status" );
 
 	giveinvisible_cmd = cmd_add( "invisible", ::cmd_invisible_f, "invisible" );
+	giveinvisible_cmd target_add_optional( 1, "player", "player", "Players to give invisible status" );
 	giveinvisible_cmd executor_obj_add_cmd( "Player who will be hidden" );
 
 	togglehud_cmd = cmd_add( "togglehud", ::cmd_togglehud_f, "togglehud" );
+	togglehud_cmd target_add_optional( 1, "player", "player", "Players to disable hud" );
 	togglehud_cmd executor_obj_add_cmd( "Player who's hud will be toggled" );
 
 	bottomlessclip_cmd = cmd_add( "bottomlessclip", ::cmd_bottomlessclip_f, "bottomlessclip" );
+	bottomlessclip_cmd target_add_optional( 1, "player", "player", "Players to give bottomless clip" );
 	bottomlessclip_cmd executor_obj_add_cmd( "Player who will receive bottomless clip" );
 
 	dvar_cmd = cmd_add( "dvar", ::cmd_server_dvar_f, "dvar <dvarname> <newval>" );
@@ -47,7 +53,7 @@ autoexec add_cmds()
 	dodamage_cmd arg_add_optional( 4, "meansofdeath", "MOD", "The means of death(MOD) the damage will do" );
 	dodamage_cmd arg_add_optional( 5, "idflags", "idflags", "Special damage flags modifying the damage effects" );
 	dodamage_cmd arg_add_optional( 6, "damageweapon", "weapon", "The weapon used for damage effects" );
-	dodamage_cmd target_add_required( 1, "victim", "general", "Entities who will receive <damage> from <origin>" );
+	dodamage_cmd target_add_required( 1, "victims", "general", "Entities who will receive <damage> from <origin>" );
 	dodamage_cmd target_add_optional( 2, "attacker", "general", "Entity who will be set as the <attacker>", 1 );
 	dodamage_cmd target_add_optional( 3, "inflictor", "general", "Entity who will be set as the <inflictor>", 1 );
 
@@ -65,6 +71,7 @@ autoexec add_cmds()
 	scrnotify_cmd arg_add_required( 1, "notifyname", "string", "Name of notify to notify on the entity" );
 	scrnotify_cmd arg_add_optional( 2, "notifyargs", "...", "Additional arguments to send with the notify" );
 	scrnotify_cmd target_add_optional( 1, "entity", "general", "Entity who will be notified", 1 );
+	scrnotify_cmd make_cmd_immune_to_unittest();
 
 	cmd_block_set_rank_group( "none" );
 	cmdlist_cmd = cmd_add( "cmdlist", ::cmd_cmdlist_f );
@@ -93,101 +100,142 @@ autoexec add_cmds()
 	debug_cmd arg_add_optional( 1, "additional_args", "...", "Special arguments for debugging" );
 	debug_cmd make_cmd_immune_to_unittest();
 
-	last_cmd = cmd_add( "lastcmd", ::cmd_last_f, "lastcmd", "Execute the previous used command string, except this one." );
+	lastcmd_cmd = cmd_add( "lastcmd", ::cmd_lastcmd_f, "lastcmd", "Execute the previous used command string, except this one." );
+	lastcmd_cmd make_cmd_immune_to_lastcmd();
 
-	listcmdhistory_cmd = cmd_add( "listcmdhistory", ::cmd_listcmdhistory_f, "listcmdhistory", "Print the last 20 executed command strings." );
+	listcmdhistory_cmd = cmd_add( "listcmdhistory", ::cmd_listcmdhistory_f, "listcmdhistory", "Print the last 16 executed command strings." );
 }
 
 private cmd_setcvar_f( param )
 {
 	dvarname = param.a[ 0 ];
 	dvarvalue = param.a[ 1 ];
-	self setClientDvar( dvarname, dvarvalue );
-
-	param add_executor_cmdinfo( "Successfully set " + dvarname + " to " + dvarvalue );
+	targets = param.t[ 0 ];
+	if ( array_validate( targets ) )
+	{
+		for ( i = 0; i < _SIZE( targets.size ); i++ )
+		{
+			player = targets[ i ];
+			player setClientDvar( dvarname, dvarvalue );
+			param add_executor_cmdinfo( "Successfully set '" + player.name + "' '" + dvarname + "' to '" + dvarvalue + "'" );
+			param add_player_cmdinfo( player, "Your '" + dvarname + "' was modified to '" + dvarvalue + "'" );
+		}
+	}
+	else
+	{
+		param add_executor_cmdinfo( "Successfully set your '" + dvarname + "' to '" + dvarvalue + "'" );
+		self setClientDvar( dvarname, dvarvalue );
+	}
 }
 
 private cmd_god_f( param )
 {
+	targets = param.t[ 0 ];
+
 	on_off = cast_bool_to_str( !is_true( self.tcs_is_invulnerable ), "on off" );
-	if ( on_off == "on" )
+	if ( array_validate( targets ) )
 	{
-		self enableInvulnerability();
-		self.tcs_is_invulnerable = true;
+		for ( i = 0; i < _SIZE( targets.size ); i++ )
+		{
+			player = targets[ i ];
+			player toggle_invulnerability( on_off == "on" );
+			param add_executor_cmdinfo( "Successfully toggled '" + player.name + "' god status to '" + on_off + "'" );
+			param add_player_cmdinfo( player, "Your go status was toggled '" + on_off + "'" );
+		}
 	}
 	else
 	{
-		self disableInvulnerability();
-		self.tcs_is_invulnerable = false;
+		self toggle_invulnerability( on_off == "on" );
+		param add_executor_cmdinfo( "God " + on_off );
 	}
-
-	param add_executor_cmdinfo( "God " + on_off );
 }
 
 private cmd_notarget_f( param )
 {
+	targets = param.t[ 0 ];
+
 	on_off = cast_bool_to_str( !is_true( self.ignoreme ), "on off" );
-	if ( on_off == "on" )
+	if ( array_validate( targets ) )
 	{
-		self.ignoreme = true;
+		for ( i = 0; i < _SIZE( targets.size ); i++ )
+		{
+			player = targets[ i ];
+			player toggle_notarget( on_off == "on" );
+			param add_executor_cmdinfo( "Successfully toggled '" + player.name + "' notarget status to '" + on_off + "'" );
+			param add_player_cmdinfo( player, "Your notarget status was toggled '" + on_off + "'" );
+		}
 	}
-	else 
+	else
 	{
-		self.ignoreme = false;
+		self toggle_notarget( on_off == "on" );
+		param add_executor_cmdinfo( "Notarget " + on_off );
 	}
-	
-	param add_executor_cmdinfo( "Notarget " + on_off );
 }
 
 private cmd_invisible_f( param )
 {
-	on_off = cast_bool_to_str( !is_true( self.tcs_is_invisible ), "on off" );
-	if ( on_off == "on" )
-	{
-		self hide();
-		self.tcs_is_invisible = true;
-	}
-	else 
-	{
-		self show();
-		self.tcs_is_invisible = false;
-	}
+	targets = param.t[ 0 ];
 
-	param add_executor_cmdinfo( "Invisible " + on_off );
+	on_off = cast_bool_to_str( !is_true( self.tcs_is_invisible ), "on off" );
+	if ( array_validate( targets ) )
+	{
+		for ( i = 0; i < _SIZE( targets.size ); i++ )
+		{
+			player = targets[ i ];
+			player toggle_invisibility( on_off == "on" );
+			param add_executor_cmdinfo( "Successfully toggled '" + player.name + "' invisibility status to '" + on_off + "'" );
+			param add_player_cmdinfo( player, "Your invisibility status was toggled '" + on_off + "'" );
+		}
+	}
+	else
+	{
+		self toggle_invisibility( on_off == "on" );
+		param add_executor_cmdinfo( "Invisibility " + on_off );
+	}
 }
 
 private cmd_togglehud_f( param )
 {
+	targets = param.t[ 0 ];
+
 	on_off = cast_bool_to_str( is_true( self.tcs_hud_toggled ), "on off" );
-	if ( on_off == "off" )
+	if ( array_validate( targets ) )
 	{
-		self setclientuivisibilityflag( "hud_visible", 0 );
-		self.tcs_hud_toggled = true;
+		for ( i = 0; i < _SIZE( targets.size ); i++ )
+		{
+			player = targets[ i ];
+			player toggle_hud( on_off == "on" );
+			param add_executor_cmdinfo( "Successfully toggled '" + player.name + "' hud status to '" + on_off + "'" );
+			param add_player_cmdinfo( player, "Your hud status was toggled '" + on_off + "'" );
+		}
 	}
 	else
 	{
-		self setclientuivisibilityflag( "hud_visible", 1 );
-		self.tcs_hud_toggled = false;
+		self toggle_hud( on_off == "on" );
+		param add_executor_cmdinfo( "Your hud has been toggled " + on_off );
 	}
-
-	param add_executor_cmdinfo( "Your hud has been toggled " + on_off );
 }
 
 private cmd_bottomlessclip_f( param )
 {
-	on_off = cast_bool_to_str( !is_true( self.tcs_bottomless_clip ), "on off" );
-	if ( on_off == "on" )
-	{
-		self thread scripts\cmd\modules\core_helpers::bottomless_clip();
-		self.tcs_bottomless_clip = true;
-	}
-	else 
-	{
-		self notify( "stop_bottomless_clip" );
-		self.tcs_bottomless_clip = false;
-	}
+	targets = param.t[ 0 ];
 
-	param add_executor_cmdinfo( "Bottomless Clip " + on_off );
+	on_off = cast_bool_to_str( !is_true( self.tcs_bottomless_clip ), "on off" );
+	if ( array_validate( targets ) )
+	{
+		for ( i = 0; i < _SIZE( targets.size ); i++ )
+		{
+			player = targets[ i ];
+			player toggle_bottomless_clip( on_off == "on" );
+			param add_executor_cmdinfo( "Successfully toggled '" + player.name + "' bottomless clip status to '" + on_off + "'" );
+			param add_player_cmdinfo( player, "Your bottomless clip status was toggled '" + on_off + "'" );
+		}
+	}
+	else
+	{
+		self toggle_bottomless_clip( on_off == "on" );
+		param add_executor_cmdinfo( "Bottomless Clip " + on_off );
+	}
 }
 
 private cmd_server_dvar_f( param )
@@ -201,7 +249,7 @@ private cmd_server_dvar_f( param )
 
 private cmd_setrank_f( param )
 {
-	target = param.t[ 0 ];
+	target = param.t[ 0 ][ 0 ];
 	if ( !self has_all_perms() )
 	{
 		return param add_executor_cmderror( "Insufficient rank to set " + target.name + "'s rank" );
@@ -278,7 +326,7 @@ private cmd_help_f( param )
 
 private cmd_dodamage_f( param )
 {
-	targets = param.t[ 0 ];
+	victims = param.t[ 0 ];
 	attacker = param.t[ 1 ][ 0 ];
 	inflictor = param.t[ 2 ][ 0 ];
 	damage = param.a[ 0 ];
@@ -288,9 +336,9 @@ private cmd_dodamage_f( param )
 	idflags = param.a[ 4 ];
 	weapon = param.a[ 5 ];
 
-	for ( i = 0; i < _SIZE( targets.size ); i++ )
+	for ( i = 0; i < _SIZE( victims.size ); i++ )
 	{
-		victim = targets[ i ];
+		victim = victims[ i ];
 		victim_name = _DEFAULT( victim.name, victim.classname );
 		attacker_name = "unspecified";
 		inflictor_name = "unspecified";
@@ -311,7 +359,7 @@ private cmd_dodamage_f( param )
 		victim _dodamage( damage, pos, attacker, inflictor, hitloc, mod, idflags, weapon );
 	}
 
-	param add_executor_cmdinfo( "Damaged '" + targets.size + "' entities" );
+	param add_executor_cmdinfo( "Damaged '" + victims.size + "' entities" );
 }
 
 private cmd_entitylist_f( param )
@@ -384,7 +432,11 @@ private cmd_teleportentity_f( param )
 		to_target._intersection_tracker_immune = true;
 	}
 
-	level.player_intersection_tracker_override_original = level.player_intersection_tracker_override;
+	if ( !isdefined( level.player_intersection_tracker_override_original ) )
+	{
+		level.player_intersection_tracker_override_original = level.player_intersection_tracker_override;
+	}
+	
 	level.player_intersection_tracker_override = ::player_intersection_handle_teleport;
 
 	for ( i = 0; i < _SIZE( from_targets.size ); i++ )
@@ -395,7 +447,7 @@ private cmd_teleportentity_f( param )
 		if ( isplayer( from ) )
 		{
 			from._intersection_tracker_immune = true;
-			param add_player_msg( from, "You have been teleported to entity: '" + to_name + "' at: '" + to_target.origin + "'" );
+			param add_player_cmdinfo( from, "You have been teleported to entity: '" + to_name + "' at: '" + to_target.origin + "'" );
 		}
 
 		param add_executor_cmdinfo( "Successfully teleported entity: '" + from_name + "' at: '" + from.origin + "' to: '" + to_target.origin + "'" );
@@ -433,12 +485,29 @@ private cmd_debug_f( param )
 	}
 }
 
-private cmd_last_f( param )
+private cmd_lastcmd_f( param )
 {
+	last_cmd_string_to_execute = self get_eligible_last_cmd();
+	if ( last_cmd_string_to_execute == "" )
+	{
+		return param add_executor_cmderror( "You haven't executed any previous eligible(i.e not lastcmd) commands" );
+	}
 
+	self.in_lastcmd_execution_block = true;
+	self cmd_execute_single_command( last_cmd_string_to_execute, true, false );
+	self.in_lastcmd_execution_block = false;
 }
 
 private cmd_listcmdhistory_f( param )
 {
+	if ( self.cmd_history.size <= 0 )
+	{
+		return param add_executor_cmderror( "You haven't executed any commands yet. Until now..." );
+	}
 
+	for ( i = 0; i < _SIZE( self.cmd_history.size ); i++ )
+	{
+		entry = self.cmd_history[ i ];
+		self com_printnotitle( entry );
+	}
 }

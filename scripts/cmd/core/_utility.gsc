@@ -894,6 +894,23 @@ get_targets_by_func()
 	return result;
 }
 
+// max_history = 16
+add_cmd_history( cmd_string )
+{
+	if ( !isdefined( self.cmd_history ) )
+	{
+		self.cmd_history = [];
+	}
+
+	cmd_history_limit = get_dvar_int_default( "max_cmd_history", 16 );
+	if ( self.cmd_history.size >= cmd_history_limit )
+	{
+		arrayremoveindex( self.cmd_history, 0 );
+	}
+
+	self.cmd_history[ self.cmd_history.size ] = cmd_string;
+}
+
 // self == param
 add_player_msg( player, msg, filter, channels )
 {
@@ -965,8 +982,9 @@ add_player_cmderror( player, msg, channels )
 	return result_obj;
 }
 
-repackage_args( args )
+repackage_args( args, delimiter )
 {
+	delimiter = _DEFAULT( delimiter, " " );
 	args_string = "";
 	if ( !isdefined( args ) )
 	{
@@ -979,7 +997,7 @@ repackage_args( args )
 			args_string = args_string + args[ i ];
 			continue;
 		}
-		args_string = args_string + args[ i ] + " ";
+		args_string = args_string + args[ i ] + delimiter;
 	}
 	return args_string;
 }
@@ -1188,9 +1206,15 @@ target_add_optional( ordinal, name, target_type, desc, max_targets )
 	self target_add( ordinal, name, target_type, false, desc, max_targets );
 }
 
-get_target_from_ordinal( cmd_data_source, ordinal )
+get_target_type_from_ordinal( cmd_data_source, ordinal )
 {
 	return cmd_data_source.target_types[ ordinal + "" ];
+}
+
+// target_kvp obj
+is_target_kvp_key()
+{
+	return self.base_key[ 0 ] == "t" || self.base_key == "target";
 }
 
 arg_type_register( argtype, rand_gen_func, cast_func )
@@ -1234,6 +1258,17 @@ make_cmd_immune_to_unittest()
 	}
 
 	self.immune_to_unittest = true;
+}
+
+make_cmd_immune_to_lastcmd()
+{
+	if ( !is_true( self.is_cmd_object ) || is_true( self.immune_to_lastcmd ) )
+	{
+		assert( false );
+		return;
+	}
+
+	self.immune_to_lastcmd = true;
 }
 
 //If we have a lot of clientdvars in the pool delay setting them to prevent client cmd overflow error.
@@ -1375,7 +1410,7 @@ get_possible_array_values_msg( arg, array, type, key_indexed )
 		}
 	}
 
-	msg = "Invalid " + type + ": '" + arg + "', valid " + type + "s are: \n" + msg;
+	msg = "Invalid " + type + ": '" + arg + "', valid " + type + "s are: \n" + list;
 
 	return msg;
 }
@@ -1497,7 +1532,7 @@ timescale_tween(start, end, time, delay = 0.0, step_time = 0.1 )
 {
 	if ( !IsDefined( start ) )
 	{
-		start = GetTimeScale();
+		start = getdvar("timescale");
 	}
 	
 	num_steps = time / step_time;
@@ -1518,7 +1553,7 @@ timescale_tween(start, end, time, delay = 0.0, step_time = 0.1 )
 	level endon("timescale_tween");
 
 	time_scale = start;
-	SetTimeScale(time_scale);
+	setdvar( "timescale", time_scale );
 
 	while (time_scale != end)
 	{
@@ -1533,6 +1568,11 @@ timescale_tween(start, end, time, delay = 0.0, step_time = 0.1 )
 			time_scale = max(time_scale - time_scale_step, end);
 		}
 
-		SetTimeScale(time_scale);
+		setdvar( "timescale", time_scale );
 	}
+}
+
+cmd_execute_single_command( message, is_hidden, is_team_chat )
+{
+	self thread scripts\cmd\core\_cmd_execute::cmd_execute( message, self, is_hidden, is_team_chat ); // the default caller of a non threaded function is the caller of the parent thread
 }

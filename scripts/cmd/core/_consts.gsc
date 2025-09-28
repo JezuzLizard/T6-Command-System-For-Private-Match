@@ -893,13 +893,13 @@ arg_obj_mod_generate( arg1, arg2, arg3 )
 arg_obj_mod_cast( arg )
 {
 	find = generic_obj_t_new();
-	if ( isdefined( level.tcs_mods[ arg ] ) )
+	toupper_arg = toupper( arg );
+	if ( isdefined( level.tcs_mods[ toupper_arg ] ) )
 	{
-		toupper_arg = toupper( arg );
 		return set_cast_success( find, toupper_arg, "MOD==" + toupper_arg );
 	}
 
-	msg = get_possible_array_values_msg( arg, level.tcs_mods, "mod" );
+	msg = get_possible_array_values_msg( toupper_arg, level.tcs_mods, "mod" );
 
 	return set_cast_error( find, msg );
 }
@@ -1100,14 +1100,21 @@ target_obj_generate( target_type, overload )
 				target_str += "#"; // default
 				break;
 			case 2:
-				target_str += "*"; // all
+				// prevent script error during unittesting if the rand generator picks all entities when only 1 is allowed max
+				if ( max_targets > 1 )
+				{
+					target_str += "*"; // all
+				}
 				break;
 			case 3:
 				target_str += "&"; // self
 				break;
 		}
 
-		return target_str;
+		if ( target_str != "" )
+		{
+			return target_str;
+		}
 	}
 
 	ents = self [[ level._entity_type_funcs[ etype ].getter ]]();

@@ -356,10 +356,11 @@ private split_kvps()
 	return cmd_parse_obj;
 }
 
-/*token_obj_t*/ private token_obj_t_new( base_key )
+/*token_obj_t*/ private token_obj_t_new( base_key, ordinal_argument )
 {
 	parse_token_obj = generic_obj_t_new( "parse_token" );
 	parse_token_obj.base_key = base_key;
+	parse_token_obj.ordinal_argument = ordinal_argument;
 	parse_token_obj.type = "unassigned"; // can be "identifier"(for a name or string), "number"(int, float)
 	parse_token_obj.v = []; // 0 is used for singleton types like identifier, > 0 is used for arrays
 
@@ -371,6 +372,7 @@ private split_kvps()
 	level._parse_obj = generic_obj_t_new( "parse" );
 	level._parse_obj.args = [];
 	level._parse_obj.kvps = [];
+	level._parse_obj.kvps_ordinal = [];
 	level._parse_obj.cmd_data_source = cmd_data_source;
 	level._parse_obj.cmd_string = cmd_string;
 
@@ -378,8 +380,15 @@ private split_kvps()
 	level._parse_obj.current_token = "";
 	level._parse_obj.current_key_string = "";
 	level._parse_obj.current_value_string = "";
+	level._parse_obj.current_base_key_string = "";
+	level._parse_obj.current_ordinal_argument = 0; // 0 is invalid
 	level._parse_obj.start_pos = 0;
 	level._parse_obj.end_pos = 0;
+}
+
+/*void*/ private parse_obj_t_delete()
+{
+	level._parse_obj = undefined;
 }
 
 private copy_parse_obj_t( parse_obj )
@@ -387,6 +396,7 @@ private copy_parse_obj_t( parse_obj )
 	copy = generic_obj_t_new( "parse" );
 	copy.args = parse_obj.args;
 	copy.kvps = parse_obj.kvps;
+	copy.kvps_ordinal = parse_obj.kvps_ordinal;
 	copy.cmd_data_source = parse_obj.cmd_data_source;
 	copy.cmd_string = parse_obj.cmd_string;
 
@@ -407,6 +417,7 @@ level._parse_obj.kvps[ "target1" ].v[ 2 ] = c;
 private set_type( new_type )
 {
 	level._parse_obj.kvps[ level._parse_obj.current_key_string ].type = new_type;
+	level._parse_obj.kvps_ordinal[ level._parse_obj.current_ordinal_argument + "" ].type = new_type;
 }
 
 private add_value( value_string )
@@ -417,6 +428,7 @@ private add_value( value_string )
 	level._parse_obj.current_value_string = value_string;
 	level._parse_obj.current_value_index = level._parse_obj.kvps[ key_string ].v.size;
 	level._parse_obj.kvps[ key_string ].v[ level._parse_obj.current_value_index ] = value_string;
+	level._parse_obj.kvps_ordinal[ level._parse_obj.current_ordinal_argument + "" ].v[ level._parse_obj.current_value_index ] = value_string;
 }
 
 private add_key( key_string )
@@ -429,10 +441,16 @@ private add_key( key_string )
 	{
 		base_key = getsubstr( key_string, 0, key_string.size - 1 );
 	}
+	else
+	{
+		throw_parse_exception( "Target ordinal must be an integer greater than 0" );
+	}
 
 	level._parse_obj.current_key_string = key_string;
 	level._parse_obj.current_base_key_string = base_key;
-	level._parse_obj.kvps[ key_string ] = token_obj_t_new( base_key );
+	level._parse_obj.current_ordinal_argument = ordinal_argument;
+	level._parse_obj.kvps[ key_string ] = token_obj_t_new( base_key, ordinal_argument );
+	level._parse_obj.kvps_ordinal[ ordinal_argument + "" ] = token_obj_t_new( base_key, ordinal_argument );
 }
 
 private add_arg( arg_str )

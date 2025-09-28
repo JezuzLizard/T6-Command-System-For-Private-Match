@@ -6,15 +6,10 @@
 autoexec cmd_buffer()
 {
 	level thread scr_dvar_cmd_watcher();
-	while ( true )
+	for ( ;; )
 	{
 		level waittill( "say", message, user, is_hidden, is_team_chat );
-		if ( !isdefined( user.exception_obj ) )
-		{
-			user.exception_obj = generic_obj_t_new();
-			user.exception_obj thread handle_parse_exception_feedback( user );
-		}
-		user thread cmd_execute( message, user, is_hidden, is_team_chat ); // the default caller of a non threaded function is the caller of the parent thread
+		user thread cmd_execute( message, user, is_hidden, is_team_chat );
 	}
 }
 
@@ -93,8 +88,13 @@ private debug_print_execute( index, cmd_obj )
 	}
 }
 
-private cmd_execute( message, initiator, is_hidden, is_team_chat, from_rcon )
+cmd_execute( message, initiator, is_hidden, is_team_chat )
 {
+	if ( !isdefined( initiator.exception_obj ) )
+	{
+		initiator.exception_obj = generic_obj_t_new();
+		initiator.exception_obj thread handle_parse_exception_feedback( initiator );
+	}
 	if ( !isdefined( initiator.cmd_execute_id ) )
 	{
 		initiator.cmd_execute_id = 0;
@@ -135,7 +135,7 @@ private cmd_execute( message, initiator, is_hidden, is_team_chat, from_rcon )
 
 	message = tolower( message );
 	cmd_parse_obj = scripts\cmd\core\_cmd_parse2::parse_cmd_message( message );
-	//add_obj_ref( cmd_execute_thread, cmd_parse_obj );
+	initiator add_cmd_history( message );
 
 	if ( !has_all_perms )
 	{
@@ -148,6 +148,11 @@ private cmd_execute( message, initiator, is_hidden, is_team_chat, from_rcon )
 		executor_directive = cmd_obj.kvps[ "executor" ];
 		executors = initiator get_executors( executor_directive );
 		debug_print_execute( i, cmd_obj );
+
+		if ( is_true( cmd_obj.cmd_data_source.immune_to_lastcmd ) && is_true( initiator.in_lastcmd_execution_block ) )
+		{
+			continue;
+		}
 
 		for ( executor_index = 0; executor_index < _SIZE( executors.size ); executor_index++ )
 		{
@@ -202,14 +207,14 @@ private arg_cast( arg_type, arg )
 		return cast_result.value;
 	}
 
-	self throw_exception( "Failed to cast to one of the valid overloads for arg_type" );
+	self throw_exception( "Failed to cast to one of the valid overloads for arg_type, attempted casts: " + repackage_args( msgs, "\n" ) );
 }
 
 private target_cast( cmd_data_source, ordinal, target_type, target_kvp )
 {
 	foreach ( etype, val in target_type.overloads )
 	{
-		value = self get_entity_targets( val.etype, target_kvp );
+		value = self get_entity_targets( etype, target_kvp );
 
 		if ( array_validate( value ) )
 		{
@@ -220,16 +225,6 @@ private target_cast( cmd_data_source, ordinal, target_type, target_kvp )
 
 			return value;
 		}
-	}
-	
-	if ( ( target_kvp.type != "undefined" && target_kvp.type != "default" ) )
-	{
-		self throw_exception( "Failed to find any compatible entities" );
-	}
-
-	if ( target_type.is_required )
-	{
-		self throw_exception( "'target" + ordinal + "' is required" );
 	}
 
 	return [];
@@ -397,7 +392,7 @@ private cmd_execute_internal( initiator, cmd_obj )
 		initiator throw_exception( "Too many args: usage: " + cmd_data_source.usage );
 	}
 
-	if ( self == level.server && cmd_data_source.requires_player_executor )
+	if ( self == level.server && cmd_data_source.requires_player_executor && cmd_obj.kvps.size <= 0 )
 	{
 		initiator throw_exception( "Command '" + cmd_data_source.cmd_name + "' expects the executor to be a player; but executor is level.server, use setdefaultcmdexecutor on a player to execute this command", cmd_obj );
 	}
@@ -442,23 +437,28 @@ private cmd_execute_internal( initiator, cmd_obj )
 	{
 		// find target kvps
 		cmd_target_keys = getarraykeys( cmd_obj.kvps );
-		for ( i = 0; i < _SIZE( cmd_target_keys.size ); i++ )
+		foreach ( ordinal_key, target_type in cmd_data_source.target_types )
 		{
-			target_kvp = cmd_obj.kvps[ cmd_target_keys[ i ] ];
-			if ( target_kvp.base_key[ 0 ] != "t" && target_kvp.base_key != "target" )
+			target_kvp = cmd_obj.kvps_ordinal[ ordinal_key ];
+			if ( !isdefined( target_kvp ) )
 			{
+				if ( target_type.is_required )
+				{
+					initiator throw_exception( "'target" + ordinal_key + "' is required" );
+				}
+
 				continue;
 			}
 
-			ordinal_str = getsubstr( cmd_target_keys[ i ], cmd_target_keys[ i ].size - 1 );
-			ordinal = int( ordinal_str );
-			if ( ordinal <= 0 )
-			{
-				initiator throw_exception( "Target ordinal must be an integer greater than 0" );
-			}
+			ordinal = int( ordinal_key );
+			index = ordinal - 1;
+			target_type = get_target_type_from_ordinal( cmd_data_source, ordinal );
+			param.t[ index ] = initiator target_cast( cmd_data_source, ordinal, target_type, target_kvp );
 
-			target_type = get_target_from_ordinal( cmd_data_source, ordinal );
-			param.t[ i ] = initiator target_cast( cmd_data_source, ordinal, target_type, target_kvp );
+			if ( !isdefined( param.t[ index ] ) && ( target_kvp.type != "undefined" && target_kvp.type != "default" ) )
+			{
+				initiator throw_exception( "Failed to find any compatible entities" );
+			}
 		}
 	}
 

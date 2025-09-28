@@ -58,11 +58,6 @@ list_entities_throttled( param )
 
 	entities = param.t[ 0 ];
 
-	if ( !array_validate( entities ) )
-	{
-		assert( false );
-		return;
-	}
 	targetname_str = undefined;
 	classname_str = undefined;
 	script_noteworthy_str = undefined;
@@ -115,7 +110,12 @@ player_intersection_handle_teleport( player )
 		return true;
 	}
 
-	return self [[ level.player_intersection_tracker_override_original ]]( player );
+	if ( isdefined( level.player_intersection_tracker_override_original ) )
+	{
+		return self [[ level.player_intersection_tracker_override_original ]]( player );
+	}
+
+	return false;
 }
 
 _dodamage( damage, pos, attacker, inflictor, hitloc, mod, idflags, weapon )
@@ -155,4 +155,97 @@ _dodamage( damage, pos, attacker, inflictor, hitloc, mod, idflags, weapon )
 	{
 		self dodamage( damage, pos );
 	}
+}
+
+toggle_invulnerability( on_off )
+{
+	if ( on_off )
+	{
+		self enableInvulnerability();
+		self.tcs_is_invulnerable = true;
+	}
+	else
+	{
+		self disableInvulnerability();
+		self.tcs_is_invulnerable = false;
+	}
+}
+
+toggle_notarget( on_off )
+{
+	if ( on_off )
+	{
+		self.ignoreme = true;
+	}
+	else 
+	{
+		self.ignoreme = false;
+	}
+}
+
+toggle_invisibility( on_off )
+{
+	if ( on_off )
+	{
+		self hide();
+		self.tcs_is_invisible = true;
+	}
+	else 
+	{
+		self show();
+		self.tcs_is_invisible = false;
+	}
+}
+
+toggle_hud( on_off )
+{
+	if ( on_off )
+	{
+		self setclientuivisibilityflag( "hud_visible", 0 );
+		self.tcs_hud_toggled = true;
+	}
+	else
+	{
+		self setclientuivisibilityflag( "hud_visible", 1 );
+		self.tcs_hud_toggled = false;
+	}
+}
+
+toggle_bottomless_clip( on_off )
+{
+	if ( on_off )
+	{
+		self thread bottomless_clip();
+		self.tcs_bottomless_clip = true;
+	}
+	else 
+	{
+		self notify( "stop_bottomless_clip" );
+		self.tcs_bottomless_clip = false;
+	}
+}
+
+get_eligible_last_cmd()
+{
+	for ( i = ( _SIZE( self.cmd_history.size ) - 1 ); i >= 0; i-- )
+	{
+		eligible = true;
+		old_cmd_strings = strtok( self.cmd_history[ i ], "^" );
+		for ( j = 0; j < old_cmd_strings.size; j++ )
+		{
+			old_cmd = strtok( old_cmd_strings[ j ], " " )[ 0 ];
+			if ( is_true( level.tcs_cmds[ old_cmd ].immune_to_lastcmd ) )
+			{
+				eligible = false;
+				break;
+			}
+		}
+
+		if ( eligible )
+		{
+			return self.cmd_history[ i ];
+		}
+	}
+
+	return "";
 }

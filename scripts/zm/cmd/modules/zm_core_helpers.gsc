@@ -136,6 +136,86 @@ give_perk_zm( perkname, index )
 	}
 }
 
+give_perk_zm_wrapper_executor( param, perk_name )
+{
+	if ( perk_name != "all" )
+	{
+		self give_perk_zm( perk_name );
+		param add_executor_cmdinfo( "Gave perk " + perk_name + " to you" );
+	}
+	else 
+	{
+		valid_perk_list = perk_list_zm();
+		foreach ( perk in valid_perk_list )
+		{
+			self give_perk_zm( perk );
+		}
+
+		param add_executor_cmdinfo( "Gave you all perks" );
+	}
+}
+
+give_perk_zm_wrapper_target( param, perk_name, player )
+{
+	if ( perk_name != "all" )
+	{
+		player give_perk_zm( perk_name );
+		param add_executor_cmdinfo( "Gave perk '" + perk_name + "' to '" + player.name + "'" );
+		param add_player_cmdinfo( player, "You received perk '" + perk_name + "'" );
+	}
+	else 
+	{
+		valid_perk_list = perk_list_zm();
+		foreach ( perk in valid_perk_list )
+		{
+			player give_perk_zm( perk );
+		}
+
+		param add_executor_cmdinfo( "Gave you all perks" );
+		param add_player_cmdinfo( player, "You received perk '" + perk_name + "'" );
+	}
+}
+
+take_perk_zm_wrapper_executor( param, perk_name )
+{
+	if ( perk_name != "all" )
+	{
+		self notify( perk_name + "_stop" );
+		param add_executor_cmdinfo( "Gave perk " + perk_name + " to you" );
+	}
+	else 
+	{
+		valid_perk_list = perk_list_zm();
+		foreach ( perk in valid_perk_list )
+		{
+			self notify( perk + "_stop" );
+		}
+
+		param add_executor_cmdinfo( "Took all perks from you" );
+	}
+}
+
+take_perk_zm_wrapper_target( param, perk_name, player )
+{
+	if ( perk_name != "all" )
+	{
+		player notify( perk_name + "_stop" );
+		param add_executor_cmdinfo( "Gave perk '" + perk_name + "' to '" + player.name + "'" );
+		param add_player_cmdinfo( player, "You lost perk '" + perk_name + "'" );
+	}
+	else 
+	{
+		valid_perk_list = perk_list_zm();
+		foreach ( perk in valid_perk_list )
+		{
+			player notify( perk + "_stop" );
+		}
+
+		param add_executor_cmdinfo( "Gave you all perks" );
+		param add_player_cmdinfo( player, "You lost all perks" );
+	}
+}
+
 disable_zombies()
 {
 	level endon( "game_unpaused" );
@@ -515,6 +595,11 @@ zombie_recalculate_total( stat_name, new_value )
 	}	
 }
 
+weapon_check_success( weapon )
+{
+	return self hasweapon( weapon );
+}
+
 weapon_give_custom( weapon, is_upgrade, should_switch_weapon )
 {
 	primaryweapons = self getweaponslistprimaries();
@@ -544,7 +629,7 @@ weapon_give_custom( weapon, is_upgrade, should_switch_weapon )
 		if ( !is_offhand_weapon( weapon ) )
 			self switchtoweapon( weapon );
 
-		return;
+		return self weapon_check_success( weapon );
 	}
 
 	if ( is_melee_weapon( weapon ) )
@@ -613,26 +698,26 @@ weapon_give_custom( weapon, is_upgrade, should_switch_weapon )
 	if ( isdefined( level.zombiemode_offhand_weapon_give_override ) )
 	{
 		if ( self [[ level.zombiemode_offhand_weapon_give_override ]]( weapon ) )
-			return;
+			return self weapon_check_success( weapon );
 	}
 
 	if ( weapon == "cymbal_monkey_zm" )
 	{
 		self maps\mp\zombies\_zm_weap_cymbal_monkey::player_give_cymbal_monkey();
-		return;
+		return self weapon_check_success( weapon );
 	}
 	else if ( issubstr( weapon, "knife_ballistic_" ) )
 		weapon = self maps\mp\zombies\_zm_melee_weapon::give_ballistic_knife( weapon, issubstr( weapon, "upgraded" ) );
 	else if ( weapon == "claymore_zm" )
 	{
 		self thread maps\mp\zombies\_zm_weap_claymore::claymore_setup();
-		return;
+		return self weapon_check_success( weapon );
 	}
 
 	if ( isdefined( level.zombie_weapons_callbacks ) && isdefined( level.zombie_weapons_callbacks[weapon] ) )
 	{
 		self thread [[ level.zombie_weapons_callbacks[weapon] ]]();
-		return;
+		return self weapon_check_success( weapon );
 	}
 	if ( weapon == "ray_gun_zm" )
 		playsoundatposition( "mus_raygun_stinger", ( 0, 0, 0 ) );
@@ -642,7 +727,7 @@ weapon_give_custom( weapon, is_upgrade, should_switch_weapon )
 		self giveweapon( weapon, 0, self get_pack_a_punch_weapon_options( weapon ) );
 	if ( self istestclient() )
 	{
-		self setSpawnWeapon( weapon );
+		self setspawnweapon( weapon );
 	}
 	acquire_weapon_toggle( weapon, self );
 	self givestartammo( weapon );
@@ -654,4 +739,6 @@ weapon_give_custom( weapon, is_upgrade, should_switch_weapon )
 		else
 			self switchtoweapon( current_weapon );
 	}
+
+	return self weapon_check_success( weapon );
 }

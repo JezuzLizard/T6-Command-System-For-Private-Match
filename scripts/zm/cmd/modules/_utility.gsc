@@ -25,7 +25,19 @@ weapon_is_upgrade( weapon )
 
 perk_list_zm()
 {
-	return getarraykeys( level._spawnable_perk_machines );
+	perks = getarraykeys( level._spawnable_perk_machines );
+	new_arr = [];
+	foreach ( perk in perks )
+	{
+		// remove pap perk for the perk giving functionality to not get confused
+		if ( perk == "specialty_weapupgrade" )
+		{
+			continue;
+		}
+
+		new_arr[ new_arr.size ] = perk;
+	}
+	return new_arr;
 }
 
 spawn_blocker_collision( origin, angles )
@@ -601,11 +613,11 @@ spawn_wallbuy_trigger_stub( model )
 		melee_weapon = undefined;
 		foreach ( melee_weap in level._melee_weapons )
 		{
-			if ( melee_weap.weapon_name == weapon_name )
-			{
-				melee_weapon = melee_weap;
-				break;
-			}
+			// if ( melee_weap.weapon_name == weapon_name )
+			// {
+			// 	melee_weapon = melee_weap;
+			// 	break;
+			// }
 		}
 
 		if ( isDefined( melee_weapon ) )
@@ -631,11 +643,11 @@ spawn_wallbuy_trigger_stub( model )
 			}
 		}
 
-		if ( weapon_name == "tazer_knuckles_zm" )
-		{
-			unitrigger_stub.origin += anglestoforward( self.angles ) * -7;
-			unitrigger_stub.origin += anglestoright( self.angles ) * -2;
-		}
+		// if ( weapon_name == "tazer_knuckles_zm" )
+		// {
+		// 	unitrigger_stub.origin += anglestoforward( self.angles ) * -7;
+		// 	unitrigger_stub.origin += anglestoright( self.angles ) * -2;
+		// }
 
 		self.wall_model.origin += anglestoforward( self.angles ) * -8; // _zm_melee_weapon::melee_weapon_show moves this back
 

@@ -454,8 +454,8 @@ save_entity( optional_keys )
 	required_keys[ "angles" ] = self.angles;
 	required_keys[ "classname" ] = self.classname;
 
-	write_gsc( required_keys );
-	write_mapents( required_keys );
+	//write_gsc( required_keys );
+	//write_mapents( required_keys );
 }
 
 spawn_script_origin( origin, spawnflags )
@@ -749,7 +749,7 @@ spawn_path_node( classname, origin, angles, key1, val1, key2, val2, key3, val3 )
 	ent = undefined;
 	if ( isdefined( key3 ) )
 	{
-		ent = spawnpathnode( classname, origin, angles, key1, val1, key2, val2, key3, val3 );
+		//ent = spawnpathnode( classname, origin, angles, key1, val1, key2, val2, key3, val3 );
 	}
 	else if ( isdefined( key2 ) )
 	{
@@ -984,9 +984,9 @@ generate_mapents_spawnpoint( classname, angles, origin )
 	fh = level.spawnpoints_mapents_fh;
 
 	fs_writeline( fh, "{" );
-	level dump_mapents_classname_key( fh, classname );
-	level dump_mapents_angles_key( fh, angles );
-	level dump_mapents_origin_key( fh, origin );
+	//level dump_mapents_classname_key( fh, classname );
+	//level dump_mapents_angles_key( fh, angles );
+	//level dump_mapents_origin_key( fh, origin );
 	fs_writeline( fh, "}" );
 }
 
@@ -999,7 +999,7 @@ generate_gsc_spawnpoint( classname, angles, origin )
 	dump_gsc_kvp( fh, "new_spawnpoint", "script_gameobjectname", level.gametype );
 }
 
-dump_gsc_func_call( fh, func, args, return_val );
+dump_gsc_func_call( fh, func, args, return_val )
 {
 	if ( isdefined( return_val ) )
 	{
@@ -1010,7 +1010,7 @@ dump_gsc_func_call( fh, func, args, return_val );
 	fs_writeline( fh, "( " );
 	for ( i = 0; i < args.size; i++ )
 	{
-		if ( isstring( val ) )
+		if ( isstring( args[ i ] ) )
 		{
 			fs_writeline( fh, "\"" + args[ i ] + "\"" );
 		}
@@ -1037,7 +1037,7 @@ generate_dog_actor_spawner( angles, origin )
 	level dump_mapents_kvp( fh, "origin", origin );
 	level dump_mapents_kvp( fh, "model", "tag_origin" );
 	level dump_mapents_kvp( fh, "targetname", "dog_spawner" );
-	level dump_mapents_kvp( fh, "spawnflags" 1 );
+	level dump_mapents_kvp( fh, "spawnflags", 1 );
 	fs_writeline( fh, "}" );
 }
 

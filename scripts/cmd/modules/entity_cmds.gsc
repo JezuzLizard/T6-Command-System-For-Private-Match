@@ -16,7 +16,7 @@ autoexec add_cmds()
 	seteditortargetent_cmd target_add_required( 1, "entity", "general", "Manual entity to target for editing", 1 );
 
 	editentfield_cmd = cmd_add( "editentfield", ::cmd_editentfield_f, "editentfield {[entity]} <fieldname> <fieldvalue> [scale] [relative]" );
-	editentfield_cmd arg_add_required( 1, "fieldname", "entfield", "New angles to set the target entity to" );
+	editentfield_cmd arg_add_required( 1, "fieldname", "string", "New angles to set the target entity to" );
 	editentfield_cmd arg_add_optional( 2, "fieldvalue", "string", "Causes the entity angles to be modified by <angles> instead of assigned" );
 	editentfield_cmd arg_add_optional( 3, "scale", "float", "The scale of the angle modification" );
 	editentfield_cmd arg_add_optional( 4, "relative", "boolean", "The scale of the angle modification" );
@@ -488,16 +488,16 @@ private cmd_dumpent_f( param )
 	switch ( type )
 	{
 		case "dogs":
-			level scripts\cmd\modules\entity_helpers::dump_mapents_dog_actor_spawner( player.angles, player.origin );
+			//level scripts\cmd\modules\entity_helpers::dump_mapents_dog_actor_spawner( player.angles, player.origin );
 			break;
 
 		case "minimap":
-			level scripts\cmd\modules\entity_helpers::dump_mapents_minimap_corner( player.angles, player.origin );
+			//level scripts\cmd\modules\entity_helpers::dump_mapents_minimap_corner( player.angles, player.origin );
 			break;
 
 		case "player_spawn":
-			level scripts\cmd\modules\entity_helpers::dump_gsc_spawnpoint( classname, player.angles, player.origin );
-			level scripts\cmd\modules\entity_helpers::dump_mapents_spawnpoint( classname, player.angles, player.origin );
+			//level scripts\cmd\modules\entity_helpers::dump_gsc_spawnpoint( classname, player.angles, player.origin );
+			//level scripts\cmd\modules\entity_helpers::dump_mapents_spawnpoint( classname, player.angles, player.origin );
 			break;
 	}
 
@@ -533,7 +533,7 @@ private cmd_editentfield_f( param )
 		for ( i = 0; i < targets.size; i++ )
 		{
 			targ = targets[ i ];
-			assign_result = targ set_entfield( fieldname, fieldvalue, scale );
+			assign_result = targ set_entfield( fieldname, fieldvalue );
 			if ( assign_result.errored )
 			{
 				param add_executor_cmderror( assign_result.msg );

@@ -953,8 +953,9 @@ add_player_cmderror( player, msg, channels )
 	return result_obj;
 }
 
-repackage_args( args )
+repackage_args( args, delimiter )
 {
+	delimiter = _DEFAULT( delimiter, " " );
 	args_string = "";
 	if ( !isdefined( args ) )
 	{
@@ -967,7 +968,7 @@ repackage_args( args )
 			args_string = args_string + args[ i ];
 			continue;
 		}
-		args_string = args_string + args[ i ] + " ";
+		args_string = args_string + args[ i ] + delimiter;
 	}
 	return args_string;
 }
@@ -1176,7 +1177,7 @@ target_add_optional( ordinal, name, target_type, desc, max_targets )
 	self target_add( ordinal, name, target_type, false, desc, max_targets );
 }
 
-get_target_from_ordinal( cmd_data_source, ordinal )
+get_target_type_from_ordinal( cmd_data_source, ordinal )
 {
 	return cmd_data_source.target_types[ ordinal + "" ];
 }
@@ -1445,6 +1446,7 @@ _SIZE( arr_size )
 	if ( !isdefined( arr_size ) )
 	{
 		// exits the loop as undefined is used in a truthy way
+		assert( false ); // force a callstack to be printed to the console
 		return 0;
 	}
 
