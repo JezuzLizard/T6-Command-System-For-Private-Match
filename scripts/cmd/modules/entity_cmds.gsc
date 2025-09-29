@@ -7,6 +7,8 @@
 
 autoexec add_cmds()
 {
+	precacheitem( "equip_turbine_zm_turret" );
+
 	waittillframeend;
 	cmd_block_set_module_group( "addon_entity_tools" );
 	cmd_block_set_rank_group( "cheat" );
@@ -24,8 +26,8 @@ autoexec add_cmds()
 
 	seteditortargetangles_cmd = cmd_add( "seteditortargetangles", ::cmd_seteditortargetangles_f, "seteditortargetangles {[entity]} <angles> [relative] [scale]" );
 	seteditortargetangles_cmd arg_add_required( 1, "angles", "vector", "New angles to set the target entity to" );
-	seteditortargetangles_cmd arg_add_optional( 2, "relative", "boolean", "Causes the entity angles to be modified by <angles> instead of assigned" );
-	seteditortargetangles_cmd arg_add_optional( 3, "scale", "float", "The scale of the angle modification" );
+	seteditortargetangles_cmd arg_add_optional_with_default( 2, "relative", "boolean", "Causes the entity angles to be modified by <angles> instead of assigned", false );
+	seteditortargetangles_cmd arg_add_optional_with_default( 3, "scale", "float", "The scale of the angle modification", 1.0 );
 	seteditortargetangles_cmd target_add_optional( 1, "entity", "general", "Manual entity to target for editing", 1 );
 
 	seteditortargetorigin_cmd = cmd_add( "seteditortargetorigin", ::cmd_seteditortargetorigin_f, "seteditortargetorigin {[entity]} <pos> [relative]" );
@@ -56,9 +58,9 @@ autoexec add_cmds()
 
 	editorcontextmodifyentity_cmd = cmd_add( "editorcontextmodifyentity", ::cmd_editorcontextmodifyentity_f, "editorcontextmodifyentity <scale> [total_time] [accel_time] [decel_time]" );
 	editorcontextmodifyentity_cmd arg_add_required( 1, "scale", "float", "Scale of changes made" );
-	editorcontextmodifyentity_cmd arg_add_optional( 2, "total_time", "float", "Total time for entity changes to occur over" );
-	editorcontextmodifyentity_cmd arg_add_optional( 3, "accel_time", "float", "Acceleration time before entity change speed maximum is reached" );
-	editorcontextmodifyentity_cmd arg_add_optional( 4, "decel_time", "float", "Deceleration time before entity change speed minimum is reached" );
+	editorcontextmodifyentity_cmd arg_add_optional_with_default( 2, "total_time", "float", "Total time for entity changes to occur over", 1 );
+	editorcontextmodifyentity_cmd arg_add_optional_with_default( 3, "accel_time", "float", "Acceleration time before entity change speed maximum is reached", 0.05 );
+	editorcontextmodifyentity_cmd arg_add_optional_with_default( 4, "decel_time", "float", "Deceleration time before entity change speed minimum is reached", 0.05 );
 
 	editorsave_cmd = cmd_add( "editorsave", ::cmd_editorsave_f );
 	// TODO:

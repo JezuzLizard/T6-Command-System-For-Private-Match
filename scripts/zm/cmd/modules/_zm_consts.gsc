@@ -13,23 +13,30 @@ autoexec init_consts()
 
 	arg_type_register( "permaperk", ::arg_obj_permaperk_generate, ::arg_obj_permaperk_cast );
 
-	register_spawnable_perk_machine( "zombie_vending_revive", "specialty_quickrevive", "revive_light" );
-	register_spawnable_perk_machine( "zombie_vending_sleight", "specialty_fastreload", "sleight_light" );
-	register_spawnable_perk_machine( "zombie_vending_doubletap2", "specialty_rof", "doubletap_light" );
-	register_spawnable_perk_machine( "zombie_vending_jugg", "specialty_armorvest", "jugger_light" );
-	register_spawnable_perk_machine( "p6_anim_zm_buildable_pap", "specialty_weapupgrade", "packapunch_fx" );
-	register_spawnable_perk_machine( "zombie_vending_three_gun", "specialty_additionalprimaryweapon", "additionalprimaryweapon_light" );
-	register_spawnable_perk_machine( "p6_zm_al_vending_ads", "specialty_deadshot", "deadshot_light" );
-	register_spawnable_perk_machine( "p6_zm_al_vending_nuke", "specialty_flakjacket", "divetonuke_light" );
-	register_spawnable_perk_machine( "p6_zm_vending_electric_cherry", "specialty_grenadepulldeath", "electriccherry" );
-	register_spawnable_perk_machine( "zombie_vending_marathon", "specialty_longersprint", "marathon_light" );
-	register_spawnable_perk_machine( "zombie_vending_tombstone", "specialty_scavenger", "tombstone_light" );
-	register_spawnable_perk_machine( "p6_zm_vending_chugabud", "specialty_finalstand", "tombstone_light" );
-	register_spawnable_perk_machine( "p6_zm_vending_vultureaid", "specialty_nomotionsensor", "vulture_light" );
-	register_spawnable_perk_machine( "p6_zm_vending_diesel_magic", "specialty_stalker", "perk_machine_light" );
+	level thread register_spawnable_perk_machines();
 }
 
-register_spawnable_perk_machine( model, script_noteworthy, perk_fx )
+private register_spawnable_perk_machines()
+{
+	flag_wait( "start_zombie_round_logic" );
+	waittillframeend;
+
+	register_spawnable_perk_machine( "specialty_quickrevive" );
+	register_spawnable_perk_machine( "specialty_fastreload" );
+	register_spawnable_perk_machine( "specialty_rof" );
+	register_spawnable_perk_machine( "specialty_armorvest" );
+	register_spawnable_perk_machine( "specialty_weapupgrade" );
+	register_spawnable_perk_machine( "specialty_additionalprimaryweapon" );
+	register_spawnable_perk_machine( "specialty_deadshot" );
+	register_spawnable_perk_machine( "specialty_flakjacket" );
+	register_spawnable_perk_machine( "specialty_grenadepulldeath" );
+	register_spawnable_perk_machine( "specialty_longersprint" );
+	register_spawnable_perk_machine( "specialty_scavenger" );
+	register_spawnable_perk_machine( "specialty_finalstand" );
+	register_spawnable_perk_machine( "specialty_nomotionsensor" );
+}
+
+register_spawnable_perk_machine( script_noteworthy )
 {
 	if ( !isdefined( level._spawnable_perk_machines ) )
 	{
@@ -42,21 +49,9 @@ register_spawnable_perk_machine( model, script_noteworthy, perk_fx )
 	}
 	
 	new_perk_obj = spawnstruct();
-	new_perk_obj.model = model; // const
+	machine_name = get_machine_name_from_specialty( script_noteworthy );
+	new_perk_obj.assets = level.machine_assets[ machine_name ]; // const
 	new_perk_obj.script_noteworthy = script_noteworthy; // const
-	
-	if ( script_noteworthy == "specialty_stalker" )
-	{
-		new_perk_obj.is_wunderfizz = true;
-		new_perk_obj.targetname = "random_perk_machine"; // const
-	}
-	else
-	{
-		new_perk_obj.is_wunderfizz = false;
-		new_perk_obj.targetname = "zm_perk_machine_override"; // const
-	}
-	
-	new_perk_obj.perk_fx = perk_fx;
 	level._spawnable_perk_machines[ script_noteworthy ] = new_perk_obj;
 }
 
@@ -97,6 +92,7 @@ arg_obj_perk_generate()
 	return set_cast_success( find, perk );
 }
 
+// GetWeaponModel use this for future proofing
 arg_obj_weapon_cast( arg )
 {
 	find = generic_obj_t_new();

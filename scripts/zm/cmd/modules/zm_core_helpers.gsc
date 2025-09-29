@@ -71,31 +71,63 @@ no_player_damage_during_unittest( einflictor, eattacker, idamage, idflags, smean
 	}
 }
 
+save_unittest_var( name, var )
+{
+	if ( !isdefined( level._unittest_old_vars ) )
+	{
+		level._unittest_old_vars = [];
+	}
+
+	level._unittest_old_vars[ name ] = var;
+}
+
+load_unittest_var( name )
+{
+	return level._unittest_old_vars[ name ];
+}
+
+init_unittest_settings()
+{
+	save_unittest_var( "solo_lives_given", level.solo_lives_given );
+	save_unittest_var( "custom_player_fake_death", level.custom_player_fake_death );
+	save_unittest_var( "no_end_game_check", level.no_end_game_check );
+	save_unittest_var( "_game_module_game_end_check", level._game_module_game_end_check );
+	save_unittest_var( "player_out_of_playable_area_monitor", level.player_out_of_playable_area_monitor );
+	save_unittest_var( "zm_disable_recording_stats", level.zm_disable_recording_stats );
+	save_unittest_var( "powerup_player_valid", level.powerup_player_valid );
+	save_unittest_var( "player_damage_callbacks", level.player_damage_callbacks );
+	level.solo_lives_given = -1000000;
+	level.custom_player_fake_death = maps\mp\gametypes_zm\_callbacksetup::callbackvoid;
+	level.no_end_game_check = true;
+	level._game_module_game_end_check = ::never_end_game;
+	level.player_out_of_playable_area_monitor = false;
+	level.zm_disable_recording_stats = true;
+	level.powerup_player_valid = ::unittest_check_player_is_valid_for_powerup;
+	//level.player_damage_callbacks[ 0 ] = ::no_player_damage_during_unittest;
+}
+
+restore_unittest_settings()
+{
+	level.solo_lives_given = load_unittest_var( "solo_lives_given" );
+	level.custom_player_fake_death = load_unittest_var( "custom_player_fake_death" );
+	level.no_end_game_check = load_unittest_var( "no_end_game_check" );
+	level._game_module_game_end_check = load_unittest_var( "_game_module_game_end_check" );
+	level.player_out_of_playable_area_monitor = load_unittest_var( "player_out_of_playable_area_monitor" );
+	level.zm_disable_recording_stats = load_unittest_var( "zm_disable_recording_stats" );
+	level.powerup_player_valid = load_unittest_var( "powerup_player_valid" );
+	//level.player_damage_callbacks = load_unittest_var( "player_damage_callbacks" );
+}
+
 on_unittest()
 {
 	level endon( "end_game" );
 	while ( true )
 	{
 		level waittill( "unittest_start" );
-		level.solo_lives_given = -1000000;
-		level.custom_player_fake_death = maps\mp\gametypes_zm\_callbacksetup::callbackvoid;
-		level.no_end_game_check = true;
-		level._game_module_game_end_check = ::never_end_game;
-		level.player_out_of_playable_area_monitor = false;
-		level.zm_disable_recording_stats = true;
-		level.powerup_player_valid = ::unittest_check_player_is_valid_for_powerup;
-		if ( isDefined( level.player_damage_callbacks ) && isDefined( level.player_damage_callbacks[ 0 ] ) )
-		{
-			old_player_damage_callback = level.player_damage_callbacks[ 0 ];
-			level.player_damage_callbacks[ 0 ] = ::no_player_damage_during_unittest;
-		}
-		else 
-		{
-			level.player_damage_callbacks = [];
-			level.player_damage_callbacks[ 0 ] = ::no_player_damage_during_unittest;
-		}
+		init_unittest_settings();
 
-		register_player_damage_callback( ::no_player_damage_during_unittest );
+		level waittill( "unittest_end" );
+		restore_unittest_settings();
 	}
 }
 
@@ -741,4 +773,16 @@ weapon_give_custom( weapon, is_upgrade, should_switch_weapon )
 	}
 
 	return self weapon_check_success( weapon );
+}
+
+toggle_magicbulletshield( on_off )
+{
+	if ( on_off )
+	{
+		self magic_bullet_shield();
+	}
+	else 
+	{
+		self stop_magic_bullet_shield();
+	}
 }

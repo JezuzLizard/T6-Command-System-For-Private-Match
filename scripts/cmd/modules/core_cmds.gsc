@@ -48,9 +48,9 @@ autoexec add_cmds()
 
 	dodamage_cmd = cmd_add( "dodamage", ::cmd_dodamage_f, "dodamage {victim} <damage> <origin> {attacker} {inflictor} [hitloc] [MOD] [idflags] [weapon]" );
 	dodamage_cmd arg_add_required( 1, "damage", "float", "Amount of damage to inflict upon entity" );
-	dodamage_cmd arg_add_required( 2, "origin", "vector", "The position where the entity will take damage from" );
+	dodamage_cmd arg_add_optional_with_default( 2, "origin", "vector", "The position where the entity will take damage from", ( 0, 0, 0 ) );
 	dodamage_cmd arg_add_optional( 3, "hitloc", "hitloc", "Hit location on the entity the damage will hit" );
-	dodamage_cmd arg_add_optional( 4, "meansofdeath", "MOD", "The means of death(MOD) the damage will do" );
+	dodamage_cmd arg_add_optional_with_default( 4, "meansofdeath", "MOD", "The means of death(MOD) the damage will do", "MOD_UNKNOWN" );
 	dodamage_cmd arg_add_optional( 5, "idflags", "idflags", "Special damage flags modifying the damage effects" );
 	dodamage_cmd arg_add_optional( 6, "damageweapon", "weapon", "The weapon used for damage effects" );
 	dodamage_cmd target_add_required( 1, "victims", "general", "Entities who will receive <damage> from <origin>" );

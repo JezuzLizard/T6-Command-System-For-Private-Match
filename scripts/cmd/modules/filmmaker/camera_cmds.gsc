@@ -16,11 +16,11 @@ autoexec add_cmds()
 	createcamera_cmd arg_add_required( 1, "camera_name", "string", "Name of camera to identify it later" );
 	createcamera_cmd arg_add_optional( 2, "origin", "vector", "Where the camera will be placed" );
 	createcamera_cmd arg_add_optional( 3, "angles", "vector", "The angles of the camera" );
-	createcamera_cmd arg_add_optional( 4, "model", "model", "Model of the camera" );
+	createcamera_cmd arg_add_optional_with_default( 4, "model", "model", "Model of the camera", "tag_origin" );
 
 	setcamera_cmd = cmd_add( "setcamera", ::cmd_setcamera_f, "setcamera <camera_name> [flags]" );
 	setcamera_cmd arg_add_required( 1, "camera_name", "string", "Name of camera to use" );
-	setcamera_cmd arg_add_optional( 2, "flags", "cameraflags", "Optional flags to control how the camera operates" );
+	setcamera_cmd arg_add_optional_with_default( 2, "flags", "cameraflags", "Optional flags to control how the camera operates", 1 );
 
 	unsetcamera_cmd = cmd_add( "unsetcamera", ::cmd_unsetcamera_f, "unsetcamera <camera_name>" );
 	unsetcamera_cmd arg_add_required( 1, "camera_name", "string", "Name of camera to unset" );
@@ -30,9 +30,9 @@ autoexec add_cmds()
 
 	linkcameratoent_cmd = cmd_add( "linkcameratoent", ::cmd_linkcameratoent_f, "linkcameratoent {entity} <camera_name> [tagname] [origin_offset] [angles_offset]" );
 	linkcameratoent_cmd arg_add_required( 1, "camera_name", "string", "Name of camera to attempt to link to {entity}" );
-	linkcameratoent_cmd arg_add_optional( 2, "tagname", "string", "Tagname of {entity} to link to" );
-	linkcameratoent_cmd arg_add_optional( 3, "origin_offset", "vector", "Origin offset from {entity} origin" );
-	linkcameratoent_cmd arg_add_optional( 4, "angles_offset", "vector", "Angles offset from {entity} angles" );
+	linkcameratoent_cmd arg_add_optional_with_default( 2, "tagname", "string", "Tagname of {entity} to link to", "" );
+	linkcameratoent_cmd arg_add_optional_with_default( 3, "origin_offset", "vector", "Origin offset from {entity} origin", ( 0, 0, 0 ) );
+	linkcameratoent_cmd arg_add_optional_with_default( 4, "angles_offset", "vector", "Angles offset from {entity} angles", ( 0, 0, 0 ) );
 	linkcameratoent_cmd target_add_required( 1, "entity", "general", "Entity to link a spawned camera to", 1 );
 
 	linkcameratoent_cmd = cmd_add( "unlinkcamera", ::cmd_unlinkcamera_f, "unlinkcamera <camera_name>" );

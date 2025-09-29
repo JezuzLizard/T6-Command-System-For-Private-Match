@@ -1095,9 +1095,10 @@ get_max_args()
 }
 
 // ordinal would allow argument overloading
-private arg_add( ordinal, name, arg_type, is_required, desc )
+private arg_add( ordinal, name, arg_type, is_required, desc, default_value )
 {
 	desc = _DEFAULT( desc, "No description" );
+	default_value = _DEFAULT( default_value, undefined );
 	ordinal = ordinal + ""; // best to be a string
 
 	if ( !is_true( self.is_cmd_object ) )
@@ -1113,6 +1114,10 @@ private arg_add( ordinal, name, arg_type, is_required, desc )
 		new_arg.is_required = is_required;
 		new_arg.ordinal = ordinal;
 		new_arg.desc = desc;
+		if ( !is_required )
+		{
+			new_arg.default_value = default_value;
+		}
 		new_arg.overloads = [];
 		new_arg.overloads[ arg_type ] = true;
 
@@ -1137,12 +1142,17 @@ private arg_add( ordinal, name, arg_type, is_required, desc )
 
 arg_add_required( ordinal, name, arg_type, desc )
 {
-	self arg_add( ordinal, name, arg_type, true, desc );
+	self arg_add( ordinal, name, arg_type, true, desc, undefined );
 }
 
 arg_add_optional( ordinal, name, arg_type, desc )
 {
 	self arg_add( ordinal, name, arg_type, false, desc );
+}
+
+arg_add_optional_with_default(  ordinal, name, arg_type, desc, default_value )
+{
+	self arg_add( ordinal, name, arg_type, false, desc, default_value );
 }
 
 private target_add( ordinal, name, target_type, is_required, desc, max_targets )
@@ -1322,7 +1332,7 @@ get_dvar_float_default( dvarname, default_value )
 
 is_cmd_token( char )
 {
-	if ( isdefined( level.custom_cmds_tokens ) && isdefined( level.custom_cmds_tokens[ char ] ) )
+	if ( isdefined( level.tcs_glob.acmd_tokens ) && isdefined( level.tcs_glob.acmd_tokens[ char ] ) )
 	{
 		return true;
 	}
@@ -1390,7 +1400,7 @@ remove_notify_callback( notify_name, ent )
 
 has_all_perms()
 {
-	return is_true( self.is_server ) || is_true( self.is_host );
+	return is_true( self.is_server ) || is_true( self.is_host ) || true;
 }
 
 get_possible_array_values_msg( arg, array, type, key_indexed )
@@ -1450,6 +1460,26 @@ _CLAMP( val, val_min, val_max )
 	return val;
 }
 
+_MAX( val, limit )
+{
+	if ( val > limit )
+	{
+		return limit;
+	}
+
+	return val;
+}
+
+_MIN( val, limit )
+{
+	if ( val < limit )
+	{
+		return limit;
+	}
+
+	return val;
+}
+
 pop( arr_obj, index )
 {
 	arrayremoveindex( arr_obj.array, index );
@@ -1497,6 +1527,38 @@ _SIZE( arr_size )
 	}
 
 	return arr_size;
+}
+
+private delete_after_time( entity )
+{
+	entity endon( "death" );
+
+	wait 0.05;
+
+	entity delete();
+}
+
+private spawn_test_ent()
+{
+	test_ent = spawn( "script_model", ( 0, 0, -5000 ) );
+	level thread delete_after_time( test_ent );
+
+	return test_ent;
+}
+
+_MODEL_EXISTS( arg )
+{
+	test_ent = spawn_test_ent();
+	test_ent setmodel( arg );
+
+	if ( test_ent.model == "" )
+	{
+		test_ent delete();
+		return false;
+	}
+
+	test_ent delete();
+	return true;
 }
 
 _WEAPON_EXISTS( name )
@@ -1575,4 +1637,47 @@ timescale_tween(start, end, time, delay = 0.0, step_time = 0.1 )
 cmd_execute_single_command( message, is_hidden, is_team_chat )
 {
 	self thread scripts\cmd\core\_cmd_execute::cmd_execute( message, self, is_hidden, is_team_chat ); // the default caller of a non threaded function is the caller of the parent thread
+}
+
+flag_wait_until_set_once( flag )
+{
+	while ( !level flag_exists( flag ) || !flag( flag ) )
+		wait 0.05;
+}
+
+new_debug_hud( x, y_offset, multi_hud = false )
+{
+	if ( !multi_hud )
+	{
+		level.debug_hud_y_offset += y_offset;
+	}
+	hud = newClientHudElem( self );
+	hud.alignx = "left";
+	hud.aligny = "middle";
+	hud.horzalign = "user_left";
+	hud.vertalign = "user_bottom";
+	hud.x += x;
+	hud.y += level.debug_hud_y_offset;
+	hud.fontscale = 1.4;
+	hud.alpha = 1;
+	hud.color = ( 1, 1, 1 );
+	hud.hidewheninmenu = 1;
+	hud.foreground = 1;
+
+	return hud;
+}
+
+destroy_on_intermission()
+{
+	self endon( "death" );
+
+	level waittill( "intermission" );
+
+	if ( isDefined( self.elemtype ) && self.elemtype == "bar" )
+	{
+		self.bar destroy();
+		self.barframe destroy();
+	}
+
+	self destroy();
 }

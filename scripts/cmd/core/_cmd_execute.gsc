@@ -37,7 +37,7 @@ private check_command_syntax_used( message, is_hidden )
 	{
 		self throw_exception( "Hidden cmds are not allowed" );
 	}
-	else if ( !is_hidden && !is_cmd_token( message[ 0 ] ) )
+	if ( !is_hidden && !is_cmd_token( message[ 0 ] ) )
 	{
 		self throw_exception( "User was not using a command", false );
 	}
@@ -413,7 +413,9 @@ private cmd_execute_internal( initiator, cmd_obj )
 			if ( !isdefined( arg ) )
 			{
 				// arguments sent is less than max possible arguments
-				break;
+				param.a[ i ] = val.default_value; // assign the default value from the command definition, "default_value" is default undefined
+				i++;
+				continue;
 			}
 
 			arg_type = val;

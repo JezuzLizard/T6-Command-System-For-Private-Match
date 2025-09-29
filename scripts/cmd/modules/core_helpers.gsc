@@ -70,13 +70,15 @@ list_entities_throttled( param )
 		}
 
 		str = "^3entnum " + ent getentitynumber();
-
-		str += " classname: " + _DEFAULT( ent.classname, "" );
-		str += " targetname: " + _DEFAULT( ent.targetname, "" );
-		str += " script_noteworthy: " + _DEFAULT( ent.script_noteworthy, "" );
-		str += " script_string: " + _DEFAULT( ent.script_string, "" );
-		str += " angles: " + ent.angles;
-		str += " origin: " + ent.origin;
+		str += "\nClassname: " + _DEFAULT( ent.classname, "" );
+		str += "\nAngles: " + ent.angles;
+		str += "\nOrigin: " + ent.origin;
+		str += "\nTargetname: " + _DEFAULT( ent.targetname, "" );
+		str += "\nTarget: " + _DEFAULT( ent.target, "" );
+		str += "\nScript_noteworthy: " + _DEFAULT( ent.script_noteworthy, "" );
+		str += "\nScript_string: " + _DEFAULT( ent.script_string, "" );
+		str += "\Model: " + _DEFAULT( ent.model, "" );
+		str += "\nTeam: " + _DEFAULT( ent.team, "" );
 
 		self com_printnotitle( str );
 		
@@ -110,7 +112,7 @@ player_intersection_handle_teleport( player )
 		return true;
 	}
 
-	if ( isdefined( level.player_intersection_tracker_override_original ) )
+	if ( isdefined( level.player_intersection_tracker_override_original ) && isdefined( level.player_intersection_tracker_override ) && level.player_intersection_tracker_override_original != level.player_intersection_tracker_override )
 	{
 		return self [[ level.player_intersection_tracker_override_original ]]( player );
 	}

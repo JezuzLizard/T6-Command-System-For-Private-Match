@@ -16,8 +16,10 @@
 #include scripts\cmd\modules\entity_cmds;
 // filmmaker cmds
 //#include scripts\cmd\modules\filmmaker\camera_cmds;
+// debug cmds
+#include scripts\cmd\modules\debug_cmds;
 
-main()
+private main()
 {
 	level._developer = getdvarint( "developer" );
 	level.server = spawnStruct();
@@ -34,6 +36,7 @@ main()
 	level.tcs_glob.bsilent_cmds = getdvarintdefault( "tcs_silent_cmds", 0 );
 	level.tcs_glob.blog_cmds = getdvarintdefault( "tcs_logprint_cmd_usage", 1 );
 	level.tcs_glob.bhidden_cmds = getdvarintdefault( "tcs_allow_hidden_cmds", 1 );
+	level.tcs_glob.acmd_tokens = [];
 
 	level.clientdvars = [];
 	tokens_str = get_dvar_string_default( "tcs_cmd_tokens", "" ); //separated by spaces, good tokens are generally not used at the start of a normal message 
@@ -42,7 +45,7 @@ main()
 		tokens = strtok( tokens_str, " " );
 		for ( i = 0; i < tokens.size; i++ )
 		{
-			level.custom_cmds_tokens[ tokens[ i ] ] = tokens[ i ];
+			level.tcs_glob.acmd_tokens[ level.tcs_glob.acmd_tokens.size ] = tokens[ i ];
 		}
 	}
 	// "\" is always useable by default

@@ -34,7 +34,7 @@ autoexec add_cmds()
 	respawnspectators_cmd target_add_optional( 1, "player", "player", "Spectators to respawn" );
 
 	pause_cmd = cmd_add( "pause", ::cmd_pause_f, "pause [minutes]" );
-	pause_cmd arg_add_optional( 1, "minutes", "natural_int", "Duration minutes until the pause automatically expires" );
+	pause_cmd arg_add_optional_with_default( 1, "minutes", "natural_int", "Duration minutes until the pause automatically expires", -1 );
 
 	unpause_cmd = cmd_add( "unpause", ::cmd_unpause_f );
 
@@ -100,14 +100,24 @@ autoexec add_cmds()
 
 	perklist_cmd = cmd_add( "perklist", ::cmd_perklist_f );
 
-	spawnperkmachine_cmd = cmd_add( "spawnperkmachine", ::cmd_spawnperkmachine_f, "spawnperkmachine <perk_specialty> <model> [origin] [angles] [blocker_model]" );
-	spawnperkmachine_cmd arg_add_required( 1, "perk_specialty", "perk", "Perk machine to spawn in" );
-	spawnperkmachine_cmd arg_add_optional( 2, "model", "model", "Model to use for perk machine" );
-	spawnperkmachine_cmd arg_add_optional( 3, "origin", "vector", "Origin to spawn at" );
-	spawnperkmachine_cmd arg_add_optional( 4, "angles", "vector", "Angles to spawn at" );
-	spawnperkmachine_cmd arg_add_optional( 5, "blocker_model", "model", "Blocker model to use" );
+	spawnperkmachine_cmd = cmd_add( "spawnperkmachine", ::cmd_spawnperkmachine_f, "spawnperkmachine <internal_name> <perk_specialty> [origin] [angles]" );
+	spawnperkmachine_cmd arg_add_required( 1, "internal_name", "string", "Internal name of perk machine to get references by" );
+	spawnperkmachine_cmd arg_add_required( 2, "perk_specialty", "perk", "Perk machine to spawn in" );
+	spawnperkmachine_cmd arg_add_optional_with_default( 3, "origin", "vector", "Origin to spawn at", ( 0, 0, 0 ) );
+	spawnperkmachine_cmd arg_add_optional_with_default( 4, "angles", "vector", "Angles to spawn at", ( 0, 0, 0 ) );
 
-	spawnwallbuy_cmd = cmd_add( "spawnwallbuy", ::cmd_spawnwallbuy_f, "spawnwallbuy" );
+	spawnwallbuy_cmd = cmd_add( "spawnwallbuy", ::cmd_spawnwallbuy_f, "spawnwallbuy <internal_name> <targetname> <weapon_name> <origin> <angles>" );
+	spawnwallbuy_cmd arg_add_required( 1, "internal_name", "string", "Internal name of wallbuy to get references by" );
+	spawnwallbuy_cmd arg_add_required( 2, "targetname", "string", "Classification of wallbuy" );
+	spawnwallbuy_cmd arg_add_required( 3, "weapon_name", "weapon", "Weapon to use" );
+	spawnwallbuy_cmd arg_add_optional_with_default( 4, "origin", "vector", "Location of new wallbuy", ( 0, 0, 0 ) );
+	spawnwallbuy_cmd arg_add_optional_with_default( 5, "angles", "vector", "Angles of new wallbuy", ( 0, 0, 0 ) );
+
+	magicbulletshield_cmd = cmd_add( "magicbulletshield", ::cmd_magicbulletshield_f, "magicbulletshield" );
+	magicbulletshield_cmd target_add_optional( 1, "player", "player", "Players to give magicbulletshield" );
+	magicbulletshield_cmd executor_obj_add_cmd( "Player who will receive magicbulletshield" );
+
+	showcustomspawns_cmd = cmd_add( "showcustomspawns", ::cmd_showcustomspawns_f, "showcustomspawns" );
 }
 
 private cmd_spectator_f( param )
@@ -503,6 +513,31 @@ private cmd_setallphysparams_f( param )
 	phys_params = param.a[ 0 ];
 	zombies = param.t[ 0 ];
 
+	if ( phys_params[ 0 ] < 0 )
+	{
+		return param add_executor_cmderror( "Phys params of x cannot be less than 0" );
+	}
+	if ( phys_params[ 1 ] < 0 )
+	{
+		return param add_executor_cmderror( "Phys params of y cannot be less than 0" );
+	}
+	if ( phys_params[ 2 ] < 0 )
+	{
+		return param add_executor_cmderror( "Phys params of z cannot be less than 0" );
+	}
+	if ( phys_params[ 0 ] > 100 )
+	{
+		return param add_executor_cmderror( "Phys params of x cannot be greater than 100" );
+	}
+	if ( phys_params[ 1 ] > 100 )
+	{
+		return param add_executor_cmderror( "Phys params of y cannot be greater than 100" );
+	}
+	if ( phys_params[ 2 ] > 100 )
+	{
+		return param add_executor_cmderror( "Phys params of z cannot be greater than 100" );
+	}
+
 	if ( !array_validate( zombies ) )
 	{
 		zombies = get_round_enemy_array();
@@ -533,23 +568,105 @@ private cmd_perklist_f( param )
 
 private cmd_spawnperkmachine_f( param )
 {
-	perk_specialty = param.a[ 0 ];
+	internal_name = param.a[ 0 ];
+	perk_specialty = param.a[ 1 ];
 	if ( !isdefined( level._spawnable_perk_machines[ perk_specialty ] ) )
 	{
 		return param add_executor_cmderror( "Unknown perk specialty: '" + perk_specialty + "'" );
 	}
 
-	model = _DEFAULT( param.a[ 1 ], level._spawnable_perk_machines[ perk_specialty ].model );
+	if ( !isdefined( level._dynamically_spawned_active_perk_machines ) )
+	{
+		level._dynamically_spawned_active_perk_machines = [];
+	}
+
+	if ( isdefined( level._dynamically_spawned_active_perk_machines[ internal_name ] ) )
+	{
+		return param add_executor_cmderror( "internal_name: '" + internal_name + "' cannot be used again because it would collide with identifying an existing perk machine"  );
+	}
+
+	model = level._spawnable_perk_machines[ perk_specialty ].assets.off_model;
 	origin = _DEFAULT( param.a[ 2 ], isdefined( self.origin ) ? self.origin : ( 0, 0, 0 ) );
 	angles = _DEFAULT( param.a[ 3 ], isdefined( self.angles ) ? self.angles : ( 0, 0, 0 ) );
-	clip_model = _DEFAULT( param.a[ 4 ], undefined );
+	clip_model = undefined;
 
-	perk_trigger = _spawn_perk_machine( perk_specialty, model, origin, angles, undefined, clip_model );
+	perk_trigger = _spawn_perk_machine( internal_name, perk_specialty, model, origin, angles, undefined, clip_model );
 	_power_on_machine( perk_trigger._perk_machine );
 	param add_executor_cmdinfo( "Successfully spawned in '" + perk_specialty + "' perk machine" );
 }
 
 private cmd_spawnwallbuy_f( param )
 {
-	setclientsysstate( "zm_cmds", "spawnwallbuy" );
+	internal_name = param.a[ 0 ];
+	targetname = param.a[ 1 ];
+	weapon_name = param.a[ 2 ];
+	origin = _DEFAULT( param.a[ 3 ], isdefined( self.origin ) ? self.origin + ( 0, 0, 39 ) : ( 0, 0, 39 ) );
+	angles = _DEFAULT( param.a[ 4 ], isdefined( self.angles ) ? self.angles : ( 0, 0, 0 ) );
+
+	if ( !isdefined( level._dynamically_spawned_active_wallbuys ) )
+	{
+		level._dynamically_spawned_active_wallbuys = [];
+	}
+
+	if ( isdefined( level._dynamically_spawned_active_wallbuys[ internal_name ] ) )
+	{
+		return param add_executor_cmderror( "internal_name: '" + internal_name + "' cannot be used again because it would collide with identifying an existing wallbuy"  );
+	}
+
+	wallbuy_struc = spawn_wallbuy_dynamically( internal_name, targetname, weapon_name, origin, angles );
+	if ( wallbuy_struc.invalid )
+	{
+		return param add_executor_cmderror( wallbuy_struc.msg );
+	}
+}
+
+private cmd_magicbulletshield_f( param )
+{
+	targets = param.t[ 0 ];
+
+	on_off = cast_bool_to_str( !is_true( self.magic_bullet_shield ), "on off" );
+	if ( array_validate( targets ) )
+	{
+		for ( i = 0; i < _SIZE( targets.size ); i++ )
+		{
+			player = targets[ i ];
+			player toggle_magicbulletshield( on_off == "on" );
+			param add_executor_cmdinfo( "Successfully toggled '" + player.name + "' Magic Bullet Shield status to '" + on_off + "'" );
+			param add_player_cmdinfo( player, "Your Magic Bullet Shield status was toggled '" + on_off + "'" );
+		}
+	}
+	else
+	{
+		self toggle_magicbulletshield( on_off == "on" );
+		param add_executor_cmdinfo( "Magic Bullet Shield " + on_off );
+	}
+
+	if ( on_off == "on" )
+	{
+		level notify( "unittest_start" );
+	}
+	else
+	{
+		level notify( "unittest_stop" );
+	}
+}
+
+show_custom_spawns()
+{
+
+}
+
+private cmd_showcustomspawns_f( param )
+{
+	on_off = cast_bool_to_str( !is_true( level._showing_custom_spawns ), "on off" );
+	if ( on_off == "on" )
+	{
+		level thread show_custom_spawns();
+	}
+	else
+	{
+		level notify( "stop_showing_custom_spawns" );
+	}
+
+	param add_executor_cmdinfo( "Showing custom spawned entities '" + on_off + "'" );
 }

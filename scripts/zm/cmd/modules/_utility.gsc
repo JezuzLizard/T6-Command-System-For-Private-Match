@@ -50,18 +50,7 @@ spawn_blocker_collision( origin, angles )
 	return blocker;
 }
 
-_spawn_perk_machine_from_structs( perk_struct, location_struct )
-{
-	perk = perk_struct.script_noteworthy;
-	model = perk_struct.model;
-	origin = location_struct.origin;
-	angles = location_struct.angles;
-	blocker_model = location_struct.blocker_model;
-	
-	return _spawn_perk_machine( perk, model, origin, angles, blocker_model );
-}
-
-_spawn_perk_machine( specialty_perk, model, origin, angles, blocker_model, clip_model )
+_spawn_perk_machine( internal_name, specialty_perk, model, origin, angles, blocker_model, clip_model )
 {
 	const trigger_offset = ( 0, 0, 30 );
 	const trigger_flags = 0;
@@ -314,6 +303,7 @@ _spawn_perk_machine( specialty_perk, model, origin, angles, blocker_model, clip_
 		perk_machine.targetname = "vending_cherry";
 	}
 	
+	level._dynamically_spawned_active_perk_machines[ internal_name ] = use_trigger;
 	return use_trigger;
 }
 
@@ -339,7 +329,7 @@ _spawn_wunderfizz( origin, angles, blocker_model )
 }
 
 // self = packapunch use trigger
-_power_on_packapunch()
+private _power_on_packapunch()
 {
 	self thread maps\mp\zombies\_zm_perks::vending_weapon_upgrade();
 	
@@ -364,17 +354,17 @@ _power_on_packapunch()
 }
 
 // self = perk use trigger
-_power_on_perk( perk_machine )
+private _power_on_perk( perk_machine )
 {
 	self thread maps\mp\zombies\_zm_perks::vending_trigger_think();
 	self thread maps\mp\zombies\_zm_perks::electric_perks_dialog();
 	
 	if ( self.script_noteworthy != "specialty_quickrevive" )
 	{
-		perk_machine setmodel( level._spawnable_perk_machines[ self.script_noteworthy ].model + "_on" );
+		perk_machine setmodel( level._spawnable_perk_machines[ self.script_noteworthy ].assets.on_model );
 		perk_machine vibrate( vectorscale( ( 0, -1, 0 ), 100.0 ), 0.3, 0.4, 3 );
 		perk_machine playsound( "zmb_perks_power_on" );
-		perk_machine thread perk_fx( level._spawnable_perk_machines[ self.script_noteworthy ].perk_fx );
+		perk_machine thread perk_fx( level._spawnable_perk_machines[ self.script_noteworthy ].assets.fx );
 		perk_machine thread play_loop_on_machine();
 	}
 	else
@@ -393,7 +383,7 @@ _power_on_perk( perk_machine )
 	self set_power_on( 1 );
 }
 
-_power_on_wunderfizz()
+private _power_on_wunderfizz()
 {
 	wait 0.05;
 	//level thread maps\mp\zombies\_zm_perk_random::init_machines();
@@ -405,12 +395,7 @@ _power_on_wunderfizz()
 
 _power_on_machine( perk_machine )
 {
-	if ( !isdefined( perk_machine.targetname ) )
-	{
-		return;
-	}
-
-	if ( perk_machine.targetname == "random_perk_machine" )
+	if ( isdefined( perk_machine.targetname ) && perk_machine.targetname == "random_perk_machine" )
 	{
 		perk_machine thread _power_on_wunderfizz();
 		return;
@@ -478,6 +463,68 @@ is_specialty_in_use( perk )
 		default:
 			return isdefined( level._custom_perks[ perk ] ); // vulture aid doesnt have a bool at all!
 	}
+}
+
+get_specialty_from_machine_name( machine_name )
+{
+	switch ( machine_name )
+	{
+		case "divetonuke":
+			return "specialty_flakjacket";
+		case "packapunch":
+			return "specialty_weapupgrade";
+		case "additionalprimaryweapon":
+			return "specialty_additionalprimaryweapon";
+		case "deadshot":
+			return "specialty_deadshot";
+		case "doubletap":
+			return "specialty_rof";
+		case "juggernog":
+			return "specialty_armorvest";
+		case "marathon":
+			return "specialty_longersprint";
+		case "revive":
+			return "specialty_quickrevive";
+		case "speedcola":
+			return "specialty_fastreload";
+		case "tombstone":
+			return "specialty_scavenger";
+		case "whoswho":
+			return "specialty_finalstand";
+	}
+
+	return "unknown";
+}
+
+get_machine_name_from_specialty( specialty )
+{
+	switch ( specialty )
+	{
+		case "specialty_flakjacket":
+			return "divetonuke";
+		case "specialty_weapupgrade":
+			return "packapunch";
+		case "specialty_additionalprimaryweapon":
+			return "additionalprimaryweapon";
+		case "specialty_deadshot":
+			return "deadshot";
+		case "specialty_rof":
+			return "doubletap";
+		case "specialty_armorvest":
+			return "juggernog";
+		case "specialty_longersprint":
+			return "marathon";
+		case "specialty_quickrevive":
+			return "revive";
+		case "specialty_fastreload":
+			return "speedcola";
+		case "specialty_scavenger":
+			return "tombstone";
+		case "specialty_finalstand":
+			return "whoswho";
+	}
+
+	return "unknown";
 }
 
 // supported targetnames
@@ -548,7 +595,7 @@ copy_additional_keys( keys )
 	self.org_model = _DEFAULT( keys[ "org_model" ], "" );
 }
 
-spawn_wallbuy_trigger_stub( model )
+spawn_wallbuy_trigger_stub( model, weapon_name )
 {
 	tempmodel = spawn( "script_model", ( 0, 0, 0 ) );
 
@@ -605,7 +652,6 @@ spawn_wallbuy_trigger_stub( model )
 		unitrigger_stub.require_look_from = 1;
 
 	unitrigger_stub.zombie_weapon_upgrade = self.zombie_weapon_upgrade;
-	unitrigger_stub.clientfieldname = self.clientfieldname;
 	maps\mp\zombies\_zm_unitrigger::unitrigger_force_per_player_triggers( unitrigger_stub, 1 );
 
 	if ( is_melee_weapon( unitrigger_stub.zombie_weapon_upgrade ) )
@@ -613,11 +659,11 @@ spawn_wallbuy_trigger_stub( model )
 		melee_weapon = undefined;
 		foreach ( melee_weap in level._melee_weapons )
 		{
-			// if ( melee_weap.weapon_name == weapon_name )
-			// {
-			// 	melee_weapon = melee_weap;
-			// 	break;
-			// }
+			if ( melee_weap.weapon_name == weapon_name )
+			{
+				melee_weapon = melee_weap;
+				break;
+			}
 		}
 
 		if ( isDefined( melee_weapon ) )
@@ -643,11 +689,11 @@ spawn_wallbuy_trigger_stub( model )
 			}
 		}
 
-		// if ( weapon_name == "tazer_knuckles_zm" )
-		// {
-		// 	unitrigger_stub.origin += anglestoforward( self.angles ) * -7;
-		// 	unitrigger_stub.origin += anglestoright( self.angles ) * -2;
-		// }
+		if ( weapon_name == "tazer_knuckles_zm" )
+		{
+			unitrigger_stub.origin += anglestoforward( self.angles ) * -7;
+			unitrigger_stub.origin += anglestoright( self.angles ) * -2;
+		}
 
 		self.wall_model.origin += anglestoforward( self.angles ) * -8; // _zm_melee_weapon::melee_weapon_show moves this back
 
@@ -672,19 +718,16 @@ spawn_wallbuy_trigger_stub( model )
 	tempmodel delete();
 }
 
-spawn_wallbuy_dynamically( targetname, weapon_name, origin, angles, additional_targetname_keys, additional_target_keys )
+spawn_wallbuy_dynamically( internal_name, targetname, weapon_name, origin, angles, additional_targetname_keys, additional_target_keys )
 {
-	additional_keys = _DEFAULT( additional_keys, [] );
+	additional_targetname_keys = _DEFAULT( additional_targetname_keys, [] );
+	additional_target_keys = _DEFAULT( additional_target_keys, [] );
 
-	// TODO: make a database of wallbuys so that it would be possible to prevent collisions when loading saved weapon placements
 	if ( !isdefined( level._dynamic_wallbuy_id ) )
 	{
-		level._dynamically_spawned_active_wallbuys = [];
 		level._dynamic_wallbuy_id = 0;
 		level thread chalk_manager();
 	}
-
-	level._dynamic_wallbuy_id++;
 
 	wallbuy_struc = spawnstruct();
 	wallbuy_struc.invalid = false;
@@ -704,12 +747,14 @@ spawn_wallbuy_dynamically( targetname, weapon_name, origin, angles, additional_t
 			break;
 		default:
 			wallbuy_struc.invalid = true;
+			wallbuy_struc.msg = "invalid targetname";
 			return wallbuy_struc;
 	}
 
 	if ( !_WEAPON_EXISTS( weapon_name ) )
 	{
 		wallbuy_struc.invalid = true;
+		wallbuy_struc.msg = "invalid weapon";
 		return wallbuy_struc;
 	}
 
@@ -717,7 +762,7 @@ spawn_wallbuy_dynamically( targetname, weapon_name, origin, angles, additional_t
 	wallbuy_struc.angles = angles;
 	wallbuy_struc.targetname = targetname;
 	wallbuy_struc.zombie_weapon_upgrade = weapon_name;
-	wallbuy_struc.target = level._dynamic_wallbuy_id + "";
+	wallbuy_struc.target = internal_name;
 	wallbuy_struc copy_additional_keys( additional_targetname_keys );
 
 	model_name = _OPTIONAL( additional_target_keys[ "model" ] );
@@ -747,20 +792,37 @@ spawn_wallbuy_dynamically( targetname, weapon_name, origin, angles, additional_t
 	model_ent.origin += move_amount;
 	wallbuy_struc.origin += move_amount;
 
-	clientfieldname = model_ent.zombie_weapon_upgrade + "_" + model_ent.origin;
-	if ( targetname == "buildable_wallbuy" )
-	{
-		clientfieldname += "_idx";
-	}
-	model_ent.clientfieldname = clientfieldname;
-
-	wallbuy_struc spawn_wallbuy_trigger_stub( model_ent.model );
+	wallbuy_struc spawn_wallbuy_trigger_stub( model_ent.model, weapon_name );
 	wallbuy_struc.wall_model = model_ent;
 
-	level._dynamically_spawned_active_wallbuys[ level._dynamically_spawned_active_wallbuys.size ] = model_ent;
+	level._dynamically_spawned_active_wallbuys[ internal_name ] = wallbuy_struc;
 	level notify( "refresh_wall_buys" );
 
 	return wallbuy_struc;
+}
+
+delete_dynamically_spawned_wallbuy( internal_name )
+{
+	wallbuy_struc = level._dynamically_spawned_wallbuy_structs[ internal_name ];
+	if ( !isdefined( wallbuy_struc ) )
+	{
+		return false;
+	}
+
+	maps\mp\zombies\_zm_unitrigger::unregister_unitrigger( wallbuy_struct.unitrigger_stub );
+	wallbuy_struct.unitrigger_stub = undefined;
+	delete_dynamic_chalk( wallbuy_struct.wall_model );
+	wallbuy_struct = undefined;
+	level._dynamically_spawned_active_wallbuys[ internal_name ] = undefined;
+	level notify( "refresh_wall_buys" );
+
+	return true;
+}
+
+delete_dynamic_chalk( model_ent )
+{
+	model_ent.fx delete();
+	model_ent delete();
 }
 
 chalk_manager()
@@ -769,19 +831,25 @@ chalk_manager()
 
 	for ( ;; )
 	{
+		keys = getarraykeys( level._dynamically_spawned_active_wallbuys );
 		for ( i = 0; i < level._dynamically_spawned_active_wallbuys.size; i++ )
 		{
-			model_ent = level._dynamically_spawned_active_wallbuys[ i ];
-			model_ent.fx = spawnfx( level._effect[ self.zombie_weapon_upgrade + "_fx" ], self.origin, anglestoforward( self.angles ), anglestoup( self.angles ) );
+			model_ent = level._dynamically_spawned_active_wallbuys[ keys[ i ] ].wall_model;
+			assert( !isdefined( model_ent.fx ) );
+			model_ent.fx = spawnfx( level._effect[ model_ent.zombie_weapon_upgrade + "_fx" ], model_ent.origin, anglestoforward( model_ent.angles ), anglestoup( model_ent.angles ) );
 			triggerfx( model_ent.fx );
 		}
 
 		level waittill( "refresh_wall_buys" );
 
-		for ( i = 0; i < level._dynamically_spawned_active_wallbuys.size; i++ )
+		keys = getarraykeys( level._dynamically_spawned_active_wallbuys );
+		for ( i = 0; i < keys.size; i++ )
 		{
-			model_ent = level._dynamically_spawned_active_wallbuys[ i ];
-			model_ent.fx delete();
+			model_ent = level._dynamically_spawned_active_wallbuys[ keys[ i ] ].wall_model;
+			if ( isdefined( model_ent.fx ) ) // it won't be defined for newly spawned wallbuys
+			{
+				model_ent.fx delete();
+			}
 		}
 	}
 }
