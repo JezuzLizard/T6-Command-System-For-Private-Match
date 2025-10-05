@@ -25,11 +25,6 @@ private parse_array()
 		throw_parse_exception( "Last character of array wasn't terminated with ']'" );
 	}
 
-	// trim the opening '[' and closing ']'
-	level._parse_obj.current_value_string = getsubstr( level._parse_obj.current_value_string, 1, level._parse_obj.current_value_string.size - 1 );
-	str = level._parse_obj.current_value_string;
-	level._parse_obj.kvps[ level._parse_obj.current_key_string ].v[ level._parse_obj.current_value_index ] = str;
-
 	set_type( "array" );
 }
 
@@ -37,7 +32,7 @@ private parse_target_random()
 {
 	if ( level._parse_obj.current_value_string.size <= 1 )
 	{
-		return;
+		throw_parse_exception( "Random target pool limit must be a number and greater than '1' OR be followed by an array start '['" );
 	}
 
 	if ( level._parse_obj.current_value_string[ 1 ] == "[" )
@@ -59,8 +54,6 @@ private parse_target_random()
 	{
 		throw_parse_exception( "Random target pool limit must be a number and greater than '1'" );
 	}
-
-	level._parse_obj.kvps[ level._parse_obj.current_key_string ].v[ level._parse_obj.current_value_index ] = level._parse_obj.current_value_string;
 
 	set_type( "random" );
 }

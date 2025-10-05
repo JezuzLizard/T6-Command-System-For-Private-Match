@@ -244,7 +244,8 @@ private get_random_limited_array( array, limit )
 
 private get_array_entities( directive, etype )
 {
-	values = strtok( directive.v[ 0 ], "," );
+	str_no_brackets = getsubstr( directive.v[ 0 ], 1, directive.v[ 0 ].size - 1 );
+	values = strtok( str_no_brackets, "," );
 	ents = [];
 	foreach ( presumed_ent in values )
 	{
@@ -295,7 +296,8 @@ private get_executors( directive )
 			limit = 1;
 			if ( isdefined( directive.v[ 0 ] ) )
 			{
-				limit = int( directive.v[ 0 ] );
+				directive_str_trimmed = getsubstr( directive.v[ 0 ], 1 );
+				limit = int( directive_str_trimmed );
 			}
 			
 			return get_random_limited_array( level.players, limit );
@@ -343,7 +345,8 @@ private get_entity_targets( etype, directive )
 			limit = 1;
 			if ( isdefined( directive.v[ 0 ] ) )
 			{
-				limit = int( directive.v[ 0 ] );
+				directive_str_trimmed = getsubstr( directive.v[ 0 ], 1 );
+				limit = int( directive_str_trimmed );
 			}
 			
 			return get_random_limited_array( ents, limit );
@@ -457,7 +460,7 @@ private cmd_execute_internal( initiator, cmd_obj )
 			target_type = get_target_type_from_ordinal( cmd_data_source, ordinal );
 			param.t[ index ] = initiator target_cast( cmd_data_source, ordinal, target_type, target_kvp );
 
-			if ( !isdefined( param.t[ index ] ) && ( target_kvp.type != "undefined" && target_kvp.type != "default" ) )
+			if ( !array_validate( param.t[ index ] ) && ( target_kvp.type != "undefined" && target_kvp.type != "default" ) )
 			{
 				initiator throw_exception( "Failed to find any compatible entities" );
 			}

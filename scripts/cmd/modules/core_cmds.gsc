@@ -540,3 +540,14 @@ private cmd_kill_f( param )
 		}
 	}
 }
+
+private cmd_delete_f( param )
+{
+	targets = param.t[ 0 ];
+
+	for ( i = 0; i < targets.size; i++ )
+	{
+		target = targets[ i ];
+		target delete();
+	}
+}
