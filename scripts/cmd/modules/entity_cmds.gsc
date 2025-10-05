@@ -154,6 +154,7 @@ autoexec add_cmds()
 	level.physicstracemaskclip = 8;
 	level.physicstracecontentsvehicleclip = 16;
 */
+
 private cmd_seteditortargetent_f( param )
 {
 	entity = param.t[ 0 ][ 0 ];

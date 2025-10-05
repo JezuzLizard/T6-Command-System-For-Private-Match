@@ -104,6 +104,12 @@ autoexec add_cmds()
 	lastcmd_cmd make_cmd_immune_to_lastcmd();
 
 	listcmdhistory_cmd = cmd_add( "listcmdhistory", ::cmd_listcmdhistory_f, "listcmdhistory", "Print the last 16 executed command strings." );
+
+	kill_cmd = cmd_add( "kill", ::cmd_kill_f, "kill {entity}" );
+	kill_cmd target_add_required( 1, "victim", "general", "Entities to kill" );
+
+	delete_cmd = cmd_add( "delete", ::cmd_delete_f, "delete {entity}" );
+	delete_cmd target_add_required( 1, "victim", "general", "Entities to delete" );
 }
 
 private cmd_setcvar_f( param )
@@ -448,11 +454,14 @@ private cmd_teleportentity_f( param )
 		{
 			from._intersection_tracker_immune = true;
 			param add_player_cmdinfo( from, "You have been teleported to entity: '" + to_name + "' at: '" + to_target.origin + "'" );
+			from setOrigin( to_target.origin );
+		}
+		else
+		{
+			from.origin = to_target.origin;
 		}
 
 		param add_executor_cmdinfo( "Successfully teleported entity: '" + from_name + "' at: '" + from.origin + "' to: '" + to_target.origin + "'" );
-
-		from setOrigin( to_target.origin );
 	}
 }
 
@@ -509,5 +518,25 @@ private cmd_listcmdhistory_f( param )
 	{
 		entry = self.cmd_history[ i ];
 		self com_printnotitle( entry );
+	}
+}
+
+private cmd_kill_f( param )
+{
+	targets = param.t[ 0 ];
+
+	for ( i = 0; i < targets.size; i++ )
+	{
+		target = targets[ i ];
+		target setcandamage( true );
+		//target stop_magic_bullet_shield();
+		if ( isplayer( self ) )
+		{
+			target _dodamage( target.health, ( 0, 0, 0 ), self );
+		}
+		else
+		{
+			target _dodamage( target.health, ( 0, 0, 0 ) );
+		}
 	}
 }
