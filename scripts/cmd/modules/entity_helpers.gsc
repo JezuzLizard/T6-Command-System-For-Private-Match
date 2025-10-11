@@ -67,6 +67,17 @@ private on_editor_connect()
 	self thread hud_bindings_update_loop();
 }
 
+debug_line( from, to, color, time, depthtest )
+{
+	if ( !isdefined( time ) )
+		time = 1000;
+
+	if ( !isdefined( depthtest ) )
+		depthtest = 1;
+
+	line( from, to, color, 1, depthtest, time );
+}
+
 cast_entity_raycast_from_player_eye()
 {
 	direction = self getplayerangles();
@@ -86,6 +97,76 @@ cast_entity_raycast_from_player_eye()
 	}
 
 	return trace;
+}
+
+raycast_from_mouse_pos( scale )
+{
+	mouse_pos = self getmousepos();
+	//mouse_pos = ( getdvarfloat( "mouse_pos_x" ), getdvarfloat( "mouse_pos_y" ), 0 );
+	//print( "mouse_pos: x=" + mouse_pos[ 0 ] + " y=" + mouse_pos[ 1 ] + "\n" );
+
+	//print( "znear_val1: " + znear_val1 + "\n" );
+	//print( "znear_val2: " + znear_val2 + "\n" );
+	unprojected_origin_to = self project2dto3d( mouse_pos[ 0 ], mouse_pos[ 1 ], 0.0 );
+	unprojected_origin_from = self project2dto3d( mouse_pos[ 0 ], mouse_pos[ 1 ], 1.0 );
+	//debugstar( unprojected_origin_to, 1000, ( 1, 0, 0 ), ( 1, 1, 1 ), "to" );
+	//debugstar( unprojected_origin_from, 1000, ( 0, 0, 1 ), ( 1, 1, 1 ), "from" );
+	direction = unprojected_origin_to - unprojected_origin_from;
+	//print( "direction: " + direction + "\n" );
+	dir_normalized = vectornormalize( direction );
+	//print( "dir_normalized: " + dir_normalized + "\n" );
+	//print( "unprojected_origin_to: x=" + unprojected_origin_to[ 0 ] + " y=" + unprojected_origin_to[ 1 ] + " z=" + unprojected_origin_to[ 2 ] + "\n" );
+	//print( "unprojected_origin_from: x=" + unprojected_origin_from[ 0 ] + " y=" + unprojected_origin_from[ 1 ] + " z=" + unprojected_origin_from[ 2 ] + "\n" );
+	//print( "self.origin: " + self.origin + "\n" );
+	//print( "self geteye: " + self geteye() + "\n" );
+	direction_vec = dir_normalized * scale;
+	//print( "direction_vec: " + direction_vec + "\n" );
+
+	trace = [];
+	trace[ 0 ] = unprojected_origin_from;
+	trace[ 1 ] = unprojected_origin_from + direction_vec;
+	return trace;
+}
+
+cast_entity_raycast_from_player_mouse_pos()
+{
+	ray = self raycast_from_mouse_pos( 8000 );
+	trace = bullettrace( ray[ 0 ], ray[ 1 ], false, undefined );
+
+	//debug_line( ray[ 0 ], trace[ "position" ], ( 0, 0, 1 ), 100 );
+
+	if ( !isdefined( trace[ "entity" ] ) )
+	{
+		trace = physicstrace( ray[ 0 ], ray[ 1 ], vectorscale( ( -1, -1, 0 ), 15.0 ), vectorscale( ( 1, 1, 0 ), 15.0 ), self, level._editor_ent_mask );
+
+		//debug_line( ray[ 0 ], trace[ "position" ], ( 1, 0, 0 ), 100 );
+		if ( !isdefined( trace[ "entity" ] ) )
+		{
+			return trace;
+		}
+	}
+
+	return trace;
+}
+
+cast_non_entity_raycast_from_player_mouse_pos()
+{
+	ray = self raycast_from_mouse_pos( 8000 );
+
+	debug_line( ray[ 0 ], ray[ 1 ], ( 0, 0, 1 ), 100 );
+
+	if ( array_validate( level._additional_mapents_pathnodes ) )
+	{
+		foreach ( node in level._additional_mapents_pathnodes )
+		{
+			radial_origin = pointonsegmentnearesttopoint( ray[ 0 ], ray[ 1 ], node.origin );
+
+			if ( distancesquared( node.origin, radial_origin ) < 100 * 100 )
+			{
+				return node;
+			}
+		}
+	}
 }
 
 give_player_turret( model, turret_classname, turret_weapon_name, turret_type, set_turret_carried, carry_offset, carry_angles )

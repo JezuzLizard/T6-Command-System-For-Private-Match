@@ -228,32 +228,6 @@ private get_eye()
 	return pos;
 }
 
-private is_player_looking_at( origin, dot, do_trace, ignore_ent )
-{
-	assert( isplayer( self ), "player_looking_at must be called on a player." );
-
-	if ( !isdefined( dot ) )
-		dot = 0.7;
-
-	if ( !isdefined( do_trace ) )
-		do_trace = 1;
-
-	eye = self get_eye();
-	delta_vec = anglestoforward( vectortoangles( origin - eye ) );
-	view_vec = anglestoforward( self getplayerangles() );
-	new_dot = vectordot( delta_vec, view_vec );
-
-	if ( new_dot >= dot )
-	{
-		if ( do_trace )
-			return bullettracepassed( origin, eye, 0, ignore_ent );
-		else
-			return 1;
-	}
-
-	return 0;
-}
-
 private draw_node_info( node, type )
 {
 	if ( !level.players[ 0 ] is_player_looking_at( node.origin, 0.9, false ) )

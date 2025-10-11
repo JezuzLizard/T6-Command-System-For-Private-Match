@@ -3,7 +3,7 @@
 
 // reference all scripts for autoexec
 #include scripts\cmd\core\_cmd_execute;
-#include scripts\cmd\core\_cmd_parse;
+#include scripts\cmd\core\_cmd_parse2;
 #include scripts\cmd\core\_com;
 #include scripts\cmd\core\_consts;
 #include scripts\cmd\core\_perms;

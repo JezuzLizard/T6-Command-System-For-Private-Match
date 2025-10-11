@@ -1,52 +1,6 @@
-#include common_scripts\utility;
-#include maps\mp\_utility;
+#include clientscripts\mp\_utility;
 
-#include scripts\cmd\core\_com;
-
-script_breakpoint( generic_obj, msg, display_callstack, should_print )
-{
-	msg = _DEFAULT( msg, undefined );
-	display_callstack = _DEFAULT( display_callstack, true );
-	should_print = _DEFAULT( should_print, true );
-	if ( !getdvarint( "script_breakpoint" ) )
-	{
-		return false;
-	}
-	if ( !isdefined( level.script_breakpoints ) )
-	{
-		level.script_breakpoints = [];
-	}
-
-	if ( display_callstack )
-	{
-		assert( false );
-	}
-
-	if ( should_print )
-	{
-		if ( isdefined( msg ) )
-		{
-			self com_printerror( msg );
-		}
-
-		generic_obj print_obj();
-	}
-
-	for ( ;; )
-	{
-		evt = self waittill_any_return( "debug_continue", "debug_abort" );
-
-		if ( evt == "debug_continue" )
-		{
-			return true;
-		}
-		else if ( evt == "debug_abort" )
-		{
-			self notify( "cmd_exception", generic_obj );
-			return false;
-		}
-	}
-}
+#include scripts\cmd\core\_cl_com;
 
 print_obj()
 {
@@ -86,7 +40,7 @@ print_obj()
 	}
 	else if ( self.obj_type == "cmd_parse" )
 	{
-		print_entity = isdefined( level.host ) ? level.host : level.server;
+		print_entity = level.primaryclient;
 		print_entity com_printcmd( self.cmd_data_source );
 		com_printdebugwarning( "start_pos: " + self.start_pos );
 		com_printdebugwarning( "end_pos: " + self.end_pos );
@@ -197,13 +151,9 @@ com_printdebuginfo( message )
 {
 	if ( level._developer )
 	{
-		if ( isdefined( level.host ) )
+		if ( isdefined( level.primaryclient ) )
 		{
-			level.host com_printinfo( message );
-		}
-		else if ( isdefined( level.server ) )
-		{
-			level.server com_printinfo( message );
+			level.primaryclient com_printinfo( message );
 		}
 	}
 }
@@ -212,13 +162,9 @@ com_printdebugwarning( message )
 {
 	if ( level._developer )
 	{
-		if ( isdefined( level.host ) )
+		if ( isdefined( level.primaryclient ) )
 		{
-			level.host com_printwarning( message );
-		}
-		else if ( isdefined( level.server ) )
-		{
-			level.server com_printwarning( message );
+			level.primaryclient com_printwarning( message );
 		}
 	}
 }
@@ -227,16 +173,10 @@ com_printdebugerror( message )
 {
 	if ( level._developer )
 	{
-		if ( isdefined( level.host ) )
+		if ( isdefined( level.primaryclient ) )
 		{
-			level.host com_printerror( message );
+			level.primaryclient com_printerror( message );
 		}
-		else if ( isdefined( level.server ) )
-		{
-			level.server com_printerror( message );
-		}
-
-		assert( false );
 	}
 }
 
@@ -267,91 +207,6 @@ com_channel_add( channel, func )
 	{
 		level.com_channels[ channel ] = func;
 	}
-}
-
-cmd_cooldown()
-{
-	if ( is_true( level.doing_cmd_system_unittest ) )
-	{
-		return;
-	}
-	if ( self has_all_perms() )
-	{
-		return;
-	}
-	self.cmd_cooldown = level.custom_cmds_cooldown_time;
-	while ( self.cmd_cooldown > 0 )
-	{
-		self.cmd_cooldown--;
-		wait 1;
-	}
-}
-
-can_use_multi_cmds()
-{
-	if ( is_true( level.doing_cmd_system_unittest ) )
-	{
-		return true;
-	}
-	if ( self has_all_perms() )
-	{
-		return true;
-	}
-	return false;
-}
-
-has_permission_for_cmd( cmd )
-{
-	if ( is_true( level.doing_cmd_system_unittest ) )
-	{
-		return true;
-	}
-	if ( self has_all_perms() )
-	{
-		return true;
-	}
-	if ( isDefined( level.tcs_perms.ranks[ self.tcs_rank ] ) && isDefined( level.tcs_perms.ranks[ self.tcs_rank ].disallowed_cmds ) )
-	{
-		for ( i = 0; i < _SIZE( level.tcs_perms.ranks[ self.tcs_rank ].disallowed_cmds.size ); i++ )
-		{
-			disallowed_cmd = level.tcs_perms.ranks[ self.tcs_rank ].disallowed_cmds[ i ];
-			if ( disallowed_cmd == "all_cmds" )
-			{
-				return false;
-			}
-			if ( cmd == disallowed_cmd )
-			{
-				return false;
-			}
-			// In this case the token must be a rank name
-			else if ( isDefined( level.cmd_groups[ disallowed_cmd ] ) && isDefined( level.cmd_groups[ disallowed_cmd ][ cmd ] ) )
-			{
-				return false;
-			}
-		}
-	}
-	if ( isDefined( level.tcs_perms.ranks[ self.tcs_rank ] ) && isDefined( level.tcs_perms.ranks[ self.tcs_rank ].allowed_cmds ) )
-	{
-		for ( i = 0; i < _SIZE( level.tcs_perms.ranks[ self.tcs_rank ].allowed_cmds.size ); i++ )
-		{
-			allowed_cmd = level.tcs_perms.ranks[ self.tcs_rank ].allowed_cmds[ i ];
-			if ( allowed_cmd == "all_cmds" )
-			{
-				return true;
-			}
-			if ( cmd == allowed_cmd )
-			{
-				return true;
-			}
-			// In this case the token must be a rank name
-			else if ( isDefined( level.cmd_groups[ allowed_cmd ] ) && isDefined( level.cmd_groups[ allowed_cmd ][ cmd ] ) )
-			{
-				return true;
-			}
-		}
-	}
-
-	return false;
 }
 
 cast_contents_to_str( contents_int )
@@ -393,35 +248,6 @@ cast_str_to_contents( contents_str )
 	return set_cast_success( result_obj, contents_int, "contents==" + contents_int );
 }
 
-cast_classname_to_ent_array( result_obj, key_value )
-{
-	result_obj.type = "entarray";
-	result_obj.value = getentarray( key_value, "classname" );
-	result_obj.msg = "entarray==classname";
-}
-
-cast_script_noteworthy_to_ent_array( result_obj, key_value )
-{
-	result_obj.type = "entarray";
-	result_obj.value = getentarray( key_value, "script_noteworthy" );
-	result_obj.msg = "entarray==script_noteworthy";
-}
-
-cast_targetname_to_ent_array( result_obj, key_value )
-{
-	result_obj.type = "entarray";
-	result_obj.value = getentarray( key_value, "targetname" );
-	result_obj.msg = "entarray==targetname";
-}
-
-cast_origin_to_ent_array( result_obj, origin, maxdist, max )
-{
-	result_obj.type = "entarray";
-	ents = getentarray();
-	result_obj.value = get_array_of_closest( origin, ents, undefined, max, maxdist );
-	result_obj.msg = "entarray==origin";
-}
-
 /*boolean*/ is_player_valid( player, checkignoremeflag, ignore_laststand_players )
 {
 	if ( !isdefined( player ) )
@@ -432,49 +258,6 @@ cast_origin_to_ent_array( result_obj, origin, maxdist, max )
 	if ( !isalive( player ) )
 	{
 		return false;
-	}
-
-	if ( !isplayer( player ) )
-	{
-		return false;
-	}
-
-	if ( isdefined( player.is_zombie ) && player.is_zombie == 1 )
-	{
-		return false;
-	}
-
-	if ( player.sessionstate == "spectator" )
-	{
-		return false;
-	}
-
-	if ( player.sessionstate == "intermission" )
-	{
-		return false;
-	}
-
-	if ( isdefined( self.intermission ) && self.intermission )
-	{
-		return false;
-	}
-
-	if ( !( isdefined( ignore_laststand_players ) && ignore_laststand_players ) )
-	{
-		if ( isDefined( player.revivetrigger ) || is_true( player.lastand ) )
-		{
-			return false;
-		}
-	}
-
-	if ( isdefined( checkignoremeflag ) && checkignoremeflag && player.ignoreme )
-	{
-		return false;
-	}
-
-	if ( isdefined( level.is_player_valid_override ) )
-	{
-		return [[ level.is_player_valid_override ]]( player );
 	}
 
 	return true;
@@ -540,7 +323,7 @@ cast_origin_to_ent_array( result_obj, origin, maxdist, max )
 		{
 			if ( allow_world_ent )
 			{
-				return set_cast_success( entity_obj, getentbynum( 1022 ), "ent==allow_world_ent" );
+				return set_cast_success( entity_obj, getentbynum( 0, 1022 ), "ent==allow_world_ent" );
 			}
 			else
 			{
@@ -554,11 +337,6 @@ cast_origin_to_ent_array( result_obj, origin, maxdist, max )
 			for ( i = 0; i < _SIZE( entities.size ); i++ )
 			{
 				ent = entities[ i ];
-				if ( !ent istestclient() && ent getGUID() == entnum )
-				{
-					return set_cast_success( entity_obj, ent, "ent==GUID" );
-				}
-
 				target_playername = tolower( ent.name );
 				if ( issubstr( target_playername, str ) )
 				{
@@ -570,7 +348,7 @@ cast_origin_to_ent_array( result_obj, origin, maxdist, max )
 		for ( i = 0; i < _SIZE( entities.size ); i++ )
 		{
 			ent = entities[ i ];
-			ent_exists_for_entnum = isdefined( getentbynum( entnum ) );
+			ent_exists_for_entnum = isdefined( getentbynum( 0, entnum ) );
 
 			if ( ent_exists_for_entnum )
 			{
@@ -869,11 +647,6 @@ is_numeric( chr, start, end )
 
 // very nice builtin which allows get entities in an arbitrary abstract volume
 // GetTouchingVolume( vec, vec, vec );
-
-get_targets_by_func()
-{
-
-}
 
 /*generic_obj_t*/ generic_obj_t_new( obj_type )
 {
@@ -1247,7 +1020,7 @@ arg_type_register( argtype, rand_gen_func, cast_func )
 
 has_permission_for_executor_syntax()
 {
-	return self ishost();
+	return true;
 }
 
 executor_obj_add_cmd( doc )
@@ -1281,13 +1054,6 @@ make_cmd_immune_to_lastcmd()
 	}
 
 	self.immune_to_lastcmd = true;
-}
-
-//If we have a lot of clientdvars in the pool delay setting them to prevent client cmd overflow error.
-set_client_dvar_thread( dvar, value, index )
-{
-	wait( index * 0.25 );
-	self setClientDvar( dvar, value );
 }
 
 get_dvar_string_default( dvarname, default_value )
@@ -1388,15 +1154,12 @@ remove_notify_callback( notify_name, ent )
 	generic_obj.msg = error_msg;
 	generic_obj.do_print = print;
 
-	if ( !self script_breakpoint( generic_obj, error_msg ) )
+	if ( level._developer )
 	{
-		if ( level._developer )
-		{
-			assert( false );
-			//generic_obj print_obj();
-		}
-		self notify( "cmd_exception", generic_obj );
+		assert( false );
+		//generic_obj print_obj();
 	}
+	self notify( "cmd_exception", generic_obj );
 	return;
 }
 
@@ -1408,7 +1171,7 @@ has_all_perms()
 get_possible_array_values_msg( arg, array, type, key_indexed )
 {
 	key_indexed = _DEFAULT( key_indexed, true );
-	type_upper = toupper( type );
+	type_upper = type;
 	list = "";
 	foreach ( key, val in array )
 	{
@@ -1438,7 +1201,7 @@ random_key( arr )
 random_index( arr )
 {
 	keys = getarraykeys( arr );
-	assert( isint( keys[ 0 ] ) );
+	//assert( isint( keys[ 0 ] ) );
 	return keys[ randomint( keys.size ) ];
 }
 
@@ -1480,21 +1243,6 @@ _MIN( val, limit )
 	}
 
 	return val;
-}
-
-pop( arr_obj, index )
-{
-	arrayremoveindex( arr_obj.array, index );
-}
-
-pop_front( arr_obj )
-{
-	pop( arr_obj, 0 );
-}
-
-pop_back( arr_obj )
-{
-	pop( arr_obj, ( arr_obj.array.size - 1 ) );
 }
 
 _DEFAULT( value, default_value )
@@ -1542,7 +1290,7 @@ private delete_after_time( entity )
 
 private spawn_test_ent()
 {
-	test_ent = spawn( "script_model", ( 0, 0, -5000 ) );
+	test_ent = spawn( 0, ( 0, 0, -5000 ), "script_model" );
 	level thread delete_after_time( test_ent );
 
 	return test_ent;
@@ -1563,12 +1311,6 @@ _MODEL_EXISTS( arg )
 	return true;
 }
 
-_WEAPON_EXISTS( name )
-{
-	// function returns undefined if the weapon doesn't exist and doesn't scr_error
-	return isdefined( isweaponprimary( name ) );
-}
-
 array_validate( array )
 {
 	return isdefined( array ) && isarray( array ) && array.size > 0;
@@ -1580,132 +1322,49 @@ server_safe_notify_thread( notify_name, index )
 	level notify( notify_name );
 }
 
-/@
-"Name: timescale_tween( <start>, <end>, <time>, [delay], [step_time] )"
-"Summary: Tweens timescale from a starting value to an ending value over time."
-"Module: Utility"
-"MandatoryArg: start: Starting timescale."
-"MandatoryArg: end: Ending timescale."
-"MandatoryArg: time: Time to get form start to end."
-"OptionalArg: delay: time delay before starting."
-"OptionalArg: step_time: time delay between setting timescale values (how smoothly you want to step)."
-"Example: level thread timescale_tween(.06, 1, tween_time);"
-"SPMP: SP"
-@/
-timescale_tween(start, end, time, delay = 0.0, step_time = 0.1 )
-{
-	if ( !IsDefined( start ) )
-	{
-		start = getdvar("timescale");
-	}
-	
-	num_steps = time / step_time;
-	time_scale_range = end - start;
-
-	time_scale_step = 0;
-	if (num_steps > 0)
-	{
-		time_scale_step = abs(time_scale_range) / num_steps;
-	}
-
-	if ( delay > 0.0 )
-	{
-		wait delay;
-	}
-
-	level notify("timescale_tween");
-	level endon("timescale_tween");
-
-	time_scale = start;
-	setdvar( "timescale", time_scale );
-
-	while (time_scale != end)
-	{
-		wait(step_time);
-
-		if (time_scale_range > 0)
-		{
-			time_scale = min(time_scale + time_scale_step, end);
-		}
-		else if (time_scale_range < 0)
-		{
-			time_scale = max(time_scale - time_scale_step, end);
-		}
-
-		setdvar( "timescale", time_scale );
-	}
-}
-
 cmd_execute_single_command( message, is_hidden, is_team_chat )
 {
-	self thread scripts\cmd\core\_cmd_execute::cmd_execute( message, self, is_hidden, is_team_chat ); // the default caller of a non threaded function is the caller of the parent thread
+	self thread scripts\cmd\core\_cl_cmd_execute::cmd_execute( message, self, is_hidden, is_team_chat ); // the default caller of a non threaded function is the caller of the parent thread
 }
 
-flag_wait_until_set_once( flag )
+is_player_looking_at( origin, dot, ignore_ent )
 {
-	while ( !level flag_exists( flag ) || !flag( flag ) )
-		wait 0.05;
-}
-
-new_debug_hud( x, y_offset, multi_hud = false )
-{
-	if ( !multi_hud )
-	{
-		level.debug_hud_y_offset += y_offset;
-	}
-	hud = newClientHudElem( self );
-	hud.alignx = "left";
-	hud.aligny = "middle";
-	hud.horzalign = "user_left";
-	hud.vertalign = "user_bottom";
-	hud.x += x;
-	hud.y += level.debug_hud_y_offset;
-	hud.fontscale = 1.4;
-	hud.alpha = 1;
-	hud.color = ( 1, 1, 1 );
-	hud.hidewheninmenu = 1;
-	hud.foreground = 1;
-
-	return hud;
-}
-
-destroy_on_intermission()
-{
-	self endon( "death" );
-
-	level waittill( "intermission" );
-
-	if ( isDefined( self.elemtype ) && self.elemtype == "bar" )
-	{
-		self.bar destroy();
-		self.barframe destroy();
-	}
-
-	self destroy();
-}
-
-is_player_looking_at( origin, dot, do_trace, ignore_ent )
-{
-	assert( isplayer( self ), "player_looking_at must be called on a player." );
-
 	if ( !isdefined( dot ) )
 		dot = 0.7;
-
-	if ( !isdefined( do_trace ) )
-		do_trace = 1;
-
+	
 	eye = self geteye();
 	delta_vec = anglestoforward( vectortoangles( origin - eye ) );
-	view_vec = anglestoforward( self getplayerangles() );
+	view_vec = anglestoforward( self.angles );
 	new_dot = vectordot( delta_vec, view_vec );
 
 	if ( new_dot >= dot )
 	{
-		if ( do_trace )
-			return bullettracepassed( origin, eye, 0, ignore_ent );
-		else
-			return 1;
+		return 1;
 	}
 
 	return 0;
+}
+
+addcallback( event, func )
+{
+	assert( isdefined( event ), "Trying to set a callback on an undefined event." );
+
+	if ( !isdefined( level._callbacks ) || !isdefined( level._callbacks[event] ) )
+		level._callbacks[event] = [];
+
+	level._callbacks[event] = add_to_array( level._callbacks[event], func, 0 );
+}
+
+callback( event )
+{
+	if ( isdefined( level._callbacks ) && isdefined( level._callbacks[event] ) )
+	{
+		for ( i = 0; i < level._callbacks[event].size; i++ )
+		{
+			callback = level._callbacks[event][i];
+
+			if ( isdefined( callback ) )
+				self thread [[ callback ]]();
+		}
+	}
 }

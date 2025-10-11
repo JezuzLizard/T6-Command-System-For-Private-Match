@@ -14,8 +14,11 @@ autoexec add_cmds()
 	cmd_block_set_rank_group( "cheat" );
 
 	// entity manipulation
-	seteditortargetent_cmd = cmd_add( "seteditortargetent", ::cmd_seteditortargetent_f, "seteditortargetent {entity}" );
+	seteditortargetent_cmd = cmd_add( "seteditortargetent", ::cmd_seteditortargetent_f, "seteditortargetent {entity} [type]" );
+	seteditortargetent_cmd arg_add_optional( 1, "enttype", "entity", "New angles to set the target entity to" );
 	seteditortargetent_cmd target_add_required( 1, "entity", "general", "Manual entity to target for editing", 1 );
+
+	cleartargetent_cmd = cmd_add( "cleartargetent", ::cmd_cleartargetent_f, "cleartargetent" );
 
 	editentfield_cmd = cmd_add( "editentfield", ::cmd_editentfield_f, "editentfield {[entity]} <fieldname> <fieldvalue> [scale] [relative]" );
 	editentfield_cmd arg_add_required( 1, "fieldname", "string", "New angles to set the target entity to" );
@@ -144,6 +147,18 @@ autoexec add_cmds()
 
 	//dumpent_cmd = cmd_add( "saveent", ::cmd_dumpent_f, "saveent <type> [classname]" );
 	//dumpent_cmd arg_add( "string string", 1, 2 );
+
+	editorspawnpathnode_cmd = cmd_add( "spawnpathnode", ::cmd_editorspawnpathnode_f, "spawnpathnode [origin]" );
+	editorspawnpathnode_cmd arg_add_optional( 1, "origin", "vector", "Pathnode origin" );
+
+	savepathnodes_cmd = cmd_add( "savepathnodes", ::cmd_savepathnodes_f, "savepathnodes <filename>" );
+	savepathnodes_cmd arg_add_required( 1, "filename", "string", "File containing the placed pathnodes" );
+
+	loadpathnodes_cmd = cmd_add( "loadpathnodes", ::cmd_loadpathnodes_f, "loadpathnodes <filename>" );
+	loadpathnodes_cmd arg_add_required( 1, "filename", "string", "File containing the placed pathnodes" );
+
+	radiantmode_cmd = cmd_add( "radiantmode", ::cmd_radiantmode_f, "radiantmode" );
+
 }
 
 // GScr_PhysicsTrace masks
@@ -160,16 +175,22 @@ private cmd_seteditortargetent_f( param )
 	entity = param.t[ 0 ][ 0 ];
 	if ( !isdefined( entity ) )
 	{
-		trace = self scripts\cmd\modules\entity_helpers::cast_entity_raycast_from_player_eye();
+		trace = self scripts\cmd\modules\entity_helpers::cast_entity_raycast_from_player_mouse_pos();
 		entity = trace[ "entity" ];
-		if ( !isdefined( entity ) )
+		if ( !isdefined( entity ) && !isdefined( trace[ "pathnode" ] ) )
 		{
-			return param add_executor_cmderror( "Not looking at an entity!" );
+			return param add_executor_cmderror( "Not looking at an entity or pathnode!" );
 		}
 	}
 
 	self hud_binding_subscribe_to_entity( "editor_selected_ent_context", entity );
 	param add_executor_cmdinfo( "Selected target entity: " + entity.classname + " origin: " + entity.origin + " angles: " + entity.angles );
+}
+
+private cmd_cleartargetent_f( param )
+{
+	self hud_binding_unsubscribe_from_entity( "editor_selected_ent_context" );
+	param add_executor_cmdinfo( "Deselected entity" );
 }
 
 private cmd_seteditortargetangles_f( param )
@@ -555,4 +576,229 @@ private cmd_editentfield_f( param )
 			}
 		}
 	}
+}
+
+draw_custom_nodes()
+{
+	level notify( "stop_drawing_nodes" );
+	level endon( "stop_drawing_nodes" );
+
+	for ( ;; )
+	{
+		wait 0.05;
+
+		for ( i = 0; i < _SIZE( level._additional_mapents_pathnodes.size ); i++ )
+		{
+			node = level._additional_mapents_pathnodes[ i ];
+			if ( !isdefined( node.origin ) )
+			{
+				continue;
+			}
+			box( node.origin );
+			print3d( node.origin, i );
+		}
+	}
+}
+ 
+generate_pathnode_for_mapents( origin )
+{
+	if ( !isdefined( level._additional_mapents_pathnodes ) )
+	{
+		level._additional_mapents_pathnodes = [];
+		level thread draw_custom_nodes();
+	}
+
+	pathnode = spawnstruct();
+	pathnode.keys = [];
+	pathnode.origin = origin;
+	pathnode.classname = "node_pathnode";
+	pathnode.icon = newhudelem();
+	pathnode.icon setshader( "white", 16, 16 );
+	pathnode.icon setwaypoint( true );
+	pathnode.icon.vertalign = "noscale";
+	pathnode.icon.horzalign = "noscale";
+	level._additional_mapents_pathnodes[ level._additional_mapents_pathnodes.size ] = pathnode;
+}
+
+write_pathnode_for_mapents( fh, pathnode )
+{
+	fs_writeline( fh, "{" );
+	fs_writeline( fh, "\"classname\" \"" + pathnode.classname + "\"" );
+	fs_writeline( fh, "\"origin\" " + get_mapents_vector( pathnode.origin ) );
+	fs_writeline( fh, "}" );
+}
+
+get_gsc_vector( mapents_vector )
+{
+	floats = strtok( mapents_vector, " " );
+	return ( float( floats[ 0 ] ), float( floats[ 1 ] ), float( floats[ 2 ] ) );
+}
+
+read_pathnode_for_drawing( pathnode )
+{
+	pathnode.classname = pathnode.kvps[ "classname" ];
+	pathnode.origin = get_gsc_vector( pathnode.kvps[ "origin" ] );
+}
+
+parse_mapents( fh )
+{
+	entities = [];
+	new_entity = [];
+
+	in_entity = false;
+	entity_count = 0;
+
+	for ( ;; )
+	{
+		line = fs_readline( fh );
+		if ( !isdefined( line ) )
+		{
+			break;
+		}
+
+		if ( line == "{" )
+		{
+			in_entity = true;
+			continue;
+		}
+
+		if ( line == "}" )
+		{
+			in_entity = false;
+			entity_count++;
+			continue;
+		}
+
+		if ( in_entity )
+		{
+			str = line;
+			key = "";
+			quote_count = 0;
+			i = 0;
+			for ( ; i < str.size; i++ )
+			{
+				if ( str[ i ] == "\"" )
+				{
+					quote_count++;
+					if ( quote_count == 2 )
+					{
+						break;
+					}
+					continue;
+				}
+
+				key += str[ i ];
+			}
+
+			print( "count: " + entity_count + " key: " + key );
+
+			value = "";
+			quote_count = 0;
+			i += 2; // skip space and start at value quote
+			for ( ; i < str.size; i++ )
+			{
+				if ( str[ i ] == "\"" )
+				{
+					quote_count++;
+					if ( quote_count == 2 )
+					{
+						break;
+					}
+					continue;
+				}
+
+				value += str[ i ];
+			}
+
+			if ( !isdefined( entities[ entity_count ] ) )
+			{
+				entities[ entity_count ] = spawnstruct();
+				entities[ entity_count ].kvps = [];
+			}
+
+			print( "count: " + entity_count + " value: " + value );
+			entities[ entity_count ].kvps[ key ] = value;
+		}
+	}
+
+	return entities;
+}
+
+private cmd_editorspawnpathnode_f( param )
+{
+	origin = _DEFAULT( param.a[ 0 ], self.origin );
+	//angles = _DEFAULT( param.a[ 1 ], ( 0, 0, 0 ) );
+
+	generate_pathnode_for_mapents( origin );
+	param add_executor_cmdinfo( "Spawned pathnode at origin: '" + origin + "'" );
+}
+
+private cmd_savepathnodes_f( param )
+{
+	filename = param.a[ 0 ];
+
+	paths_file = fs_fopen( filename + ".paths", "write" );
+
+	if ( paths_file <= 0 )
+	{
+		param add_executor_cmderror( "Could not open file for writing" );
+		return;
+	}
+
+	if ( !array_validate( level._additional_mapents_pathnodes ) )
+	{
+		fs_fclose( paths_file );
+		param add_executor_cmderror( "You have no nodes to save, why don't you work on that first" );
+		return;
+	}
+
+	for ( i = 0; i < _SIZE( level._additional_mapents_pathnodes.size ); i++ )
+	{
+		node = level._additional_mapents_pathnodes[ i ];
+		write_pathnode_for_mapents( paths_file, node );
+	}
+
+	fs_fclose( paths_file );
+}
+
+private cmd_loadpathnodes_f( param )
+{
+	filename = param.a[ 0 ];
+
+	paths_file = fs_fopen( filename + ".paths", "read" );
+
+	if ( paths_file <= 0 )
+	{
+		param add_executor_cmderror( "Could not open file for reading" );
+		return;
+	}
+
+	entities = parse_mapents( paths_file );
+	fs_fclose( paths_file );
+
+	if ( !array_validate( entities ) )
+	{
+		param add_executor_cmderror( "You have no nodes to load, why don't you work on that first" );
+		return;
+	}
+
+	level._additional_mapents_pathnodes = undefined;
+
+	for ( i = 0; i < _SIZE( entities.size ); i++ )
+	{
+		generate_pathnode_for_mapents( get_gsc_vector( entities[ i ].kvps[ "origin" ] ) );
+	}
+}
+
+private cmd_radiantmode_f( param )
+{
+	//self hideviewmodel();
+	self hide();
+	self.ignoreme = true;
+	self enableInvulnerability();
+
+	//self disable_look();
+	//self show_cursor();
+
+	//self thread radiant_movement();
 }

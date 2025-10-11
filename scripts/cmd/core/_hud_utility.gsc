@@ -36,6 +36,7 @@ create_root_hud()
 	hud_binding_obj.binding_type = binding_type;
 	hud_binding_obj.binding_subtype = binding_subtype;
 	hud_binding_obj.binding_val = binding_default_val;
+	hud_binding_obj.prev_val = binding_default_val;
 	hud_binding_obj.binding_default_val = binding_default_val;
 	hud_binding_obj.binding_subscribed_entity = undefined;
 	hud_binding_obj.binding_subscriber_hud = undefined;
@@ -113,7 +114,8 @@ hud_binding_set_default( hud_binding_obj, hud )
 		case "held_entity":
 		case "placed_entities":
 			hud_binding_obj.binding_val = hud_binding_obj.binding_default_val;
-			hud set_safe_text( hud_binding_obj.binding_default_val );
+			hud set_safe_text( hud_binding_obj.binding_default_val, hud_binding_obj.prev_val );
+			hud_binding_obj.prev_val = hud_binding_obj.binding_default_val;
 			break;
 		default:
 			break;
@@ -161,15 +163,18 @@ hud_binding_update( hud_binding_obj, hud )
 		{
 			case "held_entity":
 				hud_binding_obj.binding_val = "HOLDING: " + "Classname: " + entity.classname + " Org: " + entity.origin + " Ang: " + entity.angles;
-				hud set_safe_text( hud_binding_obj.binding_val );
+				hud set_safe_text( hud_binding_obj.binding_val, hud_binding_obj.prev_val );
+				hud_binding_obj.prev_val = hud_binding_obj.binding_val;
 				break;
 			case "selected_entity":
 				hud_binding_obj.binding_val = "SELECTED: " + "Classname: " + entity.classname + " Org: " + entity.origin + " Ang: " + entity.angles;
-				hud set_safe_text( hud_binding_obj.binding_val );
+				hud set_safe_text( hud_binding_obj.binding_val, hud_binding_obj.prev_val );
+				hud_binding_obj.prev_val = hud_binding_obj.binding_val;
 				break;
 			case "placed_entities":
 				hud_binding_obj.binding_val = "Placed ent count: " + hud_binding_obj.binding_subscribed_entity.size;
-				hud set_safe_text( hud_binding_obj.binding_val );
+				hud set_safe_text( hud_binding_obj.binding_val, hud_binding_obj.prev_val );
+				hud_binding_obj.prev_val = hud_binding_obj.binding_val;
 				break;
 			default:
 				assert( false );
@@ -180,6 +185,11 @@ hud_binding_update( hud_binding_obj, hud )
 	{
 		assert( false );
 	}
+}
+
+draw_selected_entity_in_world( entity )
+{
+	boxoriented( entity.origin, entity getmins(), entity getmaxs(), entity.angles, ( 1.0, 1.0, 1.0 ), 1.0, true );
 }
 
 hud_bindings_update_loop()
@@ -199,6 +209,7 @@ hud_bindings_update_loop()
 				if ( isdefined( entity ) )
 				{
 					self hud_binding_update( hud_binding_obj, hud );
+					self draw_selected_entity_in_world( entity );
 				}
 				else
 				{

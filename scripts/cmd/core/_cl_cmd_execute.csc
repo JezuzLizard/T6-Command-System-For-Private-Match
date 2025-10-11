@@ -1,7 +1,6 @@
-#include common_scripts\utility;
-#include maps\mp\_utility;
+#include clientscripts\mp\_utility;
 
-#include scripts\cmd\core\_utility;
+#include scripts\cmd\core\_cl_utility;
 
 autoexec cmd_buffer()
 {
@@ -15,10 +14,7 @@ autoexec cmd_buffer()
 
 private handle_parse_exception_feedback( user )
 {
-	if ( isplayer( user ) )
-	{
-		user endon( "disconnect" );
-	}
+	user endon( "disconnect" );
 	for ( ;; )
 	{
 		user waittill( "cmd_exception", generic_parse_obj );
@@ -33,10 +29,6 @@ private handle_parse_exception_feedback( user )
 
 private check_command_syntax_used( message, is_hidden )
 {
-	if ( !level.tcs_glob.bhidden_cmds && is_hidden )
-	{
-		self throw_exception( "Hidden cmds are not allowed" );
-	}
 	if ( !is_hidden && !is_cmd_token( message[ 0 ] ) )
 	{
 		self throw_exception( "User was not using a command", false );
@@ -45,18 +37,10 @@ private check_command_syntax_used( message, is_hidden )
 
 private check_command_cooldown()
 {
-	if ( isDefined( self.cmd_cooldown ) && self.cmd_cooldown > 0 )
-	{
-		self throw_exception( "You cannot use another cmd for " + self.cmd_cooldown + " seconds" );
-	}
 }
 
 private check_multi_commands( cmd_parse_obj )
 {
-	if ( cmd_parse_obj.cmds.size > 1 && !self can_use_multi_cmds() )
-	{
-		self throw_exception( "You do not have permission to use multi cmds" );
-	}
 }
 
 // just in case the thread would end before reseting it
@@ -99,11 +83,8 @@ cmd_execute( message, initiator, is_hidden, is_team_chat )
 	{
 		initiator.cmd_execute_id = 0;
 	}
-	if ( isplayer( initiator ) )
-	{
-		initiator endon( "disconnect" );
-	}
 
+	initiator endon( "disconnect" );
 	initiator endon( "cmd_exception" );
 
 	if ( !isdefined( initiator.in_command_frame ) )
@@ -134,7 +115,7 @@ cmd_execute( message, initiator, is_hidden, is_team_chat )
 	}
 
 	message = tolower( message );
-	cmd_parse_obj = scripts\cmd\core\_cmd_parse2::parse_cmd_message( message );
+	cmd_parse_obj = scripts\cmd\core\_cl_cmd_parse2::parse_cmd_message( message );
 	initiator add_cmd_history( message );
 
 	if ( !has_all_perms )
@@ -145,8 +126,6 @@ cmd_execute( message, initiator, is_hidden, is_team_chat )
 	i = 0;
 	foreach ( key, cmd_obj in cmd_parse_obj.cmds )
 	{
-		executor_directive = cmd_obj.kvps[ "executor" ];
-		executors = initiator get_executors( executor_directive );
 		debug_print_execute( i, cmd_obj );
 
 		if ( is_true( cmd_obj.cmd_data_source.immune_to_lastcmd ) && is_true( initiator.in_lastcmd_execution_block ) )
@@ -154,35 +133,18 @@ cmd_execute( message, initiator, is_hidden, is_team_chat )
 			continue;
 		}
 
-		for ( executor_index = 0; executor_index < _SIZE( executors.size ); executor_index++ )
+		if ( !true )
 		{
-			executor = executors[ executor_index ];
-
-			if ( !has_all_perms )
-			{
-				if ( executor != initiator && !initiator has_permission_for_executor_syntax() )
-				{
-					initiator throw_exception( "You do not have permission to specify executors", cmd_obj );
-				}
-
-				if ( !initiator has_permission_for_cmd( cmd_obj.cmd_data_source ) )
-				{
-					initiator throw_exception( "You do not have permission to use " + cmd_obj.cmd_data_source.cmd_name + " cmd", cmd_obj );
-				}
-			}
-
-			initiator.tcs_silent_cmds = getdvarintdefault( "tcs_silent_cmds", 0 );
-			initiator.tcs_logprint_cmd_usage = getdvarintdefault( "tcs_logprint_cmd_usage", 1 );
-			initiator.tcs_feedback_mode = getdvarintdefault( "tcs_feedback_mode", 1 ); // 0 == executor receives cmd feedback, 1 == initiator receives cmd feedback, 2 == initiator and executor receives cmd feedback, 3 == same as 2 but also print the additional msgs to the initiator/executor
-			executor cmd_execute_internal( initiator, cmd_obj );
+			initiator throw_exception( "You do not have permission to use " + cmd_obj.cmd_data_source.cmd_name + " cmd", cmd_obj );
 		}
 
-		i++;
-	}
+		executor = initiator;
+		initiator.tcs_silent_cmds = getdvarintdefault( "tcs_silent_cmds", 0 );
+		initiator.tcs_logprint_cmd_usage = getdvarintdefault( "tcs_logprint_cmd_usage", 1 );
+		initiator.tcs_feedback_mode = getdvarintdefault( "tcs_feedback_mode", 1 ); // 0 == executor receives cmd feedback, 1 == initiator receives cmd feedback, 2 == initiator and executor receives cmd feedback, 3 == same as 2 but also print the additional msgs to the initiator/executor
+		executor cmd_execute_internal( initiator, cmd_obj );
 
-	if ( !has_all_perms )
-	{
-		initiator thread cmd_cooldown();
+		i++;
 	}
 }
 
@@ -280,42 +242,6 @@ private get_name_entities( directive, etype )
 	return ents;
 }
 
-private get_executors( directive )
-{
-	if ( !isdefined( directive ) )
-	{
-		return self.default_executors;
-	}
-	switch ( directive.type )
-	{
-		case "all":
-			return level.players;
-		case "undefined": // error
-			return [];
-		case "random":
-			limit = 1;
-			if ( isdefined( directive.v[ 0 ] ) )
-			{
-				directive_str_trimmed = getsubstr( directive.v[ 0 ], 1 );
-				limit = int( directive_str_trimmed );
-			}
-			
-			return get_random_limited_array( level.players, limit );
-		case "array":
-		case "array_random":
-			return get_array_entities( directive, "player" );
-		case "self":
-			return add_to_array( undefined, self );
-		case "default":
-			return self.default_executors;
-		case "name":
-			return get_name_entities( directive, "player" );
-	}
-
-	self throw_exception( "Unknown directive.type: '" + directive.type + "'" );
-	return [];
-}
-
 private get_entity_targets( etype, directive )
 {
 	getter_func = undefined;
@@ -395,11 +321,6 @@ private cmd_execute_internal( initiator, cmd_obj )
 		initiator throw_exception( "Too many args: usage: " + cmd_data_source.usage );
 	}
 
-	if ( self == level.server && cmd_data_source.requires_player_executor && cmd_obj.kvps.size <= 0 )
-	{
-		initiator throw_exception( "Command '" + cmd_data_source.cmd_name + "' expects the executor to be a player; but executor is level.server, use setdefaultcmdexecutor on a player to execute this command", cmd_obj );
-	}
-
 	param = generic_obj_t_new( "param" );
 	param.t = []; // targets
 	param.a = cmd_obj.args; // arguments
@@ -438,46 +359,32 @@ private cmd_execute_internal( initiator, cmd_obj )
 		}
 	}
 
-	if ( array_validate( cmd_obj.kvps ) )
+	if ( array_validate( cmd_obj.kvps ) && array_validate( cmd_data_source.target_types ) )
 	{
-		if ( array_validate( cmd_data_source.target_types ) )
+		// find target kvps
+		cmd_target_keys = getarraykeys( cmd_obj.kvps );
+		foreach ( ordinal_key, target_type in cmd_data_source.target_types )
 		{
-			// find target kvps
-			cmd_target_keys = getarraykeys( cmd_obj.kvps );
-			foreach ( ordinal_key, target_type in cmd_data_source.target_types )
+			target_kvp = cmd_obj.kvps_ordinal[ ordinal_key ];
+			if ( !isdefined( target_kvp ) )
 			{
-				target_kvp = cmd_obj.kvps_ordinal[ ordinal_key ];
-				if ( isdefined( target_kvp ) && target_kvp.base_key != "target" && target_kvp.base_key != "t" )
+				if ( target_type.is_required )
 				{
-					continue;
+					initiator throw_exception( "'target" + ordinal_key + "' is required" );
 				}
 
-				if ( !isdefined( target_kvp ) )
-				{
-					if ( target_type.is_required )
-					{
-						initiator throw_exception( "'target" + ordinal_key + "' is required" );
-					}
-
-					continue;
-				}
-
-				ordinal = int( ordinal_key );
-				index = ordinal - 1;
-				target_type = get_target_type_from_ordinal( cmd_data_source, ordinal );
-				param.t[ index ] = initiator target_cast( cmd_data_source, ordinal, target_type, target_kvp );
-
-				if ( !array_validate( param.t[ index ] ) && ( target_kvp.type != "undefined" && target_kvp.type != "default" ) )
-				{
-					initiator throw_exception( "Failed to find any compatible entities" );
-				}
+				continue;
 			}
-		}
 
-		// forward command to extra local clients
-		if ( isdefined( cmd_obj.kvps[ "cl" ] ) || isdefined( cmd_obj.kvps[ "client" ] ) )
-		{
-			
+			ordinal = int( ordinal_key );
+			index = ordinal - 1;
+			target_type = get_target_type_from_ordinal( cmd_data_source, ordinal );
+			param.t[ index ] = initiator target_cast( cmd_data_source, ordinal, target_type, target_kvp );
+
+			if ( !array_validate( param.t[ index ] ) && ( target_kvp.type != "undefined" && target_kvp.type != "default" ) )
+			{
+				initiator throw_exception( "Failed to find any compatible entities" );
+			}
 		}
 	}
 
@@ -583,14 +490,6 @@ private parse_cmd_dvar()
 		setDvar( "tcscmd", "" );
 		dvar_value = "~" + dvar_value; // special token to indicate that it's from the dvar
 		waittillframeend; // prevents notifies from being dropped if they happen in the same frame
-		if ( isdedicated() )
-		{
-			// there is no local client, so the server will always need to specify an executor, unless they specify the default_executors
-			level notify( "say", dvar_value, level.server, true, false );
-		}
-		else
-		{
-			level notify( "say", dvar_value, level.host, true, false );
-		}
+		level notify( "say", dvar_value, getlocalplayers()[0], true, false );
 	}
 }

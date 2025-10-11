@@ -277,9 +277,16 @@ set_safe_label_internal( text )
 	self.label = istring( text );
 }
 
-set_safe_text( text, is_label )
+set_safe_text( text, prev_text, is_label )
 {
 	is_label = _DEFAULT( is_label, false );
+	prev_text = _DEFAULT( prev_text, "" );
+
+	if ( text == prev_text )
+	{
+		// optimization to reduce unnecessary set increments
+		return;
+	}
 
 	if ( level._text_count >= level._text_limit )
 	{
