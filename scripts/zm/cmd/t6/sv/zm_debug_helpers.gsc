@@ -3,10 +3,10 @@
 #include maps\mp\zombies\_zm_utility;
 #include maps\mp\zombies\_zm_zonemgr;
 
-#include scripts\cmd\t6\sv\core\_utility;
-#include scripts\zm\cmd\modules\_utility;
+#include scripts\cmd\game_shared\sv\core\_utility;
+#include scripts\zm\cmd\t6\sv\_zm_utility;
 
-autoexec zm_debug_helpers()
+init_zm_debug_helpers()
 {
 	addcallback( "on_player_connect", ::zm_debug_connect );
 }

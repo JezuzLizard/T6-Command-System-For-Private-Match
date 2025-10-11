@@ -14,11 +14,11 @@
 #include maps\mp\zombies\_zm_weap_cymbal_monkey;
 #include maps\mp\zombies\_zm_weapons;
 
-#include scripts\cmd\t6\sv\core\_utility;
+#include scripts\cmd\game_shared\sv\core\_utility;
 
-#include scripts\zm\cmd\modules\_utility;
+#include scripts\zm\cmd\t6\sv\_zm_utility;
 
-autoexec init_helpers()
+init_zm_core_helpers()
 {
 	register_modifiable_zombie_stat( "health_increase_flat", "int", 100, ::zombie_recalculate_health );
 	register_modifiable_zombie_stat( "health_increase_multiplier", "float", 0.1, ::zombie_recalculate_health );

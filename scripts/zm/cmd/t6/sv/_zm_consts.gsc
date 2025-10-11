@@ -1,11 +1,11 @@
 #include common_scripts\utility;
 #include maps\mp\_utility;
 
-#include scripts\cmd\t6\sv\core\_utility;
+#include scripts\cmd\game_shared\sv\core\_utility;
 
 #include scripts\zm\cmd\t6\sv\_zm_utility;
 
-autoexec init_consts()
+init_sv_zm_consts()
 {
 	arg_type_register( "perk", ::arg_obj_perk_generate, ::arg_obj_perk_cast );
 	arg_type_register( "zm_weapon", ::arg_obj_weapon_generate, ::arg_obj_weapon_cast );

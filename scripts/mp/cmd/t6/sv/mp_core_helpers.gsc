@@ -1,11 +1,11 @@
 #include common_scripts\utility;
 #include maps\mp\_utility;
 
-#include scripts\cmd\t6\sv\core\_utility;
+#include scripts\cmd\game_shared\sv\core\_utility;
 
 #include maps\mp\killstreaks\_dogs;
 
-autoexec init_helpers()
+init_core_helpers()
 {
 	build_weapons_array();
 	level thread on_unittest();

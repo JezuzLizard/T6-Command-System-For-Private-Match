@@ -2,15 +2,14 @@
 #include maps\mp\_utility;
 #include maps\mp\zombies\_zm_utility;
 
-#include scripts\cmd\t6\sv\core\_utility;
+#include scripts\cmd\game_shared\sv\core\_utility;
 
 // autoexec
-#include scripts\zm\cmd\modules\_zm_consts;
-#include scripts\zm\cmd\modules\zm_debug_helpers;
+#include scripts\zm\cmd\t6\sv\zm_debug_helpers;
 
-#include scripts\zm\cmd\modules\_utility;
+#include scripts\zm\cmd\t6\sv\_zm_utility;
 
-autoexec add_zm_debug_cmds()
+add_zm_debug_cmds()
 {
 	level._debug_zombie_spawn_loc_draw_enabled = false;
 	level._debug_zombie_spawn_loc_show_only_active_spawns = false;

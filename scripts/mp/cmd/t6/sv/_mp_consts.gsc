@@ -1,9 +1,9 @@
 #include common_scripts\utility;
 #include maps\mp\_utility;
 
-#include scripts\cmd\t6\sv\core\_utility;
+#include scripts\cmd\game_shared\sv\core\_utility;
 
-autoexec init_consts()
+init_mp_consts()
 {
 	arg_type_register( "weapon", ::arg_obj_weapon_generate, ::arg_obj_weapon_cast );
 }

@@ -5,4 +5,7 @@
 
 main()
 {
+	level thread init_mp_consts();
+	level thread init_core_helpers();
+	level thread add_core_cmds();
 }

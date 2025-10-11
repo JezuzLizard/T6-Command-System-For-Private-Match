@@ -6,11 +6,11 @@
 #include maps\mp\zombies\_zm_score;
 #include maps\mp\zombies\_zm_weapons;
 
-#include scripts\cmd\t6\sv\core\_utility;
+#include scripts\cmd\game_shared\sv\core\_utility;
 
 #include maps\mp\bots\_bot_api;
 
-autoexec add_cmds()
+add_zm_bot_cmds()
 {
 	waittillframeend;
 	cmd_block_set_module_group( "core_common" );

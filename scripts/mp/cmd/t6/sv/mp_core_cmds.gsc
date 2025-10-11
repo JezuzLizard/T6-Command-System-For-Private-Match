@@ -1,11 +1,11 @@
 #include common_scripts\utility;
 #include maps\mp\_utility;
 
-#include scripts\cmd\t6\sv\core\_utility;
+#include scripts\cmd\game_shared\sv\core\_utility;
 
 #include scripts\mp\cmd\t6\sv\mp_core_helpers;
 
-autoexec add_cmds()
+add_core_cmds()
 {
 	waittillframeend;
 	cmd_block_set_module_group( "core_mp" );

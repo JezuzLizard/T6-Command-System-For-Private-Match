@@ -272,7 +272,6 @@ def main() -> None:
 
     # Clear up all previous files
     clear_files(os.path.join(CWD, PARSED_DIR), r".*")
-    clear_files(os.path.join(CWD, COMPILED_DIR), r".*")
 
     gsc: Gsc = (Gsc()
         .load_file(os.path.join(CWD, B2FR))
@@ -288,17 +287,9 @@ def main() -> None:
         wrap_subprocess_call(
             COMPILER_GSCTOOL, "-m", MODE_PARSE, "-g", GAME_PARSE, "-s", "pc", B2FR, eval_callback=check_gsc_error
         )
-        wrap_subprocess_call(
-            COMPILER_GSCTOOL, "-m", MODE_COMP, "-g", GAME_COMP, "-s", "pc", arg_path(CWD, PARSED_DIR, B2FR), eval_callback=check_gsc_error
-        )
         file_rename(
             os.path.join(CWD, PARSED_DIR, B2FR), os.path.join(CWD, PARSED_DIR, "b2fr_precompiled_hud.gsc")
         )
-        file_rename(
-            os.path.join(CWD, COMPILED_DIR, B2FR), os.path.join(CWD, COMPILED_DIR, "b2fr_hud.gsc")
-        )
-
-        flash_hash(os.path.join(CWD, COMPILED_DIR, "b2fr_hud.gsc"))
 
     # No HUD
     with Chunk("NO HUD:"):
@@ -317,8 +308,6 @@ def main() -> None:
         file_rename(
             os.path.join(CWD, COMPILED_DIR, B2FR), os.path.join(CWD, COMPILED_DIR, "b2fr_nohud.gsc")
         )
-
-        flash_hash(os.path.join(CWD, COMPILED_DIR, "b2fr_nohud.gsc"))
 
     # Warn if release has debugger enabled
     if gsc.debugger:

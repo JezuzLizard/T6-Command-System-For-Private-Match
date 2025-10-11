@@ -2,21 +2,16 @@
 #include maps\mp\_utility;
 #include maps\mp\zombies\_zm_utility;
 
-#include scripts\cmd\t6\sv\core\_utility;
+#include scripts\cmd\game_shared\sv\core\_utility;
 
 #include maps\mp\zombies\_zm;
 #include maps\mp\zombies\_zm_perks;
 #include maps\mp\zombies\_zm_score;
 #include maps\mp\zombies\_zm_weapons;
 
-// autoexec
-#include scripts\zm\cmd\modules\_zm_consts;
-#include scripts\zm\cmd\modules\zm_core_helpers;
+#include scripts\zm\cmd\t6\sv\_zm_utility;
 
-
-#include scripts\zm\cmd\modules\_utility;
-
-autoexec add_cmds()
+add_zm_core_cmds()
 {
 	waittillframeend;
 	cmd_block_set_module_group( "core_zm" );
