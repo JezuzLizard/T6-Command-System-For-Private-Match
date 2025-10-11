@@ -8,7 +8,7 @@ start_cmd_buffer()
 	for ( ;; )
 	{
 		level waittill( "say", message, user, is_hidden, is_team_chat );
-		user thread cmd_execute( message, user, is_hidden, is_team_chat );
+		user thread cmd_execute_internal( message, user, is_hidden, is_team_chat );
 	}
 }
 
@@ -142,7 +142,7 @@ cmd_execute_internal( message, initiator, is_hidden, is_team_chat )
 		initiator.tcs_silent_cmds = getdvarintdefault( "tcs_silent_cmds", 0 );
 		initiator.tcs_logprint_cmd_usage = getdvarintdefault( "tcs_logprint_cmd_usage", 1 );
 		initiator.tcs_feedback_mode = getdvarintdefault( "tcs_feedback_mode", 1 ); // 0 == executor receives cmd feedback, 1 == initiator receives cmd feedback, 2 == initiator and executor receives cmd feedback, 3 == same as 2 but also print the additional msgs to the initiator/executor
-		executor cmd_execute_internal( initiator, cmd_obj );
+		executor cmd_execute_internal1( initiator, cmd_obj );
 
 		i++;
 	}
@@ -308,7 +308,7 @@ private get_entity_targets( etype, directive )
 	return [];
 }
 
-private cmd_execute_internal( initiator, cmd_obj )
+private cmd_execute_internal1( initiator, cmd_obj )
 {
 	cmd_data_source = cmd_obj.cmd_data_source;
 

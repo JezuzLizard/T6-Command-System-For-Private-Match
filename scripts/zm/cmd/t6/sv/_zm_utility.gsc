@@ -6,7 +6,7 @@
 #include maps\mp\zombies\_zm_score;
 #include maps\mp\zombies\_zm_unitrigger;
 #include maps\mp\zombies\_zm_weapons;
-#include maps\mp\zombies\_zm_weap_claymore
+#include maps\mp\zombies\_zm_weap_claymore;
 
 #include scripts\cmd\game_shared\sv\core\_utility;
 
@@ -706,8 +706,8 @@ spawn_wallbuy_trigger_stub( model, weapon_name )
 	}
 	else if ( unitrigger_stub.zombie_weapon_upgrade == "claymore_zm" )
 	{
-		unitrigger_stub.prompt_and_visibility_func = claymore_unitrigger_update_prompt;
-		register_static_unitrigger( unitrigger_stub, buy_claymores );
+		unitrigger_stub.prompt_and_visibility_func = ::claymore_unitrigger_update_prompt;
+		register_static_unitrigger( unitrigger_stub, ::buy_claymores );
 	}
 	else
 	{

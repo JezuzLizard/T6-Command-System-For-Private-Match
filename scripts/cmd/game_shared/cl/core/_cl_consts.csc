@@ -2,7 +2,7 @@
 
 #include scripts\cmd\game_shared\cl\core\_cl_utility;
 
-init_consts()
+init_cl_consts()
 {
 	build_contents_array();
 	build_hitlocs_array();
@@ -101,10 +101,10 @@ init_consts()
 	register_entity_type( "general", ::get_ent_array );
 	register_entity_type( "player", ::get_player_array );
 	register_entity_type( "player_corpse", ::get_player_corpse_array ); // getcorpsearray only returns player_corpse on MP
-	register_entity_type( "item", ::get_item_array );
+	//register_entity_type( "item", ::get_item_array );
 	register_entity_type( "missile", ::get_missile_array );
 	register_entity_type( "invisible", ::get_invisible_array );
-	register_entity_type( "scriptmover", ::get_scriptmover_array );
+	// register_entity_type( "scriptmover", ::get_scriptmover_array );
 	register_entity_type( "sound_blend", ::get_sound_blend_array );
 	register_entity_type( "fx", ::get_fx_array );
 	register_entity_type( "loop_fx", ::get_loop_fx_array );
@@ -115,10 +115,10 @@ init_consts()
 	register_entity_type( "vehicle", ::get_vehicle_array );
 	register_entity_type( "vehicle_corpse", ::get_vehicle_corpse_array );
 	register_entity_type( "actor", ::get_actor_array );
-	register_entity_type( "actor_spawner", ::get_actor_spawner_array );
+	// register_entity_type( "actor_spawner", ::get_actor_spawner_array );
 	register_entity_type( "actor_corpse", ::get_actor_corpse_array );
 	register_entity_type( "streamer_hint", ::get_streamer_hint_array );
-	register_entity_type( "zbarrier", ::get_zbarrier_array );
+	// register_entity_type( "zbarrier", ::get_zbarrier_array );
 	register_entity_type( "temp_entity", ::get_temp_entity_array );
 
 	register_entnum_range( "player", 0, 17, 18 );
@@ -169,6 +169,37 @@ init_consts()
 	level._target_obj_generate = ::target_obj_generate;
 }
 
+private getentitytype()
+{
+	switch ( self.type )
+	{
+		case "general":
+			return 0;
+		case "player":
+			return 1;
+		case "player_corpse":
+			return 2;
+		case "missile":
+			return 4;
+		case "scriptmover":
+			return 6;
+		case "turret":
+			return 11;
+		case "helicopter":
+			return 12;
+		case "plane":
+			return 13;
+		case "vehicle":
+			return 14;
+		case "actor":
+			return 16;
+		case "zbarrier":
+			return 20;
+		default:
+			return -2;
+	}
+}
+
 get_entities_by_etype( etype, start, end  )
 {
 	start = _DEFAULT( start, 0 );
@@ -183,7 +214,7 @@ get_entities_by_etype( etype, start, end  )
 	}
 	for ( i = start; i < end; i++ )
 	{
-		ent = getentbynum( i );
+		ent = getentbynum( _GET_PRIMARY_CLIENT_NUM(), i );
 
 		if ( !isdefined( ent ) )
 		{
@@ -218,7 +249,7 @@ get_entities_by_static_range( static_type )
 	entities = [];
 	for ( i = start; i <= end; i++ )
 	{
-		ent = getentbynum( i );
+		ent = getentbynum( _GET_PRIMARY_CLIENT_NUM(), i );
 		if ( !isdefined( ent ) )
 		{
 			continue;
@@ -238,7 +269,7 @@ get_null_entity_array()
 get_world_entity_array()
 {
 	entities = [];
-	entities[ 0 ] = getentbynum( 1022 );
+	entities[ 0 ] = getentbynum( _GET_PRIMARY_CLIENT_NUM(), 1022 );
 	return entities;
 }
 
@@ -246,10 +277,10 @@ get_ent_array( value = "", key = "" )
 {
 	if ( value != "" && key != "" )
 	{
-		return getentarray( 0, value, key );
+		return getentarray( _GET_PRIMARY_CLIENT_NUM(), value, key );
 	}
 
-	return getentarray( 0 );
+	return getentarray( _GET_PRIMARY_CLIENT_NUM() );
 }
 
 get_player_array()
@@ -262,10 +293,10 @@ get_player_corpse_array()
 	return get_entities_by_static_range( "player_corpse" );
 }
 
-get_item_array()
-{
-	return getitemarray();
-}
+// get_item_array()
+// {
+// 	return getitemarray();
+// }
 
 /*
 	classnames:
@@ -279,7 +310,7 @@ get_missile_array( classnames_str )
 	entities = [];
 	for ( i = 0; i < _SIZE( classnames.size ); i++ )
 	{
-		missile_entities = getentarray( 0, classnames[ i ], "classname" );
+		missile_entities = getentarray( _GET_PRIMARY_CLIENT_NUM(), classnames[ i ], "classname" );
 
 		entities = arraycombine( entities, missile_entities, false, false );
 	}
@@ -307,20 +338,21 @@ get_loop_fx_array()
 	return get_entities_by_etype( "loop_fx" );
 }
 
-get_scriptmover_array()
-{
-	return getscriptmoverarray();
-}
+// get_scriptmover_array()
+// {
+// 	return getscriptmoverarray();
+// }
 
 get_primary_light_array()
 {
-	return getentarray( 0, "light", "classname" );
+	return getentarray( _GET_PRIMARY_CLIENT_NUM(), "light", "classname" );
 }
 
 get_turret_array()
 {
 	return get_entities_by_static_range( "turret" );
 }
+
 get_helicopter_array()
 {
 	vehicles = get_entities_by_static_range( "vehicle" );
@@ -360,10 +392,10 @@ get_actor_array()
 	return get_entities_by_static_range( "actor" );
 }
 
-get_actor_spawner_array()
-{
-	return getspawnerarray();
-}
+// get_actor_spawner_array()
+// {
+// 	return getspawnerarray();
+// }
 
 get_actor_corpse_array()
 {
@@ -375,10 +407,10 @@ get_streamer_hint_array()
 	return get_entities_by_etype( "streamer_hint", 109 );
 }
 
-get_zbarrier_array()
-{
-	return getzbarrierarray();
-}
+// get_zbarrier_array()
+// {
+// 	return getzbarrierarray();
+// }
 
 get_temp_entity_array()
 {
@@ -944,37 +976,15 @@ arg_obj_model_generate( arg1, arg2, arg3 )
 	return set_cast_success( find, "Unimplemented", "model==" + "null" );
 }
 
-private delete_after_time( entity )
-{
-	entity endon( "death" );
-
-	wait 0.05;
-
-	entity delete();
-}
-
-private spawn_test_ent()
-{
-	test_ent = spawn( "script_model", ( 0, 0, -5000 ) );
-	level thread delete_after_time( test_ent );
-
-	return test_ent;
-}
-
 arg_obj_model_cast( arg )
 {
 	find = generic_obj_t_new();
 
-	test_ent = spawn_test_ent();
-	test_ent setmodel( arg );
-
-	if ( test_ent.model == "" )
+	model_exists = _MODEL_EXISTS( arg );
+	if ( !model_exists )
 	{
-		test_ent delete();
 		return set_cast_error( find, "Model not precached: '" + arg + "'" );
 	}
-
-	test_ent delete();
 
 	return set_cast_success( find, arg, "model==" + arg );
 }

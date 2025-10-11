@@ -966,37 +966,15 @@ arg_obj_model_generate( arg1, arg2, arg3 )
 	return set_cast_success( find, "Unimplemented", "model==" + "null" );
 }
 
-private delete_after_time( entity )
-{
-	entity endon( "death" );
-
-	wait 0.05;
-
-	entity delete();
-}
-
-private spawn_test_ent()
-{
-	test_ent = spawn( "script_model", ( 0, 0, -5000 ) );
-	level thread delete_after_time( test_ent );
-
-	return test_ent;
-}
-
 arg_obj_model_cast( arg )
 {
 	find = generic_obj_t_new();
 
-	test_ent = spawn_test_ent();
-	test_ent setmodel( arg );
-
-	if ( test_ent.model == "" )
+	model_exists = _MODEL_EXISTS( arg );
+	if ( !model_exists )
 	{
-		test_ent delete();
 		return set_cast_error( find, "Model not precached: '" + arg + "'" );
 	}
-
-	test_ent delete();
 
 	return set_cast_success( find, arg, "model==" + arg );
 }

@@ -350,7 +350,7 @@ private fill_zombie_anim_special_info( animstates )
 	}
 }
 
-private draw_debug_zombie_info()
+draw_debug_zombie_info()
 {
 	level endon( "draw_debug_zombie_info_stop" );
 	self._debug_zombie endon( "death" );
@@ -363,6 +363,13 @@ private draw_debug_zombie_info()
 
 	for ( ;; )
 	{
+		wait 0.05;
+		target = self._debug_zombie;
+		if ( !isdefined( target ) )
+		{
+			continue;
+		}
+
 		if ( target._print_anim_timings )
 		{
 			animstates = [];
@@ -431,17 +438,17 @@ private sph_hud_init()
 	{
 		level.sph_hud_counter = 0;
 		level.zombie_kill_times = [];
-		level thread calculate_sph();
+		level thread calculate_sph_thread();
 	}
 
 	sph_hud_counter = self new_debug_hud( 5, 10 );
 	sph_hud_counter.alpha = 0;
 	sph_hud_counter.label = &"SPH: ";
 
-	self thread sph_hud_thread();
+	self thread sph_hud_thread( sph_hud_counter );
 }
 
-private sph_hud_thread()
+private sph_hud_thread( sph_hud_counter )
 {
 	self endon( "disconnect" );
 
@@ -507,31 +514,31 @@ private zombie_total_hud_init()
 	zombie_total_hud.alpha = 0;
 	zombie_total_hud.label = &"Zombie Total: ";
 
-	self thread zombie_total_hud_thread();
+	self thread zombie_total_hud_thread( zombie_total_hud );
 }
 
-private zombie_total_hud_thread()
+private zombie_total_hud_thread( zombie_total_hud )
 {
 	flag_wait( "all_players_connected" );
 	wait 10;
-	enemy_counter_hud.alpha = 1;
+	zombie_total_hud.alpha = 1;
 	for ( ;; )
 	{
 		while ( !self._debug_draw_zombie_total_enabled )
 		{
-			zone_hud.alpha = 0;
+			zombie_total_hud.alpha = 0;
 			wait 1;
 		}
 
 		while ( !is_round_ongoing() )
 		{
-			enemy_counter_hud setText( "" );
+			zombie_total_hud setText( "" );
 			wait 1;
 		}
 
-		enemy_counter_hud.alpha = 1;
+		zombie_total_hud.alpha = 1;
 		enemies = level.zombie_total;
-		enemy_counter_hud setValue( enemies );
+		zombie_total_hud setValue( enemies );
 		wait 0.05;
 	}
 }
@@ -542,10 +549,10 @@ private zombie_count_hud_init()
 	zombie_count_hud.alpha = 0;
 	zombie_count_hud.label = &"Zombie Count: ";
 
-	self thread zombie_count_hud_thread();
+	self thread zombie_count_hud_thread( zombie_count_hud );
 }
 
-private zombie_count_hud_thread()
+private zombie_count_hud_thread( zombie_count_hud )
 {
 	self endon( "disconnect" );
 
@@ -556,7 +563,7 @@ private zombie_count_hud_thread()
 	{
 		while ( !self._debug_draw_zombie_current_enabled )
 		{
-			zone_hud.alpha = 0;
+			zombie_count_hud.alpha = 0;
 			wait 1;
 		}
 

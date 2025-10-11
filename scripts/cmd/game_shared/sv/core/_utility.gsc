@@ -2,8 +2,8 @@
 #include maps\mp\_utility;
 
 #include scripts\cmd\game_shared\sv\core\_com;
-#include scripts\cmd\game_shared\cl\core\_cmd_parse2;
-#include scripts\cmd\game_shared\cl\core\_cmd_execute;
+#include scripts\cmd\game_shared\sv\core\_cmd_parse2;
+#include scripts\cmd\game_shared\sv\core\_cmd_execute;
 
 script_breakpoint( generic_obj, msg, display_callstack, should_print )
 {
@@ -88,7 +88,7 @@ print_obj()
 	}
 	else if ( self.obj_type == "cmd_parse" )
 	{
-		print_entity = isdefined( level.host ) ? level.host : level.server;
+		print_entity = _GET_SERVER_ENTITY();
 		print_entity com_printcmd( self.cmd_data_source );
 		com_printdebugwarning( "start_pos: " + self.start_pos );
 		com_printdebugwarning( "end_pos: " + self.end_pos );
@@ -199,14 +199,7 @@ com_printdebuginfo( message )
 {
 	if ( level._developer )
 	{
-		if ( isdefined( level.host ) )
-		{
-			level.host com_printinfo( message );
-		}
-		else if ( isdefined( level.server ) )
-		{
-			level.server com_printinfo( message );
-		}
+		_GET_SERVER_ENTITY() com_printinfo( message );
 	}
 }
 
@@ -214,14 +207,7 @@ com_printdebugwarning( message )
 {
 	if ( level._developer )
 	{
-		if ( isdefined( level.host ) )
-		{
-			level.host com_printwarning( message );
-		}
-		else if ( isdefined( level.server ) )
-		{
-			level.server com_printwarning( message );
-		}
+		_GET_SERVER_ENTITY() com_printwarning( message );
 	}
 }
 
@@ -229,14 +215,7 @@ com_printdebugerror( message )
 {
 	if ( level._developer )
 	{
-		if ( isdefined( level.host ) )
-		{
-			level.host com_printerror( message );
-		}
-		else if ( isdefined( level.server ) )
-		{
-			level.server com_printerror( message );
-		}
+		_GET_SERVER_ENTITY() com_printerror( message );
 
 		assert( false );
 	}
@@ -1567,8 +1546,34 @@ _MODEL_EXISTS( arg )
 
 _WEAPON_EXISTS( name )
 {
-	// function returns undefined if the weapon doesn't exist and doesn't scr_error
-	return isdefined( isweaponprimary( name ) );
+	// csc alternative
+	return weaponclass( name ) == "none";
+}
+
+_INIT_SERVER()
+{
+	if ( !isdefined( level.server ) )
+	{
+		level.server = spawnStruct();
+		entity = spawnstruct();
+		entity.playername = getdvar( "sv_hostname" );
+		entity.name = getdvar( "sv_hostname" );
+		entity.is_server = true;
+		entity.default_targets = []; // treat this value as the default target for optional target specifying
+		entity.default_executors = []; // treat this value as the default executor for the command; the command is executed on behalf of the server on a player
+		_SET_SERVER_ENTITY( entity );
+		level.server.entity.default_executors[ 0 ] = level.server.entity;
+	}
+}
+
+_GET_SERVER_ENTITY()
+{
+	return level.server.entity;
+}
+
+_SET_SERVER_ENTITY( new_entity )
+{
+	level.server.entity = new_entity;
 }
 
 array_validate( array )
@@ -1651,6 +1656,11 @@ flag_wait_until_set_once( flag )
 
 new_debug_hud( x, y_offset, multi_hud = false )
 {
+	if ( !isdefined( level.debug_hud_y_offset ) )
+	{
+		level.debug_hud_y_offset = 0;
+	}
+	
 	if ( !multi_hud )
 	{
 		level.debug_hud_y_offset += y_offset;
@@ -1720,4 +1730,25 @@ parse_cmd_message( message )
 function_void()
 {
 	return;
+}
+
+cast_entity_raycast_from_player_eye()
+{
+	direction = self getplayerangles();
+	direction_vec = anglestoforward( direction );
+	eye = self geteye();
+	scale = 8000;
+	direction_vec = ( direction_vec[0] * scale, direction_vec[1] * scale, direction_vec[2] * scale );
+	trace = bullettrace( eye, eye + direction_vec, false, undefined );
+
+	if ( !isdefined( trace[ "entity" ] ) )
+	{
+		trace = physicstrace( eye, eye + direction_vec, vectorscale( ( -1, -1, 0 ), 15.0 ), vectorscale( ( 1, 1, 0 ), 15.0 ), self, level._editor_ent_mask );
+		if ( !isdefined( trace[ "entity" ] ) )
+		{
+			return trace;
+		}
+	}
+
+	return trace;
 }

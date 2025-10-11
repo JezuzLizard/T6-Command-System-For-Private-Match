@@ -126,7 +126,7 @@ private cmd_unlinkcamera_f( param )
 	camera_ent = self._cmds_cameras[ camera_name ];
 	if ( !isdefined( camera_ent ) )
 	{
-		return return result_cmderror( "No camera with name '" + camera_name + "' exists!" );( "No camera with name '" + camera_name + "' exists!" );
+		return add_executor_cmderror( "No camera with name '" + camera_name + "' exists!" );
 	}
 	
 	camera_ent unlink();

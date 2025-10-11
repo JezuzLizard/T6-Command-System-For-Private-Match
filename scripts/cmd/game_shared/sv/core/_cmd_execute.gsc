@@ -9,7 +9,7 @@ start_cmd_buffer()
 	for ( ;; )
 	{
 		level waittill( "say", message, user, is_hidden, is_team_chat );
-		user thread cmd_execute( message, user, is_hidden, is_team_chat );
+		user thread cmd_execute_internal( message, user, is_hidden, is_team_chat );
 	}
 }
 
@@ -88,7 +88,7 @@ private debug_print_execute( index, cmd_obj )
 	}
 }
 
-cmd_execute( message, initiator, is_hidden, is_team_chat )
+cmd_execute_internal( message, initiator, is_hidden, is_team_chat )
 {
 	if ( !isdefined( initiator.exception_obj ) )
 	{
@@ -174,7 +174,7 @@ cmd_execute( message, initiator, is_hidden, is_team_chat )
 			initiator.tcs_silent_cmds = getdvarintdefault( "tcs_silent_cmds", 0 );
 			initiator.tcs_logprint_cmd_usage = getdvarintdefault( "tcs_logprint_cmd_usage", 1 );
 			initiator.tcs_feedback_mode = getdvarintdefault( "tcs_feedback_mode", 1 ); // 0 == executor receives cmd feedback, 1 == initiator receives cmd feedback, 2 == initiator and executor receives cmd feedback, 3 == same as 2 but also print the additional msgs to the initiator/executor
-			executor cmd_execute_internal( initiator, cmd_obj );
+			executor cmd_execute_internal1( initiator, cmd_obj );
 		}
 
 		i++;
@@ -382,7 +382,7 @@ private get_entity_targets( etype, directive )
 	return [];
 }
 
-private cmd_execute_internal( initiator, cmd_obj )
+private cmd_execute_internal1( initiator, cmd_obj )
 {
 	cmd_data_source = cmd_obj.cmd_data_source;
 
@@ -395,9 +395,9 @@ private cmd_execute_internal( initiator, cmd_obj )
 		initiator throw_exception( "Too many args: usage: " + cmd_data_source.usage );
 	}
 
-	if ( self == level.server && cmd_data_source.requires_player_executor && cmd_obj.kvps.size <= 0 )
+	if ( self == _GET_SERVER_ENTITY() && cmd_data_source.requires_player_executor && cmd_obj.kvps.size <= 0 )
 	{
-		initiator throw_exception( "Command '" + cmd_data_source.cmd_name + "' expects the executor to be a player; but executor is level.server, use setdefaultcmdexecutor on a player to execute this command", cmd_obj );
+		initiator throw_exception( "Command '" + cmd_data_source.cmd_name + "' expects the executor to be a player; but executor is the server, use setdefaultcmdexecutor on a player to execute this command", cmd_obj );
 	}
 
 	param = generic_obj_t_new( "param" );
@@ -583,14 +583,7 @@ private parse_cmd_dvar()
 		setDvar( "tcscmd", "" );
 		dvar_value = "~" + dvar_value; // special token to indicate that it's from the dvar
 		waittillframeend; // prevents notifies from being dropped if they happen in the same frame
-		if ( isdedicated() )
-		{
-			// there is no local client, so the server will always need to specify an executor, unless they specify the default_executors
-			level notify( "say", dvar_value, level.server, true, false );
-		}
-		else
-		{
-			level notify( "say", dvar_value, level.host, true, false );
-		}
+		// there is no local client, so the server will always need to specify an executor, unless they specify the default_executors
+		level notify( "say", dvar_value, _GET_SERVER_ENTITY(), true, false );
 	}
 }

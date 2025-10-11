@@ -11,6 +11,8 @@
 
 #include scripts\zm\cmd\t6\sv\_zm_utility;
 
+#include scripts\zm\cmd\t6\sv\zm_core_helpers;
+
 add_zm_core_cmds()
 {
 	waittillframeend;

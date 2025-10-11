@@ -6,41 +6,30 @@
 #include scripts\cmd\game_shared\sv\core\_cmd_parse2;
 #include scripts\cmd\game_shared\sv\core\_com;
 #include scripts\cmd\game_shared\sv\core\_consts;
+#include scripts\cmd\game_shared\sv\core\_hud_api;
+#include scripts\cmd\game_shared\sv\core\_hud_utility;
 #include scripts\cmd\game_shared\sv\core\_perms;
 #include scripts\cmd\game_shared\sv\core\_utility;
 #include scripts\cmd\game_shared\sv\core\unittest;
+#include scripts\cmd\game_shared\sv\core\unittest_helpers;
 
 // common cmds
 #include scripts\cmd\game_shared\sv\modules\core_cmds;
+#include scripts\cmd\game_shared\sv\modules\core_helpers;
 // entity cmds
 #include scripts\cmd\game_shared\sv\modules\entity_cmds;
+#include scripts\cmd\game_shared\sv\modules\entity_helpers;
 // filmmaker cmds
-//#include scripts\cmd\game_shared\sv\modules\filmmaker\camera_cmds;
+#include scripts\cmd\game_shared\sv\modules\filmmaker\camera_cmds;
+#include scripts\cmd\game_shared\sv\modules\filmmaker\camera_helpers;
 // debug cmds
 #include scripts\cmd\game_shared\sv\modules\debug_cmds;
+#include scripts\cmd\game_shared\sv\modules\debug_helpers;
 
 private main()
 {
-	level thread com_init();
-	level thread init_consts();
-	level thread init_unittest_helpers();
-	level thread init_camera_helpers();
-	level thread init_debug_helpers();
-	level thread init_entity_helpers();
-	level thread start_cmd_buffer();
-	level thread add_unittest_cmds();
-	level thread add_camera_cmds();
-	level thread add_core_cmds();
-	level thread add_debug_cmds();
-	level thread add_entity_cmds();
+	_INIT_SERVER();
 	level._developer = getdvarint( "developer" );
-	level.server = spawnStruct();
-	level.server.playername = getdvar( "sv_hostname" );
-	level.server.name = getdvar( "sv_hostname" );
-	level.server.is_server = true;
-	level.server.default_targets = []; // treat this value as the default target for optional target specifying
-	level.server.default_executors = []; // treat this value as the default executor for the command; the command is executed on behalf of the server on a player
-	level.server.default_executors[ 0 ] = level.server;
 	level.tcs_glob = spawnstruct();
 	level.tcs_glob.irestart_countdown = 5;
 	level.tcs_glob.icmd_total = 0;
@@ -83,6 +72,20 @@ private main()
 	// Entity{Everything}
 	// Player{Bot}, Sentient{Actor, Bot}
 	
+	com_init();
+	init_consts();
+	init_unittest_helpers();
+	init_camera_helpers();
+	init_debug_helpers();
+	init_entity_helpers();
+	init_perms();
+	start_cmd_buffer();
+	add_unittest_cmds();
+	add_camera_cmds();
+	add_core_cmds();
+	add_debug_cmds();
+	add_entity_cmds();
+
 	addcallback( "on_player_connect", ::tcs_on_connect );
 	registerclientsys( "cl_tcs" );
 
@@ -146,7 +149,7 @@ tcs_on_connect()
 	if ( self ishost() )
 	{
 		self.tcs_pl.tcs_rank = "host";
-		level.host = self;
+		_SET_SERVER_ENTITY( self );
 		self.is_host = true;
 		found_entry = true;
 	}
@@ -154,7 +157,7 @@ tcs_on_connect()
 	{
 		foreach ( entry in level.tcs_player_entries )
 		{
-			find = level.server cast_str_to_entity( entry.player_entry, "player" );
+			find = _GET_SERVER_ENTITY() cast_str_to_entity( entry.player_entry, "player" );
 			if ( !find.errored && find.ent == self )
 			{
 				self.tcs_pl.tcs_rank = entry.tcs_rank;

@@ -8,6 +8,7 @@
 // zm only cmds registered by autoexec
 #include scripts\zm\cmd\t6\sv\_zm_utility;
 #include scripts\zm\cmd\t6\sv\_zm_consts;
+//#include scripts\zm\cmd\t6\sv\zm_bots_cmds;
 #include scripts\zm\cmd\t6\sv\zm_core_cmds;
 #include scripts\zm\cmd\t6\sv\zm_debug_cmds;
 #include scripts\zm\cmd\t6\sv\zm_core_helpers;
@@ -15,16 +16,18 @@
 
 main()
 {
-	level thread init_sv_zm_consts();
-	level thread init_zm_core_helpers();
-	level thread init_zm_debug_helpers();
-	level thread add_zm_bot_cmds();
-	level thread add_zm_core_cmds();
-	level thread add_zm_debug_cmds();
 	replaceFunc( maps\mp\zombies\_zm_utility::wait_network_frame, ::wait_network_frame_override );
 	replaceFunc( maps\mp\_visionset_mgr::monitor, ::monitor_stub );
 	replaceFunc( maps\mp\zombies\_zm_perks::perk_machine_spawn_init, ::perk_machine_spawn_init_hook );
 	replaceFunc( maps\mp\zombies\_zm_weapons::show_all_weapon_buys, ::show_all_weapon_buys_override );
+
+	waittillframeend;
+	init_sv_zm_consts();
+	init_zm_core_helpers();
+	init_zm_debug_helpers();
+	//add_zm_bot_cmds();
+	add_zm_core_cmds();
+	add_zm_debug_cmds();
 }
 
 wait_network_frame_override()

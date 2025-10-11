@@ -123,21 +123,8 @@ private activate_random_cmds()
 
 	if ( !isdefined( level._unittest_host ) )
 	{
-		if ( isdefined( level.host ) )
-		{
-			level._unittest_host = level.host;
-		}
-		else
-		{
-			level._unittest_host = level.server;
-		}
-
+		level._unittest_host = _GET_SERVER_ENTITY();
 		level._unittest_host.default_executors = [];
-
-		if ( level._unittest_host == level.host )
-		{
-			//level._unittest_host.default_executors[ 0 ] = level.host;
-		}
 	}
 
 	level._unittest_host.default_executors[ level._unittest_host.default_executors.size ] = self;
@@ -369,7 +356,7 @@ private testcmd_thread_server( cmd )
 	level endon( "stop_testcmd" );
 	while ( true )
 	{
-		level.server construct_chat_message_for_testcmd( cmd );
+		_GET_SERVER_ENTITY() construct_chat_message_for_testcmd( cmd );
 		wait level.unittest_cmd_rate;
 	}
 }

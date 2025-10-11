@@ -10,7 +10,7 @@ init_camera_helpers()
 	addcallback( "on_player_connect", ::on_connect );
 	addcallback( "on_player_disconnect", ::on_disconnect );
 
-	level.server init_user_cameras(); // init the cameras for the server "player"
+	_GET_SERVER_ENTITY() init_user_cameras(); // init the cameras for the server "player"
 }
 
 private on_connect()

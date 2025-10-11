@@ -325,7 +325,7 @@ cast_str_to_contents( contents_str )
 		{
 			if ( allow_world_ent )
 			{
-				return set_cast_success( entity_obj, getentbynum( 0, 1022 ), "ent==allow_world_ent" );
+				return set_cast_success( entity_obj, getentbynum( _GET_PRIMARY_CLIENT_NUM(), 1022 ), "ent==allow_world_ent" );
 			}
 			else
 			{
@@ -350,7 +350,7 @@ cast_str_to_contents( contents_str )
 		for ( i = 0; i < _SIZE( entities.size ); i++ )
 		{
 			ent = entities[ i ];
-			ent_exists_for_entnum = isdefined( getentbynum( 0, entnum ) );
+			ent_exists_for_entnum = isdefined( getentbynum( _GET_PRIMARY_CLIENT_NUM(), entnum ) );
 
 			if ( ent_exists_for_entnum )
 			{
@@ -788,12 +788,12 @@ cmd_add( cmd_name, cmdfunc, cmd_usage, description )
 		level.tcs_cmds = [];
 	}
 
-	rank_group = level.tcs_cmd_register_rank_group;
-	if ( !isdefined( rank_group ) || !isdefined( level.tcs_perms.ranks[ rank_group ] ) )
-	{
-		level com_printf( "con|g_log", "cmderror", "Failed to register cmd " + cmd_name + ", attempted to use an unregistered rank_group!" );
-		return;
-	}
+	rank_group = "client";
+	// if ( !isdefined( rank_group ) || !isdefined( level.tcs_perms.ranks[ rank_group ] ) )
+	// {
+	// 	level com_printf( "con|g_log", "cmderror", "Failed to register cmd " + cmd_name + ", attempted to use an unregistered rank_group!" );
+	// 	return;
+	// }
 
 	module_group = level.tcs_cmd_register_module_group;
 	if ( !isdefined( module_group ) )
@@ -1292,7 +1292,7 @@ private delete_after_time( entity )
 
 private spawn_test_ent()
 {
-	test_ent = spawn( 0, ( 0, 0, -5000 ), "script_model" );
+	test_ent = spawn( ( 0, 0, -5000 ), "script_model" );
 	level thread delete_after_time( test_ent );
 
 	return test_ent;
@@ -1374,4 +1374,37 @@ callback( event )
 parse_cmd_message( message )
 {
 	return parse_cmd_message_internal( message );
+}
+
+_GET_PRIMARY_CLIENT()
+{
+	return level.primaryclient;
+}
+
+_SET_PRIMARY_CLIENT( client )
+{
+	level.primaryclient = client;
+	level.primaryclient.localclientnum = client;
+}
+
+_GET_PRIMARY_CLIENT_NUM()
+{
+	return level.primaryclient.localclientnum;
+}
+
+cointoss()
+{
+	return randomint( 100 ) >= 50;
+}
+
+// TODO: reimplement me!
+toupper( str )
+{
+	return "";
+}
+
+_WEAPON_EXISTS( name )
+{
+	// csc alternative
+	return weaponclass( name ) == "none";
 }

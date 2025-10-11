@@ -77,25 +77,14 @@ debug_line( from, to, color, time, depthtest )
 	line( from, to, color, 1, depthtest, time );
 }
 
-cast_entity_raycast_from_player_eye()
+getmousepos()
 {
-	direction = self getplayerangles();
-	direction_vec = anglestoforward( direction );
-	eye = self geteye();
-	scale = 8000;
-	direction_vec = ( direction_vec[0] * scale, direction_vec[1] * scale, direction_vec[2] * scale );
-	trace = bullettrace( eye, eye + direction_vec, false, undefined );
+	return ( 0, 0, 0 );
+}
 
-	if ( !isdefined( trace[ "entity" ] ) )
-	{
-		trace = physicstrace( eye, eye + direction_vec, vectorscale( ( -1, -1, 0 ), 15.0 ), vectorscale( ( 1, 1, 0 ), 15.0 ), self, level._editor_ent_mask );
-		if ( !isdefined( trace[ "entity" ] ) )
-		{
-			return trace;
-		}
-	}
-
-	return trace;
+project2dto3d( x, y, znear )
+{
+	return ( 0, 0, 0 );
 }
 
 raycast_from_mouse_pos( scale )
@@ -954,28 +943,6 @@ write_ent_delta_to_file( entity )
 {
 	ent_history_obj = spawnstruct();
 	ent_history_obj.hash = hash_ent( self );
-}
-
-new_debug_hud( x, y_offset, multi_hud = false )
-{
-	if ( !multi_hud )
-	{
-		level.debug_hud_y_offset += y_offset;
-	}
-	hud = newClientHudElem( self );
-	hud.alignx = "left";
-	hud.aligny = "middle";
-	hud.horzalign = "user_left";
-	hud.vertalign = "user_bottom";
-	hud.x += x;
-	hud.y += level.debug_hud_y_offset;
-	hud.fontscale = 1.4;
-	hud.alpha = 1;
-	hud.color = ( 1, 1, 1 );
-	hud.hidewheninmenu = 1;
-	hud.foreground = 1;
-
-	return hud;
 }
 
 /*

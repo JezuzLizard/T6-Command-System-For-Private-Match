@@ -7,7 +7,8 @@
 
 main()
 {
-	level thread init_cl_consts();
-	level thread init_zm_debug_helpers();
-	level thread add_cl_zm_debug_cmds();
+	waittillframeend;
+	init_cl_consts();
+	init_zm_debug_helpers();
+	add_cl_zm_debug_cmds();
 }

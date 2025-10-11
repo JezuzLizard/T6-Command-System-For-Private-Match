@@ -9,10 +9,6 @@
 
 private main()
 {
-	level thread com_init();
-	level thread init_consts();
-	level thread start_cmd_buffer();
-
 	level._developer = getdvarint( "developer" );
 	level.tcs_glob = spawnstruct();
 	level.tcs_glob.icmd_total = 0;
@@ -50,12 +46,16 @@ private main()
 	// Entity{Everything}
 	// Player{Bot}, Sentient{Actor, Bot}
 	
+	com_init();
+	init_cl_consts();
+	start_cmd_buffer();
+
 	addcallback( "on_player_connect", ::tcs_on_connect );
 	registersystem( "cl_tcs", ::cl_tcs_handler );
 
 	waitforclient( 0 );
 
-	level.primaryclient = getlocalplayers()[ 0 ];
+	_SET_PRIMARY_CLIENT( getlocalplayers()[ 0 ] );
 }
 
 drive_disconnected_notifies()

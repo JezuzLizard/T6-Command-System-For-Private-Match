@@ -16,6 +16,8 @@ add_zm_debug_cmds()
 	level._debug_zombie_spawn_loc_draw_aitypes = "";
 	level._debug_zombie_spawn_loc_draw_text = false;
 
+	cmd_block_set_module_group( "debug_zm" );
+	cmd_block_set_rank_group( "cheat" );
 	setdoground_cmd = cmd_add( "setdoground", ::cmd_setdoground_f, "setdoground [round]" );
 	setdoground_cmd arg_add_optional( 1, "next_dog_round", "int", "Number to set the next dog round to" );
 
@@ -34,11 +36,11 @@ add_zm_debug_cmds()
 	toggleflag_cmd = cmd_add( "toggleflag", ::cmd_toggleflag_f, "toggleflag <flagname> " );
 	toggleflag_cmd arg_add_required( 1, "flagname", "string", "The name of the flag() to toggle" );
 
-	selectdebugzombie_cmd = cmd_add( "selectdebugzombie", ::cmd_selectdebugzombie_f, "selectdebugzombie [actor]" );
-	selectdebugzombie_cmd arg_add_optional( 1, "zombie", "actor", "Manual actor selector" );
+	selectdebugzombie_cmd = cmd_add( "selectdebugzombie", ::cmd_selectdebugzombie_f, "selectdebugzombie {actor}" );
+	selectdebugzombie_cmd target_add_optional( 1, "zombie", "actor", "Manual actor selector" );
 
 	debugzombie_cmd = cmd_add( "debugzombie", ::cmd_debugzombie_f, "debugzombie [options]" );
-	debugzombie_cmd = arg_add_required( 1, "info_types", "string", "Types of info to print/render" );
+	debugzombie_cmd arg_add_required( 1, "info_types", "string", "Types of info to print/render" );
 
 	drawzombietotal_cmd = cmd_add( "drawzombietotal", ::cmd_drawzombietotal_f, "drawzombietotal" );
 	drawzombiecurrent_cmd = cmd_add( "drawzombiecurrent", ::cmd_drawzombiecurrent_f, "drawzombiecurrent" );
@@ -189,4 +191,24 @@ private cmd_debugzombie_f( param )
 				break;
 		}
 	}
+}
+
+private cmd_drawzombietotal_f( param )
+{
+
+}
+
+private cmd_drawzombiecurrent_f( param )
+{
+
+}
+
+private cmd_drawsph_f( param )
+{
+
+}
+
+private cmd_setzombieanimrate_f( param )
+{
+
 }

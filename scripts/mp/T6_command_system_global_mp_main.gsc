@@ -5,7 +5,9 @@
 
 main()
 {
-	level thread init_mp_consts();
-	level thread init_core_helpers();
-	level thread add_core_cmds();
+	init_mp_consts();
+	init_core_helpers();
+
+	waittillframeend;
+	add_core_cmds();
 }

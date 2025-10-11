@@ -482,7 +482,7 @@ end_of_round_behavior()
 	else if ( 1 != level.players.size )
 		level thread spectators_respawn();
 
-	array_thread( level.players, round_end );
+	array_thread( level.players, ::round_end );
 	timer = level.zombie_vars["zombie_spawn_delay"];
 
 	setroundsplayed( level.round_number );
