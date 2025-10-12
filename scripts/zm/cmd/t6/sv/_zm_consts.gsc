@@ -1,5 +1,5 @@
 #include common_scripts\utility;
-#include maps\mp\_utility;
+
 
 #include scripts\cmd\game_shared\sv\core\_utility;
 
@@ -16,7 +16,7 @@ init_sv_zm_consts()
 	level thread register_spawnable_perk_machines();
 }
 
-private register_spawnable_perk_machines()
+register_spawnable_perk_machines()
 {
 	flag_wait( "start_zombie_round_logic" );
 	waittillframeend;
@@ -65,7 +65,7 @@ arg_obj_perk_cast( arg )
 		return set_cast_error( find, "There are no perks on the map" );
 	}
 
-	if ( !isinarray( perks, arg ) && arg != "all" )
+	if ( !_ISINARRAY( perks, arg ) && arg != "all" )
 	{
 		msg = get_possible_array_values_msg( arg, perks, "perk", false );
 		msg += "PERK: 'all'\n";
@@ -87,7 +87,15 @@ arg_obj_perk_generate()
 		return set_cast_success( find, "", "No perks" );
 	}
 
-	perk = randomInt( 20 ) < 1 ? "all" : random_val( perks );
+	perk = undefined;
+	if ( randomInt( 20 ) < 1 )
+	{
+		perk = "all";
+	}
+	else
+	{
+		perk = random_val( perks );
+	}
 	find.str_value = perk;
 	return set_cast_success( find, perk );
 }

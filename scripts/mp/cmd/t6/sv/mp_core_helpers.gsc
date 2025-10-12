@@ -1,15 +1,15 @@
 #include common_scripts\utility;
-#include maps\mp\_utility;
+
 
 #include scripts\cmd\game_shared\sv\core\_utility;
 
-#include maps\mp\killstreaks\_dogs;
+#include maps\killstreaks\_dogs;
 
 init_core_helpers()
 {
 	build_weapons_array();
 	level thread on_unittest();
-	addcallback( "on_player_connect", ::wait_spawn_bot_think );
+	_ADDCALLBACK( "on_player_connect", ::wait_spawn_bot_think );
 }
 
 on_unittest()
@@ -91,7 +91,7 @@ dog_set_model()
 dog_manager_spawn_dog( target, team, invisible )
 {
 	dog_spawner = getent( "dog_spawner", "targetname" );
-	dog = dog_spawner spawnactor();
+	dog = dog_spawner _SPAWNACTOR();
 	spawn_node = get_spawn_node( level, level );
 	dog forceteleport( spawn_node.origin, spawn_node.angles );
 	dog init_dog();
@@ -110,8 +110,8 @@ dog_manager_spawn_dog( target, team, invisible )
 
 build_weapons_array()
 {
-	const INTERNAL_NAME_COLUMN = 4;
-	const END_OF_WEAPONS_ROWS = 85;
+	INTERNAL_NAME_COLUMN = 4;
+	END_OF_WEAPONS_ROWS = 85;
 	level.tcs_weapons = [];
 	i = 0;
 	while ( i < END_OF_WEAPONS_ROWS )

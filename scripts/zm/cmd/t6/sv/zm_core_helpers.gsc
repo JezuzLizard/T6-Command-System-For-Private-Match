@@ -1,21 +1,6 @@
 #include common_scripts\utility;
-#include maps\mp\_utility;
-#include maps\mp\zombies\_zm_utility;
-#include maps\mp\zombies\_zm;
-#include maps\mp\zombies\_zm_audio;
-#include maps\mp\zombies\_zm_equipment;
-#include maps\mp\zombies\_zm_melee_weapon;
-#include maps\mp\zombies\_zm_perks;
-#include maps\mp\zombies\_zm_pers_upgrades_system;
-#include maps\mp\zombies\_zm_powerups;
-#include maps\mp\zombies\_zm_score;
-#include maps\mp\zombies\_zm_stats;
-#include maps\mp\zombies\_zm_weap_claymore;
-#include maps\mp\zombies\_zm_weap_cymbal_monkey;
-#include maps\mp\zombies\_zm_weapons;
 
 #include scripts\cmd\game_shared\sv\core\_utility;
-
 #include scripts\zm\cmd\t6\sv\_zm_utility;
 
 init_zm_core_helpers()
@@ -33,8 +18,6 @@ init_zm_core_helpers()
 	level.tcs_additional_help_prints_func = ::zm_help_prints;
 
 	level thread on_unittest();
-
-	registerclientsys( "zm_cmds" );
 }
 
 zm_help_prints()
@@ -60,7 +43,7 @@ never_end_game()
 
 unittest_check_player_is_valid_for_powerup( player )
 {
-	return player istestclient();
+	return player _ISTESTCLIENT();
 }
 
 no_player_damage_during_unittest( einflictor, eattacker, idamage, idflags, smeansofdeath, sweapon, vpoint, vdir, shitloc, psoffsettime )
@@ -160,11 +143,11 @@ give_powerup_zm( powerup_name )
 		return false;
 	}
 	powerup_loc = self.origin + anglestoforward( self.angles ) * 64 + anglestoright( self.angles ) * 64;
-	powerup = specific_powerup_drop( powerup_name, powerup_loc );
-	if ( powerup_name == "teller_withdrawl" )
-	{
-		powerup.value = 1000;
-	}
+	// powerup = specific_powerup_drop( powerup_name, powerup_loc );
+	// if ( powerup_name == "teller_withdrawl" )
+	// {
+	// 	powerup.value = 1000;
+	// }
 	return true;
 }
 
@@ -172,7 +155,7 @@ give_perk_zm( perkname, index )
 {
 	if ( !self hasperk( perkname ) )
 	{
-		self give_perk( perkname, true );
+		// self give_perk( perkname, true );
 	}
 }
 
@@ -186,8 +169,9 @@ give_perk_zm_wrapper_executor( param, perk_name )
 	else 
 	{
 		valid_perk_list = perk_list_zm();
-		foreach ( perk in valid_perk_list )
+		for ( i = 0; i < _SIZE( valid_perk_list.size ); i++ )
 		{
+			perk = valid_perk_list[ i ];
 			self give_perk_zm( perk );
 		}
 
@@ -206,8 +190,9 @@ give_perk_zm_wrapper_target( param, perk_name, player )
 	else 
 	{
 		valid_perk_list = perk_list_zm();
-		foreach ( perk in valid_perk_list )
+		for ( i = 0; i < _SIZE( valid_perk_list.size ); i++ )
 		{
+			perk = valid_perk_list[ i ];
 			player give_perk_zm( perk );
 		}
 
@@ -226,8 +211,9 @@ take_perk_zm_wrapper_executor( param, perk_name )
 	else 
 	{
 		valid_perk_list = perk_list_zm();
-		foreach ( perk in valid_perk_list )
+		for ( i = 0; i < _SIZE( valid_perk_list.size ); i++ )
 		{
+			perk = valid_perk_list[ i ];
 			self notify( perk + "_stop" );
 		}
 
@@ -246,8 +232,9 @@ take_perk_zm_wrapper_target( param, perk_name, player )
 	else 
 	{
 		valid_perk_list = perk_list_zm();
-		foreach ( perk in valid_perk_list )
+		for ( i = 0; i < _SIZE( valid_perk_list.size ); i++ )
 		{
+			perk = valid_perk_list[ i ];
 			player notify( perk + "_stop" );
 		}
 
@@ -261,7 +248,7 @@ disable_zombies()
 	level endon( "game_unpaused" );
 
 	flag_clear( "spawn_zombies" );
-	disablezombies( 1 );
+	_DISABLEZOMBIES( 1 );
 
 	for ( ;; )
 	{
@@ -281,7 +268,7 @@ disable_zombies()
 enable_zombies()
 {
 	flag_set( "spawn_zombies" );
-	enablezombies( 1 );
+	_ENABLEZOMBIES( 1 );
 
 	actors = [[ level._entity_type_funcs[ "actor" ].getter ]]();
 
@@ -297,8 +284,9 @@ enable_zombies()
 game_pause( duration )
 {
 	level thread disable_zombies();
-	foreach ( player in level.players )
+	for ( i = 0; i < _SIZE( level.players.size ); i++ )
 	{
+		player = level.players[ i ];
 		player enableInvulnerability();
 		player.tcs_is_invulnerable = true;
 	}
@@ -327,8 +315,9 @@ game_unpause()
 	level notify( "game_unpaused" );
 
 	level thread enable_zombies();
-	foreach ( player in level.players )
+	for ( i = 0; i < _SIZE( level.players.size ); i++ )
 	{
+		player = level.players[ i ];
 		player disableInvulnerability();
 		player.tcs_is_invulnerable = false;
 	}
@@ -336,13 +325,15 @@ game_unpause()
 
 give_perma_perk( perk_name )
 {
-	self increment_client_stat( perk_name, 0 );
+	// self increment_client_stat( perk_name, 0 );
 }
 
 give_all_perma_perks()
 {
-	foreach ( key in level.pers_upgrades_keys )
+	keys = getarraykeys( level.pers_upgrades_keys );
+	for ( i = 0; i < _SIZE( level.pers_upgrades_keys.size ); i++ )
 	{
+		key = keys[ i ];
 		self give_perma_perk( level.pers_upgrades[ key ].stat_names[ 0 ] );
 	}
 }
@@ -466,80 +457,81 @@ list_zombie_stats_throttled()
 
 end_of_round_behavior()
 {
-	level.first_round = 0;
-	level notify( "end_of_round" );
-	level thread change_zombie_music( "round_end" );
-	uploadstats();
+	// level.first_round = 0;
+	// level notify( "end_of_round" );
+	// level thread change_zombie_music( "round_end" );
+	// uploadstats();
 
-	if ( isdefined( level.round_end_custom_logic ) )
-		[[ level.round_end_custom_logic ]]();
+	// if ( isdefined( level.round_end_custom_logic ) )
+	// 	[[ level.round_end_custom_logic ]]();
 
-	if ( isdefined( level.no_end_game_check ) && level.no_end_game_check )
-	{
-		level thread last_stand_revive();
-		level thread spectators_respawn();
-	}
-	else if ( 1 != level.players.size )
-		level thread spectators_respawn();
+	// if ( isdefined( level.no_end_game_check ) && level.no_end_game_check )
+	// {
+	// 	level thread last_stand_revive();
+	// 	level thread spectators_respawn();
+	// }
+	// else if ( 1 != level.players.size )
+	// 	level thread spectators_respawn();
 
-	array_thread( level.players, ::round_end );
-	timer = level.zombie_vars["zombie_spawn_delay"];
+	// array_thread( level.players, ::round_end );
+	// timer = level.zombie_vars["zombie_spawn_delay"];
 
-	setroundsplayed( level.round_number );
-	matchutctime = getutc();
+	// setroundsplayed( level.round_number );
+	// matchutctime = getutc();
 
-	foreach ( player in level.players )
-	{
-		if ( level.curr_gametype_affects_rank && level.round_number > 3 + level.start_round )
-			player add_client_stat( "weighted_rounds_played", level.round_number );
+	// for ( i = 0; i < _SIZE( level.players.size ); i++ )
+	// {
+	// 	player = level.players;
+	// 	if ( level.curr_gametype_affects_rank && level.round_number > 3 + level.start_round )
+	// 		player add_client_stat( "weighted_rounds_played", level.round_number );
 
-		player set_global_stat( "rounds", level.round_number );
-		player update_playing_utc_time( matchutctime );
-	}
+	// 	player set_global_stat( "rounds", level.round_number );
+	// 	player update_playing_utc_time( matchutctime );
+	// }
 
-	check_quickrevive_for_hotjoin();
-	level round_over();
-	level notify( "between_round_over" );
-	restart = 0;
+	// check_quickrevive_for_hotjoin();
+	// level round_over();
+	// level notify( "between_round_over" );
+	// restart = 0;
 }
 
 change_round( target_round )
 {
-	level notify( "end_round_think" );
-	level.zombie_vars["spectators_respawn"] = 1;
-	level.zombie_total = 0;
-	if ( level.gamedifficulty == 0 )
-		level.zombie_move_speed = level.round_number * level.zombie_vars["zombie_move_speed_multiplier_easy"];
-	else
-		level.zombie_move_speed = level.round_number * level.zombie_vars["zombie_move_speed_multiplier"];
-	level.zombie_vars["zombie_spawn_delay"] = 2;
-	for ( i = 1; i <= _SIZE( level.round_number ); i++ )
-	{
-		timer = level.zombie_vars["zombie_spawn_delay"];
+	// level notify( "end_round_think" );
+	// level.zombie_vars["spectators_respawn"] = 1;
+	// level.zombie_total = 0;
+	// if ( level.gamedifficulty == 0 )
+	// 	level.zombie_move_speed = level.round_number * level.zombie_vars["zombie_move_speed_multiplier_easy"];
+	// else
+	// 	level.zombie_move_speed = level.round_number * level.zombie_vars["zombie_move_speed_multiplier"];
+	// level.zombie_vars["zombie_spawn_delay"] = 2;
+	// for ( i = 1; i <= _SIZE( level.round_number ); i++ )
+	// {
+	// 	timer = level.zombie_vars["zombie_spawn_delay"];
 
-		if ( timer > 0.08 )
-		{
-			level.zombie_vars["zombie_spawn_delay"] = timer * 0.95;
-			continue;
-		}
+	// 	if ( timer > 0.08 )
+	// 	{
+	// 		level.zombie_vars["zombie_spawn_delay"] = timer * 0.95;
+	// 		continue;
+	// 	}
 
-		if ( timer < 0.08 )
-		{
-			level.zombie_vars["zombie_spawn_delay"] = 0.08;
-			break;
-		}
-	}
-	ai_calculate_health( target_round );
-	zombies = get_round_enemy_array();
+	// 	if ( timer < 0.08 )
+	// 	{
+	// 		level.zombie_vars["zombie_spawn_delay"] = 0.08;
+	// 		break;
+	// 	}
+	// }
+	// ai_calculate_health( target_round );
+	// zombies = _GET_ROUND_ENEMY_ARRAY();
 
-	if ( isdefined( zombies ) )
-	{
-		for ( i = 0; i < _SIZE( zombies.size ); i++ )
-			zombies[i] dodamage( zombies[i].health + 666, zombies[i].origin );
-	}
+	// if ( isdefined( zombies ) )
+	// {
+	// 	for ( i = 0; i < _SIZE( zombies.size ); i++ )
+	// 		zombies[i] dodamage( zombies[i].health + 666, zombies[i].origin );
+	// }
 
-	level end_of_round_behavior();
-	level thread round_think( 1 );
+	// level end_of_round_behavior();
+	// level thread round_think( 1 );
 }
 
 register_modifiable_zombie_stat( stat_name, value_type, reset_value, recalculate_func )
@@ -626,7 +618,7 @@ zombie_recalculate_total( stat_name, new_value )
 		max += int( ( player_num - 1 ) * level.zombie_vars["zombie_ai_per_player"] * multiplier );
 
 	if ( !isdefined( level.max_zombie_func ) )
-		level.max_zombie_func = ::default_max_zombie_func;
+		level.max_zombie_func = ::_DEFAULT_MAX_ZOMBIE_FUNC;
 
 	if ( !( isdefined( level.kill_counter_hud ) && level.zombie_total > 0 ) )
 	{
@@ -642,155 +634,155 @@ weapon_check_success( weapon )
 
 weapon_give_custom( weapon, is_upgrade, should_switch_weapon )
 {
-	primaryweapons = self getweaponslistprimaries();
-	current_weapon = self getcurrentweapon();
-	current_weapon = self switch_from_alt_weapon( current_weapon );
-	if ( !isdefined( is_upgrade ) )
-		is_upgrade = 0;
+	// primaryweapons = self getweaponslistprimaries();
+	// current_weapon = self getcurrentweapon();
+	// current_weapon = self switch_from_alt_weapon( current_weapon );
+	// if ( !isdefined( is_upgrade ) )
+	// 	is_upgrade = 0;
 
-	weapon_limit = get_player_weapon_limit( self );
+	// weapon_limit = get_player_weapon_limit( self );
 
-	if ( is_equipment( weapon ) )
-		self equipment_give( weapon );
+	// if ( is_equipment( weapon ) )
+	// 	self equipment_give( weapon );
 
-	if ( weapon == "riotshield_zm" )
-	{
-		if ( isdefined( self.player_shield_reset_health ) )
-			self [[ self.player_shield_reset_health ]]();
-	}
+	// if ( weapon == "riotshield_zm" )
+	// {
+	// 	if ( isdefined( self.player_shield_reset_health ) )
+	// 		self [[ self.player_shield_reset_health ]]();
+	// }
 
-	if ( self hasweapon( weapon ) )
-	{
-		if ( issubstr( weapon, "knife_ballistic_" ) )
-			self notify( "zmb_lost_knife" );
+	// if ( self hasweapon( weapon ) )
+	// {
+	// 	if ( issubstr( weapon, "knife_ballistic_" ) )
+	// 		self notify( "zmb_lost_knife" );
 
-		self givestartammo( weapon );
+	// 	self givestartammo( weapon );
 
-		if ( !is_offhand_weapon( weapon ) )
-			self switchtoweapon( weapon );
+	// 	if ( !is_offhand_weapon( weapon ) )
+	// 		self switchtoweapon( weapon );
 
-		return self weapon_check_success( weapon );
-	}
+	// 	return self weapon_check_success( weapon );
+	// }
 
-	if ( is_melee_weapon( weapon ) )
-		current_weapon = change_melee_weapon( weapon, current_weapon );
-	else if ( is_lethal_grenade( weapon ) )
-	{
-		old_lethal = self get_player_lethal_grenade();
+	// if ( is_melee_weapon( weapon ) )
+	// 	current_weapon = change_melee_weapon( weapon, current_weapon );
+	// else if ( is_lethal_grenade( weapon ) )
+	// {
+	// 	old_lethal = self get_player_lethal_grenade();
 
-		if ( isdefined( old_lethal ) && old_lethal != "" )
-		{
-			self takeweapon( old_lethal );
-			unacquire_weapon_toggle( old_lethal );
-		}
+	// 	if ( isdefined( old_lethal ) && old_lethal != "" )
+	// 	{
+	// 		self takeweapon( old_lethal );
+	// 		unacquire_weapon_toggle( old_lethal );
+	// 	}
 
-		self set_player_lethal_grenade( weapon );
-	}
-	else if ( is_tactical_grenade( weapon ) )
-	{
-		old_tactical = self get_player_tactical_grenade();
+	// 	self set_player_lethal_grenade( weapon );
+	// }
+	// else if ( is_tactical_grenade( weapon ) )
+	// {
+	// 	old_tactical = self get_player_tactical_grenade();
 
-		if ( isdefined( old_tactical ) && old_tactical != "" )
-		{
-			self takeweapon( old_tactical );
-			unacquire_weapon_toggle( old_tactical );
-		}
+	// 	if ( isdefined( old_tactical ) && old_tactical != "" )
+	// 	{
+	// 		self takeweapon( old_tactical );
+	// 		unacquire_weapon_toggle( old_tactical );
+	// 	}
 
-		self set_player_tactical_grenade( weapon );
-	}
-	else if ( is_placeable_mine( weapon ) )
-	{
-		old_mine = self get_player_placeable_mine();
+	// 	self set_player_tactical_grenade( weapon );
+	// }
+	// else if ( is_placeable_mine( weapon ) )
+	// {
+	// 	old_mine = self get_player_placeable_mine();
 
-		if ( isdefined( old_mine ) )
-		{
-			self takeweapon( old_mine );
-			unacquire_weapon_toggle( old_mine );
-		}
+	// 	if ( isdefined( old_mine ) )
+	// 	{
+	// 		self takeweapon( old_mine );
+	// 		unacquire_weapon_toggle( old_mine );
+	// 	}
 
-		self set_player_placeable_mine( weapon );
-	}
+	// 	self set_player_placeable_mine( weapon );
+	// }
 
-	if ( !is_offhand_weapon( weapon ) )
-		self take_fallback_weapon();
+	// if ( !is_offhand_weapon( weapon ) )
+	// 	self take_fallback_weapon();
 
-	if ( primaryweapons.size >= weapon_limit )
-	{
-		if ( is_placeable_mine( current_weapon ) || is_equipment( current_weapon ) )
-			current_weapon = undefined;
+	// if ( primaryweapons.size >= weapon_limit )
+	// {
+	// 	if ( is_placeable_mine( current_weapon ) || is_equipment( current_weapon ) )
+	// 		current_weapon = undefined;
 
-		if ( isdefined( current_weapon ) )
-		{
-			if ( !is_offhand_weapon( weapon ) )
-			{
-				if ( current_weapon == "tesla_gun_zm" )
-					level.player_drops_tesla_gun = 1;
+	// 	if ( isdefined( current_weapon ) )
+	// 	{
+	// 		if ( !is_offhand_weapon( weapon ) )
+	// 		{
+	// 			if ( current_weapon == "tesla_gun_zm" )
+	// 				level.player_drops_tesla_gun = 1;
 
-				if ( issubstr( current_weapon, "knife_ballistic_" ) )
-					self notify( "zmb_lost_knife" );
+	// 			if ( issubstr( current_weapon, "knife_ballistic_" ) )
+	// 				self notify( "zmb_lost_knife" );
 
-				self takeweapon( current_weapon );
-				unacquire_weapon_toggle( current_weapon );
-			}
-		}
-	}
+	// 			self takeweapon( current_weapon );
+	// 			unacquire_weapon_toggle( current_weapon );
+	// 		}
+	// 	}
+	// }
 
-	if ( isdefined( level.zombiemode_offhand_weapon_give_override ) )
-	{
-		if ( self [[ level.zombiemode_offhand_weapon_give_override ]]( weapon ) )
-			return self weapon_check_success( weapon );
-	}
+	// if ( isdefined( level.zombiemode_offhand_weapon_give_override ) )
+	// {
+	// 	if ( self [[ level.zombiemode_offhand_weapon_give_override ]]( weapon ) )
+	// 		return self weapon_check_success( weapon );
+	// }
 
-	if ( weapon == "cymbal_monkey_zm" )
-	{
-		self player_give_cymbal_monkey();
-		return self weapon_check_success( weapon );
-	}
-	else if ( issubstr( weapon, "knife_ballistic_" ) )
-		weapon = self give_ballistic_knife( weapon, issubstr( weapon, "upgraded" ) );
-	else if ( weapon == "claymore_zm" )
-	{
-		self thread claymore_setup();
-		return self weapon_check_success( weapon );
-	}
+	// if ( weapon == "cymbal_monkey_zm" )
+	// {
+	// 	self player_give_cymbal_monkey();
+	// 	return self weapon_check_success( weapon );
+	// }
+	// else if ( issubstr( weapon, "knife_ballistic_" ) )
+	// 	weapon = self give_ballistic_knife( weapon, issubstr( weapon, "upgraded" ) );
+	// else if ( weapon == "claymore_zm" )
+	// {
+	// 	self thread claymore_setup();
+	// 	return self weapon_check_success( weapon );
+	// }
 
-	if ( isdefined( level.zombie_weapons_callbacks ) && isdefined( level.zombie_weapons_callbacks[weapon] ) )
-	{
-		self thread [[ level.zombie_weapons_callbacks[weapon] ]]();
-		return self weapon_check_success( weapon );
-	}
-	if ( weapon == "ray_gun_zm" )
-		playsoundatposition( "mus_raygun_stinger", ( 0, 0, 0 ) );
-	if ( !is_weapon_upgraded( weapon ) )
-		self giveweapon( weapon );
-	else
-		self giveweapon( weapon, 0, self get_pack_a_punch_weapon_options( weapon ) );
-	if ( self istestclient() )
-	{
-		self setspawnweapon( weapon );
-	}
-	acquire_weapon_toggle( weapon, self );
-	self givestartammo( weapon );
+	// if ( isdefined( level.zombie_weapons_callbacks ) && isdefined( level.zombie_weapons_callbacks[weapon] ) )
+	// {
+	// 	self thread [[ level.zombie_weapons_callbacks[weapon] ]]();
+	// 	return self weapon_check_success( weapon );
+	// }
+	// if ( weapon == "ray_gun_zm" )
+	// 	playsoundatposition( "mus_raygun_stinger", ( 0, 0, 0 ) );
+	// if ( !is_weapon_upgraded( weapon ) )
+	// 	self giveweapon( weapon );
+	// else
+	// 	self giveweapon( weapon, 0, self get_pack_a_punch_weapon_options( weapon ) );
+	// if ( self _ISTESTCLIENT() )
+	// {
+	// 	self setspawnweapon( weapon );
+	// }
+	// acquire_weapon_toggle( weapon, self );
+	// self givestartammo( weapon );
 
-	if ( !is_offhand_weapon( weapon ) && should_switch_weapon )
-	{
-		if ( !is_melee_weapon( weapon ) )
-			self switchtoweapon( weapon );
-		else
-			self switchtoweapon( current_weapon );
-	}
+	// if ( !is_offhand_weapon( weapon ) && should_switch_weapon )
+	// {
+	// 	if ( !is_melee_weapon( weapon ) )
+	// 		self switchtoweapon( weapon );
+	// 	else
+	// 		self switchtoweapon( current_weapon );
+	// }
 
-	return self weapon_check_success( weapon );
+	// return self weapon_check_success( weapon );
 }
 
 toggle_magicbulletshield( on_off )
 {
 	if ( on_off )
 	{
-		self magic_bullet_shield();
+		self _MAGIC_BULLET_SHIELD();
 	}
 	else 
 	{
-		self stop_magic_bullet_shield();
+		self _STOP_MAGIC_BULLET_SHIELD();
 	}
 }

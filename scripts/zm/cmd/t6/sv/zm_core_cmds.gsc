@@ -1,16 +1,7 @@
 #include common_scripts\utility;
-#include maps\mp\_utility;
-#include maps\mp\zombies\_zm_utility;
 
 #include scripts\cmd\game_shared\sv\core\_utility;
-
-#include maps\mp\zombies\_zm;
-#include maps\mp\zombies\_zm_perks;
-#include maps\mp\zombies\_zm_score;
-#include maps\mp\zombies\_zm_weapons;
-
 #include scripts\zm\cmd\t6\sv\_zm_utility;
-
 #include scripts\zm\cmd\t6\sv\zm_core_helpers;
 
 add_zm_core_cmds()
@@ -117,7 +108,7 @@ add_zm_core_cmds()
 	showcustomspawns_cmd = cmd_add( "showcustomspawns", ::cmd_showcustomspawns_f, "showcustomspawns" );
 }
 
-private cmd_spectator_f( param )
+cmd_spectator_f( param )
 {
 	targets = param.t[ 0 ];
 
@@ -138,7 +129,7 @@ private cmd_spectator_f( param )
 	param add_executor_cmdinfo( "Made '" + targets.size + "' players into spectators" );
 }
 
-private cmd_togglerespawn_f( param )
+cmd_togglerespawn_f( param )
 {
 	targets = param.t[ 0 ];
 
@@ -166,12 +157,12 @@ private cmd_togglerespawn_f( param )
 	param add_executor_cmdinfo( "Disabled respawning for '" + targets.size + "' players" );
 }
 
-private cmd_killactors_f( param )
+cmd_killactors_f( param )
 {
 	targets = param.t[ 0 ];
 	if ( !array_validate( targets ) )
 	{
-		targets = getaiarray( level.zombie_team );
+		targets = getaiarray( _GET_ZOMBIE_TEAM() );
 	}
 	for ( i = 0; i < _SIZE( targets.size ); i++ )
 	{
@@ -185,7 +176,7 @@ private cmd_killactors_f( param )
 	return param add_executor_cmdinfo( "Killed all zombies" );
 }
 
-private cmd_spawnspectator_f( param )
+cmd_spawnspectator_f( param )
 {
 	targets = _DEFAULT( param.t[ 0 ], level.players );
 
@@ -196,7 +187,7 @@ private cmd_spawnspectator_f( param )
 		if ( player.sessionstate == "spectator" && isDefined( player.spectator_respawn ) )
 		{
 			player [[ level.spawnplayer ]]();
-			thread refresh_player_navcard_hud();
+			//thread refresh_player_navcard_hud();
 
 			if ( isDefined( level.script ) && level.round_number > 6 && player.score < 1500 )
 			{
@@ -218,7 +209,7 @@ private cmd_spawnspectator_f( param )
 }
 
 // TODO: stop the zombies from dying due to g_ai preventing movement
-private cmd_pause_f( param )
+cmd_pause_f( param )
 {
 	duration = _DEFAULT( param.a[ 0 ], -1 );
 	if ( duration > 0 )
@@ -233,14 +224,14 @@ private cmd_pause_f( param )
 	}
 }
 
-private cmd_unpause_f( param )
+cmd_unpause_f( param )
 {
 	game_unpause();
 
 	return param add_executor_cmdinfo( "Game unpaused" );
 }
 
-private cmd_perk_f( param )
+cmd_perk_f( param )
 {
 	targets = param.t[ 0 ];
 
@@ -259,7 +250,7 @@ private cmd_perk_f( param )
 	}
 }
 
-private cmd_takeperk_f( param )
+cmd_takeperk_f( param )
 {
 	targets = param.t[ 0 ];
 
@@ -278,22 +269,22 @@ private cmd_takeperk_f( param )
 	}
 }
 
-private cmd_permaperk_f( param )
+cmd_permaperk_f( param )
 {
-	perma_perk_name = param.a[ 0 ];
-	if ( perma_perk_name != "all" )
-	{
-		self give_perma_perk( perma_perk_name );
-		return param add_executor_cmdinfo( "Gave you " + perma_perk_name );
-	}
-	else
-	{
-		self give_all_perma_perks();
-		return param add_executor_cmdinfo( "Gave you all perma perks" );
-	}
+	// perma_perk_name = param.a[ 0 ];
+	// if ( perma_perk_name != "all" )
+	// {
+	// 	self give_perma_perk( perma_perk_name );
+	// 	return param add_executor_cmdinfo( "Gave you " + perma_perk_name );
+	// }
+	// else
+	// {
+	// 	self give_all_perma_perks();
+	// 	return param add_executor_cmdinfo( "Gave you all perma perks" );
+	// }
 }
 
-private cmd_points_f( param )
+cmd_points_f( param )
 {
 	targets = param.t[ 0 ];
 
@@ -303,19 +294,19 @@ private cmd_points_f( param )
 		for ( i = 0; i < _SIZE( targets.size ); i++ )
 		{
 			player = targets[ i ];
-			player add_to_player_score( points );
+			player _ADD_TO_PLAYER_SCORE( points );
 			param add_executor_cmdinfo( "Gave '" + player.name + "' '" + points + "' points" );
 			param add_player_cmdinfo( player, "Gave you '" + points + "' points" );
 		}
 	}
 	else
 	{
-		self add_to_player_score( points );
+		self _ADD_TO_PLAYER_SCORE( points );
 		param add_executor_cmdinfo( "Gave you '" + points + "' points" );
 	}
 }
 
-private cmd_powerup_f( param )
+cmd_powerup_f( param )
 {
 	targets = param.t[ 0 ];
 
@@ -348,7 +339,7 @@ private cmd_powerup_f( param )
 	}
 }
 
-private cmd_weapon_f( param )
+cmd_weapon_f( param )
 {
 	targets = param.t[ 0 ];
 
@@ -381,52 +372,54 @@ private cmd_weapon_f( param )
 	}
 }
 
-private cmd_toggleperssystem_f( param )
+cmd_toggleperssystem_f( param )
 {
-	targets = param.t[ 0 ];
-	if ( array_validate( targets ) )
-	{
-		for ( i = 0; i < _SIZE( targets.size ); i++ )
-		{
-			player = targets[ i ];
-			on_off = cast_bool_to_str( is_true( self.tcs_disable_pers_system ), "on off" );
-			self.tcs_disable_pers_system = !is_true( self.tcs_disable_pers_system );
+	// targets = param.t[ 0 ];
+	// if ( array_validate( targets ) )
+	// {
+	// 	for ( i = 0; i < _SIZE( targets.size ); i++ )
+	// 	{
+	// 		player = targets[ i ];
+	// 		on_off = cast_bool_to_str( is_true( self.tcs_disable_pers_system ), "on off" );
+	// 		self.tcs_disable_pers_system = !is_true( self.tcs_disable_pers_system );
 
-			param add_executor_cmdinfo( "Toggled '" + player.name + "' perma perk system '" + on_off + "'" );
-			param add_player_cmdinfo( player, "Toggled your perma perk system '" + on_off + "'" );
-		}
-	}
-	else
-	{
-		on_off = cast_bool_to_str( is_true( self.tcs_disable_pers_system ), "on off" );
-		self.tcs_disable_pers_system = !is_true( self.tcs_disable_pers_system );
-		param add_executor_cmdinfo( "Toggled the perma perk system '" + on_off + "'" );
-	}
+	// 		param add_executor_cmdinfo( "Toggled '" + player.name + "' perma perk system '" + on_off + "'" );
+	// 		param add_player_cmdinfo( player, "Toggled your perma perk system '" + on_off + "'" );
+	// 	}
+	// }
+	// else
+	// {
+	// 	on_off = cast_bool_to_str( is_true( self.tcs_disable_pers_system ), "on off" );
+	// 	self.tcs_disable_pers_system = !is_true( self.tcs_disable_pers_system );
+	// 	param add_executor_cmdinfo( "Toggled the perma perk system '" + on_off + "'" );
+	// }
 }
 
-private cmd_toggleoutofplayableareamonitor_f( param )
+cmd_toggleoutofplayableareamonitor_f( param )
 {
-	on_off = cast_bool_to_str( !is_true( level.player_out_of_playable_area_monitor ), "on off" );
-	level.player_out_of_playable_area_monitor = !level.player_out_of_playable_area_monitor;
-	if ( on_off == "on" )
-	{
-		foreach ( player in level.players )
-		{
-			player thread player_out_of_playable_area_monitor();
-		}
-	}
-	else 
-	{
-		foreach ( player in level.players )
-		{
-			player notify( "stop_player_out_of_playable_area_monitor" );
-		}
-	}
+	// on_off = cast_bool_to_str( !is_true( level.player_out_of_playable_area_monitor ), "on off" );
+	// level.player_out_of_playable_area_monitor = !level.player_out_of_playable_area_monitor;
+	// if ( on_off == "on" )
+	// {
+	// 	for ( i = 0; i < _SIZE( level.players.size ); i++ )
+	// 	{
+	// 		player = level.players[ i ];
+	// 		player thread player_out_of_playable_area_monitor();
+	// 	}
+	// }
+	// else 
+	// {
+	// 	for ( i = 0; i < _SIZE( level.players.size ); i++ )
+	// 	{
+	// 		player = level.players[ i ];
+	// 		player notify( "stop_player_out_of_playable_area_monitor" );
+	// 	}
+	// }
 
-	param add_executor_cmdinfo( "Out of playable area monitor " + on_off );
+	// param add_executor_cmdinfo( "Out of playable area monitor " + on_off );
 }
 
-private cmd_openalldoors_f( param )
+cmd_openalldoors_f( param )
 {
 	if ( is_true( level.tcs_doors_all_opened ) )
 	{
@@ -437,7 +430,7 @@ private cmd_openalldoors_f( param )
 	param add_executor_cmdinfo( "All doors are now open" );
 }
 
-private cmd_setround_f( param )
+cmd_setround_f( param )
 {
 	round_number = param.a[ 0 ];
 
@@ -447,7 +440,7 @@ private cmd_setround_f( param )
 	param add_executor_cmdinfo( "Round set to " + round_number );
 }
 
-private cmd_nextround_f( param )
+cmd_nextround_f( param )
 {
 	level.round_number++;
 	change_round( level.round_number );
@@ -455,7 +448,7 @@ private cmd_nextround_f( param )
 	param add_executor_cmdinfo( "Round set to " + level.round_number );
 }
 
-private cmd_prevround_f( param )
+cmd_prevround_f( param )
 {
 	level.round_number--;
 	change_round( level.round_number );
@@ -463,7 +456,7 @@ private cmd_prevround_f( param )
 	param add_executor_cmdinfo( "Round set to " + level.round_number );
 }
 
-private cmd_setglobalzombiestat_f( param )
+cmd_setglobalzombiestat_f( param )
 {
 	stat_name = param.a[ 0 ];
 	stat = level.tcs_modifiable_zombie_stats[ stat_name ];
@@ -499,16 +492,16 @@ private cmd_setglobalzombiestat_f( param )
 	return param add_executor_cmderror( "Expected positive_int or positive_float, got: " + value );
 }
 
-private cmd_listglobalzombiestats_f( param )
+cmd_listglobalzombiestats_f( param )
 {
 	self thread list_zombie_stats_throttled();
 	return param add_executor_cmderror( "" );
 }
 
-private cmd_setallphysparams_f( param )
+cmd_setallphysparams_f( param )
 {
 	phys_params = param.a[ 0 ];
-	zombies = param.t[ 0 ];
+	zombies = _DEFAULT( param.t[ 0 ], _GET_ROUND_ENEMY_ARRAY() );
 
 	if ( phys_params[ 0 ] < 0 )
 	{
@@ -535,89 +528,84 @@ private cmd_setallphysparams_f( param )
 		return param add_executor_cmderror( "Phys params of z cannot be greater than 100" );
 	}
 
-	if ( !array_validate( zombies ) )
+	for ( i = 0; i < _SIZE( zombies.size ); i++ )
 	{
-		zombies = get_round_enemy_array();
-	}
-
-	foreach ( zombie in zombies )
-	{
-		zombie setphysparams( phys_params[ 0 ], phys_params[ 1 ], phys_params[ 2 ] );
+		zombie = zombies;
+		zombie _SETPHYSPARAMS( phys_params[ 0 ], phys_params[ 1 ], phys_params[ 2 ] );
 	}
 
 	param add_executor_cmdinfo( "Set all zombies phys params to " + phys_params );
 }
 
-private cmd_weaponlist_f( param )
+cmd_weaponlist_f( param )
 {
 	self thread list_weapons_throttled();
 }
 
-private cmd_poweruplist_f( param )
+cmd_poweruplist_f( param )
 {
 	self thread list_powerups_throttled();
 }
 
-private cmd_perklist_f( param )
+cmd_perklist_f( param )
 {
 	self thread list_perks_throttled();
 }
 
-private cmd_spawnperkmachine_f( param )
+cmd_spawnperkmachine_f( param )
 {
-	internal_name = param.a[ 0 ];
-	perk_specialty = param.a[ 1 ];
-	if ( !isdefined( level._spawnable_perk_machines[ perk_specialty ] ) )
-	{
-		return param add_executor_cmderror( "Unknown perk specialty: '" + perk_specialty + "'" );
-	}
+	// internal_name = param.a[ 0 ];
+	// perk_specialty = param.a[ 1 ];
+	// if ( !isdefined( level._spawnable_perk_machines[ perk_specialty ] ) )
+	// {
+	// 	return param add_executor_cmderror( "Unknown perk specialty: '" + perk_specialty + "'" );
+	// }
 
-	if ( !isdefined( level._dynamically_spawned_active_perk_machines ) )
-	{
-		level._dynamically_spawned_active_perk_machines = [];
-	}
+	// if ( !isdefined( level._dynamically_spawned_active_perk_machines ) )
+	// {
+	// 	level._dynamically_spawned_active_perk_machines = [];
+	// }
 
-	if ( isdefined( level._dynamically_spawned_active_perk_machines[ internal_name ] ) )
-	{
-		return param add_executor_cmderror( "internal_name: '" + internal_name + "' cannot be used again because it would collide with identifying an existing perk machine"  );
-	}
+	// if ( isdefined( level._dynamically_spawned_active_perk_machines[ internal_name ] ) )
+	// {
+	// 	return param add_executor_cmderror( "internal_name: '" + internal_name + "' cannot be used again because it would collide with identifying an existing perk machine"  );
+	// }
 
-	model = level._spawnable_perk_machines[ perk_specialty ].assets.off_model;
-	origin = _DEFAULT( param.a[ 2 ], isdefined( self.origin ) ? self.origin : ( 0, 0, 0 ) );
-	angles = _DEFAULT( param.a[ 3 ], isdefined( self.angles ) ? self.angles : ( 0, 0, 0 ) );
-	clip_model = undefined;
+	// model = level._spawnable_perk_machines[ perk_specialty ].assets.off_model;
+	// origin = _DEFAULT( param.a[ 2 ], self.origin );
+	// angles = _DEFAULT( param.a[ 3 ], self.angles );
+	// clip_model = undefined;
 
-	perk_trigger = _spawn_perk_machine( internal_name, perk_specialty, model, origin, angles, undefined, clip_model );
-	_power_on_machine( perk_trigger._perk_machine );
-	param add_executor_cmdinfo( "Successfully spawned in '" + perk_specialty + "' perk machine" );
+	// perk_trigger = _spawn_perk_machine( internal_name, perk_specialty, model, origin, angles, undefined, clip_model );
+	// _power_on_machine( perk_trigger._perk_machine );
+	// param add_executor_cmdinfo( "Successfully spawned in '" + perk_specialty + "' perk machine" );
 }
 
-private cmd_spawnwallbuy_f( param )
+cmd_spawnwallbuy_f( param )
 {
-	internal_name = param.a[ 0 ];
-	targetname = param.a[ 1 ];
-	weapon_name = param.a[ 2 ];
-	origin = _DEFAULT( param.a[ 3 ], isdefined( self.origin ) ? self.origin + ( 0, 0, 39 ) : ( 0, 0, 39 ) );
-	angles = _DEFAULT( param.a[ 4 ], isdefined( self.angles ) ? self.angles : ( 0, 0, 0 ) );
+	// internal_name = param.a[ 0 ];
+	// targetname = param.a[ 1 ];
+	// weapon_name = param.a[ 2 ];
+	// origin = _DEFAULT( param.a[ 3 ], ( self.origin + ( 0, 0, 39 ) ) );
+	// angles = _DEFAULT( param.a[ 3 ], self.origin );
+	// if ( !isdefined( level._dynamically_spawned_active_wallbuys ) )
+	// {
+	// 	level._dynamically_spawned_active_wallbuys = [];
+	// }
 
-	if ( !isdefined( level._dynamically_spawned_active_wallbuys ) )
-	{
-		level._dynamically_spawned_active_wallbuys = [];
-	}
+	// if ( isdefined( level._dynamically_spawned_active_wallbuys[ internal_name ] ) )
+	// {
+	// 	return param add_executor_cmderror( "internal_name: '" + internal_name + "' cannot be used again because it would collide with identifying an existing wallbuy"  );
+	// }
 
-	if ( isdefined( level._dynamically_spawned_active_wallbuys[ internal_name ] ) )
-	{
-		return param add_executor_cmderror( "internal_name: '" + internal_name + "' cannot be used again because it would collide with identifying an existing wallbuy"  );
-	}
-
-	wallbuy_struc = spawn_wallbuy_dynamically( internal_name, targetname, weapon_name, origin, angles );
-	if ( wallbuy_struc.invalid )
-	{
-		return param add_executor_cmderror( wallbuy_struc.msg );
-	}
+	// wallbuy_struc = spawn_wallbuy_dynamically( internal_name, targetname, weapon_name, origin, angles );
+	// if ( wallbuy_struc.invalid )
+	// {
+	// 	return param add_executor_cmderror( wallbuy_struc.msg );
+	// }
 }
 
-private cmd_magicbulletshield_f( param )
+cmd_magicbulletshield_f( param )
 {
 	targets = param.t[ 0 ];
 
@@ -653,7 +641,7 @@ show_custom_spawns()
 
 }
 
-private cmd_showcustomspawns_f( param )
+cmd_showcustomspawns_f( param )
 {
 	on_off = cast_bool_to_str( !is_true( level._showing_custom_spawns ), "on off" );
 	if ( on_off == "on" )

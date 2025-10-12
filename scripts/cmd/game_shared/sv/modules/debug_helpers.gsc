@@ -1,5 +1,5 @@
 #include common_scripts\utility;
-#include maps\mp\_utility;
+
 
 #include scripts\cmd\game_shared\sv\core\_utility;
 
@@ -8,7 +8,7 @@
 
 init_debug_helpers()
 {
-	addcallback( "on_player_connect", ::debug_connect );
+	_ADDCALLBACK( "on_player_connect", ::debug_connect );
 }
 
 draw_nodes()
@@ -85,7 +85,7 @@ draw_triggers()
 		{
 			level._debug_draw_trigger_types = "radius|radius_use|box|box_use|damage";
 		}
-		types = strtok( level._debug_draw_trigger_types, "|" );
+		types = _STRTOK( level._debug_draw_trigger_types, "|" );
 
 		for ( i = 0; i < types.size; i++ )
 		{
@@ -154,13 +154,13 @@ draw_triggers()
 	}
 }
 
-private debug_connect()
+debug_connect()
 {
 	self._debug_draw_location_enabled = false;
 	self thread location_hud();
 }
 
-private location_hud()
+location_hud()
 {
 	self endon( "disconnect" );
 
@@ -174,9 +174,9 @@ private location_hud()
 		x += 55;
 	}
 
-	loc_hud[ 0 ].label = &"x:";
-	loc_hud[ 1 ].label = &"y:";
-	loc_hud[ 2 ].label = &"z:";
+	loc_hud[ 0 ].label = _ISTRING( "x:" );
+	loc_hud[ 1 ].label = _ISTRING( "y:" );
+	loc_hud[ 2 ].label = _ISTRING( "z:" );
 
 	flag_wait_until_set_once( "initial_blackscreen_passed" );
 
@@ -199,36 +199,37 @@ private location_hud()
 	}
 }
 
-private draw_node_box( origin, color, vec = ( 20, 20, 40 ) )
+draw_node_box( origin, color, vec )
 {
-	box( origin + ( 0, 0, 20 ), vec * -1, vec, 0, color, 1.0 );
+	vec = _DEFAULT( vec, ( 20, 20, 40 ) );
+	_BOX( origin + ( 0, 0, 20 ), vec * -1, vec, 0, color, 1.0 );
 }
 
-private draw_node( origin, color, type )
+draw_node( origin, color, type )
 {
 	draw_node_box( origin, color );
 }
 
-private get_eye()
+get_eye()
 {
-	if ( isplayer( self ) )
-	{
-		linked_ent = self getlinkedent();
+	// if ( isplayer( self ) )
+	// {
+	// 	linked_ent = self getlinkedent();
 
-		if ( isdefined( linked_ent ) && getdvarint( #"cg_cameraUseTagCamera" ) > 0 )
-		{
-			camera = linked_ent gettagorigin( "tag_camera" );
+	// 	if ( isdefined( linked_ent ) && getdvarint( "cg_cameraUseTagCamera" ) > 0 )
+	// 	{
+	// 		camera = linked_ent gettagorigin( "tag_camera" );
 
-			if ( isdefined( camera ) )
-				return camera;
-		}
-	}
+	// 		if ( isdefined( camera ) )
+	// 			return camera;
+	// 	}
+	// }
 
 	pos = self geteye();
 	return pos;
 }
 
-private draw_node_info( node, type )
+draw_node_info( node, type )
 {
 	if ( !level.players[ 0 ] is_player_looking_at( node.origin, 0.9, false ) )
 	{
@@ -260,7 +261,7 @@ private draw_node_info( node, type )
 	}
 }
 
-private draw_node_data( node, color, type )
+draw_node_data( node, color, type )
 {
 	draw_types_string = level._debug_draw_nodes_types;
 	if ( draw_types_string == "" )
@@ -268,7 +269,7 @@ private draw_node_data( node, color, type )
 		return;
 	}
 
-	draw_types = strTok( draw_types_string, "|" );
+	draw_types = _STRTOK( draw_types_string, "|" );
 	found_type = false;
 	for ( i = 0; i < draw_types.size; i++ )
 	{
@@ -288,17 +289,17 @@ private draw_node_data( node, color, type )
 	draw_node_info( node, type );
 }
 
-private draw_trigger_box( origin, mins, maxs, angles, color  )
+draw_trigger_box( origin, mins, maxs, angles, color  )
 {
-	boxoriented( origin, mins, maxs, angles, color, 1.0 );
+	_BOXORIENTED( origin, mins, maxs, angles, color, 1.0 );
 }
 
-private draw_trigger_radius( origin, radius, height, angles, segments, color )
+draw_trigger_radius( origin, radius, height, angles, segments, color )
 {
-	cylinder( origin, radius, height, angles, segments, color, 1.0 );
+	_CYLINDER( origin, radius, height, angles, segments, color, 1.0 );
 }
 
-private draw_trigger_radius_info( origin, radius, height, angles, type, entnum )
+draw_trigger_radius_info( origin, radius, height, angles, type, entnum )
 {
 	//print3d( origin + ( 0, 0, 97 ), "ZONE:" + zone_name );
 	print3d( origin + ( 0, 0, 85 ), "ENTNUM: [" + entnum + "]" );
@@ -309,7 +310,7 @@ private draw_trigger_radius_info( origin, radius, height, angles, type, entnum )
 	print3d( origin + ( 0, 0, 25 ), "ORIGIN: [" + origin + "]" );
 }
 
-private draw_trigger_box_info( origin, mins, maxs, angles, type, entnum )
+draw_trigger_box_info( origin, mins, maxs, angles, type, entnum )
 {
 	//print3d( origin + ( 0, 0, 97 ), "ZONE:" + zone_name );
 	print3d( origin + ( 0, 0, 85 ), "ENTNUM: [" + entnum + "]" );
@@ -338,7 +339,7 @@ private draw_trigger_box_info( origin, mins, maxs, angles, type, entnum )
 // 	scale = 100.0;
 // 	if ( isdefined( args[ 3 ] ) )
 // 	{
-// 		scale = float( args[ 3 ] );
+// 		scale = _FLOAT( args[ 3 ] );
 // 	}
 
 // 	player thread draw_polygon( args[ 2 ], scale );

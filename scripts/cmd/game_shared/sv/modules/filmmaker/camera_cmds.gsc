@@ -1,5 +1,5 @@
 #include common_scripts\utility;
-#include maps\mp\_utility;
+
 
 #include scripts\cmd\game_shared\sv\core\_utility;
 #include scripts\cmd\game_shared\sv\core\_hud_utility;
@@ -43,7 +43,7 @@ add_camera_cmds()
 	spectateactor_cmd target_add_required( 1, "actor", "actor", "Actor to spectate", 1 );
 }
 
-private cmd_createcamera_f( param )
+cmd_createcamera_f( param )
 {
 	camera_name = param.a[ 0 ];
 	origin = _DEFAULT( param.a[ 1 ], self.origin );
@@ -58,7 +58,7 @@ private cmd_createcamera_f( param )
 	param add_executor_cmdinfo( "Created a camera named: '" + camera_name + "' at position: '" + origin + "' with angles: '" + angles + "' with model: " + model );
 }
 
-private cmd_setcamera_f( param )
+cmd_setcamera_f( param )
 {
 	camera_name = param.a[ 0 ];
 	camera_flags = _DEFAULT( param.a[ 1 ], 1 );
@@ -70,23 +70,23 @@ private cmd_setcamera_f( param )
 		return param add_executor_cmderror( "No camera with name '" + camera_name + "' exists!" );
 	}
 
-	player camerasetposition( camera_ent );
-	player camerasetlookat();
-	player cameraactivate( camera_flags );
+	player _CAMERASETPOSITION( camera_ent );
+	player _CAMERASETLOOKAT();
+	player _CAMERAACTIVATE( camera_flags );
 
 	param add_executor_cmdinfo( "Set camera lookat to a camera named: '" + camera_name + "' at: '" + self.origin + "' with angles: '" + self.angles + "'" );
 }
 
-private cmd_unsetcamera_f( param )
+cmd_unsetcamera_f( param )
 {
 	player = self;
-	player cameraactivate( 0 );
+	player _CAMERAACTIVATE( 0 );
 	camera_name = param.a[ 0 ];
 
 	param add_executor_cmdinfo( "Set camera lookat to a camera named: '" + camera_name + "' at: '" + self.origin + "' with angles: '" + self.angles + "'" );
 }
 
-private cmd_deletecamera_f( param )
+cmd_deletecamera_f( param )
 {
 	camera_name = param.a[ 0 ];
 	camera_flags = param.a[ 1 ];
@@ -103,7 +103,7 @@ private cmd_deletecamera_f( param )
 	param add_executor_cmdinfo( "Deleted camera lookat for a camera named: '" + camera_name + "' at: '" + self.origin + " with angles: '" + self.angles + "'" );
 }
 
-private cmd_linkcameratoent_f( param )
+cmd_linkcameratoent_f( param )
 {
 	camera_name = param.a[ 0 ];
 	entity = param.t[ 0 ][ 0 ];
@@ -120,7 +120,7 @@ private cmd_linkcameratoent_f( param )
 	param add_executor_cmdinfo( "Linked camera '" + camera_name + "' to ent '" + entity.classname + "'!"  );
 }
 
-private cmd_unlinkcamera_f( param )
+cmd_unlinkcamera_f( param )
 {
 	camera_name = param.a[ 0 ];
 	camera_ent = self._cmds_cameras[ camera_name ];
@@ -133,7 +133,7 @@ private cmd_unlinkcamera_f( param )
 	param add_executor_cmdinfo( "Unlinked camera '" + camera_name + "'!"  );
 }
 
-private cmd_spectateactor_f( param )
+cmd_spectateactor_f( param )
 {
 	actor = param.t[ 0 ][ 0 ];
 	tag_name = param.a[ 0 ];

@@ -1,5 +1,5 @@
 #include common_scripts\utility;
-#include maps\mp\_utility;
+
 
 #include scripts\cmd\game_shared\sv\core\_utility;
 
@@ -8,7 +8,7 @@
 
 init_unittest_helpers()
 {
-	addcallback( "on_player_connect", ::unittest_connect );
+	_ADDCALLBACK( "on_player_connect", ::unittest_connect );
 }
 
 do_unit_test( required_bots, duration, rate )
@@ -27,7 +27,7 @@ do_unit_test( required_bots, duration, rate )
 	{
 		if ( is_true( level.players[ i ].pers["isBot"] ) )
 		{
-			kick( level.players[ i ] getEntityNumber() );
+			_KICK( level.players[ i ] getEntityNumber() );
 		}
 	}
 	level.doing_cmd_system_unittest = false;
@@ -57,9 +57,9 @@ test_cmd_for_time( cmd, threadcount, duration )
 	}
 }
 
-private unittest_connect()
+unittest_connect()
 {
-	if ( self istestclient() )
+	if ( self _ISTESTCLIENT() )
 	{
 		if ( is_true( level.doing_cmd_system_testcmd ) )
 		{
@@ -75,12 +75,12 @@ private unittest_connect()
 	}
 }
 
-private set_cmd_rate( rate )
+set_cmd_rate( rate )
 {
 	level.unittest_cmd_rate = rate;
 }
 
-private manage_unittest_bots( required_bots, cmd )
+manage_unittest_bots( required_bots, cmd )
 {
 	bot_count = 0;
 	for ( i = 0; i < _SIZE( level.players.size ); i++ )
@@ -116,7 +116,7 @@ private manage_unittest_bots( required_bots, cmd )
 	}
 }
 
-private activate_random_cmds()
+activate_random_cmds()
 {
 	self endon( "disconnect" );
 	self.health = 2100000000;
@@ -128,7 +128,7 @@ private activate_random_cmds()
 	}
 
 	level._unittest_host.default_executors[ level._unittest_host.default_executors.size ] = self;
-	if ( sessionModeIsZombiesGame() )
+	if ( _SESSIONMODEISZOMBIESGAME() )
 	{	
 		flag_clear( "solo_game" );
 	}
@@ -144,7 +144,7 @@ private activate_random_cmds()
 	}
 }
 
-private create_random_valid_targets( cmd )
+create_random_valid_targets( cmd )
 {
 	target_gen_obj = generic_obj_t_new( "target_gen" );
 	targets = "";
@@ -156,8 +156,11 @@ private create_random_valid_targets( cmd )
 		return target_gen_obj;
 	}
 
-	foreach ( ordinal, val in types )
+	keys = getarraykeys( types );
+	for ( i = 0; i < _SIZE( types.size ); i++ )
 	{
+		ordinal = keys[ i ];
+		val = types[ keys[ i ] ];
 		if ( !val.is_required && cointoss() )
 		{
 			continue;
@@ -216,7 +219,7 @@ private create_random_valid_targets( cmd )
 	return target_gen_obj;
 }
 
-private construct_chat_message_for_unittest()
+construct_chat_message_for_unittest()
 {
 	cmd_find_result = level [[ level.tcs_arg_type_handlers[ "cmdalias" ].rand_gen_func ]]();
 	if ( cmd_find_result.errored )
@@ -263,7 +266,7 @@ private construct_chat_message_for_unittest()
 	level.unittest_total_cmds_used++;
 }
 
-private create_random_valid_args2( cmd_object )
+create_random_valid_args2( cmd_object )
 {
 	arg_gen_obj = generic_obj_t_new( "arg_gen" );
 	arg_gen_obj.value = [];
@@ -274,9 +277,11 @@ private create_random_valid_args2( cmd_object )
 		return arg_gen_obj;
 	}
 
-	i = 0;
-	foreach ( ordinal, type in types )
+	keys = getarraykeys( types );
+	for ( i = 0; i < _SIZE( types.size ); i++ )
 	{
+		ordinal = keys[ i ];
+		type = types[ keys[ i ] ];
 		if ( !type.is_required )
 		{
 			if ( cointoss() )
@@ -294,13 +299,12 @@ private create_random_valid_args2( cmd_object )
 		}
 
 		arg_gen_obj.value[ i ] = arg.str_value;
-		i++;
 	}
 
 	return arg_gen_obj;
 }
 
-private generate_args_from_type( type )
+generate_args_from_type( type )
 {
 	rand_obj = generic_obj_t_new();
 	if ( isDefined( level.tcs_arg_type_handlers[ type ] ) && isdefined( level.tcs_arg_type_handlers[ type ].rand_gen_func ) )
@@ -327,7 +331,7 @@ private generate_args_from_type( type )
 	return rand_obj;
 }
 
-private end_unittest_after_time( time_required_in_seconds )
+end_unittest_after_time( time_required_in_seconds )
 {
 	level endon( "unittest_stop" );
 
@@ -341,7 +345,7 @@ private end_unittest_after_time( time_required_in_seconds )
 	level notify( "unittest_stop" );
 }
 
-private end_testcmd_after_time( time_in_seconds )
+end_testcmd_after_time( time_in_seconds )
 {
 	level endon( "stop_testcmd" );
 	for ( i = 0; i < _SIZE( time_in_seconds ); i++ )
@@ -351,7 +355,7 @@ private end_testcmd_after_time( time_in_seconds )
 	level notify( "stop_testcmd" );
 }
 
-private testcmd_thread_server( cmd )
+testcmd_thread_server( cmd )
 {
 	level endon( "stop_testcmd" );
 	while ( true )
@@ -361,7 +365,7 @@ private testcmd_thread_server( cmd )
 	}
 }
 
-private construct_chat_message_for_testcmd( cmd )
+construct_chat_message_for_testcmd( cmd )
 {
 	cmdargs = self create_random_valid_args2( cmd );
 	if ( cmdargs.size == 0 )
@@ -376,11 +380,11 @@ private construct_chat_message_for_testcmd( cmd )
 	cmd_log = self.name + " executed " + message + " count " + level.unittest_total_cmds_used;
 	level com_printf( "con", "notitle", cmd_log );
 	level com_printf( "g_log", "cmdinfo", cmd_log );
-	level notify( "say", message, self, true );
+	level notify( "say", message, self, true, false );
 	level.unittest_total_cmds_used++;
 }
 
-private activate_specific_cmd()
+activate_specific_cmd()
 {
 	level endon( "stop_testcmd" );
 	self endon( "disconnect" );
@@ -391,14 +395,14 @@ private activate_specific_cmd()
 	}
 }
 
-private test_cmd_kick_bots_at_end()
+test_cmd_kick_bots_at_end()
 {
 	level waittill( "stop_testcmd" );
 	for ( i = 0; i < _SIZE( level.players.size ); i++ )
 	{
 		if ( is_true( level.players[ i ].pers["isBot"] ) )
 		{
-			kick( level.players[ i ] getEntityNumber() );
+			_KICK( level.players[ i ] getEntityNumber() );
 		}
 	}
 }

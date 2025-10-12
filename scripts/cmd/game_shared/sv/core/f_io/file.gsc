@@ -24,7 +24,7 @@ read_file( filename, mode )
 	return "";
 }
 
-private fs_fopen( filename, mode )
+fs_fopen( filename, mode )
 {
 	assert( isdefined( filename ) && filename.size > 0 );
 	assert( mode == "read" || mode == "write" || mode == "append" );
@@ -35,7 +35,7 @@ private fs_fopen( filename, mode )
 	return f;
 }
 
-private fs_read( f, byte_count )
+fs_read( f, byte_count )
 {
 	assert( f > 0 );
 	assert( byte_count > 0 );
@@ -45,7 +45,7 @@ private fs_read( f, byte_count )
 	return buffer;
 }
 
-private fs_fclose( f )
+fs_fclose( f )
 {
 	assert( f > 0 );
 

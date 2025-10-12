@@ -1,5 +1,4 @@
 #include common_scripts\utility;
-#include maps\mp\_utility;
 
 #include scripts\cmd\game_shared\sv\core\_utility;
 #include scripts\cmd\game_shared\sv\core\_hud_api;
@@ -188,7 +187,7 @@ hud_binding_update( hud_binding_obj, hud )
 
 draw_selected_entity_in_world( entity )
 {
-	boxoriented( entity.origin, entity getmins(), entity getmaxs(), entity.angles, ( 1.0, 1.0, 1.0 ), 1.0, true );
+	_BOXORIENTED( entity.origin, entity getmins(), entity getmaxs(), entity.angles, ( 1.0, 1.0, 1.0 ), 1.0, true );
 }
 
 hud_bindings_update_loop()
@@ -257,7 +256,7 @@ vertical_text_list_add_member( parent, new_member )
 {
 	vertical_text_list_update_member( parent, new_member, parent.members.size );
 
-	parent.members = add_to_array( parent.members, new_member, false );
+	parent.members = _ADD_TO_ARRAY( parent.members, new_member, false );
 }
 
 vertical_text_list_update_members( parent )

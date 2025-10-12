@@ -1,5 +1,3 @@
-#include clientscripts\mp\_utility;
-
 #include scripts\cmd\game_shared\cl\core\_cl_utility;
 
 com_init()
@@ -20,32 +18,32 @@ com_init()
 	com_channel_add( "iprintbold", ::com_iprintlnbold );
 }
 
-private com_filter_is_active( filter )
+com_filter_is_active( filter )
 {
 	return is_true( level.com_filters[ filter ] );
 }
 
-private com_channel_is_active( channel )
+com_channel_is_active( channel )
 {
 	return isDefined( level.com_channels[ channel ] );
 }
 
-private com_caps_msg_title( channel, filter, allow_custom_colors )
+com_caps_msg_title( channel, filter, allow_custom_colors )
 {
 	allow_custom_colors = _DEFAULT( allow_custom_colors, false );
 	if ( filter == "notitle" )
 	{
 		return "";
 	}
-	if ( issubstr( filter, "error" ) )
+	if ( _ISSUBSTR( filter, "error" ) )
 	{
 		color_code = "^1";
 	}
-	else if ( issubstr( filter, "warning" ) )
+	else if ( _ISSUBSTR( filter, "warning" ) )
 	{
 		color_code = "^3";
 	}
-	else if ( issubstr( filter, "info" ) )
+	else if ( _ISSUBSTR( filter, "info" ) )
 	{
 		color_code = "^2";
 	}
@@ -56,13 +54,13 @@ private com_caps_msg_title( channel, filter, allow_custom_colors )
 	return color_code + ":";
 }
 
-private com_print( message, players )
+com_print( message, players )
 {
 	printf( message );
 	message = undefined;
 }
 
-private com_iprintlnbold( message, players )
+com_iprintlnbold( message, players )
 {
 	if ( is_true( level.doing_cmd_system_unittest ) )
 	{
@@ -84,12 +82,12 @@ com_printf_internal( channels, filter, message, players )
 		assert( false );
 		return;
 	}
-	if ( !isDefined( message ) || isstring( message ) && message == "" )
+	if ( !isDefined( message ) || _ISSTRING( message ) && message == "" )
 	{
 		assert( false );
 		return;
 	}
-	channel_keys = strTok( channels, "|" );
+	channel_keys = _STRTOK( channels, "|" );
 	for ( i = 0; i < _SIZE( channel_keys.size ); i++ )
 	{
 		channel = channel_keys[ i ];

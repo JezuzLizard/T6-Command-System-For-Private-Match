@@ -1,5 +1,5 @@
 #include common_scripts\utility;
-#include maps\mp\_utility;
+
 
 #include scripts\cmd\game_shared\sv\core\_utility;
 #include scripts\cmd\game_shared\sv\modules\core_helpers;
@@ -112,7 +112,7 @@ add_core_cmds()
 	delete_cmd target_add_required( 1, "victim", "general", "Entities to delete" );
 }
 
-private cmd_setcvar_f( param )
+cmd_setcvar_f( param )
 {
 	dvarname = param.a[ 0 ];
 	dvarvalue = param.a[ 1 ];
@@ -134,7 +134,7 @@ private cmd_setcvar_f( param )
 	}
 }
 
-private cmd_god_f( param )
+cmd_god_f( param )
 {
 	targets = param.t[ 0 ];
 
@@ -156,7 +156,7 @@ private cmd_god_f( param )
 	}
 }
 
-private cmd_notarget_f( param )
+cmd_notarget_f( param )
 {
 	targets = param.t[ 0 ];
 
@@ -178,7 +178,7 @@ private cmd_notarget_f( param )
 	}
 }
 
-private cmd_invisible_f( param )
+cmd_invisible_f( param )
 {
 	targets = param.t[ 0 ];
 
@@ -200,7 +200,7 @@ private cmd_invisible_f( param )
 	}
 }
 
-private cmd_togglehud_f( param )
+cmd_togglehud_f( param )
 {
 	targets = param.t[ 0 ];
 
@@ -222,7 +222,7 @@ private cmd_togglehud_f( param )
 	}
 }
 
-private cmd_bottomlessclip_f( param )
+cmd_bottomlessclip_f( param )
 {
 	targets = param.t[ 0 ];
 
@@ -244,7 +244,7 @@ private cmd_bottomlessclip_f( param )
 	}
 }
 
-private cmd_server_dvar_f( param )
+cmd_server_dvar_f( param )
 {
 	dvarname = param.a[ 0 ];
 	dvarvalue = param.a[ 1 ];
@@ -253,7 +253,7 @@ private cmd_server_dvar_f( param )
 	param add_executor_cmdinfo( "Successfully set " + dvarname + " to " + dvarvalue );
 }
 
-private cmd_setrank_f( param )
+cmd_setrank_f( param )
 {
 	target = param.t[ 0 ][ 0 ];
 	if ( !self has_all_perms() )
@@ -274,7 +274,7 @@ private cmd_setrank_f( param )
 	param add_executor_cmdinfo( "Target's new rank is " + new_rank );
 }
 
-private cmd_playerlist_f( param )
+cmd_playerlist_f( param )
 {
 	if ( level.players.size == 0 )
 	{
@@ -285,12 +285,12 @@ private cmd_playerlist_f( param )
 	self thread list_players_throttled( team );
 }
 
-private cmd_cmdlist_f( param )
+cmd_cmdlist_f( param )
 {
 	self thread list_cmds_throttled();
 }
 
-private cmd_help_f( param )
+cmd_help_f( param )
 {
 	specific_cmd = param.a[ 0 ];
 
@@ -330,7 +330,7 @@ private cmd_help_f( param )
 	self com_printconsoleprintlore();
 }
 
-private cmd_dodamage_f( param )
+cmd_dodamage_f( param )
 {
 	victims = param.t[ 0 ];
 	attacker = param.t[ 1 ][ 0 ];
@@ -368,12 +368,12 @@ private cmd_dodamage_f( param )
 	param add_executor_cmdinfo( "Damaged '" + victims.size + "' entities" );
 }
 
-private cmd_entitylist_f( param )
+cmd_entitylist_f( param )
 {
 	self thread list_entities_throttled( param );
 }
 
-private cmd_scrnotify_f( param )
+cmd_scrnotify_f( param )
 {
 	notify_ent = param.t[ 0 ][ 0 ];
 	notify_name = param.a[ 0 ];
@@ -401,7 +401,7 @@ private cmd_scrnotify_f( param )
 	param add_executor_cmdinfo( "Successfully delivered notify " + notify_name );
 }
 
-private cmd_printorigin_f( param )
+cmd_printorigin_f( param )
 {
 	targets = param.t[ 0 ];
 
@@ -413,7 +413,7 @@ private cmd_printorigin_f( param )
 	}
 }
 
-private cmd_printangles_f( param )
+cmd_printangles_f( param )
 {
 	targets = param.t[ 0 ];
 
@@ -425,7 +425,7 @@ private cmd_printangles_f( param )
 	}
 }
 
-private cmd_teleportentity_f( param )
+cmd_teleportentity_f( param )
 {
 	from_targets = param.t[ 0 ];
 	to_target = param.t[ 1 ][ 0 ];
@@ -465,21 +465,21 @@ private cmd_teleportentity_f( param )
 	}
 }
 
-private cmd_setdefaultcmdexecutor_f( param )
+cmd_setdefaultcmdexecutor_f( param )
 {
 	self.default_executors = param.t[ 0 ];
 
 	param add_executor_cmdinfo( "Successfully set your default cmd executors" );
 }
 
-private cmd_setdefaultcmdtarget_f( param )
+cmd_setdefaultcmdtarget_f( param )
 {
 	self.default_targets = param.t[ 0 ];
 
 	param add_executor_cmdinfo( "Successfully set your default cmd targets" );
 }
 
-private cmd_debug_f( param )
+cmd_debug_f( param )
 {
 	type = param.a[ 0 ];
 
@@ -494,7 +494,7 @@ private cmd_debug_f( param )
 	}
 }
 
-private cmd_lastcmd_f( param )
+cmd_lastcmd_f( param )
 {
 	last_cmd_string_to_execute = self get_eligible_last_cmd();
 	if ( last_cmd_string_to_execute == "" )
@@ -507,7 +507,7 @@ private cmd_lastcmd_f( param )
 	self.in_lastcmd_execution_block = false;
 }
 
-private cmd_listcmdhistory_f( param )
+cmd_listcmdhistory_f( param )
 {
 	if ( self.cmd_history.size <= 0 )
 	{
@@ -521,7 +521,7 @@ private cmd_listcmdhistory_f( param )
 	}
 }
 
-private cmd_kill_f( param )
+cmd_kill_f( param )
 {
 	targets = param.t[ 0 ];
 
@@ -529,7 +529,7 @@ private cmd_kill_f( param )
 	{
 		target = targets[ i ];
 		target setcandamage( true );
-		//target stop_magic_bullet_shield();
+		//target _STOP_MAGIC_BULLET_SHIELD();
 		if ( isplayer( self ) )
 		{
 			target _dodamage( target.health, ( 0, 0, 0 ), self );
@@ -541,7 +541,7 @@ private cmd_kill_f( param )
 	}
 }
 
-private cmd_delete_f( param )
+cmd_delete_f( param )
 {
 	targets = param.t[ 0 ];
 

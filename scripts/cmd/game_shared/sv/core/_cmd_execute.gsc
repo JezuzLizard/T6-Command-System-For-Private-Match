@@ -1,5 +1,4 @@
 #include common_scripts\utility;
-#include maps\mp\_utility;
 
 #include scripts\cmd\game_shared\sv\core\_utility;
 
@@ -13,7 +12,7 @@ start_cmd_buffer()
 	}
 }
 
-private handle_parse_exception_feedback( user )
+handle_parse_exception_feedback( user )
 {
 	if ( isplayer( user ) )
 	{
@@ -31,7 +30,7 @@ private handle_parse_exception_feedback( user )
 	}
 }
 
-private check_command_syntax_used( message, is_hidden )
+check_command_syntax_used( message, is_hidden )
 {
 	if ( !level.tcs_glob.bhidden_cmds && is_hidden )
 	{
@@ -43,7 +42,7 @@ private check_command_syntax_used( message, is_hidden )
 	}
 }
 
-private check_command_cooldown()
+check_command_cooldown()
 {
 	if ( isDefined( self.cmd_cooldown ) && self.cmd_cooldown > 0 )
 	{
@@ -51,7 +50,7 @@ private check_command_cooldown()
 	}
 }
 
-private check_multi_commands( cmd_parse_obj )
+check_multi_commands( cmd_parse_obj )
 {
 	if ( cmd_parse_obj.cmds.size > 1 && !self can_use_multi_cmds() )
 	{
@@ -60,13 +59,13 @@ private check_multi_commands( cmd_parse_obj )
 }
 
 // just in case the thread would end before reseting it
-private reset_in_command()
+reset_in_command()
 {
 	wait 0.05;
 	self.in_command_frame = false;
 }
 
-private debug_print_execute( index, cmd_obj )
+debug_print_execute( index, cmd_obj )
 {
 	self com_printdebuginfo( "Printing info for cmd index '" + index + "'" );
 	self com_printdebuginfo( "cmd_name: '" + cmd_obj.cmd_data_source.cmd_name + "'" );
@@ -76,8 +75,11 @@ private debug_print_execute( index, cmd_obj )
 		self com_printdebuginfo( "args[ '" + i + "' ]: " + cmd_obj.args[ i ] );
 	}
 
-	foreach ( key, value in cmd_obj.kvps )
+	keys = getarraykeys( cmd_obj.kvps );
+	for ( i = 0; i < _SIZE( cmd_obj.kvps.size ); i++ )
 	{
+		key = keys[ i ];
+		value = cmd_obj.kvps[ keys[ i ] ];
 		self com_printdebuginfo( "kvps[ '" + key + "' ]:" );
 		self com_printdebuginfo( "base_key: " + value.base_key );
 		self com_printdebuginfo( "type: " + value.type );
@@ -142,9 +144,11 @@ cmd_execute_internal( message, initiator, is_hidden, is_team_chat )
 		initiator check_multi_commands( cmd_parse_obj );
 	}
 
-	i = 0;
-	foreach ( key, cmd_obj in cmd_parse_obj.cmds )
+	keys = getarraykeys( cmd_parse_obj.cmds );
+	for ( i = 0; i < _SIZE( cmd_parse_obj.cmds.size ); i++ )
 	{
+		key = keys[ i ];
+		cmd_obj = cmd_parse_obj.cmds[ keys[ i ] ];
 		executor_directive = cmd_obj.kvps[ "executor" ];
 		executors = initiator get_executors( executor_directive );
 		debug_print_execute( i, cmd_obj );
@@ -171,13 +175,11 @@ cmd_execute_internal( message, initiator, is_hidden, is_team_chat )
 				}
 			}
 
-			initiator.tcs_silent_cmds = getdvarintdefault( "tcs_silent_cmds", 0 );
-			initiator.tcs_logprint_cmd_usage = getdvarintdefault( "tcs_logprint_cmd_usage", 1 );
-			initiator.tcs_feedback_mode = getdvarintdefault( "tcs_feedback_mode", 1 ); // 0 == executor receives cmd feedback, 1 == initiator receives cmd feedback, 2 == initiator and executor receives cmd feedback, 3 == same as 2 but also print the additional msgs to the initiator/executor
+			initiator.tcs_silent_cmds = _GETDVARINTDEFAULT( "tcs_silent_cmds", 0 );
+			initiator.tcs_logprint_cmd_usage = _GETDVARINTDEFAULT( "tcs_logprint_cmd_usage", 1 );
+			initiator.tcs_feedback_mode = _GETDVARINTDEFAULT( "tcs_feedback_mode", 1 ); // 0 == executor receives cmd feedback, 1 == initiator receives cmd feedback, 2 == initiator and executor receives cmd feedback, 3 == same as 2 but also print the additional msgs to the initiator/executor
 			executor cmd_execute_internal1( initiator, cmd_obj );
 		}
-
-		i++;
 	}
 
 	if ( !has_all_perms )
@@ -186,11 +188,14 @@ cmd_execute_internal( message, initiator, is_hidden, is_team_chat )
 	}
 }
 
-private arg_cast( arg_type, arg )
+arg_cast( arg_type, arg )
 {
 	msgs = [];
-	foreach ( atype, val in arg_type.overloads )
+	keys = getarraykeys( arg_type.overloads );
+	for ( i = 0; i < _SIZE( arg_type.overloads.size ); i++ )
 	{
+		atype = keys[ i ];
+		val = arg_type.overloads[ keys[ i ] ];
 		if ( !isDefined( level.tcs_arg_type_handlers[ atype ] ) || !isDefined( level.tcs_arg_type_handlers[ atype ].cast_func ) )
 		{
 			return arg;
@@ -210,10 +215,13 @@ private arg_cast( arg_type, arg )
 	self throw_exception( "Failed to cast to one of the valid overloads for arg_type, attempted casts: " + repackage_args( msgs, "\n" ) );
 }
 
-private target_cast( cmd_data_source, ordinal, target_type, target_kvp )
+target_cast( cmd_data_source, ordinal, target_type, target_kvp )
 {
-	foreach ( etype, val in target_type.overloads )
+	keys = getarraykeys( target_type.overloads );
+	for ( i = 0; i < _SIZE( target_type.overloads.size ); i++ )
 	{
+		etype = keys[ i ];
+		val = target_type.overloads[ keys[ i ] ];
 		value = self get_entity_targets( etype, target_kvp );
 
 		if ( array_validate( value ) )
@@ -230,10 +238,10 @@ private target_cast( cmd_data_source, ordinal, target_type, target_kvp )
 	return [];
 }
 
-private get_random_limited_array( array, limit )
+get_random_limited_array( array, limit )
 {
 	new_array = [];
-	array = array_randomize( array );
+	array = _ARRAY_RANDOMIZE( array );
 	for ( i = 0; i < limit; i++ )
 	{
 		new_array[ new_array.size ] = array[ i ];
@@ -242,13 +250,14 @@ private get_random_limited_array( array, limit )
 	return new_array;
 }
 
-private get_array_entities( directive, etype )
+get_array_entities( directive, etype )
 {
 	str_no_brackets = getsubstr( directive.v[ 0 ], 1, directive.v[ 0 ].size - 1 );
-	values = strtok( str_no_brackets, "," );
+	values = _STRTOK( str_no_brackets, "," );
 	ents = [];
-	foreach ( presumed_ent in values )
+	for ( i = 0; i < _SIZE( values.size ); i++ )
 	{
+		presumed_ent = values[ i ];
 		ent_obj = cast_str_to_entity( presumed_ent, etype );
 		if ( ent_obj.errored )
 		{
@@ -264,10 +273,10 @@ private get_array_entities( directive, etype )
 		return ents;
 	}
 
-	return add_to_array( undefined, random_val( ents ) );
+	return _ADD_TO_ARRAY( undefined, random_val( ents ) );
 }
 
-private get_name_entities( directive, etype )
+get_name_entities( directive, etype )
 {
 	ents = [];
 	ent_obj = cast_str_to_entity( directive.v[ 0 ], etype );
@@ -280,7 +289,7 @@ private get_name_entities( directive, etype )
 	return ents;
 }
 
-private get_executors( directive )
+get_executors( directive )
 {
 	if ( !isdefined( directive ) )
 	{
@@ -305,7 +314,7 @@ private get_executors( directive )
 		case "array_random":
 			return get_array_entities( directive, "player" );
 		case "self":
-			return add_to_array( undefined, self );
+			return _ADD_TO_ARRAY( undefined, self );
 		case "default":
 			return self.default_executors;
 		case "name":
@@ -316,7 +325,7 @@ private get_executors( directive )
 	return [];
 }
 
-private get_entity_targets( etype, directive )
+get_entity_targets( etype, directive )
 {
 	getter_func = undefined;
 	if ( isdefined( level._entity_type_funcs[ etype ] ) )
@@ -354,7 +363,7 @@ private get_entity_targets( etype, directive )
 		case "array_random":
 			return get_array_entities( directive, etype );
 		case "self":
-			return add_to_array( undefined, self );
+			return _ADD_TO_ARRAY( undefined, self );
 		case "function_call":
 			if ( directive.v[ 0 ] == "" )
 			{
@@ -369,7 +378,7 @@ private get_entity_targets( etype, directive )
 				// 0 = caller
 				// > 0 = regular arguments
 				// caller must always be defined, but it can be level or '#' for default which would use the normal argument casting logic
-				args = strtok( directive.v[ 2 ], "," );
+				args = _STRTOK( directive.v[ 2 ], "," );
 				// requires casting without millions of script errors
 			}
 			// TODO: check entities to match the expected etype
@@ -382,7 +391,7 @@ private get_entity_targets( etype, directive )
 	return [];
 }
 
-private cmd_execute_internal1( initiator, cmd_obj )
+cmd_execute_internal1( initiator, cmd_obj )
 {
 	cmd_data_source = cmd_obj.cmd_data_source;
 
@@ -409,15 +418,16 @@ private cmd_execute_internal1( initiator, cmd_obj )
 	// Leaving the casting up to the cmd itself
 	if ( array_validate( cmd_obj.args ) && array_validate( cmd_data_source.arg_types ) )
 	{
-		i = 0;
-		foreach ( key, val in cmd_data_source.arg_types )
+		keys = getarraykeys( cmd_data_source.arg_types );
+		for ( i = 0; i < _SIZE( cmd_data_source.arg_types.size ); i++ )
 		{
+			key = keys[ i ];
+			val = cmd_data_source.arg_types[ keys[ i ] ];
 			arg = cmd_obj.args[ i ];
 			if ( !isdefined( arg ) )
 			{
 				// arguments sent is less than max possible arguments
 				param.a[ i ] = val.default_value; // assign the default value from the command definition, "default_value" is default undefined
-				i++;
 				continue;
 			}
 
@@ -434,7 +444,6 @@ private cmd_execute_internal1( initiator, cmd_obj )
 			}
 
 			param.a[ i ] = initiator arg_cast( arg_type, arg );
-			i++;
 		}
 	}
 
@@ -444,8 +453,11 @@ private cmd_execute_internal1( initiator, cmd_obj )
 		{
 			// find target kvps
 			cmd_target_keys = getarraykeys( cmd_obj.kvps );
-			foreach ( ordinal_key, target_type in cmd_data_source.target_types )
+			keys = getarraykeys( cmd_data_source.target_types );
+			for ( i = 0; i < _SIZE( cmd_data_source.target_types.size ); i++ )
 			{
+				ordinal_key = keys[ i ];
+				target_type = cmd_data_source.target_types[ keys[ i ] ];
 				target_kvp = cmd_obj.kvps_ordinal[ ordinal_key ];
 				if ( isdefined( target_kvp ) && target_kvp.base_key != "target" && target_kvp.base_key != "t" )
 				{
@@ -497,7 +509,7 @@ private cmd_execute_internal1( initiator, cmd_obj )
 	self handle_feedback( initiator, cmd_obj, param );
 }
 
-private handle_feedback( initiator, cmd_obj, param )
+handle_feedback( initiator, cmd_obj, param )
 {
 	if ( is_true( initiator.tcs_logprint_cmd_usage ) && !is_true( level.doing_cmd_system_unittest ) )
 	{
@@ -551,7 +563,7 @@ private handle_feedback( initiator, cmd_obj, param )
 	}
 }
 
-private print_feedback( param )
+print_feedback( param )
 {
 	for ( i = 0; i < _SIZE( param.result_array.size ); i++ )
 	{
@@ -565,9 +577,9 @@ private print_feedback( param )
 	}
 }
 
-private scr_dvar_cmd_watcher()
+scr_dvar_cmd_watcher()
 {
-	setDvar( "tcscmd", "" );
+	setdvar( "tcscmd", "" );
 	while ( true )
 	{
 		parse_cmd_dvar();
@@ -575,12 +587,12 @@ private scr_dvar_cmd_watcher()
 	}
 }
 
-private parse_cmd_dvar()
+parse_cmd_dvar()
 {
 	dvar_value = getdvar( "tcscmd" );
 	if ( dvar_value != "" )
 	{
-		setDvar( "tcscmd", "" );
+		setdvar( "tcscmd", "" );
 		dvar_value = "~" + dvar_value; // special token to indicate that it's from the dvar
 		waittillframeend; // prevents notifies from being dropped if they happen in the same frame
 		// there is no local client, so the server will always need to specify an executor, unless they specify the default_executors

@@ -1,4 +1,4 @@
-#include clientscripts\mp\_utility;
+
 
 // reference all scripts for autoexec
 #include scripts\cmd\game_shared\cl\core\_cl_cmd_execute;
@@ -7,8 +7,9 @@
 #include scripts\cmd\game_shared\cl\core\_cl_consts;
 #include scripts\cmd\game_shared\cl\core\_cl_utility;
 
-private main()
+main()
 {
+	_INIT_GAME();
 	level._developer = getdvarint( "developer" );
 	level.tcs_glob = spawnstruct();
 	level.tcs_glob.icmd_total = 0;
@@ -17,7 +18,7 @@ private main()
 	tokens_str = get_dvar_string_default( "tcs_cmd_tokens", "" ); //separated by spaces, good tokens are generally not used at the start of a normal message 
 	if ( tokens_str != "" )
 	{
-		tokens = strtok( tokens_str, " " );
+		tokens = _STRTOK( tokens_str, " " );
 		for ( i = 0; i < tokens.size; i++ )
 		{
 			level.tcs_glob.acmd_tokens[ level.tcs_glob.acmd_tokens.size ] = tokens[ i ];
@@ -50,7 +51,7 @@ private main()
 	init_cl_consts();
 	start_cmd_buffer();
 
-	addcallback( "on_player_connect", ::tcs_on_connect );
+	_ADDCALLBACK( "on_player_connect", ::tcs_on_connect );
 	registersystem( "cl_tcs", ::cl_tcs_handler );
 
 	waitforclient( 0 );
@@ -63,7 +64,7 @@ drive_disconnected_notifies()
 	for ( ;; )
 	{
 		level waittill( "disconnect", player );
-		player callback( "on_player_disconnect" );
+		player _CALLBACK( "on_player_disconnect" );
 	}
 }
 

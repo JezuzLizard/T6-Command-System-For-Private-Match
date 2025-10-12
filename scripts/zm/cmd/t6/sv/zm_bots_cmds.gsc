@@ -1,14 +1,8 @@
 #include common_scripts\utility;
-#include maps\mp\_utility;
-#include maps\mp\zombies\_zm_utility;
-#include maps\mp\zombies\_zm;
-#include maps\mp\zombies\_zm_perks;
-#include maps\mp\zombies\_zm_score;
-#include maps\mp\zombies\_zm_weapons;
 
 #include scripts\cmd\game_shared\sv\core\_utility;
 
-#include maps\mp\bots\_bot_api;
+#include maps\bots\_bot_api;
 
 add_zm_bot_cmds()
 {
@@ -27,7 +21,7 @@ add_zm_bot_cmds()
 	hasscriptgoal target_add_required( 1, "bot", "bot", "Bot to print goal for" );
 }
 
-private cmd_setscriptgoal_f( param )
+cmd_setscriptgoal_f( param )
 {
 	result = [];
 	bot = param.t[ 0 ][ 0 ];
@@ -76,14 +70,14 @@ private cmd_setscriptgoal_f( param )
 	param add_executor_cmdinfo( "Set " + bot.name + " goal to " + goal );
 }
 
-private cmd_clearscriptgoal_f( param )
+cmd_clearscriptgoal_f( param )
 {
 	bot = param.t[ 0 ][ 0 ];
 	bot ClearScriptGoal();
 	param add_executor_cmdinfo( "Cleared " + bot.name + " goal" );
 }
 
-private cmd_hasscriptgoal_f( param )
+cmd_hasscriptgoal_f( param )
 {
 	bot = param.t[ 0 ][ 0 ];
 	bot ClearScriptGoal();

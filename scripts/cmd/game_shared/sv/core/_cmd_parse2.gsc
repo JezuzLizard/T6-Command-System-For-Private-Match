@@ -1,9 +1,8 @@
 #include common_scripts\utility;
-#include maps\mp\_utility;
 
 #include scripts\cmd\game_shared\sv\core\_utility;
 
-private com_printparse( msg )
+com_printparse( msg )
 {
 	if ( getdvarint( "tcs_debug_parser" ) == 1 )
 	{
@@ -11,12 +10,12 @@ private com_printparse( msg )
 	}
 }
 
-private throw_parse_exception( msg )
+throw_parse_exception( msg )
 {
 	throw_exception( msg, level._parse_obj );
 }
 
-private parse_array()
+parse_array()
 {
 	tokens = [];
 	if ( level._parse_obj.current_value_string[ level._parse_obj.current_value_string.size - 1 ] != "]" )
@@ -28,7 +27,7 @@ private parse_array()
 	set_type( "array" );
 }
 
-private parse_target_random()
+parse_target_random()
 {
 	if ( level._parse_obj.current_value_string.size <= 1 )
 	{
@@ -58,7 +57,7 @@ private parse_target_random()
 	set_type( "random" );
 }
 
-private try_parse_function()
+try_parse_function()
 {
 	end_pos = -1;
 	path_end_pos = -1;
@@ -117,7 +116,7 @@ private try_parse_function()
 	return true;
 }
 
-private try_parse_name()
+try_parse_name()
 {
 	if ( !is_alpha_numeric( level._parse_obj.current_value_string, true ) )
 	{
@@ -127,7 +126,7 @@ private try_parse_name()
 	set_type( "name" );
 }
 
-private parse_target_value()
+parse_target_value()
 {
 	// basic tokens
 	switch ( level._parse_obj.current_value_string[ 0 ] )
@@ -174,7 +173,7 @@ private parse_target_value()
 	throw_parse_exception( "Unsupported target directive value: '" + level._parse_obj.current_value_string + "'" );
 }
 
-private parse_directive()
+parse_directive()
 {
 	check_str = level._parse_obj.current_key_string;
 	if ( level._parse_obj.current_base_key_string != level._parse_obj.current_key_string )
@@ -239,11 +238,11 @@ private parse_directive()
 // target1 [a,b,c]
 // t2 JezuzLizard
 // t3 {a=5,b=8} // if we just split the kvps again we can actually parse them at least!
-private split_combined_kvps()
+split_combined_kvps()
 {
 	keys_to_values = [];
 
-	kvps = strtok( level._parse_obj.current_token, "=" );
+	kvps = _STRTOK( level._parse_obj.current_token, "=" );
 
 	if ( ( kvps.size % 2 ) != 0 )
 	{
@@ -266,7 +265,7 @@ private split_combined_kvps()
 	return keys_to_values;
 }
 
-private split_kvps()
+split_kvps()
 {
 	combined_kvps = [];
 	commas_delimit = true;
@@ -342,14 +341,14 @@ private split_kvps()
 	return combined_kvps;
 } 
 
-/*cmd_parse_obj_array_t*/ private cmd_parse_obj_array_t_new()
+/*cmd_parse_obj_array_t*/ cmd_parse_obj_array_t_new()
 {
 	cmd_parse_obj = generic_obj_t_new( "cmd_parse_array" );
 	cmd_parse_obj.cmds = []; // string -> cmd_parse_obj_t
 	return cmd_parse_obj;
 }
 
-/*token_obj_t*/ private token_obj_t_new( base_key, ordinal_argument )
+/*token_obj_t*/ token_obj_t_new( base_key, ordinal_argument )
 {
 	parse_token_obj = generic_obj_t_new( "parse_token" );
 	parse_token_obj.base_key = base_key;
@@ -360,7 +359,7 @@ private split_kvps()
 	return parse_token_obj;
 }
 
-/*parse_obj_t*/ private parse_obj_t_new( cmd_string, cmd_data_source )
+/*parse_obj_t*/ parse_obj_t_new( cmd_string, cmd_data_source )
 {
 	level._parse_obj = generic_obj_t_new( "parse" );
 	level._parse_obj.args = [];
@@ -379,12 +378,12 @@ private split_kvps()
 	level._parse_obj.end_pos = 0;
 }
 
-/*void*/ private parse_obj_t_delete()
+/*void*/ parse_obj_t_delete()
 {
 	level._parse_obj = undefined;
 }
 
-private copy_parse_obj_t( parse_obj )
+copy_parse_obj_t( parse_obj )
 {
 	copy = generic_obj_t_new( "parse" );
 	copy.args = parse_obj.args;
@@ -407,13 +406,13 @@ level._parse_obj.kvps[ "target1" ].v[ 1 ] = b;
 level._parse_obj.kvps[ "target1" ].v[ 2 ] = c;
 */
 
-private set_type( new_type )
+set_type( new_type )
 {
 	level._parse_obj.kvps[ level._parse_obj.current_key_string ].type = new_type;
 	level._parse_obj.kvps_ordinal[ level._parse_obj.current_ordinal_argument + "" ].type = new_type;
 }
 
-private add_value( value_string )
+add_value( value_string )
 {
 	key_string = level._parse_obj.current_key_string;
 	assert( isdefined( level._parse_obj.kvps[ key_string ] ) );
@@ -424,7 +423,7 @@ private add_value( value_string )
 	level._parse_obj.kvps_ordinal[ level._parse_obj.current_ordinal_argument + "" ].v[ level._parse_obj.current_value_index ] = value_string;
 }
 
-private add_key( key_string )
+add_key( key_string )
 {
 	assert( !isdefined( level._parse_obj.kvps[ key_string ] ) );
 
@@ -446,13 +445,14 @@ private add_key( key_string )
 	level._parse_obj.kvps_ordinal[ ordinal_argument + "" ] = token_obj_t_new( base_key, ordinal_argument );
 }
 
-private add_arg( arg_str )
+add_arg( arg_str )
 {
 	level._parse_obj.args[ level._parse_obj.args.size ] = arg_str;
 }
 
-private parse_token_until_delimiter( str, start, delimiter = " " )
+parse_token_until_delimiter( str, start, delimiter )
 {
+	delimiter = _DEFAULT( delimiter, " " );
 	delimited_obj = spawnstruct();
 	delimited_obj.end = start;
 	for ( i = start; i < _SIZE( str.size ); i++ )
@@ -479,7 +479,7 @@ private parse_token_until_delimiter( str, start, delimiter = " " )
 // the command to be executed is the first alnum + '_' string encountered; therefore it can be before or after any '@' directives
 // directives '@' can appear in any order in the string
 // spaces can now be used within directives, functions and arrays; otherwise it would not be possible to 
-private custom_split( str )
+custom_split( str )
 {
 	tokens = [];
 	in_identifier = false;
@@ -560,7 +560,7 @@ private custom_split( str )
 
 	com_printparse( message );
 
-	multiple_cmds_keys = strtok( message, "^" );
+	multiple_cmds_keys = _STRTOK( message, "^" );
 	for ( i = 0; i < _SIZE( multiple_cmds_keys.size ); i++ )
 	{
 		cmd_strings = custom_split( multiple_cmds_keys[ i ] );
@@ -595,7 +595,7 @@ private custom_split( str )
 				combined_kvps = split_kvps();
 				for ( k = 0; k < _SIZE( combined_kvps.size ); k++ )
 				{
-					kvps = strtok( combined_kvps[ k ], "=" );
+					kvps = _STRTOK( combined_kvps[ k ], "=" );
 					key = kvps[ 0 ];
 					value = kvps[ 1 ];
 

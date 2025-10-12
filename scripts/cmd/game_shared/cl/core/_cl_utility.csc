@@ -1,5 +1,3 @@
-#include clientscripts\mp\_utility;
-
 #include scripts\cmd\game_shared\cl\core\_cl_com;
 #include scripts\cmd\game_shared\cl\core\_cl_cmd_parse2;
 #include scripts\cmd\game_shared\cl\core\_cl_cmd_execute;
@@ -25,8 +23,11 @@ print_obj()
 		com_printdebugwarning( self.id );
 		if ( isdefined( self.objects ) )
 		{
-			foreach ( key, object in self.objects )
+			keys = getarraykeys( self.objects );
+			for ( i = 0; i < _SIZE( self.objects.size ); i++ )
 			{
+				key = keys[ i ];
+				object = self.objects[ keys[ i ] ];
 				com_printdebugwarning( "Printing child fields: " + key );
 				object print_obj();
 			}
@@ -34,8 +35,11 @@ print_obj()
 	}
 	else if ( self.obj_type == "cmd_parse_array" )
 	{
-		foreach ( key, object in self.cmds )
+		keys = getarraykeys( self.cmds );
+		for ( i = 0; i < _SIZE( self.cmds.size ); i++ )
 		{
+			key = keys[ i ];
+			object = self.cmds[ keys[ i ] ];
 			com_printdebugwarning( "Printing cmd fields: " + key );
 			object print_obj();
 		}
@@ -69,8 +73,11 @@ print_obj()
 	else if ( self.obj_type == "token_parse" )
 	{
 		com_printdebugwarning( self.token_type );
-		foreach ( key, value in self.token_values )
+		keys = getarraykeys( self.token_values );
+		for ( i = 0; i < _SIZE( self.token_values.size ); i++ )
 		{
+			key = keys[ i ];
+			value = self.token_values[ keys[ i ] ];
 			com_printdebugwarning( value );
 		}
 	}
@@ -195,7 +202,7 @@ com_filter_add( filter, default_value )
 	}
 	if ( !isDefined( level.com_filters[ filter ] ) )
 	{
-		level.com_filters[ filter ] = getDvarIntDefault( "com_script_filter_" + filter, default_value );
+		level.com_filters[ filter ] = _GETDVARINTDEFAULT( "com_script_filter_" + filter, default_value );
 	}
 }
 
@@ -238,7 +245,7 @@ cast_str_to_contents( contents_str )
 	result_obj = generic_obj_t_new( "contents" );
 
 	contents_int = level.tcs_contents[ "NONE" ];
-	keys = strtok( contents_str, "|" );
+	keys = _STRTOK( contents_str, "|" );
 	for ( i = 0; i < _SIZE( keys.size ); i++ )
 	{
 		if ( isdefined( level.tcs_contents[ keys[ i ] ] ) )
@@ -325,7 +332,7 @@ cast_str_to_contents( contents_str )
 		{
 			if ( allow_world_ent )
 			{
-				return set_cast_success( entity_obj, getentbynum( _GET_PRIMARY_CLIENT_NUM(), 1022 ), "ent==allow_world_ent" );
+				return set_cast_success( entity_obj, getentnum( _GET_PRIMARY_CLIENT_NUM(), 1022 ), "ent==allow_world_ent" );
 			}
 			else
 			{
@@ -339,8 +346,8 @@ cast_str_to_contents( contents_str )
 			for ( i = 0; i < _SIZE( entities.size ); i++ )
 			{
 				ent = entities[ i ];
-				target_playername = tolower( ent.name );
-				if ( issubstr( target_playername, str ) )
+				target_playername = _TOLOWER( ent.name );
+				if ( _ISSUBSTR( target_playername, str ) )
 				{
 					return set_cast_success( entity_obj, ent, "player==name" );
 				}
@@ -350,7 +357,7 @@ cast_str_to_contents( contents_str )
 		for ( i = 0; i < _SIZE( entities.size ); i++ )
 		{
 			ent = entities[ i ];
-			ent_exists_for_entnum = isdefined( getentbynum( _GET_PRIMARY_CLIENT_NUM(), entnum ) );
+			ent_exists_for_entnum = isdefined( getentnum( _GET_PRIMARY_CLIENT_NUM(), entnum ) );
 
 			if ( ent_exists_for_entnum )
 			{
@@ -377,8 +384,8 @@ cast_str_to_contents( contents_str )
 
 		if ( etype == "player" )
 		{
-			target_playername = tolower( ent.name );
-			if ( issubstr( target_playername, str ) )
+			target_playername = _TOLOWER( ent.name );
+			if ( _ISSUBSTR( target_playername, str ) )
 			{
 				return set_cast_success( entity_obj, ent, "player==name" );
 			}
@@ -503,7 +510,7 @@ cast_str_to_number( str, type )
 			break;
 		case "positive_float":
 		case "float":
-			value = float( str );
+			value = _FLOAT( str );
 			break;
 	}
 
@@ -513,7 +520,7 @@ cast_str_to_number( str, type )
 cast_str_to_vector( str )
 {
 	result_obj = generic_obj_t_new( "vector" );
-	float_strs = strTok( str, "," );
+	float_strs = _STRTOK( str, "," );
 	if ( float_strs.size != 3 )
 	{
 		return set_cast_error( result_obj, "expected vector in format of x,x,x" );
@@ -535,7 +542,7 @@ cast_str_to_vector( str )
 
 cast_bool_to_str( bool, binary_string_options )
 {
-	options = strTok( binary_string_options, " " );
+	options = _STRTOK( binary_string_options, " " );
 	if ( options.size == 2 )
 	{
 		if ( bool )
@@ -552,15 +559,33 @@ cast_bool_to_str( bool, binary_string_options )
 
 cast_str_to_bool( str )
 {
-	lower_str = tolower( str );
+	lower_str = _TOLOWER( str );
 	result_obj = generic_obj_t_new( "boolean" );
 	if ( lower_str == "true" || lower_str == "1" )
 	{
-		return set_cast_success( result_obj, true, lower_str == "true" ? "boolean==true" : "boolean==1" );
+		msg = undefined;
+		if ( lower_str == "true" )
+		{
+			msg = "boolean==true";
+		}
+		else
+		{
+			msg = "boolean==1";
+		}
+		return set_cast_success( result_obj, true, msg );
 	}
 	else if ( lower_str == "false" || lower_str == "0" )
 	{
-		return set_cast_success( result_obj, false, lower_str == "false" ? "boolean==false" : "boolean==0" );
+		msg = undefined;
+		if ( lower_str == "false" )
+		{
+			msg = "boolean==false";
+		}
+		else
+		{
+			msg = "boolean==0";
+		}
+		return set_cast_success( result_obj, false, msg );
 	}
 
 	return set_cast_error( result_obj, "boolean!=boolean" );
@@ -612,7 +637,7 @@ is_alpha_numeric( chr, check_underscore, start, end )
 	}
 	for ( i = start; i < _SIZE( end ); i++ )
 	{
-		if ( !isdefined( level._alphabet_array[ tolower( chr[ i ] ) ] ) && !isdefined( level._numeric_array[ chr[ i ] ] ) )
+		if ( !isdefined( level._alphabet_array[ _TOLOWER( chr[ i ] ) ] ) && !isdefined( level._numeric_array[ chr[ i ] ] ) )
 		{
 			if ( !check_underscore )
 			{
@@ -682,7 +707,7 @@ add_cmd_history( cmd_string )
 	cmd_history_limit = get_dvar_int_default( "max_cmd_history", 16 );
 	if ( self.cmd_history.size >= cmd_history_limit )
 	{
-		arrayremoveindex( self.cmd_history, 0 );
+		self.cmd_history[ 0 ] = undefined;
 	}
 
 	self.cmd_history[ self.cmd_history.size ] = cmd_string;
@@ -872,7 +897,7 @@ get_max_args()
 }
 
 // ordinal would allow argument overloading
-private arg_add( ordinal, name, arg_type, is_required, desc, default_value )
+arg_add( ordinal, name, arg_type, is_required, desc, default_value )
 {
 	desc = _DEFAULT( desc, "No description" );
 	default_value = _DEFAULT( default_value, undefined );
@@ -932,7 +957,7 @@ arg_add_optional_with_default(  ordinal, name, arg_type, desc, default_value )
 	self arg_add( ordinal, name, arg_type, false, desc, default_value );
 }
 
-private target_add( ordinal, name, target_type, is_required, desc, max_targets )
+target_add( ordinal, name, target_type, is_required, desc, max_targets )
 {
 	max_targets = _DEFAULT( max_targets, 1024 );
 	desc = _DEFAULT( desc, "No description" );
@@ -1067,7 +1092,7 @@ get_dvar_string_default( dvarname, default_value )
 	}
 	else 
 	{
-		setDvar( dvarname, default_value );
+		_SETDVAR( dvarname, default_value );
 		return default_value;
 	}
 }
@@ -1081,7 +1106,7 @@ get_dvar_int_default( dvarname, default_value )
 	}
 	else 
 	{
-		setDvar( dvarname, default_value );
+		_SETDVAR( dvarname, default_value );
 		return default_value;
 	}
 }
@@ -1095,7 +1120,7 @@ get_dvar_float_default( dvarname, default_value )
 	}
 	else 
 	{
-		setDvar( dvarname, default_value );
+		_SETDVAR( dvarname, default_value );
 		return default_value;
 	}
 }
@@ -1175,8 +1200,11 @@ get_possible_array_values_msg( arg, array, type, key_indexed )
 	key_indexed = _DEFAULT( key_indexed, true );
 	type_upper = type;
 	list = "";
-	foreach ( key, val in array )
+	keys = getarraykeys( array );
+	for ( i = 0; i < _SIZE( array.size ); i++ )
 	{
+		key = keys[ i ];
+		val = array[ keys[ i ] ];
 		if ( key_indexed )
 		{
 			list += type_upper + ": '" + key + "'\n";
@@ -1196,14 +1224,14 @@ get_possible_array_values_msg( arg, array, type, key_indexed )
 random_key( arr )
 {
 	keys = getarraykeys( arr );
-	assert( isstring( keys[ 0 ] ) );
+	assert( _ISSTRING( keys[ 0 ] ) );
 	return keys[ randomint( keys.size ) ];
 }
 
 random_index( arr )
 {
 	keys = getarraykeys( arr );
-	//assert( isint( keys[ 0 ] ) );
+	//assert( _ISINT( keys[ 0 ] ) );
 	return keys[ randomint( keys.size ) ];
 }
 
@@ -1281,7 +1309,7 @@ _SIZE( arr_size )
 	return arr_size;
 }
 
-private delete_after_time( entity )
+delete_after_time( entity )
 {
 	entity endon( "death" );
 
@@ -1290,7 +1318,7 @@ private delete_after_time( entity )
 	entity delete();
 }
 
-private spawn_test_ent()
+spawn_test_ent()
 {
 	test_ent = spawn( ( 0, 0, -5000 ), "script_model" );
 	level thread delete_after_time( test_ent );
@@ -1347,7 +1375,7 @@ is_player_looking_at( origin, dot, ignore_ent )
 	return 0;
 }
 
-addcallback( event, func )
+_ADDCALLBACK( event, func )
 {
 	assert( isdefined( event ), "Trying to set a callback on an undefined event." );
 
@@ -1357,7 +1385,7 @@ addcallback( event, func )
 	level._callbacks[event] = add_to_array( level._callbacks[event], func, 0 );
 }
 
-callback( event )
+_CALLBACK( event )
 {
 	if ( isdefined( level._callbacks ) && isdefined( level._callbacks[event] ) )
 	{
@@ -1403,8 +1431,203 @@ toupper( str )
 	return "";
 }
 
+_WEAPONCLASS( weapon_name )
+{
+	//weaponclass( weapon_name );
+	return "none";
+}
+
 _WEAPON_EXISTS( name )
 {
 	// csc alternative
-	return weaponclass( name ) == "none";
+	return _WEAPONCLASS( name ) == "none";
+}
+
+IS_TRUE( check )
+{
+	return isdefined( check ) && check;
+}
+
+IS_FALSE( check )
+{
+	return isdefined( check ) && !check;
+}
+
+_FLOAT( string )
+{
+	floatParts = _STRTOK( string, "." );
+	if ( floatParts.size == 1 )
+		return int(floatParts[0]);
+
+	whole = int(floatParts[0]);
+	decimal = int(floatParts[1]);
+	while ( decimal > 1 )
+		decimal *= 0.1;
+
+	if ( whole >= 0 )
+		return (whole + decimal);
+	else
+		return (whole - decimal);
+}
+
+_GETDVARINTDEFAULT( dvarname, defaultvalue )
+{
+	value = getdvar( dvarname );
+
+	if ( value != "" )
+		return int( value );
+
+	return defaultvalue;
+}
+
+// TODO: implement me!
+_ARRAYCOMBINE( array1, array2, a, b )
+{
+	return [];
+}
+
+_STRTOK( string, delimiter )
+{
+	return [];
+}
+
+_ISSTRING( value )
+{
+	return false;
+}
+
+_ISSUBSTR( string, start, end )
+{
+	return false;
+}
+
+_SETDVAR( dvar_name, value )
+{
+	setclientdvar( dvar_name, value );
+}
+
+_TOLOWER( string )
+{
+	return "";
+}
+
+_ARRAY_RANDOMIZE( array )
+{
+	for ( i = 0; i < array.size; i++ )
+	{
+		j = randomint( array.size );
+		temp = array[i];
+		array[i] = array[j];
+		array[j] = temp;
+	}
+
+	return array;
+}
+
+_ADD_TO_ARRAY( array, item, allow_dupes )
+{
+	if ( !isdefined( item ) )
+		return array;
+
+	if ( !isdefined( allow_dupes ) )
+		allow_dupes = 1;
+
+	if ( !isdefined( array ) )
+		array[0] = item;
+	else if ( allow_dupes || !_ISINARRAY( array, item ) )
+		array[array.size] = item;
+
+	return array;
+}
+
+_GET_ARRAY_OF_CLOSEST( org, array, excluders, max, maxdist )
+{
+	if ( !isdefined( max ) )
+		max = array.size;
+
+	if ( !isdefined( excluders ) )
+		excluders = [];
+
+	maxdists2rd = undefined;
+
+	if ( isdefined( maxdist ) )
+		maxdists2rd = maxdist * maxdist;
+
+	dist = [];
+	index = [];
+
+	for ( i = 0; i < array.size; i++ )
+	{
+		if ( !isdefined( array[i] ) )
+			continue;
+
+		excluded = 0;
+
+		for ( p = 0; p < excluders.size; p++ )
+		{
+			if ( array[i] != excluders[p] )
+				continue;
+
+			excluded = 1;
+			break;
+		}
+
+		if ( excluded )
+			continue;
+
+		length = distancesquared( org, array[i].origin );
+
+		if ( isdefined( maxdists2rd ) && maxdists2rd < length )
+			continue;
+
+		dist[dist.size] = length;
+		index[index.size] = i;
+	}
+
+	for (;;)
+	{
+		change = 0;
+
+		for ( i = 0; i < dist.size - 1; i++ )
+		{
+			if ( dist[i] <= dist[i + 1] )
+				continue;
+
+			change = 1;
+			temp = dist[i];
+			dist[i] = dist[i + 1];
+			dist[i + 1] = temp;
+			temp = index[i];
+			index[i] = index[i + 1];
+			index[i + 1] = temp;
+		}
+
+		if ( !change )
+			break;
+	}
+
+	newarray = [];
+
+	if ( max > dist.size )
+		max = dist.size;
+
+	for ( i = 0; i < max; i++ )
+		newarray[i] = array[index[i]];
+
+	return newarray;
+}
+
+_INIT_GAME()
+{
+	_SET_GAME( "T4" );
+}
+
+_GET_GAME()
+{
+
+}
+
+_SET_GAME( gamename )
+{
+	level.gamename = gamename;
 }

@@ -1,4 +1,4 @@
-#include clientscripts\mp\_utility;
+
 
 #include scripts\cmd\game_shared\cl\core\_cl_utility;
 
@@ -15,7 +15,7 @@ add_cl_zm_debug_cmds()
 	setzombiesanimrate_cmd arg_add_required( 1, "animrate", "float", "Animrate to synchronize with the server to" );
 }
 
-private cmd_setzombiesanimrate_f( param )
+cmd_setzombiesanimrate_f( param )
 {
 	animrate = param.a[ 0 ];
 

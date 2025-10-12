@@ -1,5 +1,4 @@
 #include common_scripts\utility;
-#include maps\mp\_utility;
 
 #include scripts\cmd\game_shared\sv\core\_utility;
 
@@ -274,7 +273,7 @@ set_safe_label_internal( text )
 {
 	level._text_count++;
 	self.save_label = text;
-	self.label = istring( text );
+	self.label = _ISTRING( text );
 }
 
 set_safe_text( text, prev_text, is_label )
@@ -460,37 +459,37 @@ call_hud_method( call_name, args )
 			decay_duration = args[ 2 ];
 			self setpulsefx( letter_time, decay_start_time, decay_duration );
 			break;
-		case "setcod7decodefx":
-			letter_time = args[ 0 ];
-			decay_start_time = args[ 1 ];
-			decay_duration = args[ 2 ];
-			self setcod7decodefx( letter_time, decay_start_time, decay_duration );
-			break;
-		case "setredactfx":
-			decay_start_time = args[ 0 ];
-			decay_duration = args[ 1 ];
-			redact_decay_start_time = args[ 2 ];
-			redact_decay_duration = args[ 3 ];
-			self setredactfx( decay_start_time, decay_duration, redact_decay_start_time, redact_decay_duration );
-			break;
-		case "settypewriterfx":
-			letter_time = args[ 0 ];
-			decay_start_time = args[ 1 ];
-			decay_duration = args[ 2 ];
-			self settypewriterfx( letter_time, decay_start_time, decay_duration );
-			break;
-		case "setplayernamestring":
-			ent = args[ 0 ];
-			self setplayernamestring( ent );
-			break;
-		case "setmapnamestring":
-			mapname = args[ 0 ];
-			self setmapnamestring( mapname );
-			break;
-		case "setgametypestring":
-			gametype = args[ 0 ];
-			self setmapnamestring( gametype );
-			break;
+		// case "setcod7decodefx":
+		// 	letter_time = args[ 0 ];
+		// 	decay_start_time = args[ 1 ];
+		// 	decay_duration = args[ 2 ];
+		// 	self setcod7decodefx( letter_time, decay_start_time, decay_duration );
+		// 	break;
+		// case "setredactfx":
+		// 	decay_start_time = args[ 0 ];
+		// 	decay_duration = args[ 1 ];
+		// 	redact_decay_start_time = args[ 2 ];
+		// 	redact_decay_duration = args[ 3 ];
+		// 	self setredactfx( decay_start_time, decay_duration, redact_decay_start_time, redact_decay_duration );
+		// 	break;
+		// case "settypewriterfx":
+		// 	letter_time = args[ 0 ];
+		// 	decay_start_time = args[ 1 ];
+		// 	decay_duration = args[ 2 ];
+		// 	self settypewriterfx( letter_time, decay_start_time, decay_duration );
+		// 	break;
+		// case "setplayernamestring":
+		// 	ent = args[ 0 ];
+		// 	self setplayernamestring( ent );
+		// 	break;
+		// case "setmapnamestring":
+		// 	mapname = args[ 0 ];
+		// 	self setmapnamestring( mapname );
+		// 	break;
+		// case "setgametypestring":
+		// 	gametype = args[ 0 ];
+		// 	self setmapnamestring( gametype );
+		// 	break;
 		case "changefontscaleovertime":
 			scale_time = args[ 0 ];
 			self changefontscaleovertime( scale_time );

@@ -1,5 +1,5 @@
 #include common_scripts\utility;
-#include maps\mp\_utility;
+
 
 #include scripts\cmd\game_shared\sv\core\_utility;
 #include scripts\cmd\game_shared\sv\core\_hud_utility;
@@ -170,7 +170,7 @@ add_entity_cmds()
 	level.physicstracecontentsvehicleclip = 16;
 */
 
-private cmd_seteditortargetent_f( param )
+cmd_seteditortargetent_f( param )
 {
 	entity = param.t[ 0 ][ 0 ];
 	if ( !isdefined( entity ) )
@@ -187,13 +187,13 @@ private cmd_seteditortargetent_f( param )
 	param add_executor_cmdinfo( "Selected target entity: " + entity.classname + " origin: " + entity.origin + " angles: " + entity.angles );
 }
 
-private cmd_cleartargetent_f( param )
+cmd_cleartargetent_f( param )
 {
 	self hud_binding_unsubscribe_from_entity( "editor_selected_ent_context" );
 	param add_executor_cmdinfo( "Deselected entity" );
 }
 
-private cmd_seteditortargetangles_f( param )
+cmd_seteditortargetangles_f( param )
 {
 	// allow using the argument from the target system to optionally override
 	editor_ent = param.t[ 0 ][ 0 ];
@@ -224,7 +224,7 @@ private cmd_seteditortargetangles_f( param )
 	param add_executor_cmdinfo( "Set angles of target entity: '" + editor_ent.classname + "' to: '" + editor_ent.angles + "'" );
 }
 
-private cmd_seteditortargetorigin_f( param )
+cmd_seteditortargetorigin_f( param )
 {
 	// allow using the argument from the target system to optionally override
 	editor_ent = param.t[ 0 ][ 0 ];
@@ -252,12 +252,12 @@ private cmd_seteditortargetorigin_f( param )
 	param add_executor_cmdinfo( "Set origin of target entity: '" + editor_ent.classname + "' to: '" + new_origin + "'" );
 }
 
-private cmd_setviewpos_f( param )
+cmd_setviewpos_f( param )
 {
 	self com_printerror( "UNIMPLEMENTED" );
 }
 
-private cmd_editheldmodel_f( param )
+cmd_editheldmodel_f( param )
 {
 	editor_held_ent = self hud_binding_get_subscribed_entity( "editor_held_context" );
 	model = _DEFAULT( param.a[ 0 ], "null" );
@@ -274,20 +274,20 @@ private cmd_editheldmodel_f( param )
 		return param add_executor_cmderror( "No arguments, no changes..." );
 	}
 
-	self stopcarryturret( editor_held_ent );
-	editor_held_ent setturretcarried( false );
+	self _STOPCARRYTURRET( editor_held_ent );
+	editor_held_ent _SETURRETCARRIED( false );
 	if ( model != "null" )
 	{
 		editor_held_ent setmodel( model );
 	}
 	
-	editor_held_ent setturretcarried( true );
-	self carryturret( editor_held_ent, carry_offset, carry_angles );
+	editor_held_ent _SETURRETCARRIED( true );
+	self _CARRYTURRET( editor_held_ent, carry_offset, carry_angles );
 
 	param add_executor_cmdinfo( "Successfully set your carried model to " + model );
 }
 
-private cmd_editorspawnheldmodel_f( param )
+cmd_editorspawnheldmodel_f( param )
 {
 	ent_name = param.a[ 0 ];
 	model = param.a[ 1 ];
@@ -308,12 +308,12 @@ private cmd_editorspawnheldmodel_f( param )
 	param add_executor_cmdinfo( "Successfully set your carried model to " + model );
 }
 
-private cmd_editorspawn_f( param )
+cmd_editorspawn_f( param )
 {
 
 }
 
-private cmd_editorpickup_f( param )
+cmd_editorpickup_f( param )
 {
 	target_entity = param.t[ 0 ][ 0 ];
 	carry_offset = _DEFAULT( param.a[ 0 ], ( 22, 0, 0 ) );
@@ -346,9 +346,9 @@ private cmd_editorpickup_f( param )
 	param add_executor_cmdinfo( "You picked up target entity: " + target_entity.classname );
 }
 
-private cmd_editorcontextmodifyentity_f( param )
+cmd_editorcontextmodifyentity_f( param )
 {
-	context_scale = float( self hud_binding_get( "editor_scale_context" ).binding_val );
+	context_scale = _FLOAT( self hud_binding_get( "editor_scale_context" ).binding_val );
 	total_time = _DEFAULT( param.a[ 0 ], 0.1 );
 	accel_time = _DEFAULT( param.a[ 1 ], 0.05 );
 	decel_time = _DEFAULT( param.a[ 2 ], 0.05 );
@@ -392,10 +392,10 @@ private cmd_editorcontextmodifyentity_f( param )
 	}
 }
 
-private cmd_editorsetcontext_f( param )
+cmd_editorsetcontext_f( param )
 {
 	context_mode = param.a[ 0 ];
-	current_scale = float( self hud_binding_get( "editor_scale_context" ).binding_val );
+	current_scale = _FLOAT( self hud_binding_get( "editor_scale_context" ).binding_val );
 	context_scale = _DEFAULT( current_scale, param.a[ 1 ] );
 
 	if ( context_scale == 0.0 )
@@ -428,12 +428,12 @@ private cmd_editorsetcontext_f( param )
 	self hud_binding_set( "editor_mode_context", context_mode );
 }
 
-private cmd_editorsave_f( param )
+cmd_editorsave_f( param )
 {
 
 }
 
-private cmd_spawn_f( param )
+cmd_spawn_f( param )
 {
 	classname = param.a[ 0 ];
 	origin = param.a[ 1 ];
@@ -471,7 +471,7 @@ private cmd_spawn_f( param )
 	}
 }
 
-private cmd_dumpent_f( param )
+cmd_dumpent_f( param )
 {
 	type = param.a[ 0 ];
 	classname = param.a[ 1 ];
@@ -528,13 +528,13 @@ private cmd_dumpent_f( param )
 	create_entity_location_screenshot( type, player.name, player.angles, player.origin, classname );
 }
 
-private cmd_editorputdown_f( param )
+cmd_editorputdown_f( param )
 {
 	self notify( "editor_place_held" );
 	param add_executor_cmdinfo( "You put down held entity" );
 }
 
-private cmd_editentfield_f( param )
+cmd_editentfield_f( param )
 {
 	targets = _DEFAULT( param.t[ 0 ], [] );
 	fieldname = param.a[ 0 ];
@@ -594,7 +594,7 @@ draw_custom_nodes()
 			{
 				continue;
 			}
-			box( node.origin );
+			_BOX( node.origin );
 			print3d( node.origin, i );
 		}
 	}
@@ -630,8 +630,8 @@ write_pathnode_for_mapents( fh, pathnode )
 
 get_gsc_vector( mapents_vector )
 {
-	floats = strtok( mapents_vector, " " );
-	return ( float( floats[ 0 ] ), float( floats[ 1 ] ), float( floats[ 2 ] ) );
+	floats = _STRTOK( mapents_vector, " " );
+	return ( _FLOAT( floats[ 0 ] ), _FLOAT( floats[ 1 ] ), _FLOAT( floats[ 2 ] ) );
 }
 
 read_pathnode_for_drawing( pathnode )
@@ -724,7 +724,7 @@ parse_mapents( fh )
 	return entities;
 }
 
-private cmd_editorspawnpathnode_f( param )
+cmd_editorspawnpathnode_f( param )
 {
 	origin = _DEFAULT( param.a[ 0 ], self.origin );
 	//angles = _DEFAULT( param.a[ 1 ], ( 0, 0, 0 ) );
@@ -733,7 +733,7 @@ private cmd_editorspawnpathnode_f( param )
 	param add_executor_cmdinfo( "Spawned pathnode at origin: '" + origin + "'" );
 }
 
-private cmd_savepathnodes_f( param )
+cmd_savepathnodes_f( param )
 {
 	filename = param.a[ 0 ];
 
@@ -761,7 +761,7 @@ private cmd_savepathnodes_f( param )
 	fs_fclose( paths_file );
 }
 
-private cmd_loadpathnodes_f( param )
+cmd_loadpathnodes_f( param )
 {
 	filename = param.a[ 0 ];
 
@@ -790,7 +790,7 @@ private cmd_loadpathnodes_f( param )
 	}
 }
 
-private cmd_radiantmode_f( param )
+cmd_radiantmode_f( param )
 {
 	//self hideviewmodel();
 	self hide();

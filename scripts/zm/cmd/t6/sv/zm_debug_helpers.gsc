@@ -1,14 +1,11 @@
 #include common_scripts\utility;
-#include maps\mp\_utility;
-#include maps\mp\zombies\_zm_utility;
-#include maps\mp\zombies\_zm_zonemgr;
 
 #include scripts\cmd\game_shared\sv\core\_utility;
 #include scripts\zm\cmd\t6\sv\_zm_utility;
 
 init_zm_debug_helpers()
 {
-	addcallback( "on_player_connect", ::zm_debug_connect );
+	_ADDCALLBACK( "on_player_connect", ::zm_debug_connect );
 }
 
 draw_zombie_spawn_locations()
@@ -55,7 +52,7 @@ draw_zombie_spawn_locations()
 	}
 }
 
-private zm_debug_connect()
+zm_debug_connect()
 {
 	iprintln( "************zm_debug_connect callback\n" );
 	self._debug_draw = [];
@@ -73,7 +70,7 @@ private zm_debug_connect()
 	self zombie_count_hud_init();
 }
 
-private zone_hud_init()
+zone_hud_init()
 {
 	self endon( "disconnect" );
 
@@ -85,7 +82,7 @@ private zone_hud_init()
 	self thread zone_hud_thread( zone_hud );
 }
 
-private zone_hud_thread( zone_hud )
+zone_hud_thread( zone_hud )
 {
 	self endon( "disconnect" );
 	zone_hud endon("death");
@@ -131,19 +128,19 @@ private zone_hud_thread( zone_hud )
 	}
 }
 
-private draw_zombie_spawn_location_box( origin, color, vec = ( 20, 20, 40 ) )
+draw_zombie_spawn_location_box( origin, color, vec = ( 20, 20, 40 ) )
 {
-	box( origin + ( 0, 0, 20 ), vec * -1, vec, 0, color, 1.0 );
+	_BOX( origin + ( 0, 0, 20 ), vec * -1, vec, 0, color, 1.0 );
 }
 
-private draw_zome_spawn_location_info_text( origin, color, zone_name, location_type_name )
+draw_zome_spawn_location_info_text( origin, color, zone_name, location_type_name )
 {
 	print3d( origin + ( 0, 0, 49 ), "ZONE:" + zone_name );
 	print3d( origin + ( 0, 0, 37 ), "TYPE:" + location_type_name );
 	print3d( origin + ( 0, 0, 25 ), "ORIGIN:" + origin );
 }
 
-private draw_specific_zombie_spawn_locations( loc_array, zone_name, color, type )
+draw_specific_zombie_spawn_locations( loc_array, zone_name, color, type )
 {
 	draw_type = level._debug_zombie_spawn_loc_draw_aitypes;
 	if ( draw_type == "" || ( draw_type != "all" && draw_type != type ) )
@@ -162,7 +159,7 @@ private draw_specific_zombie_spawn_locations( loc_array, zone_name, color, type 
 	}
 }
 
-private fill_zombie_anim_basic_info( animstates )
+fill_zombie_anim_basic_info( animstates )
 {
 	anim_keys = getarraykeys( animstates );
 
@@ -188,7 +185,7 @@ private fill_zombie_anim_basic_info( animstates )
 	}
 }
 
-private fill_zombie_anim_special_info( animstates )
+fill_zombie_anim_special_info( animstates )
 {
 	keys = getarraykeys( animstates );
 	for ( i = 0; i < _SIZE( keys.size ); i++ )
@@ -432,7 +429,7 @@ draw_debug_zombie_info()
 	}
 }
 
-private sph_hud_init()
+sph_hud_init()
 {
 	if ( !isdefined( level.zombie_kill_times ) )
 	{
@@ -443,12 +440,12 @@ private sph_hud_init()
 
 	sph_hud_counter = self new_debug_hud( 5, 10 );
 	sph_hud_counter.alpha = 0;
-	sph_hud_counter.label = &"SPH: ";
+	sph_hud_counter.label = _ISTRING( "SPH: " );
 
 	self thread sph_hud_thread( sph_hud_counter );
 }
 
-private sph_hud_thread( sph_hud_counter )
+sph_hud_thread( sph_hud_counter )
 {
 	self endon( "disconnect" );
 
@@ -471,7 +468,7 @@ private sph_hud_thread( sph_hud_counter )
 	}
 }
 
-private calculate_sph_thread()
+calculate_sph_thread()
 {
 	for ( ;; )
 	{
@@ -508,16 +505,16 @@ private calculate_sph_thread()
 	}
 }
 
-private zombie_total_hud_init()
+zombie_total_hud_init()
 {
 	zombie_total_hud = self new_debug_hud( 5, 10 );
 	zombie_total_hud.alpha = 0;
-	zombie_total_hud.label = &"Zombie Total: ";
+	zombie_total_hud.label = _ISTRING( "Zombie Total: " );
 
 	self thread zombie_total_hud_thread( zombie_total_hud );
 }
 
-private zombie_total_hud_thread( zombie_total_hud )
+zombie_total_hud_thread( zombie_total_hud )
 {
 	flag_wait( "all_players_connected" );
 	wait 10;
@@ -543,16 +540,16 @@ private zombie_total_hud_thread( zombie_total_hud )
 	}
 }
 
-private zombie_count_hud_init()
+zombie_count_hud_init()
 {
 	zombie_count_hud = self new_debug_hud( 5, 10 );
 	zombie_count_hud.alpha = 0;
-	zombie_count_hud.label = &"Zombie Count: ";
+	zombie_count_hud.label = _ISTRING( "Zombie Count: " );
 
 	self thread zombie_count_hud_thread( zombie_count_hud );
 }
 
-private zombie_count_hud_thread( zombie_count_hud )
+zombie_count_hud_thread( zombie_count_hud )
 {
 	self endon( "disconnect" );
 
@@ -580,7 +577,7 @@ private zombie_count_hud_thread( zombie_count_hud )
 	}
 }
 
-private is_round_ongoing()
+is_round_ongoing()
 {
 	return ( get_current_zombie_count() > 0 || level.zombie_total > 0 );
 }

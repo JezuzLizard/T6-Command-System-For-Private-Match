@@ -1,5 +1,5 @@
 #include common_scripts\utility;
-#include maps\mp\_utility;
+
 
 #include scripts\cmd\game_shared\sv\core\_com;
 #include scripts\cmd\game_shared\sv\core\_cmd_parse2;
@@ -71,8 +71,11 @@ print_obj()
 		com_printdebugwarning( self.id );
 		if ( isdefined( self.objects ) )
 		{
-			foreach ( key, object in self.objects )
+			keys = getarraykeys( self.objects );
+			for ( i = 0; i < _SIZE( self.objects.size ); i++ )
 			{
+				key = keys[ i ];
+				object = self.objects[ keys[ i ] ];
 				com_printdebugwarning( "Printing child fields: " + key );
 				object print_obj();
 			}
@@ -80,8 +83,11 @@ print_obj()
 	}
 	else if ( self.obj_type == "cmd_parse_array" )
 	{
-		foreach ( key, object in self.cmds )
+		keys = getarraykeys( self.cmds );
+		for ( i = 0; i < _SIZE( self.cmds.size ); i++ )
 		{
+			key = keys[ i ];
+			object = self.cmds[ keys[ i ] ];
 			com_printdebugwarning( "Printing cmd fields: " + key );
 			object print_obj();
 		}
@@ -115,8 +121,11 @@ print_obj()
 	else if ( self.obj_type == "token_parse" )
 	{
 		com_printdebugwarning( self.token_type );
-		foreach ( key, value in self.token_values )
+		keys = getarraykeys( self.token_values );
+		for ( i = 0; i < _SIZE( self.token_values.size ); i++ )
 		{
+			key = keys[ i ];
+			value = self.token_values[ keys[ i ] ];
 			com_printdebugwarning( value );
 		}
 	}
@@ -234,7 +243,7 @@ com_filter_add( filter, default_value )
 	}
 	if ( !isDefined( level.com_filters[ filter ] ) )
 	{
-		level.com_filters[ filter ] = getDvarIntDefault( "com_script_filter_" + filter, default_value );
+		level.com_filters[ filter ] = _GETDVARINTDEFAULT( "com_script_filter_" + filter, default_value );
 	}
 }
 
@@ -362,7 +371,7 @@ cast_str_to_contents( contents_str )
 	result_obj = generic_obj_t_new( "contents" );
 
 	contents_int = level.tcs_contents[ "NONE" ];
-	keys = strtok( contents_str, "|" );
+	keys = _STRTOK( contents_str, "|" );
 	for ( i = 0; i < _SIZE( keys.size ); i++ )
 	{
 		if ( isdefined( level.tcs_contents[ keys[ i ] ] ) )
@@ -399,7 +408,7 @@ cast_origin_to_ent_array( result_obj, origin, maxdist, max )
 {
 	result_obj.type = "entarray";
 	ents = getentarray();
-	result_obj.value = get_array_of_closest( origin, ents, undefined, max, maxdist );
+	result_obj.value = _GET_ARRAY_OF_CLOSEST( origin, ents, undefined, max, maxdist );
 	result_obj.msg = "entarray==origin";
 }
 
@@ -521,7 +530,11 @@ cast_origin_to_ent_array( result_obj, origin, maxdist, max )
 		{
 			if ( allow_world_ent )
 			{
-				return set_cast_success( entity_obj, getentbynum( 1022 ), "ent==allow_world_ent" );
+				ent = undefined;
+			/#
+				ent = getentbynum( 1022 );
+			#/
+				return set_cast_success( entity_obj, ent, "ent==allow_world_ent" );
 			}
 			else
 			{
@@ -535,7 +548,7 @@ cast_origin_to_ent_array( result_obj, origin, maxdist, max )
 			for ( i = 0; i < _SIZE( entities.size ); i++ )
 			{
 				ent = entities[ i ];
-				if ( !ent istestclient() && ent getGUID() == entnum )
+				if ( !ent _ISTESTCLIENT() && ent getGUID() == entnum )
 				{
 					return set_cast_success( entity_obj, ent, "ent==GUID" );
 				}
@@ -551,7 +564,10 @@ cast_origin_to_ent_array( result_obj, origin, maxdist, max )
 		for ( i = 0; i < _SIZE( entities.size ); i++ )
 		{
 			ent = entities[ i ];
-			ent_exists_for_entnum = isdefined( getentbynum( entnum ) );
+			ent_exists_for_entnum = false;
+			/#
+				ent_exists_for_entnum = isdefined( getentbynum( entnum ) );
+			#/
 
 			if ( ent_exists_for_entnum )
 			{
@@ -704,7 +720,7 @@ cast_str_to_number( str, type )
 			break;
 		case "positive_float":
 		case "float":
-			value = float( str );
+			value = _FLOAT( str );
 			break;
 	}
 
@@ -714,7 +730,7 @@ cast_str_to_number( str, type )
 cast_str_to_vector( str )
 {
 	result_obj = generic_obj_t_new( "vector" );
-	float_strs = strTok( str, "," );
+	float_strs = _STRTOK( str, "," );
 	if ( float_strs.size != 3 )
 	{
 		return set_cast_error( result_obj, "expected vector in format of x,x,x" );
@@ -736,7 +752,7 @@ cast_str_to_vector( str )
 
 cast_bool_to_str( bool, binary_string_options )
 {
-	options = strTok( binary_string_options, " " );
+	options = _STRTOK( binary_string_options, " " );
 	if ( options.size == 2 )
 	{
 		if ( bool )
@@ -757,11 +773,29 @@ cast_str_to_bool( str )
 	result_obj = generic_obj_t_new( "boolean" );
 	if ( lower_str == "true" || lower_str == "1" )
 	{
-		return set_cast_success( result_obj, true, lower_str == "true" ? "boolean==true" : "boolean==1" );
+		msg = undefined;
+		if ( lower_str == "true" )
+		{
+			msg = "boolean==true";
+		}
+		else
+		{
+			msg = "boolean==1";
+		}
+		return set_cast_success( result_obj, true, msg );
 	}
 	else if ( lower_str == "false" || lower_str == "0" )
 	{
-		return set_cast_success( result_obj, false, lower_str == "false" ? "boolean==false" : "boolean==0" );
+		msg = undefined;
+		if ( lower_str == "false" )
+		{
+			msg = "boolean==false";
+		}
+		else
+		{
+			msg = "boolean==0";
+		}
+		return set_cast_success( result_obj, false, msg );
 	}
 
 	return set_cast_error( result_obj, "boolean!=boolean" );
@@ -888,7 +922,7 @@ add_cmd_history( cmd_string )
 	cmd_history_limit = get_dvar_int_default( "max_cmd_history", 16 );
 	if ( self.cmd_history.size >= cmd_history_limit )
 	{
-		arrayremoveindex( self.cmd_history, 0 );
+		self.cmd_history[ 0 ] = undefined;
 	}
 
 	self.cmd_history[ self.cmd_history.size ] = cmd_string;
@@ -1078,7 +1112,7 @@ get_max_args()
 }
 
 // ordinal would allow argument overloading
-private arg_add( ordinal, name, arg_type, is_required, desc, default_value )
+arg_add( ordinal, name, arg_type, is_required, desc, default_value )
 {
 	desc = _DEFAULT( desc, "No description" );
 	default_value = _DEFAULT( default_value, undefined );
@@ -1138,7 +1172,7 @@ arg_add_optional_with_default(  ordinal, name, arg_type, desc, default_value )
 	self arg_add( ordinal, name, arg_type, false, desc, default_value );
 }
 
-private target_add( ordinal, name, target_type, is_required, desc, max_targets )
+target_add( ordinal, name, target_type, is_required, desc, max_targets )
 {
 	max_targets = _DEFAULT( max_targets, 1024 );
 	desc = _DEFAULT( desc, "No description" );
@@ -1391,8 +1425,11 @@ get_possible_array_values_msg( arg, array, type, key_indexed )
 	key_indexed = _DEFAULT( key_indexed, true );
 	type_upper = toupper( type );
 	list = "";
-	foreach ( key, val in array )
+	keys = getarraykeys( array );
+	for ( i = 0; i < _SIZE( array.size ); i++ )
 	{
+		key = keys[ i ];
+		val = array[ keys[ i ] ];
 		if ( key_indexed )
 		{
 			list += type_upper + ": '" + key + "'\n";
@@ -1412,14 +1449,14 @@ get_possible_array_values_msg( arg, array, type, key_indexed )
 random_key( arr )
 {
 	keys = getarraykeys( arr );
-	assert( isstring( keys[ 0 ] ) );
+	assert( _ISSTRING( keys[ 0 ] ) );
 	return keys[ randomint( keys.size ) ];
 }
 
 random_index( arr )
 {
 	keys = getarraykeys( arr );
-	assert( isint( keys[ 0 ] ) );
+	assert( _ISINT( keys[ 0 ] ) );
 	return keys[ randomint( keys.size ) ];
 }
 
@@ -1465,7 +1502,7 @@ _MIN( val, limit )
 
 pop( arr_obj, index )
 {
-	arrayremoveindex( arr_obj.array, index );
+	arr_obj.array[ index ] = undefined;
 }
 
 pop_front( arr_obj )
@@ -1512,7 +1549,7 @@ _SIZE( arr_size )
 	return arr_size;
 }
 
-private delete_after_time( entity )
+delete_after_time( entity )
 {
 	entity endon( "death" );
 
@@ -1521,7 +1558,7 @@ private delete_after_time( entity )
 	entity delete();
 }
 
-private spawn_test_ent()
+spawn_test_ent()
 {
 	test_ent = spawn( "script_model", ( 0, 0, -5000 ) );
 	level thread delete_after_time( test_ent );
@@ -1556,6 +1593,8 @@ _INIT_SERVER()
 	{
 		level.server = spawnStruct();
 		entity = spawnstruct();
+		entity.origin = ( 0, 0, 0 );
+		entity.angles = ( 0, 0, 0 );
 		entity.playername = getdvar( "sv_hostname" );
 		entity.name = getdvar( "sv_hostname" );
 		entity.is_server = true;
@@ -1587,20 +1626,22 @@ server_safe_notify_thread( notify_name, index )
 	level notify( notify_name );
 }
 
-/@
-"Name: timescale_tween( <start>, <end>, <time>, [delay], [step_time] )"
-"Summary: Tweens timescale from a starting value to an ending value over time."
-"Module: Utility"
-"MandatoryArg: start: Starting timescale."
-"MandatoryArg: end: Ending timescale."
-"MandatoryArg: time: Time to get form start to end."
-"OptionalArg: delay: time delay before starting."
-"OptionalArg: step_time: time delay between setting timescale values (how smoothly you want to step)."
-"Example: level thread timescale_tween(.06, 1, tween_time);"
-"SPMP: SP"
-@/
-timescale_tween(start, end, time, delay = 0.0, step_time = 0.1 )
+// /@
+// "Name: timescale_tween( <start>, <end>, <time>, [delay], [step_time] )"
+// "Summary: Tweens timescale from a starting value to an ending value over time."
+// "Module: Utility"
+// "MandatoryArg: start: Starting timescale."
+// "MandatoryArg: end: Ending timescale."
+// "MandatoryArg: time: Time to get form start to end."
+// "OptionalArg: delay: time delay before starting."
+// "OptionalArg: step_time: time delay between setting timescale values (how smoothly you want to step)."
+// "Example: level thread timescale_tween(.06, 1, tween_time);"
+// "SPMP: SP"
+// @/
+timescale_tween(start, end, time, delay, step_time )
 {
+	delay = _DEFAULT( delay, 0.0 );
+	step_time = _DEFAULT( step_time, 0.1 );
 	if ( !IsDefined( start ) )
 	{
 		start = getdvar("timescale");
@@ -1654,8 +1695,9 @@ flag_wait_until_set_once( flag )
 		wait 0.05;
 }
 
-new_debug_hud( x, y_offset, multi_hud = false )
+new_debug_hud( x, y_offset, multi_hud )
 {
+	multi_hud = _DEFAULT( multi_hud, false );
 	if ( !isdefined( level.debug_hud_y_offset ) )
 	{
 		level.debug_hud_y_offset = 0;
@@ -1751,4 +1793,767 @@ cast_entity_raycast_from_player_eye()
 	}
 
 	return trace;
+}
+
+// TODO: implement me!
+toupper( string )
+{
+	return "";
+}
+
+IS_TRUE( check )
+{
+	return isdefined( check ) && check;
+}
+
+IS_FALSE( check )
+{
+	return isdefined( check ) && !check;
+}
+
+_FLAG_EXISTS( flagname )
+{
+	if ( self == level )
+	{
+		if ( !isdefined( level.flag ) )
+			return false;
+
+		if ( isdefined( level.flag[flagname] ) )
+			return true;
+	}
+	else
+	{
+		if ( !isdefined( self.ent_flag ) )
+			return false;
+
+		if ( isdefined( self.ent_flag[flagname] ) )
+			return true;
+	}
+
+	return false;
+}
+
+_FLOAT( string )
+{
+	floatParts = _STRTOK( string, "." );
+	if ( floatParts.size == 1 )
+		return int(floatParts[0]);
+
+	whole = int(floatParts[0]);
+	decimal = int(floatParts[1]);
+	while ( decimal > 1 )
+		decimal *= 0.1;
+
+	if ( whole >= 0 )
+		return (whole + decimal);
+	else
+		return (whole - decimal);
+}
+
+_ISTESTCLIENT()
+{
+	return self isbot();
+}
+
+_GETDVARINTDEFAULT( dvarname, defaultvalue )
+{
+	value = getdvar( dvarname );
+
+	if ( value != "" )
+		return int( value );
+
+	return defaultvalue;
+}
+
+// TODO: implement me!
+_ZBARRIERARRAY()
+{
+	return [];
+}
+
+// TODO: implement me!
+_GETENTITYTYPE()
+{
+	return -2;
+}
+
+// TODO: implement me!
+_GETSCRIPTMOVERARRAY()
+{
+	return [];
+}
+
+// TODO: implement me!
+_ARRAYCOMBINE( array1, array2, a, b )
+{
+	return [];
+}
+
+_GETITEMARRAY()
+{
+	return [];
+}
+
+_ISTRING( string )
+{
+	return string;
+}
+
+_BOXORIENTED( origin, mins, maxs, angles, color, alpha, depthTest, duration )
+{
+
+}
+
+_ARRAY( a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z )
+{
+	return [];
+}
+
+_SESSIONMODEISZOMBIESGAME()
+{
+	return false;
+}
+
+_KICK( clientnum )
+{
+
+}
+
+_ADDCALLBACK( event, func )
+{
+	assert( isdefined( event ), "Trying to set a callback on an undefined event." );
+
+	if ( !isdefined( level._callbacks ) || !isdefined( level._callbacks[event] ) )
+		level._callbacks[event] = [];
+
+	level._callbacks[event] = _ADD_TO_ARRAY( level._callbacks[event], func, 0 );
+}
+
+_CALLBACK( event )
+{
+	if ( isdefined( level._callbacks ) && isdefined( level._callbacks[event] ) )
+	{
+		for ( i = 0; i < level._callbacks[event].size; i++ )
+		{
+			callback = level._callbacks[event][i];
+
+			if ( isdefined( callback ) )
+				self thread [[ callback ]]();
+		}
+	}
+}
+
+_SETCLIENTUIVISIBILITYFLAG( flagname, on_off )
+{
+	//self
+}
+
+_ISVEC( value )
+{
+	return false;
+}
+
+_ISINT( value )
+{
+	return false;
+}
+
+_ISFLOAT( value )
+{
+	return false;
+}
+
+_ISSTRING( value )
+{
+	return false;
+}
+
+_SPAWNTIMEDFX( weapon, origin, direction, time_seconds )
+{
+	return undefined;
+}
+
+_SPAWNPATHNODE( classname, origin, angles, key1, val1, key2, val2 )
+{
+	return undefined;
+}
+
+_CLONEPLAYER( death_anim_duration )
+{
+	return undefined;
+}
+
+_SPAWNHELICOPTER( owner, origin, angles, vehicle_def_name, model )
+{
+	return undefined;
+}
+
+_SPAWNPLANE( owner, classname, origin, spawnflags )
+{
+	return undefined;
+}
+
+_SPAWNACTOR( get_enemy_info, targetname )
+{
+	return undefined;
+}
+
+_SETZOMBIESHRINK( on_off )
+{
+	return;
+}
+
+_IGNORECHEAPENTITYFLAG( on_off )
+{
+	return;
+}
+
+_SETCHEAPFLAG( on_off )
+{
+	return;
+}
+
+_ISINARRAY( arr, item )
+{
+	return false;
+}
+
+_CANPLAYERPLACETURRET()
+{
+	return [];
+}
+
+_STOPCARRYTURRET( turret )
+{
+
+}
+
+_CARRYTURRET( placeturret, carry_offset, carry_angles )
+{
+
+}
+
+_SETTURRETOWNER( owner )
+{
+
+}
+
+_SETURRETCARRIED( carried )
+{
+
+}
+
+_BOX( origin, mins, maxs, yaw, color, alpha, depthtest, duration )
+{
+
+}
+
+_STRTOK( string, delimiter )
+{
+	return strtok( string, delimiter );
+}
+
+_ARRAY_RANDOMIZE( array )
+{
+	for ( i = 0; i < array.size; i++ )
+	{
+		j = randomint( array.size );
+		temp = array[i];
+		array[i] = array[j];
+		array[j] = temp;
+	}
+
+	return array;
+}
+
+_CAMERAACTIVATE( cam_flags )
+{
+
+}
+
+_CAMERASETLOOKAT()
+{
+
+}
+
+_CAMERASETPOSITION( ent )
+{
+
+}
+
+_CYLINDER( origin, radius, height, angles, segments, color, alpha, depthTest, duration )
+{
+
+}
+
+_ADD_TO_ARRAY( array, item, allow_dupes )
+{
+	if ( !isdefined( item ) )
+		return array;
+
+	if ( !isdefined( allow_dupes ) )
+		allow_dupes = 1;
+
+	if ( !isdefined( array ) )
+		array[0] = item;
+	else if ( allow_dupes || !_ISINARRAY( array, item ) )
+		array[array.size] = item;
+
+	return array;
+}
+
+_GET_ARRAY_OF_CLOSEST( org, array, excluders, max, maxdist )
+{
+	if ( !isdefined( max ) )
+		max = array.size;
+
+	if ( !isdefined( excluders ) )
+		excluders = [];
+
+	maxdists2rd = undefined;
+
+	if ( isdefined( maxdist ) )
+		maxdists2rd = maxdist * maxdist;
+
+	dist = [];
+	index = [];
+
+	for ( i = 0; i < array.size; i++ )
+	{
+		if ( !isdefined( array[i] ) )
+			continue;
+
+		excluded = 0;
+
+		for ( p = 0; p < excluders.size; p++ )
+		{
+			if ( array[i] != excluders[p] )
+				continue;
+
+			excluded = 1;
+			break;
+		}
+
+		if ( excluded )
+			continue;
+
+		length = distancesquared( org, array[i].origin );
+
+		if ( isdefined( maxdists2rd ) && maxdists2rd < length )
+			continue;
+
+		dist[dist.size] = length;
+		index[index.size] = i;
+	}
+
+	for (;;)
+	{
+		change = 0;
+
+		for ( i = 0; i < dist.size - 1; i++ )
+		{
+			if ( dist[i] <= dist[i + 1] )
+				continue;
+
+			change = 1;
+			temp = dist[i];
+			dist[i] = dist[i + 1];
+			dist[i + 1] = temp;
+			temp = index[i];
+			index[i] = index[i + 1];
+			index[i + 1] = temp;
+		}
+
+		if ( !change )
+			break;
+	}
+
+	newarray = [];
+
+	if ( max > dist.size )
+		max = dist.size;
+
+	for ( i = 0; i < max; i++ )
+		newarray[i] = array[index[i]];
+
+	return newarray;
+}
+
+_SETPHYSPARAMS( x, y, z )
+{
+
+}
+
+_STOP_MAGIC_BULLET_SHIELD()
+{
+	self.attackeraccuracy = 1;
+	self notify( "stop_magic_bullet_shield" );
+	self.magic_bullet_shield = undefined;
+	self._mbs = undefined;
+}
+
+_MAGIC_BULLET_SHIELD()
+{
+	if ( !( isdefined( self.magic_bullet_shield ) && self.magic_bullet_shield ) )
+	{
+		if ( isai( self ) || isplayer( self ) )
+		{
+			self.magic_bullet_shield = 1;
+/#
+			level thread debug_magic_bullet_shield_death( self );
+#/
+
+			if ( !isdefined( self._mbs ) )
+				self._mbs = spawnstruct();
+
+			if ( isai( self ) )
+			{
+				assert( isalive( self ), "Tried to do magic_bullet_shield on a dead or undefined guy." );
+				self._mbs.last_pain_time = 0;
+				self._mbs.ignore_time = 2;
+				self._mbs.turret_ignore_time = 5;
+			}
+
+			self.attackeraccuracy = 0.1;
+		}
+		else
+		{
+/#
+			assertmsg( "magic_bullet_shield does not support entity of classname '" + self.classname + "'." );
+#/
+		}
+	}
+}
+
+_DEFAULT_MAX_ZOMBIE_FUNC( max_num )
+{
+/#
+	count = getdvarint( "zombie_default_max" );
+
+	if ( count > -1 )
+		return count;
+#/
+	max = max_num;
+
+	if ( level.round_number < 2 )
+		max = int( max_num * 0.25 );
+	else if ( level.round_number < 3 )
+		max = int( max_num * 0.3 );
+	else if ( level.round_number < 4 )
+		max = int( max_num * 0.5 );
+	else if ( level.round_number < 5 )
+		max = int( max_num * 0.7 );
+	else if ( level.round_number < 6 )
+		max = int( max_num * 0.9 );
+
+	return max;
+}
+
+_ENABLEZOMBIES( on_off )
+{
+
+}
+
+_DISABLEZOMBIES( on_off )
+{
+
+}
+
+_REGISTERCLIENTSYS( ssysname )
+{
+	if ( !isdefined( level._clientsys ) )
+		level._clientsys = [];
+
+	if ( level._clientsys.size >= 32 )
+	{
+/#
+		error( "Max num client systems exceeded." );
+#/
+		return;
+	}
+
+	if ( isdefined( level._clientsys[ssysname] ) )
+	{
+/#
+		error( "Attempt to re-register client system : " + ssysname );
+#/
+		return;
+	}
+	else
+	{
+		level._clientsys[ssysname] = spawnstruct();
+		level._clientsys[ssysname].sysid = clientsysregister( ssysname );
+	}
+}
+
+_SETCLIENTSYSSTATE( ssysname, ssysstate, player )
+{
+	if ( !isdefined( level._clientsys ) )
+	{
+/#
+		error( "setClientSysState called before registration of any systems." );
+#/
+		return;
+	}
+
+	if ( !isdefined( level._clientsys[ssysname] ) )
+	{
+/#
+		error( "setClientSysState called on unregistered system " + ssysname );
+#/
+		return;
+	}
+
+	if ( isdefined( player ) )
+		player clientsyssetstate( level._clientsys[ssysname].sysid, ssysstate );
+	else
+	{
+		clientsyssetstate( level._clientsys[ssysname].sysid, ssysstate );
+		level._clientsys[ssysname].sysstate = ssysstate;
+	}
+}
+
+_GETCLIENTSYSSTATE( ssysname )
+{
+	if ( !isdefined( level._clientsys ) )
+	{
+/#
+		error( "Cannot getClientSysState before registering any client systems." );
+#/
+		return "";
+	}
+
+	if ( !isdefined( level._clientsys[ssysname] ) )
+	{
+/#
+		error( "Client system " + ssysname + " cannot return state, as it is unregistered." );
+#/
+		return "";
+	}
+
+	if ( isdefined( level._clientsys[ssysname].sysstate ) )
+		return level._clientsys[ssysname].sysstate;
+
+	return "";
+}
+
+_CLIENTNOTIFY( event )
+{
+	if ( level.clientscripts )
+	{
+		if ( isplayer( self ) )
+			_SETCLIENTSYSSTATE( "levelNotify", event, self );
+		else
+			_SETCLIENTSYSSTATE( "levelNotify", event );
+	}
+}
+
+_GETCORPSEARRAY()
+{
+	return [];
+}
+
+_GET_CURRENT_CORPSE_COUNT()
+{
+	corpse_array = _GETCORPSEARRAY();
+
+	if ( isdefined( corpse_array ) )
+		return corpse_array.size;
+
+	return 0;
+}
+
+_GET_CURRENT_ACTOR_COUNT()
+{
+	count = 0;
+	actors = getaispeciesarray( _GET_ZOMBIE_TEAM(), "all" );
+
+	if ( isdefined( actors ) )
+		count = count + actors.size;
+
+	count = count + _GET_CURRENT_CORPSE_COUNT();
+	return count;
+}
+
+_GET_CURRENT_ZOMBIE_COUNT()
+{
+	enemies = _GET_ROUND_ENEMY_ARRAY();
+	return enemies.size;
+}
+
+_GET_ROUND_ENEMY_ARRAY()
+{
+	enemies = [];
+	valid_enemies = [];
+	enemies = getaispeciesarray( _GET_ZOMBIE_TEAM(), "all" );
+
+	for ( i = 0; i < enemies.size; i++ )
+	{
+		if ( isdefined( enemies[i].ignore_enemy_count ) && enemies[i].ignore_enemy_count )
+			continue;
+
+		valid_enemies[valid_enemies.size] = enemies[i];
+	}
+
+	return valid_enemies;
+}
+
+_INIT_ZOMBIE_TEAM()
+{
+	if ( !isdefined( level.zombie_team ) )
+	{
+		level.zombie_team = "axis";
+	}
+}
+
+_GET_ZOMBIE_TEAM()
+{
+	_INIT_ZOMBIE_TEAM();
+	return level.zombie_team;
+}
+
+_INIT_PLAYERS_ARRAY()
+{
+	if ( !isdefined( level.players ) )
+	{
+		level.players = [];
+	}
+}
+
+_ADD_PLAYERS_ARRAY( player )
+{
+	level.players[ level.players.size ] = player;
+}
+
+_REMOVE_PLAYERS_ARRAY( player )
+{
+	for ( entry = 0; entry < level.players.size; entry++ )
+	{
+		if ( level.players[entry] == player )
+		{
+			while ( entry < level.players.size - 1 )
+			{
+				level.players[entry] = level.players[entry + 1];
+				entry++;
+			}
+
+			level.players[entry] = undefined;
+			break;
+		}
+	}
+}
+
+_INCREMENTPLAYERSTAT( statname, value )
+{
+
+}
+
+_WHICH_GAME()
+{
+	// stubbed for older games; overridden by T6
+	if ( _SESSIONMODEISZOMBIESGAME() )
+	{
+		return "T6";
+	}
+}
+
+_ADD_TO_PLAYER_SCORE( points )
+{
+
+}
+
+_INIT_GAME()
+{
+	_SET_GAME( "T4" );
+}
+
+_GET_GAME()
+{
+
+}
+
+_SET_GAME( gamename )
+{
+	level.gamename = gamename;
+}
+
+_GET_PRIORITY_FUNCTION( priority_paths, path, target_func_name )
+{
+	for ( i = 0; i < _SIZE( priority_paths.size ); i++ )
+	{
+		func = getfunction( priority_paths[ i ], target_func_name );
+		if ( isdefined( func ) )
+		{
+			return func;
+		}
+	}
+
+	func = getfunction( path, target_func );
+	return func;
+}
+
+_GET_FUNCTION( path, target_func_name )
+{
+	gamename = _GET_GAME();
+
+	func = undefined;
+	switch ( gamename )
+	{
+		case "T4":
+			priority_zombiemode_paths = [];
+			priority_zombiemode_paths[ priority_zombiemode_paths.size ] = "_zombiemode_asylum";
+			priority_zombiemode_paths[ priority_zombiemode_paths.size ] = "_zombiemode_prototype";
+			priority_zombiemode_spawner_paths = [];
+			priority_zombiemode_spawner_paths[ priority_zombiemode_spawner_paths.size ] = "_zombiemode_spawner_asylum";
+			priority_zombiemode_spawner_paths[ priority_zombiemode_spawner_paths.size ] = "_zombiemode_spawner_prototype";
+			priority_zombiemode_blockers_paths = [];
+			priority_zombiemode_blockers_paths[ priority_zombiemode_blockers_paths.size ] = "_zombiemode_blockers_new";
+			priority_zombiemode_weapons_paths = [];
+			priority_zombiemode_weapons_paths[ priority_zombiemode_weapons_paths.size ] = "_zombiemode_weapons_sumpf";
+
+			switch ( path )
+			{
+				case "maps/_zombiemode":
+					func = _GET_PRIORITY_FUNCTION( priority_zombiemode_paths, path, target_func_name );
+					if ( isdefined( func ) )
+					{
+						return func;
+					}
+					break;
+				case "maps/_zombiemode_spawner":
+					func = _GET_PRIORITY_FUNCTION( priority_zombiemode_spawner_paths, path, target_func_name );
+					if ( isdefined( func ) )
+					{
+						return func;
+					}
+					break;
+				case "maps/_zombiemode_blockers":
+					func = _GET_PRIORITY_FUNCTION( priority_zombiemode_blockers_paths, path, target_func_name );
+					if ( isdefined( func ) )
+					{
+						return func;
+					}
+					break;
+				case "maps/_zombiemode_weapons":
+					func = _GET_PRIORITY_FUNCTION( priority_zombiemode_weapons_paths, path, target_func_name );
+					if ( isdefined( func ) )
+					{
+						return func;
+					}
+					break;
+			}
+
+			return getfunction( path, target_func_name );
+			break;
+		default:
+			return getfunction( path, target_func_name );
+	}
+}
+
+_FLAG_TOGGLE( flagname )
+{
+	if ( flag( flagname ) )
+		flag_clear( flagname );
+	else
+		flag_set( flagname );
 }

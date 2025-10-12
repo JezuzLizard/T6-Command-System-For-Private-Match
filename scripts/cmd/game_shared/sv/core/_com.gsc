@@ -1,5 +1,4 @@
 #include common_scripts\utility;
-#include maps\mp\_utility;
 
 #include scripts\cmd\game_shared\sv\core\_utility;
 
@@ -28,17 +27,17 @@ com_init()
 	com_channel_add( "iprint_array", ::com_iprintln_array );
 }
 
-private com_filter_is_active( filter )
+com_filter_is_active( filter )
 {
 	return is_true( level.com_filters[ filter ] );
 }
 
-private com_channel_is_active( channel )
+com_channel_is_active( channel )
 {
 	return isDefined( level.com_channels[ channel ] );
 }
 
-private com_caps_msg_title( channel, filter, allow_custom_colors )
+com_caps_msg_title( channel, filter, allow_custom_colors )
 {
 	allow_custom_colors = _DEFAULT( allow_custom_colors, false );
 	if ( filter == "notitle" )
@@ -68,20 +67,20 @@ private com_caps_msg_title( channel, filter, allow_custom_colors )
 	return color_code + toupper( filter ) + ":";
 }
 
-private com_print( message, players )
+com_print( message, players )
 {
 	printf( message );
 	message = undefined;
 }
 
-private com_logprint( message, players )
+com_logprint( message, players )
 {
 	players = undefined;
 	logPrint( message + "\n" );
 	message = undefined;
 }
 
-private com_iprintln( message, player )
+com_iprintln( message, player )
 {
 	if ( is_true( level.doing_cmd_system_unittest ) )
 	{
@@ -93,7 +92,7 @@ private com_iprintln( message, player )
 	}	
 }
 
-private com_iprintln_array( message, players )
+com_iprintln_array( message, players )
 {
 	if ( is_true( level.doing_cmd_system_unittest ) )
 	{
@@ -105,7 +104,7 @@ private com_iprintln_array( message, players )
 	}
 }
 
-private com_iprintlnbold( message, players )
+com_iprintlnbold( message, players )
 {
 	if ( is_true( level.doing_cmd_system_unittest ) )
 	{
@@ -129,12 +128,12 @@ com_printf_internal( channels, filter, message, players )
 		assert( false );
 		return;
 	}
-	if ( !isDefined( message ) || isstring( message ) && message == "" )
+	if ( !isDefined( message ) || _ISSTRING( message ) && message == "" )
 	{
 		assert( false );
 		return;
 	}
-	channel_keys = strTok( channels, "|" );
+	channel_keys = _STRTOK( channels, "|" );
 	for ( i = 0; i < _SIZE( channel_keys.size ); i++ )
 	{
 		channel = channel_keys[ i ];

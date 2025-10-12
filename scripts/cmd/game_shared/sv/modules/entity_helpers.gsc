@@ -1,5 +1,5 @@
 #include common_scripts\utility;
-#include maps\mp\_utility;
+
 
 #include scripts\cmd\game_shared\sv\core\_utility;
 #include scripts\cmd\game_shared\sv\core\_hud_api;
@@ -19,10 +19,10 @@ init_entity_helpers()
 	level.physicstracecontentsvehicleclip = 16;
 	level._editor_ent_mask = level.physicstracemaskphysics | level.physicstracemaskvehicle | level.physicstracemaskwater | level.physicstracemaskclip;
 
-	addcallback( "on_player_connect", ::on_editor_connect );
+	_ADDCALLBACK( "on_player_connect", ::on_editor_connect );
 }
 
-private on_editor_connect()
+on_editor_connect()
 {
 	if ( !isdefined( level._first_player ) )
 	{
@@ -145,8 +145,9 @@ cast_non_entity_raycast_from_player_mouse_pos()
 
 	if ( array_validate( level._additional_mapents_pathnodes ) )
 	{
-		foreach ( node in level._additional_mapents_pathnodes )
+		for ( i = 0; i < _SIZE( level._additional_mapents_pathnodes.size ); i++ )
 		{
+			node = level._additional_mapents_pathnodes[ i ];
 			radial_origin = pointonsegmentnearesttopoint( ray[ 0 ], ray[ 1 ], node.origin );
 
 			if ( distancesquared( node.origin, radial_origin ) < 100 * 100 )
@@ -162,10 +163,10 @@ give_player_turret( model, turret_classname, turret_weapon_name, turret_type, se
 	placeturret = spawnturret( turret_classname, self.origin, turret_weapon_name );
 	placeturret.angles = self.angles;
 	placeturret setmodel( model );
-	placeturret setturretcarried( set_turret_carried );
-	placeturret setturretowner( self );
+	placeturret _SETURRETCARRIED( set_turret_carried );
+	placeturret _SETTURRETOWNER( self );
 
-	self carryturret( placeturret, carry_offset, carry_angles );
+	self _CARRYTURRET( placeturret, carry_offset, carry_angles );
 	self hud_binding_subscribe_to_entity( "editor_held_context", placeturret );
 
 	return placeturret;
@@ -173,8 +174,8 @@ give_player_turret( model, turret_classname, turret_weapon_name, turret_type, se
 
 take_player_turret( held_ent )
 {
-	self stopcarryturret( held_ent );
-	held_ent setturretcarried( false );
+	self _STOPCARRYTURRET( held_ent );
+	held_ent _SETURRETCARRIED( false );
 	held_ent delete();
 }
 
@@ -250,10 +251,9 @@ editor_held_model_thread( held_ent, place_mode )
 	{
 		self waittill( "editor_place_held" );
 
-		if ( !( isdefined( level.use_legacy_equipment_placement ) && level.use_legacy_equipment_placement ) )
-			turret_placement = self canplayerplaceturret();
+		turret_placement = self _CANPLAYERPLACETURRET();
 
-		if ( turret_placement[ "result" ] )
+		if ( is_true( turret_placement[ "result" ] ) )
 		{
 			if ( place_mode == "spawn" )
 			{
@@ -289,15 +289,15 @@ add_change_history( entfield_name, old_value, new_value )
 	hist_obj.value = new_value;
 
 	limit = get_dvar_int_default( "editor_ent_history_limit", 32 );
-	limit = clamp( limit, 0, 1024 );
+	limit = _CLAMP( limit, 0, 1024 );
 	while ( _SIZE( self._change_history.size ) > limit )
 	{
 		// remove oldest
-		arrayremoveindex( self._change_history, 0 );
+		self._change_history[ 0 ] = undefined;
 	}
 
 	self._change_history[ self._change_history.size ] = hist_obj;
-	if ( !isinarray( level._change_history, self ) )
+	if ( !_ISINARRAY( level._change_history, self ) )
 	{
 		level._change_history[ level._change_history.size ] = self;
 	}
@@ -331,10 +331,10 @@ set_entfield_relative( entfield_name, new_value, scale )
 			self.index += int( int( new_value ) * scale );
 			break;
 		case "lerp_to_lighter":
-			self.lerp_to_lighter += float( new_value ) * scale;
+			self.lerp_to_lighter += _FLOAT( new_value ) * scale;
 			break;
 		case "lerp_to_dark":
-			self.lerp_to_dark += float( new_value ) * scale;
+			self.lerp_to_dark += _FLOAT( new_value ) * scale;
 			break;
 		case "origin":
 			vector_origin = self.origin;
@@ -390,10 +390,10 @@ set_entfield( entfield_name, new_value )
 			self.index = int( new_value );
 			break;
 		case "lerp_to_lighter":
-			self.lerp_to_lighter = float( new_value );
+			self.lerp_to_lighter = _FLOAT( new_value );
 			break;
 		case "lerp_to_dark":
-			self.lerp_to_dark = float( new_value );
+			self.lerp_to_dark = _FLOAT( new_value );
 			break;
 		case "origin":
 			vector_origin = cast_str_to_vector( new_value );
@@ -416,13 +416,13 @@ set_entfield( entfield_name, new_value )
 			self notsolid();
 			break;
 		case "setcheapflag":
-			self setcheapflag( int( new_value ) );
+			self _SETCHEAPFLAG( int( new_value ) );
 			break;
 		case "ignorecheapentityflag":
-			self ignorecheapentityflag( int( new_value ) );
+			self _IGNORECHEAPENTITYFLAG( int( new_value ) );
 			break;
 		case "setzombieshrink":
-			self setzombieshrink( int( new_value ) );
+			self _SETZOMBIESHRINK( int( new_value ) );
 			break;
 		default:
 			return set_cast_error( result_obj, entfield_name + " is unsupported!" );
@@ -549,7 +549,14 @@ spawn_trigger_damage( origin, spawnflags, radius, height )
 	// Mirroring engine code
 	ent.health = 32000;
 	ent setcandamage( true );
-	ent setcontents( 0x405C0008 );
+	contents = 0;
+	contents |= level.tcs_contents[ "VEHICLETRIGGER" ];
+	contents |= level.tcs_contents[ "VEHICLECLIP" ];
+	contents |= level.tcs_contents[ "ITEMCLIP" ];
+	contents |= level.tcs_contents[ "NEUTRALTRIGGER" ];
+	contents |= level.tcs_contents[ "UTILITYCLIP" ];
+	contents |= level.tcs_contents[ "PLAYERTRIGGER" ];
+	ent setcontents( contents );
 	return ent;
 }
 
@@ -562,25 +569,25 @@ spawn_trigger_radius_use( origin, spawnflags, radius, height )
 	contents = 0;
 	if ( ( spawnflags & 8 ) == 0 )
 	{
-		contents = 0x40000000;
+		contents = level.tcs_contents[ "PLAYERTRIGGER" ];
 	}
 	if ( ( spawnflags & 1 ) != 0 )
 	{
-		contents |= 0x40000;
+		contents |= level.tcs_contents[ "VEHICLECLIP" ];
 	}
 	if ( ( spawnflags & 2 ) != 0 )
 	{
-		contents |= 0x80000;
+		contents |= level.tcs_contents[ "ITEMCLIP" ];
 	}
 	if ( ( spawnflags & 4 ) != 0 )
 	{
-		contents |= 0x100000;
+		contents |= level.tcs_contents[ "NEUTRALTRIGGER" ];
 	}
-	if ( ( spawnflags & 0x10 ) != 0 )
+	if ( ( spawnflags & 16 ) != 0 )
 	{
-		contents |= 8;
+		contents |= level.tcs_contents[ "VEHICLETRIGGER" ];
 	}
-	ent setcontents( contents | 0x200000 );
+	ent setcontents( contents | level.tcs_contents[ "USE" ] );
 	return ent;
 }
 
@@ -595,25 +602,25 @@ spawn_trigger_box_use( origin, spawnflags, width, length, height )
 	contents = 0;
 	if ( ( spawnflags & 8 ) == 0 )
 	{
-		contents = 0x40000000;
+		contents = level.tcs_contents[ "PLAYERTRIGGER" ];
 	}
 	if ( ( spawnflags & 1 ) != 0 )
 	{
-		contents |= 0x40000;
+		contents |= level.tcs_contents[ "VEHICLECLIP" ];
 	}
 	if ( ( spawnflags & 2 ) != 0 )
 	{
-		contents |= 0x80000;
+		contents |= level.tcs_contents[ "ITEMCLIP" ];
 	}
 	if ( ( spawnflags & 4 ) != 0 )
 	{
-		contents |= 0x100000;
+		contents |= level.tcs_contents[ "NEUTRALTRIGGER" ];
 	}
-	if ( ( spawnflags & 0x10 ) != 0 )
+	if ( ( spawnflags & 16 ) != 0 )
 	{
-		contents |= 8;
+		contents |= level.tcs_contents[ "VEHICLETRIGGER" ];
 	}
-	ent setcontents( contents | 0x200000 );
+	ent setcontents( contents | level.tcs_contents[ "USE" ] );
 	return ent;
 }
 
@@ -628,25 +635,25 @@ spawn_trigger_box( origin, spawnflags, width, length, height )
 	contents = 0;
 	if ( ( spawnflags & 8 ) == 0 )
 	{
-		contents = 0x40000000;
+		contents = level.tcs_contents[ "PLAYERTRIGGER" ];
 	}
 	if ( ( spawnflags & 1 ) != 0 )
 	{
-		contents |= 0x40000;
+		contents |= level.tcs_contents[ "VEHICLECLIP" ];
 	}
 	if ( ( spawnflags & 2 ) != 0 )
 	{
-		contents |= 0x80000;
+		contents |= level.tcs_contents[ "ITEMCLIP" ];
 	}
 	if ( ( spawnflags & 4 ) != 0 )
 	{
-		contents |= 0x100000;
+		contents |= level.tcs_contents[ "NEUTRALTRIGGER" ];
 	}
-	if ( ( spawnflags & 0x10 ) != 0 )
+	if ( ( spawnflags & 16 ) != 0 )
 	{
-		contents |= 8;
+		contents |= level.tcs_contents[ "VEHICLETRIGGER" ];
 	}
-	ent setcontents( contents | 0x200000 );
+	ent setcontents( contents | level.tcs_contents[ "USE" ] );
 	return ent;
 }
 
@@ -660,29 +667,29 @@ spawn_trigger_radius( origin, spawnflags, radius, height )
 	contents = 0;
 	if ( ( spawnflags & 8 ) == 0 )
 	{
-		contents = 0x40000000;
+		contents = level.tcs_contents[ "PLAYERTRIGGER" ];
 	}
 	if ( ( spawnflags & 1 ) != 0 )
 	{
-		contents |= 0x40000;
+		contents |= level.tcs_contents[ "VEHICLECLIP" ];
 	}
 	if ( ( spawnflags & 2 ) != 0 )
 	{
-		contents |= 0x80000;
+		contents |= level.tcs_contents[ "ITEMCLIP" ];
 	}
 	if ( ( spawnflags & 4 ) != 0 )
 	{
-		contents |= 0x100000;
+		contents |= level.tcs_contents[ "NEUTRALTRIGGER" ];
 	}
-	if ( ( spawnflags & 0x10 ) != 0 )
+	if ( ( spawnflags & 16 ) != 0 )
 	{
-		contents |= 8;
+		contents |= level.tcs_contents[ "VEHICLETRIGGER" ];
 	}
-	ent setcontents( contents | 0x200000 );
+	ent setcontents( contents | level.tcs_contents[ "USE" ] );
 	return ent;
 }
 
-cast_str_to_actor_spawner( str, noprint = false, allow_null_actor_spawner = false )
+cast_str_to_actor_spawner( str )
 {
 	spawners = getspawnerarray();
 
@@ -693,7 +700,7 @@ spawn_actor( actor_spawner, get_enemy_info, targetname )
 {
 	get_enemy_info = _DEFAULT( get_enemy_info, 0 );
 	targetname = _DEFAULT( targetname, "" );
-	actor = actor_spawner spawnactor( get_enemy_info, targetname );
+	actor = actor_spawner _SPAWNACTOR( get_enemy_info, targetname );
 	return actor;
 }
 
@@ -723,7 +730,7 @@ cmd_spawncollision_f( target_obj, args )
 spawn_plane( owner, classname, origin, spawnflags )
 {
 	spawnflags = _DEFAULT( spawnflags, 0 );
-	ent = spawnplane( owner, classname, origin, spawnflags );
+	ent = _SPAWNPLANE( owner, classname, origin, spawnflags );
 	return ent;
 }
 
@@ -739,8 +746,7 @@ cmd_spawnplane_f( target_obj, args )
 
 spawn_helicopter( owner, origin, angles, vehicle_def_name, model )
 {
-	spawnflags = _DEFAULT( spawnflags, 0 );
-	ent = spawnhelicopter( owner, origin, angles, vehicle_def_name, model );
+	ent = _SPAWNHELICOPTER( owner, origin, angles, vehicle_def_name, model );
 	return ent;
 }
 
@@ -800,7 +806,7 @@ cmd_spawnturret_f( target_obj, args )
 
 spawn_player_clone( player, death_anim_duration )
 {
-	ent = player cloneplayer( death_anim_duration );
+	ent = player _CLONEPLAYER( death_anim_duration );
 	
 	return ent;
 }
@@ -818,19 +824,19 @@ spawn_path_node( classname, origin, angles, key1, val1, key2, val2, key3, val3 )
 	ent = undefined;
 	if ( isdefined( key3 ) )
 	{
-		//ent = spawnpathnode( classname, origin, angles, key1, val1, key2, val2, key3, val3 );
+		//ent = _SPAWNPATHNODE( classname, origin, angles, key1, val1, key2, val2, key3, val3 );
 	}
 	else if ( isdefined( key2 ) )
 	{
-		ent = spawnpathnode( classname, origin, angles, key1, val1, key2, val2 );
+		ent = _SPAWNPATHNODE( classname, origin, angles, key1, val1, key2, val2 );
 	}
 	else if ( isdefined( key1 ) )
 	{
-		ent = spawnpathnode( classname, origin, angles, key1, val1 );
+		ent = _SPAWNPATHNODE( classname, origin, angles, key1, val1 );
 	}
 	else
 	{
-		ent = spawnpathnode( classname, origin, angles );
+		ent = _SPAWNPATHNODE( classname, origin, angles );
 	}
 	
 	return ent;
@@ -870,7 +876,7 @@ cmd_spawnfx_f( target_obj, args )
 
 spawn_timed_fx( weapon, origin, direction, time_seconds )
 {
-	ent = spawntimedfx( weapon, origin, direction, time_seconds );
+	ent = _SPAWNTIMEDFX( weapon, origin, direction, time_seconds );
 	
 	return ent;
 }
@@ -1001,11 +1007,11 @@ get_vector_filename( vector )
 
 dump_mapents_kvp( fh, key, val )
 {
-	if ( isint( val ) || isfloat( val ) || isstring( val ) )
+	if ( _ISINT( val ) || _ISFLOAT( val ) || _ISSTRING( val ) )
 	{
 		fs_writeline( fh, "\"" + key + "\"" + " " + "\"" + val + "\"" );
 	}
-	else if ( isvec( val ) )
+	else if ( _ISVEC( val ) )
 	{
 		vec_str = get_mapents_vector( val );
 		fs_writeline( fh, "\"" + key + "\"" + " " + "\"" + vec_str + "\"" );
@@ -1014,7 +1020,7 @@ dump_mapents_kvp( fh, key, val )
 
 dump_gsc_kvp( fh, ent_var_name, key, val )
 {
-	if ( isstring( val ) )
+	if ( _ISSTRING( val ) )
 	{
 		fs_writeline( fh, ent_var_name + "." + key + " = " + "\"" + val + "\"" );
 	}
@@ -1041,7 +1047,7 @@ generate_gsc_spawnpoint( classname, angles, origin )
 {
 	fh = level.spawnpoints_gsc_fh;
 
-	args = array( classname, origin, 0, angles[ 1 ], 0 );
+	args = _ARRAY( classname, origin, 0, angles[ 1 ], 0 );
 	dump_gsc_func_call( fh, "spawn", args, "new_spawnpoint" );
 	dump_gsc_kvp( fh, "new_spawnpoint", "script_gameobjectname", level.gametype );
 }
@@ -1057,7 +1063,7 @@ dump_gsc_func_call( fh, func, args, return_val )
 	fs_writeline( fh, "( " );
 	for ( i = 0; i < args.size; i++ )
 	{
-		if ( isstring( args[ i ] ) )
+		if ( _ISSTRING( args[ i ] ) )
 		{
 			fs_writeline( fh, "\"" + args[ i ] + "\"" );
 		}
@@ -1113,9 +1119,11 @@ generate_minimap_corner( keys )
 }
 */
 
-create_entity_location_screenshot( type, player_name, angles, origin, classname = undefined, location = undefined, gamemodegroup = undefined )
+create_entity_location_screenshot( type, player_name, angles, origin, classname, location, gamemodegroup )
 {
 	classname = _DEFAULT( classname, undefined );
+	location = _DEFAULT( location, "none" );
+	gamemodegroup = _DEFAULT( gamemodegroup, "none" );
 	angles_str = get_vector_filename( angles );
 	origin_str = get_vector_filename( origin );
 

@@ -1,5 +1,4 @@
 #include common_scripts\utility;
-#include maps\mp\_utility;
 
 // reference all scripts for autoexec
 #include scripts\cmd\game_shared\sv\core\_cmd_execute;
@@ -26,24 +25,27 @@
 #include scripts\cmd\game_shared\sv\modules\debug_cmds;
 #include scripts\cmd\game_shared\sv\modules\debug_helpers;
 
-private main()
+#include scripts\zm\T6_sv_cs_zm_main;
+
+main()
 {
 	_INIT_SERVER();
+	_INIT_GAME();
 	level._developer = getdvarint( "developer" );
 	level.tcs_glob = spawnstruct();
 	level.tcs_glob.irestart_countdown = 5;
 	level.tcs_glob.icmd_total = 0;
-	level.tcs_glob.icooldown = getdvarintdefault( "tcs_cmd_cd", 5 );
-	level.tcs_glob.bsilent_cmds = getdvarintdefault( "tcs_silent_cmds", 0 );
-	level.tcs_glob.blog_cmds = getdvarintdefault( "tcs_logprint_cmd_usage", 1 );
-	level.tcs_glob.bhidden_cmds = getdvarintdefault( "tcs_allow_hidden_cmds", 1 );
+	level.tcs_glob.icooldown = _GETDVARINTDEFAULT( "tcs_cmd_cd", 5 );
+	level.tcs_glob.bsilent_cmds = _GETDVARINTDEFAULT( "tcs_silent_cmds", 0 );
+	level.tcs_glob.blog_cmds = _GETDVARINTDEFAULT( "tcs_logprint_cmd_usage", 1 );
+	level.tcs_glob.bhidden_cmds = _GETDVARINTDEFAULT( "tcs_allow_hidden_cmds", 1 );
 	level.tcs_glob.acmd_tokens = [];
 
 	level.clientdvars = [];
 	tokens_str = get_dvar_string_default( "tcs_cmd_tokens", "" ); //separated by spaces, good tokens are generally not used at the start of a normal message 
 	if ( tokens_str != "" )
 	{
-		tokens = strtok( tokens_str, " " );
+		tokens = _STRTOK( tokens_str, " " );
 		for ( i = 0; i < tokens.size; i++ )
 		{
 			level.tcs_glob.acmd_tokens[ level.tcs_glob.acmd_tokens.size ] = tokens[ i ];
@@ -86,8 +88,8 @@ private main()
 	add_debug_cmds();
 	add_entity_cmds();
 
-	addcallback( "on_player_connect", ::tcs_on_connect );
-	registerclientsys( "cl_tcs" );
+	_ADDCALLBACK( "on_player_connect", ::tcs_on_connect );
+	_REGISTERCLIENTSYS( "cl_tcs" );
 
 	level thread drive_connected_notifies_for_mp();
 	level thread drive_disconnected_notifies();
@@ -103,16 +105,17 @@ drive_connected_notifies_for_mp()
 	for ( ;; )
 	{
 		level waittill( "connected", player );
-		if ( !sessionmodeiszombiesgame() )
+		_ADD_PLAYERS_ARRAY( player );
+		if ( !_SESSIONMODEISZOMBIESGAME() )
 		{
-			player callback( "on_player_connect" ); // MP doesn't have...
+			player _CALLBACK( "on_player_connect" ); // MP doesn't have...
 		}
 	}
 }
 
 onplayerdisconnect()
 {
-	if ( sessionmodeiszombiesgame() )
+	if ( _SESSIONMODEISZOMBIESGAME() )
 	{
 		level notify( "disconnect", self ); // ZM doesn't have...
 	}
@@ -125,7 +128,8 @@ drive_disconnected_notifies()
 	for ( ;; )
 	{
 		level waittill( "disconnect", player );
-		player callback( "on_player_disconnect" );
+		player _CALLBACK( "on_player_disconnect" );
+		_REMOVE_PLAYERS_ARRAY( player );
 	}
 }
 
@@ -141,8 +145,9 @@ tcs_on_connect()
 	tcs_pl_obj = tcs_p_obj_new();
 	self.tcs_pl = tcs_pl_obj;
 
-	foreach ( index, dvar in level.clientdvars )
+	for ( index = 0; index < level.clientdvars.size; index++ )
 	{
+		dvar = level.clientdvars[ index ];
 		self thread set_client_dvar_thread( dvar[ "name" ], dvar[ "value" ], index );
 	}
 	found_entry = false;
@@ -155,8 +160,9 @@ tcs_on_connect()
 	}
 	else if ( array_validate( level.tcs_player_entries ) )
 	{
-		foreach ( entry in level.tcs_player_entries )
+		for ( i = 0; i < level.tcs_player_entries.size; i++ )
 		{
+			entry = level.tcs_player_entries[ i ];
 			find = _GET_SERVER_ENTITY() cast_str_to_entity( entry.player_entry, "player" );
 			if ( !find.errored && find.ent == self )
 			{

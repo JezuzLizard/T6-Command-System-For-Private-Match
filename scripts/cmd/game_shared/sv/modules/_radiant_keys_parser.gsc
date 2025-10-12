@@ -1,6 +1,6 @@
 // RULE 1: 'self' is always a radiant_keys_parse_obj_t object
 
-/*radiant_keys_parse_obj_t*/ private radiant_keys_parse_obj_t_new()
+/*radiant_keys_parse_obj_t*/ radiant_keys_parse_obj_t_new()
 {
 	radiant_keys_obj = generic_obj_t_new( "radiant_keys" );
 	radiant_keys_obj.data = []; // string -> struct of {type, desc}
@@ -8,7 +8,7 @@
 	return radiant_keys_obj;
 }
 
-/*radiant_key_obj_t*/ private radiant_key_obj_t_new( key, type, desc )
+/*radiant_key_obj_t*/ radiant_key_obj_t_new( key, type, desc )
 {
 	desc = _DEFAULT( desc, "No description" );
 	struc = spawnstruct();

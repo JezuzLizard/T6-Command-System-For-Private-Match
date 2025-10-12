@@ -1,5 +1,5 @@
 #include common_scripts\utility;
-#include maps\mp\_utility;
+
 
 #include scripts\cmd\game_shared\sv\core\_utility;
 #include scripts\cmd\game_shared\sv\core\_hud_utility;
@@ -7,34 +7,37 @@
 init_camera_helpers()
 {
 	level._placed_cameras = [];
-	addcallback( "on_player_connect", ::on_connect );
-	addcallback( "on_player_disconnect", ::on_disconnect );
+	_ADDCALLBACK( "on_player_connect", ::on_connect );
+	_ADDCALLBACK( "on_player_disconnect", ::on_disconnect );
 
 	_GET_SERVER_ENTITY() init_user_cameras(); // init the cameras for the server "player"
 }
 
-private on_connect()
+on_connect()
 {
 	max_user_cameras = get_dvar_int_default( "max_user_cameras", 8 ); // 144 total...
 
 	self init_user_cameras( max_user_cameras );
 }
 
-private on_disconnect()
+on_disconnect()
 {
 	if ( isdefined( level._placed_cameras[ self.name ] ) )
 	{
-		foreach ( camera_name, cam in level._placed_cameras[ self.name ].cams )
+		keys = getarraykeys( level._placed_cameras[ self.name ].cams );
+		for ( i = 0; i < _SIZE( level._placed_cameras[ self.name ].cams.size ); i++ )
 		{
-			level._placed_cameras[ self.name ].cams[ camera_name ] delete();
-			level._placed_cameras[ self.name ].cams[ camera_name ] = undefined;
+			camera_name = keys[ i ];
+			cam = level._placed_cameras[ self.name ].cams[ keys[ i ] ];
+			cam delete();
+			cam = undefined;
 		}
 
 		level._placed_cameras[ self.name ] = undefined;
 	}
 }
 
-private init_user_cameras( limit )
+init_user_cameras( limit )
 {
 	if ( !isdefined( level._placed_cameras[ self.name ] ) )
 	{
@@ -44,8 +47,9 @@ private init_user_cameras( limit )
 	}
 }
 
-register_placed_camera( camera_name, origin, angles, model = "tag_origin" )
+register_placed_camera( camera_name, origin, angles, model )
 {
+	model = _DEFAULT( model, "tag_origin" );
 	if ( ( level._placed_cameras[ self.name ].cams.size + 1 ) > level._placed_cameras[ self.name ].limit )
 	{
 		return false;
@@ -81,7 +85,7 @@ placed_camera_exists( camera_name )
 	return isdefined( level._placed_cameras[ self.name ].cams[ camera_name ] );
 }
 
-spawn_camera_ent( camera_name, origin, angles, model = "tag_origin" )
+spawn_camera_ent( camera_name, origin, angles, model )
 {
 	model = _DEFAULT( model, "tag_origin" );
 	camera_ent = spawn( "script_model", origin );
@@ -92,7 +96,7 @@ spawn_camera_ent( camera_name, origin, angles, model = "tag_origin" )
 	return camera_ent;
 }
 
-link_camera_to_ent( camera_name, ent, tag_name, origin_offset = undefined, angles_offset = undefined )
+link_camera_to_ent( camera_name, ent, tag_name, origin_offset, angles_offset )
 {
 	origin_offset = _DEFAULT( origin_offset, ( 0, 0, 0 ) );
 	angles_offset = _DEFAULT( angles_offset, ( 0, 0, 0 ) );

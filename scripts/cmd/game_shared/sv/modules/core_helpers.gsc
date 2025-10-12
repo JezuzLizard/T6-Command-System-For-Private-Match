@@ -1,5 +1,5 @@
 #include common_scripts\utility;
-#include maps\mp\_utility;
+
 
 #include scripts\cmd\game_shared\sv\core\_utility;
 
@@ -203,12 +203,12 @@ toggle_hud( on_off )
 {
 	if ( on_off )
 	{
-		self setclientuivisibilityflag( "hud_visible", 0 );
+		self _SETCLIENTUIVISIBILITYFLAG( "hud_visible", 0 );
 		self.tcs_hud_toggled = true;
 	}
 	else
 	{
-		self setclientuivisibilityflag( "hud_visible", 1 );
+		self _SETCLIENTUIVISIBILITYFLAG( "hud_visible", 1 );
 		self.tcs_hud_toggled = false;
 	}
 }
@@ -232,10 +232,10 @@ get_eligible_last_cmd()
 	for ( i = ( _SIZE( self.cmd_history.size ) - 1 ); i >= 0; i-- )
 	{
 		eligible = true;
-		old_cmd_strings = strtok( self.cmd_history[ i ], "^" );
+		old_cmd_strings = _STRTOK( self.cmd_history[ i ], "^" );
 		for ( j = 0; j < old_cmd_strings.size; j++ )
 		{
-			old_cmd = strtok( old_cmd_strings[ j ], " " )[ 0 ];
+			old_cmd = _STRTOK( old_cmd_strings[ j ], " " )[ 0 ];
 			if ( is_true( level.tcs_cmds[ old_cmd ].immune_to_lastcmd ) )
 			{
 				eligible = false;

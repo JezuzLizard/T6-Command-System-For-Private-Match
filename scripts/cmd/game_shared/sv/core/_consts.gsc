@@ -1,5 +1,4 @@
 #include common_scripts\utility;
-#include maps\mp\_utility;
 
 #include scripts\cmd\game_shared\sv\core\_utility;
 
@@ -176,7 +175,7 @@ get_entities_by_etype( etype, start, end  )
 {
 	start = _DEFAULT( start, 0 );
 	start = _CLAMP( start, 0, 1024 );
-	end = _DEFAULT( ent, 1024 );
+	end = _DEFAULT( end, 1024 );
 	end = _CLAMP( end, 1, 1024 );
 	ents = [];
 
@@ -184,6 +183,7 @@ get_entities_by_etype( etype, start, end  )
 	{
 		return ents;
 	}
+/#
 	for ( i = start; i < end; i++ )
 	{
 		ent = getentbynum( i );
@@ -195,21 +195,21 @@ get_entities_by_etype( etype, start, end  )
 
 		if ( etype == "temp_entity" )
 		{
-			if ( ent getentitytype() >= level._entity_types[ "temp_entity" ] )
+			if ( ent _GETENTITYTYPE() >= level._entity_types[ "temp_entity" ] )
 			{
 				ents[ ents.size ] = ent;
 				continue;
 			}
 		}
 		
-		if ( ent getentitytype() != level._entity_types[ etype ] )
+		if ( ent _GETENTITYTYPE() != level._entity_types[ etype ] )
 		{
 			continue;
 		}
 
 		ents[ ents.size ] = ent;
 	}
-
+#/
 	return ents;
 }
 
@@ -219,6 +219,7 @@ get_entities_by_static_range( static_type )
 	end = level._ent_num_ranges[ static_type ].last_entnum;
 
 	entities = [];
+/#
 	for ( i = start; i <= end; i++ )
 	{
 		ent = getentbynum( i );
@@ -229,7 +230,7 @@ get_entities_by_static_range( static_type )
 
 		entities[ entities.size ] = ent;
 	}
-
+#/
 	return entities;
 }
 
@@ -241,12 +242,16 @@ get_null_entity_array()
 get_world_entity_array()
 {
 	entities = [];
+/#
 	entities[ 0 ] = getentbynum( 1022 );
+#/
 	return entities;
 }
 
-get_ent_array( value = "", key = "" )
+get_ent_array( value, key )
 {
+	value = _DEFAULT( value, "" );
+	key = _DEFAULT( key, "" );
 	if ( value != "" && key != "" )
 	{
 		return getentarray( value, key );
@@ -267,7 +272,7 @@ get_player_corpse_array()
 
 get_item_array()
 {
-	return getitemarray();
+	return _GETITEMARRAY();
 }
 
 /*
@@ -277,14 +282,14 @@ get_item_array()
 */
 get_missile_array( classnames_str )
 {
-	classnames = strtok( classnames_str, " " );
+	classnames = _STRTOK( classnames_str, " " );
 
 	entities = [];
 	for ( i = 0; i < _SIZE( classnames.size ); i++ )
 	{
 		missile_entities = getentarray( classnames[ i ], "classname" );
 
-		entities = arraycombine( entities, missile_entities, false, false );
+		entities = _ARRAYCOMBINE( entities, missile_entities, false, false );
 	}
 
 	return entities;
@@ -312,7 +317,7 @@ get_loop_fx_array()
 
 get_scriptmover_array()
 {
-	return getscriptmoverarray();
+	return _GETSCRIPTMOVERARRAY();
 }
 
 get_primary_light_array()
@@ -331,7 +336,7 @@ get_helicopter_array()
 	helicopters = [];
 	for ( i = 0; i < _SIZE( vehicles.size ); i++ )
 	{
-		if ( vehicles[ i ] getentitytype() == level._entity_types[ "helicopter" ] )
+		if ( vehicles[ i ] _GETENTITYTYPE() == level._entity_types[ "helicopter" ] )
 		{
 			helicopters[ helicopters.size ] = vehicles[ i ];
 		}
@@ -380,7 +385,7 @@ get_streamer_hint_array()
 
 get_zbarrier_array()
 {
-	return getzbarrierarray();
+	return _ZBARRIERARRAY();
 }
 
 get_temp_entity_array()
@@ -396,7 +401,7 @@ get_bot_array()
 	for ( i = 0; i < _SIZE( players.size ); i++ )
 	{
 		player = players[ i ];
-		if ( !player istestclient() )
+		if ( !player _ISTESTCLIENT() )
 		{
 			continue;
 		}
@@ -407,7 +412,7 @@ get_bot_array()
 	return bots;
 }
 
-private register_entity_type( type, getter_func )
+register_entity_type( type, getter_func )
 {
 	if ( !isdefined( level._entity_type_funcs ) )
 	{
@@ -418,7 +423,7 @@ private register_entity_type( type, getter_func )
 	level._entity_type_funcs[ type ].getter = getter_func;
 }
 
-private register_entity_string_type( classname, required_fields, optional_fields )
+register_entity_string_type( classname, required_fields, optional_fields )
 {
 	if ( !isdefined( level._entity_string_types ) )
 	{
@@ -430,7 +435,7 @@ private register_entity_string_type( classname, required_fields, optional_fields
 	level._entity_string_types[ classname ].optional_fields = optional_fields;
 }
 
-private register_entity_string_field( field_name, type_value, readonly )
+register_entity_string_field( field_name, type_value, readonly )
 {
 	readonly = _DEFAULT( readonly, false );
 	if ( !isdefined( level._entity_string_fields ) )
@@ -443,7 +448,7 @@ private register_entity_string_field( field_name, type_value, readonly )
 	level._entity_string_fields[ field_name ].readonly = readonly;
 }
 
-private register_custom_entity_getter( type, getter_func )
+register_custom_entity_getter( type, getter_func )
 {
 	if ( !isdefined( level._entity_custom_getter_funcs ) )
 	{
@@ -454,7 +459,7 @@ private register_custom_entity_getter( type, getter_func )
 	level._entity_custom_getter_funcs[ type ].getter = getter_func;
 }
 
-private register_entnum_range( type, first_entnum, last_entnum, count )
+register_entnum_range( type, first_entnum, last_entnum, count )
 {
 	if ( !isdefined( level._ent_num_ranges ) )
 	{
@@ -502,7 +507,7 @@ private register_entnum_range( type, first_entnum, last_entnum, count )
 	CONTENTS_TRIGGER = 0x40000000,
 	CONTENTS_NODROP = 0x80000000,
 */
-private build_contents_array()
+build_contents_array()
 {
 	level.tcs_contents = [];
 	level.tcs_contents[ "NONE" ] = 0;
@@ -542,7 +547,7 @@ private build_contents_array()
 	level.tcs_contents[ "NODROP" ] = 1 << 31;
 }
 
-private build_hitlocs_array()
+build_hitlocs_array()
 {
 	level.tcs_hitlocs = [];
 	level.tcs_hitlocs[ "none" ] = 0;
@@ -567,7 +572,7 @@ private build_hitlocs_array()
 	level.tcs_hitlocs[ "right_foot" ] = 19;
 }
 
-private build_mods_array()
+build_mods_array()
 {
 	level.tcs_mods = [];
 	level.tcs_mods[ "MOD_UNKNOWN" ] = 0;
@@ -593,7 +598,7 @@ private build_mods_array()
 	level.tcs_mods[ "MOD_GAS" ] = 20;
 }
 
-private build_idflags_array()
+build_idflags_array()
 {
 	level.tcs_idflags = [];
 	level.tcs_idflags[ "radius" ] = 1 << 0;
@@ -609,7 +614,7 @@ private build_idflags_array()
 	level.tcs_idflags[ "passthru" ] = 1 << 10;
 }
 
-private build_sessionstate_array()
+build_sessionstate_array()
 {
 	level.tcs_sessstates = [];
 	level.tcs_sessstates[ "playing" ] = 0;
@@ -618,7 +623,7 @@ private build_sessionstate_array()
 	level.tcs_sessstates[ "intermission" ] = 3;
 }
 
-private build_dynamic_spawnable_classname_array()
+build_dynamic_spawnable_classname_array()
 {
 	level.tcs_dynamic_spawns = [];
 	level.tcs_dynamic_spawns[ "info_notnull" ] = 0;
@@ -635,7 +640,7 @@ private build_dynamic_spawnable_classname_array()
 	level.tcs_dynamic_spawns[ "_spawn" ] = 11;
 }
 
-private build_dynamic_spawnable_function_array()
+build_dynamic_spawnable_function_array()
 {
 	level.tcs_dynamic_function_spawns = [];
 	level.tcs_dynamic_function_spawns[ "spawn" ] = 0;
@@ -652,7 +657,7 @@ private build_dynamic_spawnable_function_array()
 	level.tcs_dynamic_function_spawns[ "cloneplayer" ] = 11;
 }
 
-private build_bsp_spawnable_classname_array()
+build_bsp_spawnable_classname_array()
 {
 	level.tcs_bsp_spawns = [];
 	level.tcs_bsp_spawns[ "trigger_use" ] = 0;
@@ -708,7 +713,16 @@ arg_obj_boolean_generate( arg1, arg2, arg3 )
 	find = generic_obj_t_new();
 
 	bool_val = cointoss();
-	bool_val_str = cointoss() ? cast_bool_to_str( bool_val, "true false" ) : bool_val + "";
+	bool_val_str = undefined;
+	if ( cointoss() )
+	{
+		bool_val_str = cast_bool_to_str( bool_val, "true false" );
+	}
+	else
+	{
+		bool_val_str = bool_val + "";
+	}
+
 	find.str_value = bool_val_str;
 	return set_cast_success( find, bool_val, "boolean==" + find.str_value );
 }
@@ -722,7 +736,16 @@ arg_obj_int_generate( arg1, arg2, arg3 )
 {
 	find = generic_obj_t_new();
 
-	int_val = cointoss() ? randomFloat( 1000000 ) : randomFloat( 1000000 ) * -1;
+	int_val = undefined;
+	if ( cointoss() )
+	{
+		int_val = randomint( 1000000 );
+	}
+	else
+	{
+		int_val = randomint( 1000000 ) * -1;
+	}
+
 	find.str_value = int_val + "";
 	return set_cast_success( find, int_val, "int==" + find.str_value );
 }
@@ -736,7 +759,16 @@ arg_obj_float_generate( arg1, arg2, arg3 )
 {
 	find = generic_obj_t_new();
 
-	float_val = cointoss() ? randomFloat( 1000000 ) : randomFloat( 1000000 ) * -1;
+	float_val = undefined;
+	if ( cointoss() )
+	{
+		float_val = randomfloat( 1000000 );
+	}
+	else
+	{
+		float_val = randomfloat( 1000000 ) * -1;
+	}
+
 	find.str_value = float_val + "";
 	return set_cast_success( find, float_val, "float==" + find.str_value );
 }
@@ -764,9 +796,33 @@ arg_obj_vector_generate( arg1, arg2, arg3 )
 {
 	find = generic_obj_t_new();
 
-	x = cointoss() ? randomfloat( 1000 ) : randomfloat( 1000 ) * -1;
-	y = cointoss() ? randomfloat( 1000 ) : randomfloat( 1000 ) * -1;
-	z = cointoss() ? randomfloat( 1000 ) : randomfloat( 1000 ) * -1;
+	x = undefined;
+	y = undefined;
+	z = undefined;
+	if ( cointoss() )
+	{
+		x = randomfloat( 1000 );
+	}
+	else
+	{
+		x = randomfloat( 1000 ) * -1;
+	}
+	if ( cointoss() )
+	{
+		y = randomfloat( 1000 );
+	}
+	else
+	{
+		y = randomfloat( 1000 ) * -1;
+	}
+	if ( cointoss() )
+	{
+		z = randomfloat( 1000 );
+	}
+	else
+	{
+		z = randomfloat( 1000 ) * -1;
+	}
 	vec = ( x, y, z );
 
 	find.str_value = x + "," + y + "," + z;
@@ -922,7 +978,7 @@ arg_obj_idflags_generate( arg1, arg2, arg3 )
 		{
 			find.str_value += "|";
 		}
-		arrayremoveindex( idflags_array, random_flag_index );
+		idflags_array[ random_flag_index ] = undefined;
 	}
 
 	return set_cast_success( find, flags, "idflags==" + find.str_value );
@@ -933,7 +989,7 @@ arg_obj_idflags_cast( arg )
 {
 	find = generic_obj_t_new();
 
-	flag_strs = strtok( arg, "|" );
+	flag_strs = _STRTOK( arg, "|" );
 
 	flags = 0;
 
@@ -1033,16 +1089,17 @@ clamp_array( arr, limit )
 	}
 
 	new_arr = [];
-	i = 0;
-	foreach ( key, val in arr )
+	keys = getarraykeys( arr );
+	for ( i = 0; i < _SIZE( arr.size ); i++ )
 	{
+		key = keys[ i ];
+		val = arr[ keys[ i ] ];
 		if ( i >= limit )
 		{
 			break;
 		}
 
 		new_arr[ key ] = val;
-		i++;
 	}
 
 	return new_arr;
@@ -1103,7 +1160,7 @@ target_obj_generate( target_type, overload )
 
 	max_targets = _CLAMP( max_targets, 1, ents.size );
 
-	ents = array_randomize( ents );
+	ents = _ARRAY_RANDOMIZE( ents );
 	ents = clamp_array( ents, max_targets );
 	if ( ents.size == 0 )
 	{

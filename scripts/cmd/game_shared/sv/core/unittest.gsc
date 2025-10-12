@@ -1,5 +1,5 @@
 #include common_scripts\utility;
-#include maps\mp\_utility;
+
 
 #include scripts\cmd\game_shared\sv\core\_utility;
 
@@ -22,7 +22,7 @@ add_unittest_cmds()
 	testcmd_cmd make_cmd_immune_to_unittest();
 }
 
-private cmd_unittest_validargs_f( param )
+cmd_unittest_validargs_f( param )
 {
 	required_bots = _DEFAULT( param.a[ 0 ], 1 );
 	duration = _DEFAULT( param.a[ 1 ], 0 );
@@ -44,7 +44,7 @@ private cmd_unittest_validargs_f( param )
 	param add_executor_cmdinfo( "Cmd system unit test '" + on_off + "'" );
 }
 
-private cmd_testcmd_f( param )
+cmd_testcmd_f( param )
 {
 	cmd = param.a[ 0 ];
 	threadcount = _DEFAULT( param.a[ 1 ], 1 );

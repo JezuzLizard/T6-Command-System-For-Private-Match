@@ -1,5 +1,5 @@
 #include common_scripts\utility;
-#include maps\mp\_utility;
+
 
 #include scripts\cmd\game_shared\sv\core\_utility;
 #include scripts\cmd\game_shared\sv\modules\debug_helpers;
@@ -7,23 +7,23 @@
 add_debug_cmds()
 {
 	level.linelist = [];
-	level.linelist[ "cube" ] = array( (0, 0, 0), (1, 0, 0), (1, 1, 0), (0, 1, 0), (0, 0, 0), 
+	level.linelist[ "cube" ] = _ARRAY( (0, 0, 0), (1, 0, 0), (1, 1, 0), (0, 1, 0), (0, 0, 0), 
 									  (0, 0, 1), (1, 0, 1), (1, 1, 1), (0, 1, 1), (0, 0, 1), 
 									  (1, 0, 1), (1, 0, 0), (1, 1, 0), (1, 1, 1), (0, 1, 1), 
 									  (0, 1, 0) );
 
-	level.linelist[ "tetrahedron" ] = array( (0, 0, 0), (1, 0, 0), (0.5, 0.866, 0), (0.5, 0.2887, 0.816), 
+	level.linelist[ "tetrahedron" ] = _ARRAY( (0, 0, 0), (1, 0, 0), (0.5, 0.866, 0), (0.5, 0.2887, 0.816), 
 											 (0, 0, 0), (0.5, 0.866, 0), (0.5, 0.2887, 0.816), (1, 0, 0) );
 
-	level.linelist[ "pyramid" ] = array( (0, 0, 0), (1, 0, 0), (1, 1, 0), (0, 1, 0), (0, 0, 0), 
+	level.linelist[ "pyramid" ] = _ARRAY( (0, 0, 0), (1, 0, 0), (1, 1, 0), (0, 1, 0), (0, 0, 0), 
 										 (0.5, 0.5, 1), (1, 0, 0), (0.5, 0.5, 1), (1, 1, 0), 
 										 (0.5, 0.5, 1), (0, 1, 0), (0.5, 0.5, 1) );
 
-	level.linelist[ "octahedron" ] = array( (0, 0, 0), (1, 0, 0), (0.5, 0.866, 0), (0.5, 0.2887, 1), 
+	level.linelist[ "octahedron" ] = _ARRAY( (0, 0, 0), (1, 0, 0), (0.5, 0.866, 0), (0.5, 0.2887, 1), 
 											(0, 0, 0), (0.5, 0.2887, -1), (1, 0, 0), (0.5, 0.2887, -1), 
 											(0.5, 0.866, 0), (0.5, 0.2887, 1) );
 
-	level.linelist[ "prism" ] = array( (0, 0, 0), (1, 0, 0), (0.5, 0.866, 0), (0, 0, 0), 
+	level.linelist[ "prism" ] = _ARRAY( (0, 0, 0), (1, 0, 0), (0.5, 0.866, 0), (0, 0, 0), 
 									   (0, 0, 1), (1, 0, 1), (0.5, 0.866, 1), (0, 0, 1), 
 									   (1, 0, 1), (1, 0, 0), (0.5, 0.866, 0), (0.5, 0.866, 1) );
 
@@ -55,7 +55,7 @@ add_debug_cmds()
 	drawlocation_cmd = cmd_add( "drawlocation", ::cmd_drawlocation_f, "drawlocation" );
 }
 
-private cmd_drawtriggers_f( param )
+cmd_drawtriggers_f( param )
 {
 	was_on = level._debug_draw_triggers_enabled;
 	level._debug_draw_trigger_types = param.a[ 0 ];
@@ -76,7 +76,7 @@ private cmd_drawtriggers_f( param )
 	}
 }
 
-private cmd_drawnodes_f( param )
+cmd_drawnodes_f( param )
 {
 	was_on = level._debug_draw_nodes_enabled;
 	level._debug_draw_nodes_types = param.a[ 0 ];
@@ -97,7 +97,7 @@ private cmd_drawnodes_f( param )
 	}
 }
 
-private cmd_drawlocation_f( param )
+cmd_drawlocation_f( param )
 {
 	self._debug_draw_location_enabled = !is_true( self._debug_draw_location_enabled );
 

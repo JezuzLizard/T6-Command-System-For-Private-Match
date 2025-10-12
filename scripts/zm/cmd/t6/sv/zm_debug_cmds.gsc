@@ -1,12 +1,8 @@
 #include common_scripts\utility;
-#include maps\mp\_utility;
-#include maps\mp\zombies\_zm_utility;
 
 #include scripts\cmd\game_shared\sv\core\_utility;
-
 // autoexec
 #include scripts\zm\cmd\t6\sv\zm_debug_helpers;
-
 #include scripts\zm\cmd\t6\sv\_zm_utility;
 
 add_zm_debug_cmds()
@@ -49,7 +45,7 @@ add_zm_debug_cmds()
 	setzombiesanimrate_cmd = cmd_add( "setzombieanimrate", ::cmd_setzombieanimrate_f, "setzombieanimrate <value>" );
 }
 
-private cmd_setdoground_f( param )
+cmd_setdoground_f( param )
 {
 	new_round = _DEFAULT( param.a[ 0 ], level.round_number + 1 );
 	level.next_dog_round = new_round;
@@ -57,7 +53,7 @@ private cmd_setdoground_f( param )
 	param add_executor_cmdinfo( "Next dog round is: " + level.next_dog_round );
 }
 
-private cmd_spawnzombie_f( param )
+cmd_spawnzombie_f( param )
 {
 	aitype = param.a[ 0 ];
 	count = _DEFAULT( param.a[ 1 ], 1 );
@@ -77,7 +73,7 @@ private cmd_spawnzombie_f( param )
 	}
 }
 
-private cmd_drawzombiespawnlocations_f( param )
+cmd_drawzombiespawnlocations_f( param )
 {
 	was_on = level._debug_zombie_spawn_loc_draw_enabled;
 	level._debug_zombie_spawn_loc_draw_enabled = param.a[ 0 ];
@@ -100,7 +96,7 @@ private cmd_drawzombiespawnlocations_f( param )
 	}
 }
 
-private cmd_drawzones_f( param )
+cmd_drawzones_f( param )
 {
 	self._debug_draw_zones_enabled = !is_true( self._debug_draw_zones_enabled );
 
@@ -108,22 +104,22 @@ private cmd_drawzones_f( param )
 	return param add_executor_cmdinfo( on_off + " drawing your active zone" );
 }
 
-private cmd_toggleflag_f( param )
+cmd_toggleflag_f( param )
 {
 	flagname = param.a[ 0 ];
 
-	exists = level flag_exists( flagname );
+	exists = level _FLAG_EXISTS( flagname );
 	if ( !exists )
 	{
 		return param add_executor_cmderror( "Flagname '" + flagname + "' does not exist" );
 	}
 
-	level flag_toggle( flagname );
+	level _FLAG_TOGGLE( flagname );
 	on_off = cast_bool_to_str( flag( flagname ), "on off" );
 	param add_executor_cmdinfo( "Successfully toggled '" + flagname + "' '" + on_off + "'" );
 }
 
-private cmd_selectdebugzombie_f( param )
+cmd_selectdebugzombie_f( param )
 {
 	entity = param.t[ 0 ][ 0 ];
 	if ( !isdefined( entity ) )
@@ -149,7 +145,7 @@ private cmd_selectdebugzombie_f( param )
 	self thread draw_debug_zombie_info();
 }
 
-private cmd_debugzombie_f( param )
+cmd_debugzombie_f( param )
 {
 	types = param.a[ 0 ];
 	if ( !isdefined( self._debug_zombie ) )
@@ -157,7 +153,7 @@ private cmd_debugzombie_f( param )
 		return param add_executor_cmderror( "You must execute selectdebugzombie first before using this command!" );
 	}
 
-	types_array = strtok( types, "|" );
+	types_array = _STRTOK( types, "|" );
 
 	target = self._debug_zombie;
 	for ( i = 0; i < _SIZE( types_array.size ); i++ )
@@ -193,22 +189,22 @@ private cmd_debugzombie_f( param )
 	}
 }
 
-private cmd_drawzombietotal_f( param )
+cmd_drawzombietotal_f( param )
 {
 
 }
 
-private cmd_drawzombiecurrent_f( param )
+cmd_drawzombiecurrent_f( param )
 {
 
 }
 
-private cmd_drawsph_f( param )
+cmd_drawsph_f( param )
 {
 
 }
 
-private cmd_setzombieanimrate_f( param )
+cmd_setzombieanimrate_f( param )
 {
 
 }
