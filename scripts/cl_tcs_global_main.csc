@@ -1,11 +1,11 @@
 #include clientscripts\mp\_utility;
 
 // reference all scripts for autoexec
-#include scripts\cmd\game_shared\cl\core\_cl_cmd_execute;
-#include scripts\cmd\game_shared\cl\core\_cl_cmd_parse2;
-#include scripts\cmd\game_shared\cl\core\_cl_com;
-#include scripts\cmd\game_shared\cl\core\_cl_consts;
-#include scripts\cmd\game_shared\cl\core\_cl_utility;
+#include scripts\cmd\cl\core\_cl_cmd_execute;
+#include scripts\cmd\cl\core\_cl_cmd_parse2;
+#include scripts\cmd\cl\core\_cl_com;
+#include scripts\cmd\cl\core\_cl_consts;
+#include scripts\cmd\cl\core\_cl_utility;
 
 private main()
 {
@@ -48,7 +48,7 @@ private main()
 	
 	com_init();
 	init_cl_consts();
-	start_cmd_buffer();
+	level thread start_cmd_buffer_thread();
 
 	addcallback( "on_player_connect", ::tcs_on_connect );
 	registersystem( "cl_tcs", ::cl_tcs_handler );
@@ -67,7 +67,7 @@ drive_disconnected_notifies()
 	}
 }
 
-tcs_on_connect()
+tcs_on_connect( localclientnum )
 {
 	self._connected = true;
 	self.default_targets = []; // the default target is by default the default_executors instead as most commands would prefer 'self' which is the executor to be the assumed default target

@@ -2,29 +2,30 @@
 #include maps\mp\_utility;
 
 // reference all scripts for autoexec
-#include scripts\cmd\game_shared\sv\core\_cmd_execute;
-#include scripts\cmd\game_shared\sv\core\_cmd_parse2;
-#include scripts\cmd\game_shared\sv\core\_com;
-#include scripts\cmd\game_shared\sv\core\_consts;
-#include scripts\cmd\game_shared\sv\core\_hud_api;
-#include scripts\cmd\game_shared\sv\core\_hud_utility;
-#include scripts\cmd\game_shared\sv\core\_perms;
-#include scripts\cmd\game_shared\sv\core\_utility;
-#include scripts\cmd\game_shared\sv\core\unittest;
-#include scripts\cmd\game_shared\sv\core\unittest_helpers;
+#include scripts\cmd\sv\core\_cmd_execute;
+#include scripts\cmd\sv\core\_cmd_parse2;
+#include scripts\cmd\sv\core\_com;
+#include scripts\cmd\sv\core\_consts;
+#include scripts\cmd\sv\core\_hud_api;
+#include scripts\cmd\sv\core\_hud_utility;
+#include scripts\cmd\sv\core\_perms;
+#include scripts\cmd\sv\core\_utility;
 
 // common cmds
-#include scripts\cmd\game_shared\sv\modules\core_cmds;
-#include scripts\cmd\game_shared\sv\modules\core_helpers;
+#include scripts\cmd\sv\modules\core_cmds;
+#include scripts\cmd\sv\modules\core_helpers;
 // entity cmds
-#include scripts\cmd\game_shared\sv\modules\entity_cmds;
-#include scripts\cmd\game_shared\sv\modules\entity_helpers;
-// filmmaker cmds
-#include scripts\cmd\game_shared\sv\modules\filmmaker\camera_cmds;
-#include scripts\cmd\game_shared\sv\modules\filmmaker\camera_helpers;
+#include scripts\cmd\sv\modules\editor\entity_cmds;
+#include scripts\cmd\sv\modules\editor\entity_helpers;
 // debug cmds
-#include scripts\cmd\game_shared\sv\modules\debug_cmds;
-#include scripts\cmd\game_shared\sv\modules\debug_helpers;
+#include scripts\cmd\sv\modules\editor\debug_cmds;
+#include scripts\cmd\sv\modules\editor\debug_helpers;
+// filmmaker cmds
+#include scripts\cmd\sv\modules\filmmaker\camera_cmds;
+#include scripts\cmd\sv\modules\filmmaker\camera_helpers;
+// unittest cmds
+#include scripts\cmd\sv\modules\unittest_cmds;
+#include scripts\cmd\sv\modules\unittest_helpers;
 
 private main()
 {
@@ -79,12 +80,7 @@ private main()
 	init_debug_helpers();
 	init_entity_helpers();
 	init_perms();
-	start_cmd_buffer();
-	add_unittest_cmds();
-	add_camera_cmds();
-	add_core_cmds();
-	add_debug_cmds();
-	add_entity_cmds();
+	level thread start_cmd_buffer_thread();
 
 	addcallback( "on_player_connect", ::tcs_on_connect );
 	registerclientsys( "cl_tcs" );
@@ -94,6 +90,11 @@ private main()
 
 	wait 0.05;
 	waittillframeend;
+	add_unittest_cmds();
+	add_camera_cmds();
+	add_core_cmds();
+	add_debug_cmds();
+	add_entity_cmds();
 	level.onplayerdisconnect_old = level.onplayerdisconnect;
 	level.onplayerdisconnect = ::onplayerdisconnect;
 }
