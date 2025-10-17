@@ -94,7 +94,7 @@ print_obj()
 		com_printdebugwarning( "end_pos: " + self.end_pos );
 		for ( i = 0; i < _SIZE( self.args.size ); i++ )
 		{
-			ordinal = ( i + 1 );
+			ordinal = _MAKE_ORDINAL_KEY( ( i + 1 ) );
 			com_printdebugwarning( "arg" + ordinal + ": " + self.args[ i ] );
 		}
 
@@ -137,20 +137,88 @@ com_printcmd( cmd_object )
 	self com_printnotitle( "func: " + getfunctionname( cmd_object.func ) );
 	self com_printnotitle( "min_args: " + cmd_object get_min_args() );
 	self com_printnotitle( "max_args: " + cmd_object get_max_args() );
-	//self com_printnotitle( "arg_types: " + repackage_args( cmd_object.arg_types ) ); // TODO
 	self com_printnotitle( "rank_group: " + cmd_object.rank_group );
 	self com_printnotitle( "module_group: " + cmd_object.module_group );
+	self com_printnotitle( "desc: " + cmd_object.desc );
+	self com_printnotitle( "example: " + cmd_object.example );
 }
 
 com_printcmd_help( cmd_object )
 {
-	self com_printnotitle( "Name: " + cmd_object.cmd_name );
-	self com_printnotitle( "Usage: " + cmd_object.usage );
-	self com_printnotitle( "Min Args: " + cmd_object get_min_args() );
-	self com_printnotitle( "Max Args: " + cmd_object get_max_args() );
-	//self com_printnotitle( "Arg Types: " + repackage_args( cmd_object.arg_types ) ); // TODO
-	self com_printnotitle( "Rank: " + cmd_object.rank_group );
-	self com_printnotitle( "Module: " + cmd_object.module_group );
+	self com_printnotitle( "Name: '{}'", cmd_object.cmd_name );
+	self com_printnotitle( "Usage: '{}'", cmd_object.usage );
+	self com_printnotitle( "Min Args: '{}'", cmd_object get_min_args() );
+	self com_printnotitle( "Max Args: '{}'", cmd_object get_max_args() );
+	self com_printnotitle( "Rank: '{}'", cmd_object.rank_group );
+	self com_printnotitle( "Module: '{}'", cmd_object.module_group );
+	self com_printnotitle( "Desc: '{}'", cmd_object.desc );
+	self com_printnotitle( "Example: '{}'", cmd_object.example );
+
+	arg_types = cmd_object.arg_types;
+	if ( array_validate( arg_types ) )
+	{
+		for ( i = 0; i < _SIZE( arg_types.size ); i++ )
+		{
+			arg_ordinal = _MAKE_ORDINAL_KEY( ( i + 1 ) );
+			arg_name = arg_types[ arg_ordinal ].name;
+			arg_desc = arg_types[ arg_ordinal ].desc;
+			arg_is_required = arg_types[ arg_ordinal ].is_required;
+			self com_printnotitle( "Arg Name: {}", arg_name );
+			self com_printnotitle( "Arg Desc: '{}'", arg_desc );
+			if ( arg_is_required )
+			{
+				self com_printnotitle( "[Optional Argument]" );
+			}
+			else
+			{
+				self com_printnotitle( "<Required Argument>" );
+			}
+			self com_printnotitle( "Arg Ordinal: '{}'", arg_ordinal );
+		}
+	}
+	else
+	{
+		self com_printnotitle( "<Does not use args>" );
+	}
+
+	target_types = cmd_object.target_types;
+	if ( array_validate( target_types ) )
+	{
+		for ( i = 0; i < _SIZE( target_types.size ); i++ )
+		{
+			targ_ordinal = _MAKE_ORDINAL_KEY( ( i + 1 ) );
+			target_typenames = getarraykeys( target_types[ targ_ordinal ].overloads );
+			assert( target_typenames.size == 1 );
+			target_name = target_types[ targ_ordinal ].name;
+			target_desc = target_types[ targ_ordinal ].desc;
+			target_is_required = target_types[ targ_ordinal ].is_required;
+			overload = target_types[ targ_ordinal ].overloads[ target_typenames[ 0 ] ]; // overloading isn't implemented yet
+			target_etype = overload.etype;
+			target_max_targets = overload.max_targets;
+
+			self com_printnotitle( "Target Name: '{}'", target_name );
+			self com_printnotitle( "Target Desc: '{}'", target_desc );
+			if ( target_is_required )
+			{
+				self com_printnotitle( "[Optional Target]" );
+			}
+			else
+			{
+				self com_printnotitle( "<Required Target>" );
+			}
+			self com_printnotitle( "Arg Ordinal: '{}'", targ_ordinal );
+			self com_printnotitle( "Target EType: '{}'", target_etype );
+
+			if ( target_max_targets != 1024 )
+			{
+				self com_printnotitle( "Target Max Targets: '{}'", target_max_targets );
+			}
+		}
+	}
+	else
+	{
+		self com_printnotitle( "<Does not use targets>" );
+	}
 }
 
 com_printannouncment( message, players )
@@ -163,26 +231,30 @@ com_printf( channels, filter, message, players )
 	level com_printf_internal( channels, filter, message, players );
 }
 
-com_printinfo( message )
+com_printinfo( format, a, b, c, d, e, f, g, h, i, j, k )
 {
+	message = format( format, a, b, c, d, e, f, g, h, i, j, k );
 	channels = self com_get_cmd_feedback_channel_internal();
 	level com_printf_internal( channels, "cmdinfo", message, self );
 }
 
-com_printwarning( message )
+com_printwarning( format, a, b, c, d, e, f, g, h, i, j, k )
 {
+	message = format( format, a, b, c, d, e, f, g, h, i, j, k );
 	channels = self com_get_cmd_feedback_channel_internal();
 	level com_printf_internal( channels, "cmdwarning", message, self );
 }
 
-com_printerror( message )
+com_printerror( format, a, b, c, d, e, f, g, h, i, j, k )
 {
+	message = format( format, a, b, c, d, e, f, g, h, i, j, k );
 	channels = self com_get_cmd_feedback_channel_internal();
 	level com_printf_internal( channels, "cmderror", message, self );
 }
 
-com_printnotitle( message )
+com_printnotitle( format, a, b, c, d, e, f, g, h, i, j, k )
 {
+	message = format( format, a, b, c, d, e, f, g, h, i, j, k );
 	channels = self com_get_cmd_feedback_channel_internal();
 	level com_printf_internal( channels, "notitle", message, self );
 }
@@ -195,27 +267,27 @@ com_printconsoleprintlore()
 	}
 }
 
-com_printdebuginfo( message )
+com_printdebuginfo( format, a, b, c, d, e, f, g, h, i, j, k )
 {
 	if ( level._developer )
 	{
-		_GET_SERVER_ENTITY() com_printinfo( message );
+		_GET_SERVER_ENTITY() com_printinfo( format, a, b, c, d, e, f, g, h, i, j, k );
 	}
 }
 
-com_printdebugwarning( message )
+com_printdebugwarning( format, a, b, c, d, e, f, g, h, i, j, k )
 {
 	if ( level._developer )
 	{
-		_GET_SERVER_ENTITY() com_printwarning( message );
+		_GET_SERVER_ENTITY() com_printwarning( format, a, b, c, d, e, f, g, h, i, j, k );
 	}
 }
 
-com_printdebugerror( message )
+com_printdebugerror( format, a, b, c, d, e, f, g, h, i, j, k )
 {
 	if ( level._developer )
 	{
-		_GET_SERVER_ENTITY() com_printerror( message );
+		_GET_SERVER_ENTITY() com_printerror( format, a, b, c, d, e, f, g, h, i, j, k );
 
 		assert( false );
 	}
@@ -915,40 +987,40 @@ add_player_msg( player, msg, filter, channels )
 	self.result_array[ self.result_array.size ] = new_entry;
 }
 
-add_executor_cmdinfo( msg, channels )
+add_executor_cmdinfo( format, a, b, c, d, e, f, g, h, i, j, k )
 {
-	channels = _DEFAULT( channels, undefined );
-	self add_player_msg( self.executor, msg, "cmdinfo", channels );
+	message = format( format, a, b, c, d, e, f, g, h, i, j, k );
+	self add_player_msg( self.executor, message, "cmdinfo", undefined );
 }
 
-add_executor_cmdwarning( msg, channels )
+add_executor_cmdwarning( format, a, b, c, d, e, f, g, h, i, j, k )
 {
-	channels = _DEFAULT( channels, undefined );
-	self add_player_msg( self.executor, msg, "cmdwarning", channels );
+	message = format( format, a, b, c, d, e, f, g, h, i, j, k );
+	self add_player_msg( self.executor, message, "cmdwarning", undefined );
 }
 
-add_executor_cmderror( msg, channels )
+add_executor_cmderror( format, a, b, c, d, e, f, g, h, i, j, k )
 {
-	channels = _DEFAULT( channels, undefined );
-	self add_player_msg( self.executor, msg, "cmderror", channels );
+	message = format( format, a, b, c, d, e, f, g, h, i, j, k );
+	self add_player_msg( self.executor, message, "cmderror", undefined );
 }
 
-add_player_cmdinfo( player, msg, channels )
+add_player_cmdinfo( player, format, a, b, c, d, e, f, g, h, i, j, k )
 {
-	channels = _DEFAULT( channels, undefined );
-	self add_player_msg( player, msg, "cmdinfo", channels );
+	message = format( format, a, b, c, d, e, f, g, h, i, j, k );
+	self add_player_msg( player, message, "cmdinfo", undefined );
 }
 
-add_player_cmdwarning( player, msg, channels )
+add_player_cmdwarning( player, format, a, b, c, d, e, f, g, h, i, j, k )
 {
-	channels = _DEFAULT( channels, undefined );
-	self add_player_msg( player, msg, "cmdwarning", channels );
+	message = format( format, a, b, c, d, e, f, g, h, i, j, k );
+	self add_player_msg( player, message, "cmdwarning", undefined );
 }
 
-add_player_cmderror( player, msg, channels )
+add_player_cmderror( player, format, a, b, c, d, e, f, g, h, i, j, k )
 {
-	channels = _DEFAULT( channels, undefined );
-	self add_player_msg( player, msg, "cmderror", channels );
+	message = format( format, a, b, c, d, e, f, g, h, i, j, k );
+	self add_player_msg( player, message, "cmderror", undefined );
 }
 
 /*result_obj_t*/ set_cast_error( result_obj, error_msg, expected_value_type )
@@ -999,6 +1071,8 @@ cmd_add( cmd_name, cmdfunc, cmd_usage, description )
 		level.tcs_cmds = [];
 	}
 
+	level.tcs_cmd_register_working_cmd = undefined;
+
 	rank_group = level.tcs_cmd_register_rank_group;
 	if ( !isdefined( rank_group ) || !isdefined( level.tcs_perms.ranks[ rank_group ] ) )
 	{
@@ -1017,9 +1091,10 @@ cmd_add( cmd_name, cmdfunc, cmd_usage, description )
 	new_cmd.cmd_name = cmd_name;
 	new_cmd.usage = cmd_usage;
 	new_cmd.desc = description;
+	new_cmd.long_description = "";
+	new_cmd.example = "";
 	new_cmd.func = cmdfunc;
 	new_cmd.is_cmd_object = true;
-	new_cmd.requires_player_executor = false;
 	new_cmd.arg_types = [];
 	new_cmd.target_types = [];
 	new_cmd.has_required_target = false;
@@ -1037,7 +1112,30 @@ cmd_add( cmd_name, cmdfunc, cmd_usage, description )
 	}
 	level.cmd_groups[ rank_group ][ cmd_name ] = true;
 
-	return new_cmd;
+	if ( !isdefined( level._cmd_modules ) )
+	{
+		level._cmd_modules = [];
+	}
+
+	if ( !isdefined( level._cmd_modules[ module_group ] ) )
+	{
+		level._cmd_modules[ module_group ] = [];
+	}
+
+	level._cmd_modules[ module_group ][ level._cmd_modules[ module_group ].size ] = new_cmd;
+	level.tcs_cmd_register_working_cmd = new_cmd;
+}
+
+cmd_add_detailed_desc( long_description )
+{
+	working_cmd = level.tcs_cmd_register_working_cmd;
+	if ( !is_true( working_cmd.is_cmd_object ) )
+	{
+		assert( false );
+		return;
+	}
+
+	working_cmd.long_description = long_description;
 }
 
 cmd_block_set_rank_group( rank_group )
@@ -1047,6 +1145,8 @@ cmd_block_set_rank_group( rank_group )
 
 cmd_block_set_module_group( module_group )
 {
+	level.tcs_cmd_register_working_cmd = undefined; // this will allow for detecting unintended usage of arg/target registration
+
 	level.tcs_cmd_register_module_group = module_group;
 }
 
@@ -1061,7 +1161,7 @@ get_min_args()
 	count = 0;
 	for ( i = 0; i < _SIZE( self.arg_types.size ); i++ )
 	{
-		ordinal = ( i + 1 ) + "";
+		ordinal = _MAKE_ORDINAL_KEY( ( i + 1 ) );
 		if ( isdefined( self.arg_types[ ordinal ] ) && self.arg_types[ ordinal ].is_required )
 		{
 			count++;
@@ -1087,15 +1187,17 @@ private arg_add( ordinal, name, arg_type, is_required, desc, default_value )
 {
 	desc = _DEFAULT( desc, "No description" );
 	default_value = _DEFAULT( default_value, undefined );
-	ordinal = ordinal + ""; // best to be a string
+	ordinal = _MAKE_ORDINAL_KEY( ordinal ); // best to be a string
 
-	if ( !is_true( self.is_cmd_object ) )
+	working_cmd = level.tcs_cmd_register_working_cmd;
+
+	if ( !isdefined( working_cmd ) || !is_true( working_cmd.is_cmd_object ) )
 	{
 		assert( false );
 		return;
 	}
 
-	if ( !isdefined( self.arg_types[ ordinal ] ) )
+	if ( !isdefined( working_cmd.arg_types[ ordinal ] ) )
 	{
 		new_arg = spawnstruct();
 		new_arg.name = name;
@@ -1109,59 +1211,61 @@ private arg_add( ordinal, name, arg_type, is_required, desc, default_value )
 		new_arg.overloads = [];
 		new_arg.overloads[ arg_type ] = true;
 
-		self.arg_types[ ordinal ] = new_arg;
+		working_cmd.arg_types[ ordinal ] = new_arg;
 	}
-	else if ( !isdefined( self.arg_types[ ordinal ].overloads[ arg_type ] ) )
+	else if ( !isdefined( working_cmd.arg_types[ ordinal ].overloads[ arg_type ] ) )
 	{
-		self.arg_types[ ordinal ].overloads[ arg_type ] = true;
+		working_cmd.arg_types[ ordinal ].overloads[ arg_type ] = true;
 	}
 	else
 	{
 		assert( false );
-		com_printdebugerror( "Cannot overload argument ordinal: '" + ordinal + "' for command: '" + self.cmd_name + "' with type: '" + arg_type + "' as it is already overloaded with that type" );
+		com_printdebugerror( "Cannot overload argument ordinal: '" + ordinal + "' for command: '" + working_cmd.cmd_name + "' with type: '" + arg_type + "' as it is already overloaded with that type" );
 	}
 
 	if ( !isdefined( level.tcs_arg_type_handlers[ arg_type ] ) )
 	{
 		assert( false );
-		com_printdebugerror( "Unknown arg type: '" + arg_type + "' being registered for cmd: '" + self.cmd_name + "' at ordinal '" + ordinal + "'" );
+		com_printdebugerror( "Unknown arg type: '" + arg_type + "' being registered for cmd: '" + working_cmd.cmd_name + "' at ordinal '" + ordinal + "'" );
 	}
 }
 
 arg_add_required( ordinal, name, arg_type, desc )
 {
-	self arg_add( ordinal, name, arg_type, true, desc, undefined );
+	level.tcs_cmd_register_working_cmd arg_add( ordinal, name, arg_type, true, desc, undefined );
 }
 
 arg_add_optional( ordinal, name, arg_type, desc )
 {
-	self arg_add( ordinal, name, arg_type, false, desc );
+	level.tcs_cmd_register_working_cmd arg_add( ordinal, name, arg_type, false, desc );
 }
 
 arg_add_optional_with_default(  ordinal, name, arg_type, desc, default_value )
 {
-	self arg_add( ordinal, name, arg_type, false, desc, default_value );
+	level.tcs_cmd_register_working_cmd arg_add( ordinal, name, arg_type, false, desc, default_value );
 }
 
 private target_add( ordinal, name, target_type, is_required, desc, max_targets )
 {
 	max_targets = _DEFAULT( max_targets, 1024 );
 	desc = _DEFAULT( desc, "No description" );
-	ordinal = ordinal + ""; // best to be a string
+	ordinal = _MAKE_ORDINAL_KEY( ordinal ); // best to be a string
 
-	if ( !is_true( self.is_cmd_object ) )
+	working_cmd = level.tcs_cmd_register_working_cmd;
+	if ( !isdefined( working_cmd ) || !is_true( working_cmd.is_cmd_object ) )
 	{
 		assert( false );
 		return;
 	}
 
-	if ( !isdefined( self.target_types[ ordinal ] ) )
+	if ( !isdefined( working_cmd.target_types[ ordinal ] ) )
 	{
 		new_target = spawnstruct();
 		new_target.name = name;
 		new_target.is_required = is_required;
 		new_target.ordinal = ordinal;
 		new_target.desc = desc;
+		new_target.default_value = "";
 		new_target.overloads = [];
 
 		new_overload = spawnstruct();
@@ -1169,44 +1273,65 @@ private target_add( ordinal, name, target_type, is_required, desc, max_targets )
 		new_overload.max_targets = max_targets;
 		new_target.overloads[ target_type ] = new_overload;
 
-		self.target_types[ ordinal ] = new_target;
+		working_cmd.target_types[ ordinal ] = new_target;
 	}
-	else if ( !isdefined( self.target_types[ ordinal ].overloads[ target_type ] ) )
+	else if ( !isdefined( working_cmd.target_types[ ordinal ].overloads[ target_type ] ) )
 	{
 		new_overload = spawnstruct();
 		new_overload.etype = target_type;
 		new_overload.max_targets = max_targets;
-		self.target_types[ ordinal ].overloads[ target_type ] = new_overload;
+		working_cmd.target_types[ ordinal ].overloads[ target_type ] = new_overload;
 	}
 	else
 	{
 		assert( false );
-		com_printdebugerror( "Cannot overload target ordinal: '" + ordinal + "' for command: '" + self.cmd_name + "' with type: '" + target_type + "' as it is already overloaded with that type" );
+		com_printdebugerror( "Cannot overload target ordinal: '" + ordinal + "' for command: '" + working_cmd.cmd_name + "' with type: '" + target_type + "' as it is already overloaded with that type" );
 		return;
 	}
 
-	self.has_required_target = self.has_required_target || is_required;
+	working_cmd.has_required_target = working_cmd.has_required_target || is_required;
 
 	if ( !isdefined( level._entity_type_funcs[ target_type ] ) )
 	{
 		assert( false );
-		com_printdebugerror( "Unknown entity type: '" + target_type + "' registered for command: '" + self.cmd_name + "'" );
+		com_printdebugerror( "Unknown entity type: '" + target_type + "' registered for command: '" + working_cmd.cmd_name + "'" );
 	}
 }
 
 target_add_required( ordinal, name, target_type, desc, max_targets )
 {
-	self target_add( ordinal, name, target_type, true, desc, max_targets );
+	level.tcs_cmd_register_working_cmd target_add( ordinal, name, target_type, true, desc, max_targets );
 }
 
 target_add_optional( ordinal, name, target_type, desc, max_targets )
 {
-	self target_add( ordinal, name, target_type, false, desc, max_targets );
+	level.tcs_cmd_register_working_cmd target_add( ordinal, name, target_type, false, desc, max_targets );
+}
+
+target_set_default_target( ordinal, default_value )
+{
+	working_cmd = level.tcs_cmd_register_working_cmd;
+	if ( !isdefined( working_cmd ) || !is_true( working_cmd.is_cmd_object ) )
+	{
+		assert( false );
+		return;
+	}
+
+	switch ( default_value )
+	{
+		case "self":
+			break;
+		default:
+			assert( false );
+			return;
+	}
+
+	working_cmd.target_types[ ordinal ].default_value = default_value;
 }
 
 get_target_type_from_ordinal( cmd_data_source, ordinal )
 {
-	return cmd_data_source.target_types[ ordinal + "" ];
+	return cmd_data_source.target_types[ _MAKE_ORDINAL_KEY( ordinal ) ];
 }
 
 // target_kvp obj
@@ -1236,37 +1361,28 @@ has_permission_for_executor_syntax()
 	return self ishost();
 }
 
-executor_obj_add_cmd( doc )
-{
-	if ( !is_true( self.is_cmd_object ) )
-	{
-		assert( false );
-		return;
-	}
-
-	self.requires_player_executor = true;
-}
-
 make_cmd_immune_to_unittest()
 {
-	if ( !is_true( self.is_cmd_object ) || is_true( self.immune_to_unittest ) )
+	working_cmd = level.tcs_cmd_register_working_cmd;
+	if ( !is_true( working_cmd.is_cmd_object ) || is_true( working_cmd.immune_to_unittest ) )
 	{
 		assert( false );
 		return;
 	}
 
-	self.immune_to_unittest = true;
+	working_cmd.immune_to_unittest = true;
 }
 
 make_cmd_immune_to_lastcmd()
 {
-	if ( !is_true( self.is_cmd_object ) || is_true( self.immune_to_lastcmd ) )
+	working_cmd = level.tcs_cmd_register_working_cmd;
+	if ( !is_true( working_cmd.is_cmd_object ) || is_true( working_cmd.immune_to_lastcmd ) )
 	{
 		assert( false );
 		return;
 	}
 
-	self.immune_to_lastcmd = true;
+	working_cmd.immune_to_lastcmd = true;
 }
 
 //If we have a lot of clientdvars in the pool delay setting them to prevent client cmd overflow error.
@@ -1366,13 +1482,13 @@ remove_notify_callback( notify_name, ent )
 	ent._notify_callbacks[ notify_name ] = undefined;
 }
 
-/*noreturn*/ throw_exception( error_msg, generic_obj, print )
+/*noreturn*/ throw_exception( generic_obj, format, a, b, c, d, e, f, g, h, i, j, k )
 {
+	error_msg = format( format, a, b, c, d, e, f, g, h, i, j, k );
 	generic_obj = _DEFAULT( generic_obj, generic_obj_t_new( "cmd_exception" ) );
-	print = _DEFAULT( print, true );
 	generic_obj.errored = true;
 	generic_obj.msg = error_msg;
-	generic_obj.do_print = print;
+	generic_obj.do_print = true;
 
 	if ( !self script_breakpoint( generic_obj, error_msg ) )
 	{
@@ -1383,6 +1499,28 @@ remove_notify_callback( notify_name, ent )
 		}
 		self notify( "cmd_exception", generic_obj );
 	}
+
+	return;
+}
+
+/*noreturn*/ throw_silent_exception( generic_obj, format, a, b, c, d, e, f, g, h, i, j, k )
+{
+	error_msg = format( format, a, b, c, d, e, f, g, h, i, j, k );
+	generic_obj = _DEFAULT( generic_obj, generic_obj_t_new( "cmd_exception" ) );
+	generic_obj.errored = true;
+	generic_obj.msg = error_msg;
+	generic_obj.do_print = false;
+
+	if ( !self script_breakpoint( generic_obj, error_msg ) )
+	{
+		if ( level._developer )
+		{
+			assert( false );
+			//generic_obj print_obj();
+		}
+		self notify( "cmd_exception", generic_obj );
+	}
+
 	return;
 }
 
@@ -1793,4 +1931,79 @@ new_mapent_struct( a, b )
 	new_struct = spawnstruct();
 	new_struct.keys = [];
 	return new_struct;
+}
+
+pack( a, b, c, d, e, f, g, h, i, j, k )
+{
+	arr = [];
+
+	arr[ arr.size ] = a;
+	arr[ arr.size ] = b;
+	arr[ arr.size ] = c;
+	arr[ arr.size ] = d;
+	arr[ arr.size ] = e;
+	arr[ arr.size ] = f;
+	arr[ arr.size ] = g;
+	arr[ arr.size ] = h;
+	arr[ arr.size ] = i;
+	arr[ arr.size ] = j;
+	arr[ arr.size ] = k;
+
+	arrayremovevalue( arr, undefined );
+
+	return arr;
+}
+
+format( fmt, a, b, c, d, e, f, g, h, i, j, k )
+{
+	args = pack( a, b, c, d, e, f, g, h, i, j, k );
+
+	if ( !array_validate( args ) )
+	{
+		return fmt;
+	}
+
+	assert( isstring( fmt ) );
+
+	new_str = "";
+	insert_arg_index = 0;
+	for ( i = 0; i < _SIZE( fmt.size ); i++ )
+	{
+		t = fmt[ i ];
+		t2 = ( fmt.size + 1 ) < fmt.size ? fmt[ i + 1 ] : "";
+		if ( t != "{" )
+		{
+			new_str += fmt[ i ];
+			continue;
+		}
+
+		if ( t2 != "}" )
+		{
+			new_str += fmt[ i ];
+			continue;
+		}
+
+		new_str += args[ insert_arg_index ];
+		insert_arg_index++;
+		i += 2; // push past t2's index
+
+		if ( insert_arg_index >= args.size )
+		{
+			// consume remaining str
+			new_str += getsubstr( fmt, i );
+			break;
+		}
+	}
+
+	if ( insert_arg_index != args.size )
+	{
+		assert( false );
+	}
+
+	return new_str;
+}
+
+_MAKE_ORDINAL_KEY( integer )
+{
+	return integer + "";
 }

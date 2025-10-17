@@ -860,12 +860,37 @@ arg_obj_team_generate( arg1, arg2, arg3 )
 	return set_cast_success( find, team, "team==" + team );
 }
 
-arg_obj_cmdalias_generate( arg1, arg2, arg3 )
+arg_obj_cmdalias_generate( module, index, arg3 )
 {
+	module = _DEFAULT( module, undefined );
+	index = _DEFAULT( index, undefined );
+
 	find = generic_obj_t_new();
 
-	cmd = random_val( level.tcs_cmds );
+	if ( isdefined( module ) )
+	{
+		module_cmds = level._cmd_modules[ module ];
+
+		if ( isdefined( index ) )
+		{
+			cmd = level._cmd_modules[ module ][ index ];
+		}
+		else
+		{
+			cmd = random_val( level._cmd_modules[ module ] );
+		}
+	}
+	else
+	{
+		cmd = random_val( level.tcs_cmds );
+	}
+	
 	find.str_value = cmd.cmd_name;
+	if ( !isdefined( find.str_value ) )
+	{
+		return set_cast_error( find, "Unreachable" );	
+	}
+
 	return set_cast_success( find, cmd, "cmd==" + cmd.cmd_name );
 }
 

@@ -7,62 +7,61 @@
 
 add_entity_cmds()
 {
-	waittillframeend;
 	cmd_block_set_module_group( "addon_entity_tools" );
 	cmd_block_set_rank_group( "cheat" );
 
 	// entity manipulation
-	seteditortargetent_cmd = cmd_add( "seteditortargetent", ::cmd_seteditortargetent_f, "seteditortargetent {entity} [type]" );
-	seteditortargetent_cmd target_add_required( 1, "entity", "general", "Manual entity to target for editing", 1 );
+	cmd_add( "seteditortargetent", ::cmd_seteditortargetent_f, "seteditortargetent {entity} [type]" );
+	target_add_required( 1, "entity", "general", "Manual entity to target for editing", 1 );
 
-	cleartargetent_cmd = cmd_add( "cleartargetent", ::cmd_cleartargetent_f, "cleartargetent" );
+	cmd_add( "cleartargetent", ::cmd_cleartargetent_f, "cleartargetent" );
 
-	editentfield_cmd = cmd_add( "editentfield", ::cmd_editentfield_f, "editentfield {[entity]} <fieldname> <fieldvalue> [scale] [relative]" );
-	editentfield_cmd arg_add_required( 1, "fieldname", "string", "New angles to set the target entity to" );
-	editentfield_cmd arg_add_optional( 2, "fieldvalue", "string", "Causes the entity angles to be modified by <angles> instead of assigned" );
-	editentfield_cmd arg_add_optional( 3, "scale", "float", "The scale of the angle modification" );
-	editentfield_cmd arg_add_optional( 4, "relative", "boolean", "The scale of the angle modification" );
-	editentfield_cmd target_add_optional( 1, "entity", "general", "Manual entity to target for editing" );
+	cmd_add( "editentfield", ::cmd_editentfield_f, "editentfield {[entity]} <fieldname> <fieldvalue> [scale] [relative]" );
+	arg_add_required( 1, "fieldname", "string", "New angles to set the target entity to" );
+	arg_add_optional( 2, "fieldvalue", "string", "Causes the entity angles to be modified by <angles> instead of assigned" );
+	arg_add_optional( 3, "scale", "float", "The scale of the angle modification" );
+	arg_add_optional( 4, "relative", "boolean", "The scale of the angle modification" );
+	target_add_optional( 1, "entity", "general", "Manual entity to target for editing" );
 
-	seteditortargetangles_cmd = cmd_add( "seteditortargetangles", ::cmd_seteditortargetangles_f, "seteditortargetangles {[entity]} <angles> [relative] [scale]" );
-	seteditortargetangles_cmd arg_add_required( 1, "angles", "vector", "New angles to set the target entity to" );
-	seteditortargetangles_cmd arg_add_optional_with_default( 2, "relative", "boolean", "Causes the entity angles to be modified by <angles> instead of assigned", false );
-	seteditortargetangles_cmd arg_add_optional_with_default( 3, "scale", "float", "The scale of the angle modification", 1.0 );
-	seteditortargetangles_cmd target_add_optional( 1, "entity", "general", "Manual entity to target for editing", 1 );
+	cmd_add( "seteditortargetangles", ::cmd_seteditortargetangles_f, "seteditortargetangles {[entity]} <angles> [relative] [scale]" );
+	arg_add_required( 1, "angles", "vector", "New angles to set the target entity to" );
+	arg_add_optional_with_default( 2, "relative", "boolean", "Causes the entity angles to be modified by <angles> instead of assigned", false );
+	arg_add_optional_with_default( 3, "scale", "float", "The scale of the angle modification", 1.0 );
+	target_add_optional( 1, "entity", "general", "Manual entity to target for editing", 1 );
 
-	seteditortargetorigin_cmd = cmd_add( "seteditortargetorigin", ::cmd_seteditortargetorigin_f, "seteditortargetorigin {[entity]} <pos> [relative]" );
-	seteditortargetorigin_cmd arg_add_required( 1, "pos", "vector", "New position to set the target entity to" );
-	seteditortargetorigin_cmd arg_add_optional( 2, "relative", "boolean", "Causes the entity origin to be modified by <pos> instead of assigned" );
-	seteditortargetorigin_cmd target_add_optional( 1, "entity", "general", "Manual entity to target for editing", 1 );
+	cmd_add( "seteditortargetorigin", ::cmd_seteditortargetorigin_f, "seteditortargetorigin {[entity]} <pos> [relative]" );
+	arg_add_required( 1, "pos", "vector", "New position to set the target entity to" );
+	arg_add_optional( 2, "relative", "boolean", "Causes the entity origin to be modified by <pos> instead of assigned" );
+	target_add_optional( 1, "entity", "general", "Manual entity to target for editing", 1 );
 
-	editheldmodel_cmd = cmd_add( "editheldmodel", ::cmd_editheldmodel_f, "editheldmodel [model] [carry_origin_offset] [carry_angles_offset]" );
-	editheldmodel_cmd arg_add_optional( 1, "model", "model", "New model to assign the held model to" );
-	editheldmodel_cmd arg_add_optional( 2, "carry_origin_offset", "vector", "New carry origin offset" );
-	editheldmodel_cmd arg_add_optional( 3, "carry_angles_offset", "vector", "New carry angles offset" );
+	cmd_add( "editheldmodel", ::cmd_editheldmodel_f, "editheldmodel [model] [carry_origin_offset] [carry_angles_offset]" );
+	arg_add_optional( 1, "model", "model", "New model to assign the held model to" );
+	arg_add_optional( 2, "carry_origin_offset", "vector", "New carry origin offset" );
+	arg_add_optional( 3, "carry_angles_offset", "vector", "New carry angles offset" );
 
-	editorspawnheldmodel_cmd = cmd_add( "editorspawnheldmodel", ::cmd_editorspawnheldmodel_f, "editorspawnheldmodel <ent_name> <model> [carry_origin_offset] [carry_angles_offset]" );
-	editorspawnheldmodel_cmd arg_add_required( 1, "ent_name", "string", "Name of entity to identify it with later commands" );
-	editorspawnheldmodel_cmd arg_add_required( 2, "model", "model", "Model to assign to entity" );
-	editorspawnheldmodel_cmd arg_add_optional( 3, "carry_origin_offset", "vector", "Initial carry origin offset" );
-	editorspawnheldmodel_cmd arg_add_optional( 4, "carry_angles_offset", "vector", "Initial carry angles offset" );
-	editorspawnheldmodel_cmd make_cmd_immune_to_unittest();
+	cmd_add( "editorspawnheldmodel", ::cmd_editorspawnheldmodel_f, "editorspawnheldmodel <ent_name> <model> [carry_origin_offset] [carry_angles_offset]" );
+	arg_add_required( 1, "ent_name", "string", "Name of entity to identify it with later commands" );
+	arg_add_required( 2, "model", "model", "Model to assign to entity" );
+	arg_add_optional( 3, "carry_origin_offset", "vector", "Initial carry origin offset" );
+	arg_add_optional( 4, "carry_angles_offset", "vector", "Initial carry angles offset" );
+	make_cmd_immune_to_unittest();
 
-	editorpickup_cmd = cmd_add( "editorpickup", ::cmd_editorpickup_f, "editorpickup {entity} [carry_origin_offset] [carry_angles_offset]" );
-	editorpickup_cmd arg_add_optional( 1, "carry_origin_offset", "vector", "Initial carry origin offset" );
-	editorpickup_cmd arg_add_optional( 2, "carry_angles_offset", "vector", "Initial carry angles offset" );
-	editorpickup_cmd target_add_optional( 1, "entity", "general", "Manual entity to pickup for editing", 1 );
+	cmd_add( "editorpickup", ::cmd_editorpickup_f, "editorpickup {entity} [carry_origin_offset] [carry_angles_offset]" );
+	arg_add_optional( 1, "carry_origin_offset", "vector", "Initial carry origin offset" );
+	arg_add_optional( 2, "carry_angles_offset", "vector", "Initial carry angles offset" );
+	target_add_optional( 1, "entity", "general", "Manual entity to pickup for editing", 1 );
 
-	editorsetcontext_cmd = cmd_add( "editorsetcontext", ::cmd_editorsetcontext_f, "editorsetcontext <context_mode> [context_scale]" );
-	editorsetcontext_cmd arg_add_required( 1, "context_mode", "string", "Mode for editing selected entity" );
-	editorsetcontext_cmd arg_add_optional( 2, "context_scale", "float", "Scale applied to change values" );
+	cmd_add( "editorsetcontext", ::cmd_editorsetcontext_f, "editorsetcontext <context_mode> [context_scale]" );
+	arg_add_required( 1, "context_mode", "string", "Mode for editing selected entity" );
+	arg_add_optional( 2, "context_scale", "float", "Scale applied to change values" );
 
-	editorcontextmodifyentity_cmd = cmd_add( "editorcontextmodifyentity", ::cmd_editorcontextmodifyentity_f, "editorcontextmodifyentity <scale> [total_time] [accel_time] [decel_time]" );
-	editorcontextmodifyentity_cmd arg_add_required( 1, "scale", "float", "Scale of changes made" );
-	editorcontextmodifyentity_cmd arg_add_optional_with_default( 2, "total_time", "float", "Total time for entity changes to occur over", 1 );
-	editorcontextmodifyentity_cmd arg_add_optional_with_default( 3, "accel_time", "float", "Acceleration time before entity change speed maximum is reached", 0.05 );
-	editorcontextmodifyentity_cmd arg_add_optional_with_default( 4, "decel_time", "float", "Deceleration time before entity change speed minimum is reached", 0.05 );
+	cmd_add( "editorcontextmodifyentity", ::cmd_editorcontextmodifyentity_f, "editorcontextmodifyentity <scale> [total_time] [accel_time] [decel_time]" );
+	arg_add_required( 1, "scale", "float", "Scale of changes made" );
+	arg_add_optional_with_default( 2, "total_time", "float", "Total time for entity changes to occur over", 1 );
+	arg_add_optional_with_default( 3, "accel_time", "float", "Acceleration time before entity change speed maximum is reached", 0.05 );
+	arg_add_optional_with_default( 4, "decel_time", "float", "Deceleration time before entity change speed minimum is reached", 0.05 );
 
-	editorsave_cmd = cmd_add( "editorsave", ::cmd_editorsave_f );
+	cmd_add( "editorsave", ::cmd_editorsave_f );
 	// TODO:
 	//setmins
 	//setmaxs
@@ -133,11 +132,11 @@ add_entity_cmds()
 	*/
 
 	// debugging
-	setviewpos_cmd = cmd_add( "setviewpos", ::cmd_setviewpos_f, "setviewpos <origin> [angles]" );
-	setviewpos_cmd arg_add_required( 1, "origin", "vector", "New origin for you to be moved to" );
-	setviewpos_cmd arg_add_optional( 2, "angles", "vector", "New angles for you to have" );
+	cmd_add( "setviewpos", ::cmd_setviewpos_f, "setviewpos <origin> [angles]" );
+	arg_add_required( 1, "origin", "vector", "New origin for you to be moved to" );
+	arg_add_optional( 2, "angles", "vector", "New angles for you to have" );
 
-	editorputdown_cmd = cmd_add( "editorputdown", ::cmd_editorputdown_f, "editorputdown" );
+	cmd_add( "editorputdown", ::cmd_editorputdown_f, "editorputdown" );
 
 	//spawn_cmd = cmd_add( "spawn", ::cmd_spawn_f, "spawn <classname> <origin> [spawnflags] [contextual1] [contextual2] [contextual3]" );
 	//spawn_cmd arg_add( "spawnable_classname vector string string string string", 2, 6 );
@@ -145,25 +144,21 @@ add_entity_cmds()
 	//dumpent_cmd = cmd_add( "saveent", ::cmd_dumpent_f, "saveent <type> [classname]" );
 	//dumpent_cmd arg_add( "string string", 1, 2 );
 
-	editorspawnpathnode_cmd = cmd_add( "spawnpathnode", ::cmd_editorspawnpathnode_f, "spawnpathnode [origin] [kvps...]" );
-	editorspawnpathnode_cmd arg_add_optional( 1, "origin", "vector", "Pathnode origin" );
-	editorspawnpathnode_cmd arg_add_optional( 2, "kvps", "...", "Key value pairs to define on pathnode entity" );
+	cmd_add( "savemapents", ::cmd_savemapents_f, "savemapents <filename>" );
+	arg_add_required( 1, "filename", "string", "File containing the placed mapents" );
 
-	savemapents_cmd = cmd_add( "savemapents", ::cmd_savemapents_f, "savemapents <filename>" );
-	savemapents_cmd arg_add_required( 1, "filename", "string", "File containing the placed mapents" );
+	cmd_add( "loadmapents", ::cmd_loadmapents_f, "loadmapents <filename>" );
+	arg_add_required( 1, "filename", "string", "File containing the placed mapents" );
 
-	loadmapents_cmd = cmd_add( "loadmapents", ::cmd_loadmapents_f, "loadmapents <filename>" );
-	loadmapents_cmd arg_add_required( 1, "filename", "string", "File containing the placed mapents" );
+	cmd_add( "radiantmode", ::cmd_radiantmode_f, "radiantmode" );
 
-	radiantmode_cmd = cmd_add( "radiantmode", ::cmd_radiantmode_f, "radiantmode" );
-
-	editmapentfield_cmd = cmd_add( "editmapentfield", ::cmd_editmapentfield_f, "editmapentfield <mapent_type> <id> <fieldname> <fieldvalue> [scale] [relative]" );
-	editmapentfield_cmd arg_add_required( 1, "mapent_type", "string", "Type of map entity to edit" );
-	editmapentfield_cmd arg_add_required( 2, "id", "string", "Identifier of entity" );
-	editmapentfield_cmd arg_add_required( 3, "fieldname", "string", "Fieldname to edit" );
-	editmapentfield_cmd arg_add_required( 4, "fieldvalue", "string", "Fieldvalue to modify <fieldname>" );
-	editmapentfield_cmd arg_add_optional( 5, "scale", "float", "The scale of the angle modification" );
-	editmapentfield_cmd arg_add_optional( 6, "relative", "boolean", "The scale of the angle modification" );
+	cmd_add( "editmapentfield", ::cmd_editmapentfield_f, "editmapentfield <mapent_type> <id> <fieldname> <fieldvalue> [scale] [relative]" );
+	arg_add_required( 1, "mapent_type", "string", "Type of map entity to edit" );
+	arg_add_required( 2, "id", "string", "Identifier of entity" );
+	arg_add_required( 3, "fieldname", "string", "Fieldname to edit" );
+	arg_add_required( 4, "fieldvalue", "string", "Fieldvalue to modify <fieldname>" );
+	arg_add_optional( 5, "scale", "float", "The scale of the angle modification" );
+	arg_add_optional( 6, "relative", "boolean", "The scale of the angle modification" );
 }
 
 // GScr_PhysicsTrace masks
@@ -583,41 +578,6 @@ private cmd_editentfield_f( param )
 	}
 }
 
-draw_custom_nodes()
-{
-	level notify( "stop_drawing_nodes" );
-	level endon( "stop_drawing_nodes" );
-
-	for ( ;; )
-	{
-		wait 0.05;
-
-		for ( i = 0; i < _SIZE( level._mapents[ "path_nodes" ].size ); i++ )
-		{
-			node = level._mapents[ "path_nodes" ][ i ];
-			if ( !isdefined( node.origin ) )
-			{
-				continue;
-			}
-
-			box( node.origin );
-			print3d( node.origin, i );
-		}
-	}
-}
- 
-generate_pathnode_for_mapents( keys )
-{
-	if ( !array_validate( level._mapents[ "path_nodes" ] ) )
-	{
-		level thread draw_custom_nodes();
-	}
-
-	pathnode = new_mapent_struct();
-	pathnode.keys = keys;
-	add_mapent_entity( pathnode, "path_nodes", pathnode.keys[ "id" ] );
-}
-
 fs_write_kvps( fh, mapent )
 {
 	keys = getarraykeys( mapent.keys );
@@ -730,28 +690,6 @@ parse_mapents( fh )
 	}
 
 	return entities;
-}
-
-private cmd_editorspawnpathnode_f( param )
-{
-	origin = _DEFAULT( param.a[ 0 ], self.origin );
-	kvps = param.a;
-	if ( array_validate( kvps ) && ( ( kvps.size - 1 ) % 2 ) != 0 )
-	{
-		return param add_executor_cmderror( "You must input an even number of key value pairs" );
-	}
-
-	keys = [];
-	keys[ "origin" ] = origin;
-
-	// push past origin argument
-	for ( i = 1; i < _SIZE( param.a ); i += 2 )
-	{
-		keys[ param.a[ i ] ] = param.a[ i + 1 ];
-	}
-
-	generate_pathnode_for_mapents( keys );
-	param add_executor_cmdinfo( "Spawned pathnode at origin: '" + origin + "'" );
 }
 
 private cmd_savemapents_f( param )

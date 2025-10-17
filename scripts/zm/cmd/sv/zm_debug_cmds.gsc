@@ -18,35 +18,35 @@ add_zm_debug_cmds()
 
 	cmd_block_set_module_group( "debug_zm" );
 	cmd_block_set_rank_group( "cheat" );
-	setdoground_cmd = cmd_add( "setdoground", ::cmd_setdoground_f, "setdoground [round]" );
-	setdoground_cmd arg_add_optional( 1, "next_dog_round", "int", "Number to set the next dog round to" );
+	cmd_add( "setdoground", ::cmd_setdoground_f, "setdoground [round]" );
+	arg_add_optional( 1, "next_dog_round", "int", "Number to set the next dog round to" );
 
-	spawnzombie_cmd = cmd_add( "spawnzombie", ::cmd_spawnzombie_f, "spawnzombie <aitype> [count]" );
-	spawnzombie_cmd arg_add_required( 1, "aitype", "string", "Type of AI to spawn" );
-	spawnzombie_cmd arg_add_optional_with_default( 2, "count", "int", "Amount of AI to spawn", 1 );
+	cmd_add( "spawnzombie", ::cmd_spawnzombie_f, "spawnzombie <aitype> [count]" );
+	arg_add_required( 1, "aitype", "string", "Type of AI to spawn" );
+	arg_add_optional_with_default( 2, "count", "int", "Amount of AI to spawn", 1 );
 
-	drawzombiespawnlocations_cmd = cmd_add( "drawzombiespawnlocations", ::cmd_drawzombiespawnlocations_f, "drawzombiespawnlocations <show> [only_active_spawns] [aitypes] [draw_text]" );
-	drawzombiespawnlocations_cmd arg_add_required( 1, "show", "boolean", "Toggle displaying zombie spawns" );
-	drawzombiespawnlocations_cmd arg_add_optional_with_default( 2, "only_active_spawns", "boolean", "Toggle showing only active spawns(in zones)", true );
-	drawzombiespawnlocations_cmd arg_add_optional_with_default( 3, "aitypes", "string", "Aitypes to display spawn locations for", "all" );
-	drawzombiespawnlocations_cmd arg_add_optional_with_default( 4, "draw_text", "boolean", "Toggle the additional text info drawn on spawns", true );
+	cmd_add( "drawzombiespawnlocations", ::cmd_drawzombiespawnlocations_f, "drawzombiespawnlocations <show> [only_active_spawns] [aitypes] [draw_text]" );
+	arg_add_required( 1, "show", "boolean", "Toggle displaying zombie spawns" );
+	arg_add_optional_with_default( 2, "only_active_spawns", "boolean", "Toggle showing only active spawns(in zones)", true );
+	arg_add_optional_with_default( 3, "aitypes", "string", "Aitypes to display spawn locations for", "all" );
+	arg_add_optional_with_default( 4, "draw_text", "boolean", "Toggle the additional text info drawn on spawns", true );
 
-	drawzones_cmd = cmd_add( "drawzones", ::cmd_drawzones_f, "drawzones" );
+	cmd_add( "drawzones", ::cmd_drawzones_f, "drawzones" );
 
-	toggleflag_cmd = cmd_add( "toggleflag", ::cmd_toggleflag_f, "toggleflag <flagname> " );
-	toggleflag_cmd arg_add_required( 1, "flagname", "string", "The name of the flag() to toggle" );
+	cmd_add( "toggleflag", ::cmd_toggleflag_f, "toggleflag <flagname> " );
+	arg_add_required( 1, "flagname", "string", "The name of the flag() to toggle" );
 
-	selectdebugzombie_cmd = cmd_add( "selectdebugzombie", ::cmd_selectdebugzombie_f, "selectdebugzombie {actor}" );
-	selectdebugzombie_cmd target_add_optional( 1, "zombie", "actor", "Manual actor selector" );
+	cmd_add( "selectdebugzombie", ::cmd_selectdebugzombie_f, "selectdebugzombie {actor}" );
+	target_add_optional( 1, "zombie", "actor", "Manual actor selector" );
 
-	debugzombie_cmd = cmd_add( "debugzombie", ::cmd_debugzombie_f, "debugzombie [options]" );
-	debugzombie_cmd arg_add_required( 1, "info_types", "string", "Types of info to print/render" );
+	cmd_add( "debugzombie", ::cmd_debugzombie_f, "debugzombie [options]" );
+	arg_add_required( 1, "info_types", "string", "Types of info to print/render" );
 
-	drawzombietotal_cmd = cmd_add( "drawzombietotal", ::cmd_drawzombietotal_f, "drawzombietotal" );
-	drawzombiecurrent_cmd = cmd_add( "drawzombiecurrent", ::cmd_drawzombiecurrent_f, "drawzombiecurrent" );
-	drawsph_cmd = cmd_add( "drawsph", ::cmd_drawsph_f, "drawsph" );
+	cmd_add( "drawzombietotal", ::cmd_drawzombietotal_f, "drawzombietotal" );
+	cmd_add( "drawzombiecurrent", ::cmd_drawzombiecurrent_f, "drawzombiecurrent" );
+	cmd_add( "drawsph", ::cmd_drawsph_f, "drawsph" );
 
-	setzombiesanimrate_cmd = cmd_add( "setzombieanimrate", ::cmd_setzombieanimrate_f, "setzombieanimrate <value>" );
+	cmd_add( "setzombieanimrate", ::cmd_setzombieanimrate_f, "setzombieanimrate <value>" );
 }
 
 private cmd_setdoground_f( param )
@@ -54,7 +54,7 @@ private cmd_setdoground_f( param )
 	new_round = _DEFAULT( param.a[ 0 ], level.round_number + 1 );
 	level.next_dog_round = new_round;
 
-	param add_executor_cmdinfo( "Next dog round is: " + level.next_dog_round );
+	param add_executor_cmdinfo( "Next dog round is: '{}'", level.next_dog_round );
 }
 
 private cmd_spawnzombie_f( param )
@@ -105,7 +105,7 @@ private cmd_drawzones_f( param )
 	self._debug_draw[ "zones" ] = !is_true( self._debug_draw[ "zones" ] );
 
 	on_off = cast_bool_to_str( self._debug_draw[ "zones" ], "Started Stopped" );
-	return param add_executor_cmdinfo( on_off + " drawing your active zone" );
+	return param add_executor_cmdinfo( "'{}' drawing your active zone", on_off );
 }
 
 private cmd_toggleflag_f( param )
@@ -115,12 +115,12 @@ private cmd_toggleflag_f( param )
 	exists = level flag_exists( flagname );
 	if ( !exists )
 	{
-		return param add_executor_cmderror( "Flagname '" + flagname + "' does not exist" );
+		return param add_executor_cmderror( "Flagname '{}' does not exist", flagname );
 	}
 
 	level flag_toggle( flagname );
 	on_off = cast_bool_to_str( flag( flagname ), "on off" );
-	param add_executor_cmdinfo( "Successfully toggled '" + flagname + "' '" + on_off + "'" );
+	param add_executor_cmdinfo( "Successfully toggled '{}' '", flagname, on_off );
 }
 
 private cmd_selectdebugzombie_f( param )

@@ -181,7 +181,7 @@ give_perk_zm_wrapper_executor( param, perk_name )
 	if ( perk_name != "all" )
 	{
 		self give_perk_zm( perk_name );
-		param add_executor_cmdinfo( "Gave perk " + perk_name + " to you" );
+		param add_executor_cmdinfo( "Gave perk '{}' to you", perk_name );
 	}
 	else 
 	{
@@ -200,8 +200,8 @@ give_perk_zm_wrapper_target( param, perk_name, player )
 	if ( perk_name != "all" )
 	{
 		player give_perk_zm( perk_name );
-		param add_executor_cmdinfo( "Gave perk '" + perk_name + "' to '" + player.name + "'" );
-		param add_player_cmdinfo( player, "You received perk '" + perk_name + "'" );
+		param add_executor_cmdinfo( "Gave perk '{}' to '{}'", perk_name, player.name );
+		param add_player_cmdinfo( player, "You received perk '{}'", perk_name );
 	}
 	else 
 	{
@@ -212,7 +212,7 @@ give_perk_zm_wrapper_target( param, perk_name, player )
 		}
 
 		param add_executor_cmdinfo( "Gave you all perks" );
-		param add_player_cmdinfo( player, "You received perk '" + perk_name + "'" );
+		param add_player_cmdinfo( player, "You received perk '{}'", perk_name );
 	}
 }
 
@@ -221,7 +221,7 @@ take_perk_zm_wrapper_executor( param, perk_name )
 	if ( perk_name != "all" )
 	{
 		self notify( perk_name + "_stop" );
-		param add_executor_cmdinfo( "Gave perk " + perk_name + " to you" );
+		param add_executor_cmdinfo( "Gave perk '{}' to you", perk_name );
 	}
 	else 
 	{
@@ -240,8 +240,8 @@ take_perk_zm_wrapper_target( param, perk_name, player )
 	if ( perk_name != "all" )
 	{
 		player notify( perk_name + "_stop" );
-		param add_executor_cmdinfo( "Gave perk '" + perk_name + "' to '" + player.name + "'" );
-		param add_player_cmdinfo( player, "You lost perk '" + perk_name + "'" );
+		param add_executor_cmdinfo( "Gave perk '{}' to '{}'", perk_name, player.name );
+		param add_player_cmdinfo( player, "You lost perk '{}'", perk_name );
 	}
 	else 
 	{

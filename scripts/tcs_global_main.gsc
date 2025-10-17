@@ -17,6 +17,9 @@
 // entity cmds
 #include scripts\cmd\sv\modules\editor\entity_cmds;
 #include scripts\cmd\sv\modules\editor\entity_helpers;
+// path cmds
+#include scripts\cmd\sv\modules\editor\path_cmds;
+#include scripts\cmd\sv\modules\editor\path_helpers;
 // debug cmds
 #include scripts\cmd\sv\modules\editor\debug_cmds;
 #include scripts\cmd\sv\modules\editor\debug_helpers;
@@ -95,6 +98,7 @@ private main()
 	add_core_cmds();
 	add_debug_cmds();
 	add_entity_cmds();
+	add_path_cmds();
 	level.onplayerdisconnect_old = level.onplayerdisconnect;
 	level.onplayerdisconnect = ::onplayerdisconnect;
 }

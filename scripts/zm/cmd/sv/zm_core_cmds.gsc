@@ -15,112 +15,112 @@
 
 add_zm_core_cmds()
 {
-	waittillframeend;
 	cmd_block_set_module_group( "core_zm" );
 	cmd_block_set_rank_group( "cheat" );
-	spectator_cmd = cmd_add( "spectator", ::cmd_spectator_f, "spectator {player}" );
-	spectator_cmd target_add_required( 1, "player", "player", "Player to force into spectate state" );
+
+	cmd_add( "spectator", ::cmd_spectator_f, "spectator {player}" );
+	target_add_required( 1, "player", "player", "Player to force into spectate state" );
 	
-	togglerespawn_cmd = cmd_add( "togglerespawn", ::cmd_togglerespawn_f, "togglerespawn {player}" );
-	togglerespawn_cmd target_add_optional( 1, "player", "player", "Player to disable respawning for" );
+	cmd_add( "togglerespawn", ::cmd_togglerespawn_f, "togglerespawn {player}" );
+	target_add_optional( 1, "player", "player", "Player to disable respawning for" );
 
-	killactors_cmd = cmd_add( "killactors", ::cmd_killactors_f, "killactors {actor_targets}" );
-	killactors_cmd target_add_optional( 1, "actor_targets", "actor", "Actors to kill" );
+	cmd_add( "killactors", ::cmd_killactors_f, "killactors {actor_targets}" );
+	target_add_optional( 1, "actor_targets", "actor", "Actors to kill" );
 
-	respawnspectators_cmd = cmd_add( "spawnspectator", ::cmd_spawnspectator_f, "spawnspectator {player}" );
-	respawnspectators_cmd target_add_optional( 1, "player", "player", "Spectators to respawn" );
+	cmd_add( "spawnspectator", ::cmd_spawnspectator_f, "spawnspectator {player}" );
+	target_add_optional( 1, "player", "player", "Spectators to respawn" );
 
-	pause_cmd = cmd_add( "pause", ::cmd_pause_f, "pause [minutes]" );
-	pause_cmd arg_add_optional_with_default( 1, "minutes", "natural_int", "Duration minutes until the pause automatically expires", -1 );
+	cmd_add( "pause", ::cmd_pause_f, "pause [minutes]" );
+	arg_add_optional_with_default( 1, "minutes", "natural_int", "Duration minutes until the pause automatically expires", -1 );
 
-	unpause_cmd = cmd_add( "unpause", ::cmd_unpause_f );
+	cmd_add( "unpause", ::cmd_unpause_f );
 
-	giveperk_cmd = cmd_add( "perk", ::cmd_perk_f, "perk <perk|all> {players}" );
-	giveperk_cmd arg_add_required( 1, "perk", "perk", "Perk to give; can be literal 'all'" );
-	giveperk_cmd target_add_optional( 1, "player", "player", "Players to give perks to" );
-	giveperk_cmd executor_obj_add_cmd( "Player to give a perk to" );
+	cmd_add( "perk", ::cmd_perk_f, "perk <perk|all> {players}" );
+	arg_add_required( 1, "perk", "perk", "Perk to give; can be literal 'all'" );
+	target_add_optional( 1, "player", "player", "Players to give perks to" );
+	target_set_default_target( 1, "self" );
 
-	takeperk_cmd = cmd_add( "takeperk", ::cmd_takeperk_f, "takeperk <perk|all> {players}" );
-	takeperk_cmd arg_add_required( 1, "perk", "perk", "Perk to take; can be literal 'all'" );
-	takeperk_cmd target_add_optional( 1, "player", "player", "Players to takes perks from" );
-	takeperk_cmd executor_obj_add_cmd( "Player to take a perk from" );
+	cmd_add( "takeperk", ::cmd_takeperk_f, "takeperk <perk|all> {players}" );
+	arg_add_required( 1, "perk", "perk", "Perk to take; can be literal 'all'" );
+	target_add_optional( 1, "player", "player", "Players to takes perks from" );
+	target_set_default_target( 1, "self" );
 
-	givepermaperk_cmd = cmd_add( "permaperk", ::cmd_permaperk_f, "permaperk <permaperk|all> {players}" );
-	givepermaperk_cmd arg_add_required( 1, "permaperk", "permaperk", "Permaperk to give; can be literal 'all'" );
-	givepermaperk_cmd target_add_optional( 1, "player", "player", "Players to give perma perks" );
-	givepermaperk_cmd executor_obj_add_cmd( "Player to give a perma perk to" );
+	cmd_add( "permaperk", ::cmd_permaperk_f, "permaperk <permaperk|all> {players}" );
+	arg_add_required( 1, "permaperk", "permaperk", "Permaperk to give; can be literal 'all'" );
+	target_add_optional( 1, "player", "player", "Players to give perma perks" );
+	target_set_default_target( 1, "self" );
 
-	givepoints_cmd = cmd_add( "points", ::cmd_points_f, "points <amount> {players}" );
-	givepoints_cmd arg_add_required( 1, "amount", "int", "Points to give" );
-	givepoints_cmd target_add_optional( 1, "player", "player", "Players to give points to" );
-	givepoints_cmd executor_obj_add_cmd( "Player to give points to" );
+	cmd_add( "points", ::cmd_points_f, "points <amount> {players}" );
+	arg_add_required( 1, "amount", "int", "Points to give" );
+	target_add_optional( 1, "player", "player", "Players to give points to" );
+	target_set_default_target( 1, "self" );
 
-	givepowerup_cmd = cmd_add( "powerup", ::cmd_powerup_f, "powerup <powerup> {players}" );
-	givepowerup_cmd arg_add_required( 1, "powerup", "powerup", "Powerup to spawn" );
-	givepowerup_cmd target_add_optional( 1, "player", "player", "Players to give powerups to" );
-	givepowerup_cmd executor_obj_add_cmd( "Player to give a powerup to" );
+	cmd_add( "powerup", ::cmd_powerup_f, "powerup <powerup> {players}" );
+	arg_add_required( 1, "powerup", "powerup", "Powerup to spawn" );
+	target_add_optional( 1, "player", "player", "Players to give powerups to" );
+	target_set_default_target( 1, "self" );
 
-	giveweapon_cmd = cmd_add( "weapon", ::cmd_weapon_f, "weapon <weapon> {players}" );
-	giveweapon_cmd arg_add_required( 1, "weapon", "weapon", "Weapon to give" );
-	giveweapon_cmd target_add_optional( 1, "player", "player", "Players to give weapons" );
-	giveweapon_cmd executor_obj_add_cmd( "Player to give a weapon to" );
+	cmd_add( "weapon", ::cmd_weapon_f, "weapon <weapon> {players}" );
+	arg_add_required( 1, "weapon", "weapon", "Weapon to give" );
+	target_add_optional( 1, "player", "player", "Players to give weapons" );
+	target_set_default_target( 1, "self" );
 
-	toggleperssystem_cmd = cmd_add( "toggleperssystem", ::cmd_toggleperssystem_f, "toggleperssystem {players}" );
-	toggleperssystem_cmd target_add_optional( 1, "player", "player", "Players to disable the perma perks system for" );
-	toggleperssystem_cmd executor_obj_add_cmd( "Player to toggle the perma perks system for" );
+	cmd_add( "toggleperssystem", ::cmd_toggleperssystem_f, "toggleperssystem {players}" );
+	target_add_optional( 1, "player", "player", "Players to disable the perma perks system for" );
+	target_set_default_target( 1, "self" );
 
-	toggleoutofplayableareamonitor_cmd = cmd_add( "toggleoutofplayableareamonitor", ::cmd_toggleoutofplayableareamonitor_f );
+	cmd_add( "toggleoutofplayableareamonitor", ::cmd_toggleoutofplayableareamonitor_f );
 
-	openalldoors_cmd = cmd_add( "openalldoors", ::cmd_openalldoors_f );
+	cmd_add( "openalldoors", ::cmd_openalldoors_f );
 
-	setround_cmd = cmd_add( "setround", ::cmd_setround_f, "setround <round_number>" );
-	setround_cmd arg_add_required( 1, "round_number", "positive_int", "Force change round to <round_number>" );
+	cmd_add( "setround", ::cmd_setround_f, "setround <round_number>" );
+	arg_add_required( 1, "round_number", "positive_int", "Force change round to <round_number>" );
 
-	nextround_cmd = cmd_add( "nextround", ::cmd_nextround_f );
+	cmd_add( "nextround", ::cmd_nextround_f );
 
-	prevround_cmd = cmd_add( "prevround", ::cmd_prevround_f );
+	cmd_add( "prevround", ::cmd_prevround_f );
 
-	setglobalzombiestat_cmd = cmd_add( "setglobalzombiestat", ::cmd_setglobalzombiestat_f, "setglobalzombiestat <statname> <value>" );
-	setglobalzombiestat_cmd arg_add_required( 1, "statname", "string", "Statname to change" );
-	setglobalzombiestat_cmd arg_add_required( 2, "value", "string", "Value to assign to" );
+	cmd_add( "setglobalzombiestat", ::cmd_setglobalzombiestat_f, "setglobalzombiestat <statname> <value>" );
+	arg_add_required( 1, "statname", "string", "Statname to change" );
+	arg_add_required( 2, "value", "string", "Value to assign to" );
 
-	listglobalzombiestats_cmd = cmd_add( "listglobalzombiestats", ::cmd_listglobalzombiestats_f );
+	cmd_add( "listglobalzombiestats", ::cmd_listglobalzombiestats_f );
 
-	setallphysparams_cmd = cmd_add( "setallphysparams", ::cmd_setallphysparams_f, "setallphysparams {actor} <vector>" );
-	setallphysparams_cmd arg_add_required( 1, "physparams", "vector", "Vector {actor} target will use for phyparams" );
-	setallphysparams_cmd target_add_optional( 1, "actor", "actor", "Actor to modify phys params for" );
+	cmd_add( "setallphysparams", ::cmd_setallphysparams_f, "setallphysparams {actor} <vector>" );
+	arg_add_required( 1, "physparams", "vector", "Vector {actor} target will use for phyparams" );
+	target_add_optional( 1, "actor", "actor", "Actor to modify phys params for" );
 
 	cmd_block_set_rank_group( "none" );
-	weaponlist_cmd = cmd_add( "weaponlist", ::cmd_weaponlist_f );
+	cmd_add( "weaponlist", ::cmd_weaponlist_f );
 
-	poweruplist_cmd = cmd_add( "poweruplist", ::cmd_poweruplist_f );
+	cmd_add( "poweruplist", ::cmd_poweruplist_f );
 
-	perklist_cmd = cmd_add( "perklist", ::cmd_perklist_f );
+	cmd_add( "perklist", ::cmd_perklist_f );
 
-	spawnperkmachine_cmd = cmd_add( "spawnperkmachine", ::cmd_spawnperkmachine_f, "spawnperkmachine <internal_name> <perk_specialty> [origin] [angles] [kvps...]" );
-	spawnperkmachine_cmd arg_add_required( 1, "internal_name", "string", "Internal name of perk machine to get references by" );
-	spawnperkmachine_cmd arg_add_required( 2, "perk_specialty", "perk", "Perk machine to spawn in" );
-	spawnperkmachine_cmd arg_add_optional( 3, "origin", "vector", "Origin to spawn at" );
-	spawnperkmachine_cmd arg_add_optional( 4, "angles", "vector", "Angles to spawn at" );
-	spawnperkmachine_cmd arg_add_optional( 5, "kvps", "...", "Additional kvps to apply" );
+	cmd_add( "spawnperkmachine", ::cmd_spawnperkmachine_f, "spawnperkmachine <internal_name> <perk_specialty> [origin] [angles] [kvps...]" );
+	arg_add_required( 1, "internal_name", "string", "Internal name of perk machine to get references by" );
+	arg_add_required( 2, "perk_specialty", "perk", "Perk machine to spawn in" );
+	arg_add_optional( 3, "origin", "vector", "Origin to spawn at" );
+	arg_add_optional( 4, "angles", "vector", "Angles to spawn at" );
+	arg_add_optional( 5, "kvps", "...", "Additional kvps to apply" );
 
-	spawnwallbuy_cmd = cmd_add( "spawnwallbuy", ::cmd_spawnwallbuy_f, "spawnwallbuy <internal_name> <targetname> <weapon_name> <origin> <angles> [kvps...]" );
-	spawnwallbuy_cmd arg_add_required( 1, "internal_name", "string", "Internal name of wallbuy to get references by" );
-	spawnwallbuy_cmd arg_add_required( 2, "targetname", "string", "Classification of wallbuy" );
-	spawnwallbuy_cmd arg_add_required( 3, "weapon_name", "weapon", "Weapon to use" );
-	spawnwallbuy_cmd arg_add_optional( 4, "origin", "vector", "Location of new wallbuy" );
-	spawnwallbuy_cmd arg_add_optional( 5, "angles", "vector", "Angles of new wallbuy" );
-	spawnwallbuy_cmd arg_add_optional( 6, "kvps", "...", "Additional kvps to apply" );
+	cmd_add( "spawnwallbuy", ::cmd_spawnwallbuy_f, "spawnwallbuy <internal_name> <targetname> <weapon_name> <origin> <angles> [kvps...]" );
+	arg_add_required( 1, "internal_name", "string", "Internal name of wallbuy to get references by" );
+	arg_add_required( 2, "targetname", "string", "Classification of wallbuy" );
+	arg_add_required( 3, "weapon_name", "weapon", "Weapon to use" );
+	arg_add_optional( 4, "origin", "vector", "Location of new wallbuy" );
+	arg_add_optional( 5, "angles", "vector", "Angles of new wallbuy" );
+	arg_add_optional( 6, "kvps", "...", "Additional kvps to apply" );
 
-	spawnzombieloc_cmd = cmd_add( "spawnzombieloc", ::cmd_spawnzombieloc_f, "spawnzombieloc <internal_name> <origin> [kvps...]" );
-	spawnzombieloc_cmd arg_add_required( 1, "internal_name", "string", "Internal name of spawn location to get references by" );
-	spawnzombieloc_cmd arg_add_optional( 2, "kvps", "...", "Additional kvps to apply" );
+	cmd_add( "spawnzombieloc", ::cmd_spawnzombieloc_f, "spawnzombieloc <internal_name> <origin> [kvps...]" );
+	arg_add_required( 1, "internal_name", "string", "Internal name of spawn location to get references by" );
+	arg_add_optional( 2, "kvps", "...", "Additional kvps to apply" );
 
-	magicbulletshield_cmd = cmd_add( "magicbulletshield", ::cmd_magicbulletshield_f, "magicbulletshield" );
-	magicbulletshield_cmd target_add_optional( 1, "player", "player", "Players to give magicbulletshield" );
-	magicbulletshield_cmd executor_obj_add_cmd( "Player who will receive magicbulletshield" );
+	cmd_add( "magicbulletshield", ::cmd_magicbulletshield_f, "magicbulletshield" );
+	target_add_optional( 1, "player", "player", "Players to give magicbulletshield" );
+	target_set_default_target( 1, "self" );
 
-	showcustomspawns_cmd = cmd_add( "showcustomspawns", ::cmd_showcustomspawns_f, "showcustomspawns" );
+	cmd_add( "showcustomspawns", ::cmd_showcustomspawns_f, "showcustomspawns" );
 }
 
 private cmd_spectator_f( param )
@@ -137,11 +137,11 @@ private cmd_spectator_f( param )
 		}
 		target.spectator_respawn = undefined;
 
-		param add_executor_cmdinfo( "Successfully made " + target.name + " a spectator" );
+		param add_executor_cmdinfo( "Successfully made '{}' a spectator", target.name );
 		param add_player_cmdinfo( target, "You are now a spectator" );
 	}
 
-	param add_executor_cmdinfo( "Made '" + targets.size + "' players into spectators" );
+	param add_executor_cmdinfo( "Made '{}' players into spectators", targets.size );
 }
 
 private cmd_togglerespawn_f( param )
@@ -165,11 +165,11 @@ private cmd_togglerespawn_f( param )
 			target.spectator_respawn = target.tcs_original_respawn;
 		}
 
-		param add_executor_cmdinfo( target.name + " has their respawn toggled" );
-		param add_player_cmdinfo( target, "You will no longer respawn" );
+		param add_executor_cmdinfo( "'{}' has their respawn toggled", target.name );
+		param add_player_cmdinfo( "You will no longer respawn '{}'", target );
 	}
 
-	param add_executor_cmdinfo( "Disabled respawning for '" + targets.size + "' players" );
+	param add_executor_cmdinfo( "Disabled respawning for '{}' players", targets.size );
 }
 
 private cmd_killactors_f( param )
@@ -215,12 +215,12 @@ private cmd_spawnspectator_f( param )
 			}
 
 			respawn_count++;
-			param add_executor_cmdinfo( "Respawned '" + player.name + "'" );
+			param add_executor_cmdinfo( "Respawned '{}'", player.name );
 			param add_player_cmdinfo( player, "You have been respawned" );
 		}
 	}
 
-	param add_executor_cmdinfo( "Successfully respawned '" + respawn_count + "' players" );
+	param add_executor_cmdinfo( "Successfully respawned '{}' players", respawn_count );
 }
 
 // TODO: stop the zombies from dying due to g_ai preventing movement
@@ -230,7 +230,7 @@ private cmd_pause_f( param )
 	if ( duration > 0 )
 	{
 		level thread game_pause( duration );
-		return param add_executor_cmdinfo( "Game paused for " + duration + " minutes" );
+		return param add_executor_cmdinfo( "Game paused for '{}' minutes", duration );
 	}
 	else 
 	{
@@ -290,7 +290,7 @@ private cmd_permaperk_f( param )
 	if ( perma_perk_name != "all" )
 	{
 		self give_perma_perk( perma_perk_name );
-		return param add_executor_cmdinfo( "Gave you " + perma_perk_name );
+		return param add_executor_cmdinfo( "Gave you '{}'", perma_perk_name );
 	}
 	else
 	{
@@ -310,14 +310,14 @@ private cmd_points_f( param )
 		{
 			player = targets[ i ];
 			player add_to_player_score( points );
-			param add_executor_cmdinfo( "Gave '" + player.name + "' '" + points + "' points" );
-			param add_player_cmdinfo( player, "Gave you '" + points + "' points" );
+			param add_executor_cmdinfo( "Gave '{}' '{}' points", player.name, points );
+			param add_player_cmdinfo( player, "Gave you '{}' points", points );
 		}
 	}
 	else
 	{
 		self add_to_player_score( points );
-		param add_executor_cmdinfo( "Gave you '" + points + "' points" );
+		param add_executor_cmdinfo( "Gave you '{}' points", points );
 	}
 }
 
@@ -334,12 +334,12 @@ private cmd_powerup_f( param )
 			success = player give_powerup_zm( powerup_name );
 			if ( !success )
 			{
-				param add_executor_cmderror( "Could not spawn powerup: '" + powerup_name + "' for '" + player.name + "'" );
+				param add_executor_cmderror( "Could not spawn powerup: '{}' for '{}'", powerup_name, player.name );
 				continue;
 			}
 
-			param add_executor_cmdinfo( "Spawned '" + player.name + "' '" + powerup_name + "' a powerup" );
-			param add_player_cmdinfo( player, "Spawned you '" + powerup_name + "' powerup" );
+			param add_executor_cmdinfo( "Spawned '{}' ' a powerup", player.name, powerup_name );
+			param add_player_cmdinfo( player, "Spawned you '{}' powerup", powerup_name );
 		}
 	}
 	else
@@ -347,10 +347,10 @@ private cmd_powerup_f( param )
 		success = self give_powerup_zm( powerup_name );
 		if ( !success )
 		{
-			return param add_executor_cmderror( "Could not spawn powerup: '" + powerup_name + "'" );
+			return param add_executor_cmderror( "Could not spawn powerup: '{}'", powerup_name );
 		}
 
-		return param add_executor_cmdinfo( "Spawned '" + powerup_name + "' for you" );
+		return param add_executor_cmdinfo( "Spawned '{}' for you", powerup_name );
 	}
 }
 
@@ -367,12 +367,12 @@ private cmd_weapon_f( param )
 			success = player weapon_give_custom( weapon, weapon_is_upgrade( weapon ), true );
 			if ( !success )
 			{
-				param add_executor_cmderror( "Could not give: '" + weapon + "' to '" + player.name + "'" );
+				param add_executor_cmderror( "Could not give: '{}' to '{}'", weapon, player.name );
 				continue;
 			}
 
-			param add_executor_cmdinfo( "Gave " + player.name + "'" + weapon + "' weapon" );
-			param add_player_cmdinfo( player, "Gave you '" + weapon + "' weapon" );
+			param add_executor_cmdinfo( "Gave '{}' '{}' weapon", player.name, weapon );
+			param add_player_cmdinfo( player, "Gave you '{}' weapon", weapon );
 		}
 	}
 	else
@@ -380,10 +380,10 @@ private cmd_weapon_f( param )
 		success = self weapon_give_custom( weapon, weapon_is_upgrade( weapon ), true );
 		if ( !success )
 		{
-			return param add_executor_cmderror( "Could not spawn weapon: '" + weapon + "'" );
+			return param add_executor_cmderror( "Could not spawn weapon: '{}'" + weapon );
 		}
 
-		param add_executor_cmdinfo( "Gave you '" + weapon + "'" );
+		param add_executor_cmdinfo( "Gave you '{}'", weapon );
 	}
 }
 
@@ -398,15 +398,15 @@ private cmd_toggleperssystem_f( param )
 			on_off = cast_bool_to_str( is_true( self.tcs_disable_pers_system ), "on off" );
 			self.tcs_disable_pers_system = !is_true( self.tcs_disable_pers_system );
 
-			param add_executor_cmdinfo( "Toggled '" + player.name + "' perma perk system '" + on_off + "'" );
-			param add_player_cmdinfo( player, "Toggled your perma perk system '" + on_off + "'" );
+			param add_executor_cmdinfo( "Toggled '{}' perma perk system '{}'", player.name, on_off );
+			param add_player_cmdinfo( player, "Toggled your perma perk system '{}'", on_off );
 		}
 	}
 	else
 	{
 		on_off = cast_bool_to_str( is_true( self.tcs_disable_pers_system ), "on off" );
 		self.tcs_disable_pers_system = !is_true( self.tcs_disable_pers_system );
-		param add_executor_cmdinfo( "Toggled the perma perk system '" + on_off + "'" );
+		param add_executor_cmdinfo( "Toggled the perma perk system '{}'", on_off );
 	}
 }
 
@@ -429,7 +429,7 @@ private cmd_toggleoutofplayableareamonitor_f( param )
 		}
 	}
 
-	param add_executor_cmdinfo( "Out of playable area monitor " + on_off );
+	param add_executor_cmdinfo( "Out of playable area monitor '{}'", on_off );
 }
 
 private cmd_openalldoors_f( param )
@@ -450,7 +450,7 @@ private cmd_setround_f( param )
 	level.round_number = round_number;
 	change_round( round_number );
 
-	param add_executor_cmdinfo( "Round set to " + round_number );
+	param add_executor_cmdinfo( "Round set to '{}'", round_number );
 }
 
 private cmd_nextround_f( param )
@@ -458,7 +458,7 @@ private cmd_nextround_f( param )
 	level.round_number++;
 	change_round( level.round_number );
 
-	param add_executor_cmdinfo( "Round set to " + level.round_number );
+	param add_executor_cmdinfo( "Round set to '{}'", level.round_number );
 }
 
 private cmd_prevround_f( param )
@@ -466,7 +466,7 @@ private cmd_prevround_f( param )
 	level.round_number--;
 	change_round( level.round_number );
 
-	param add_executor_cmdinfo( "Round set to " + level.round_number );
+	param add_executor_cmdinfo( "Round set to '{}'", level.round_number );
 }
 
 private cmd_setglobalzombiestat_f( param )
@@ -475,7 +475,7 @@ private cmd_setglobalzombiestat_f( param )
 	stat = level.tcs_modifiable_zombie_stats[ stat_name ];
 	if ( !isDefined( stat ) )
 	{
-		return param add_executor_cmderror( "1Invalid zombie stat " + stat_name + ", use listglobalzombiestats to see modifiable stats" );
+		return param add_executor_cmderror( "1Invalid zombie stat '{}' use listglobalzombiestats to see modifiable stats", stat_name );
 	}
 
 	value = param.a[ 1 ];
@@ -484,10 +484,10 @@ private cmd_setglobalzombiestat_f( param )
 	{
 		if ( !set_global_zombie_stat( stat, stat_name, stat.reset_value ) )
 		{
-			return param add_executor_cmderror( "2Invalid zombie stat " + stat_name + " , use listglobalzombiestats to see modifiable stats" );
+			return param add_executor_cmderror( "2Invalid zombie stat '{}' use listglobalzombiestats to see modifiable stats", stat_name );
 		}
 
-		return param add_executor_cmdinfo( "Successfully reset " + stat_name + " to its original value" );
+		return param add_executor_cmdinfo( "Successfully reset '{}' to its original value", stat_name );
 	}
 
 	if ( isDefined( level.tcs_arg_type_handlers[ stat.type ] ) )
@@ -496,10 +496,10 @@ private cmd_setglobalzombiestat_f( param )
 
 		if ( !set_global_zombie_stat( stat, stat_name, casted_value ) )
 		{
-			return param add_executor_cmderror( "3Invalid zombie stat " + stat_name + " , use listglobalzombiestats to see modifiable stats" );
+			return param add_executor_cmderror( "3Invalid zombie stat '{}' use listglobalzombiestats to see modifiable stats", stat_name );
 		}
 
-		return param add_executor_cmdinfo( "Successfully set " + stat_name + " to " + value );
+		return param add_executor_cmdinfo( "Successfully set '{}' to", stat_name, value );
 	}
 
 	return param add_executor_cmderror( "Expected positive_int or positive_float, got: " + value );
@@ -551,7 +551,7 @@ private cmd_setallphysparams_f( param )
 		zombie setphysparams( phys_params[ 0 ], phys_params[ 1 ], phys_params[ 2 ] );
 	}
 
-	param add_executor_cmdinfo( "Set all zombies phys params to " + phys_params );
+	param add_executor_cmdinfo( "Set all zombies phys params to '{}'", phys_params );
 }
 
 private cmd_weaponlist_f( param )
@@ -575,12 +575,12 @@ private cmd_spawnperkmachine_f( param )
 	perk_specialty = param.a[ 1 ];
 	if ( !isdefined( level._spawnable_perk_machines[ perk_specialty ] ) )
 	{
-		return param add_executor_cmderror( "Unknown perk specialty: '" + perk_specialty + "'" );
+		return param add_executor_cmderror( "Unknown perk specialty: '{}'", perk_specialty );
 	}
 
 	if ( isdefined( level._mapents[ "perk_machines" ][ internal_name ] ) )
 	{
-		return param add_executor_cmderror( "internal_name: '" + internal_name + "' cannot be used again because it would collide with identifying an existing perk machine"  );
+		return param add_executor_cmderror( "internal_name: '{}' cannot be used again because it would collide with identifying an existing perk machine", internal_name );
 	}
 
 	model = level._spawnable_perk_machines[ perk_specialty ].assets.off_model;
@@ -612,7 +612,7 @@ private cmd_spawnperkmachine_f( param )
 	perk_trigger = _spawn_perk_machine( internal_name, perk_specialty, model, origin, angles, undefined, clip_model, keys );
 	perk_trigger.keys = keys;
 	_power_on_machine( perk_trigger._perk_machine );
-	param add_executor_cmdinfo( "Successfully spawned in '" + perk_specialty + "' perk machine" );
+	param add_executor_cmdinfo( "Successfully spawned in '{}' perk machine", perk_specialty );
 }
 
 private cmd_spawnwallbuy_f( param )
@@ -625,7 +625,7 @@ private cmd_spawnwallbuy_f( param )
 
 	if ( isdefined( level._mapents[ "wallbuy_locations" ][ internal_name ] ) )
 	{
-		return param add_executor_cmderror( "internal_name: '" + internal_name + "' cannot be used again because it would collide with identifying an existing wallbuy"  );
+		return param add_executor_cmderror( "internal_name: '{}' cannot be used again because it would collide with identifying an existing wallbuy", internal_name  );
 	}
 
 	kvp_start = 5;
@@ -654,7 +654,7 @@ private cmd_spawnwallbuy_f( param )
 	}
 
 	wallbuy_struct.keys = keys;
-	return param add_executor_cmdinfo( "Sucessfully spawned wallbuy with id '" + internal_name + "' at '" + wallbuy_struct.origin + "'"  );
+	return param add_executor_cmdinfo( "Sucessfully spawned wallbuy with id '{}' at '", internal_name, wallbuy_struct.origin  );
 }
 
 private cmd_magicbulletshield_f( param )
@@ -668,14 +668,14 @@ private cmd_magicbulletshield_f( param )
 		{
 			player = targets[ i ];
 			player toggle_magicbulletshield( on_off == "on" );
-			param add_executor_cmdinfo( "Successfully toggled '" + player.name + "' Magic Bullet Shield status to '" + on_off + "'" );
-			param add_player_cmdinfo( player, "Your Magic Bullet Shield status was toggled '" + on_off + "'" );
+			param add_executor_cmdinfo( "Successfully toggled '{}' Magic Bullet Shield status to '{}'", player.name, on_off );
+			param add_player_cmdinfo( player, "Your Magic Bullet Shield status was toggled '{}'", on_off );
 		}
 	}
 	else
 	{
 		self toggle_magicbulletshield( on_off == "on" );
-		param add_executor_cmdinfo( "Magic Bullet Shield " + on_off );
+		param add_executor_cmdinfo( "Magic Bullet Shield '{}'", on_off );
 	}
 
 	if ( on_off == "on" )
@@ -705,7 +705,7 @@ private cmd_showcustomspawns_f( param )
 		level notify( "stop_showing_custom_spawns" );
 	}
 
-	param add_executor_cmdinfo( "Showing custom spawned entities '" + on_off + "'" );
+	param add_executor_cmdinfo( "Showing custom spawned entities '{}'", on_off );
 }
 
 private cmd_spawnzombieloc_f( param )
@@ -715,7 +715,7 @@ private cmd_spawnzombieloc_f( param )
 
 	if ( isdefined( level._mapents[ "zombies_spawns" ][ internal_name ] ) )
 	{
-		return param add_executor_cmderror( "internal_name: '" + internal_name + "' cannot be used again because it would collide with identifying an existing zombie spawn"  );
+		return param add_executor_cmderror( "internal_name: '{}' cannot be used again because it would collide with identifying an existing zombie spawn", internal_name );
 	}
 
 	kvp_start = 2;

@@ -443,7 +443,7 @@ private add_key( key_string )
 	level._parse_obj.current_base_key_string = base_key;
 	level._parse_obj.current_ordinal_argument = ordinal_argument;
 	level._parse_obj.kvps[ key_string ] = token_obj_t_new( base_key, ordinal_argument );
-	level._parse_obj.kvps_ordinal[ ordinal_argument + "" ] = token_obj_t_new( base_key, ordinal_argument );
+	level._parse_obj.kvps_ordinal[ _MAKE_ORDINAL_KEY( ordinal_argument ) ] = token_obj_t_new( base_key, ordinal_argument );
 }
 
 private add_arg( arg_str )

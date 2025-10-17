@@ -6,64 +6,65 @@
 
 add_core_cmds()
 {
-	waittillframeend;
 	cmd_block_set_module_group( "core_common" );
 	cmd_block_set_rank_group( "cheat" );
-	setcvar_cmd = cmd_add( "cvar", ::cmd_setcvar_f, "cvar <cvarname> <newval>" );
-	setcvar_cmd arg_add_required( 1, "cvarname", "string", "Name of client dvar" );
-	setcvar_cmd arg_add_required( 2, "newval", "string", "New value to assign to client dvar" );
-	setcvar_cmd target_add_optional( 1, "player", "player", "Players to modify cvar for" );
-	setcvar_cmd executor_obj_add_cmd( "Player whos <cvarname> will be set to <newval>" );
+	cmd_add( "cvar", ::cmd_setcvar_f, "cvar <cvarname> <newval>" );
+	arg_add_required( 1, "cvarname", "string", "Name of client dvar" );
+	arg_add_required( 2, "newval", "string", "New value to assign to client dvar" );
+	target_add_optional( 1, "player", "player", "Players to modify cvar for" );
+	target_set_default_target( 1, "self" );
 
-	givegod_cmd = cmd_add( "god", ::cmd_god_f, "god" );
-	givegod_cmd target_add_optional( 1, "player", "player", "Players to give god status" );
-	givegod_cmd executor_obj_add_cmd( "Player who will receive god status" );
+	cmd_add( "god", ::cmd_god_f, "god" );
+	target_add_optional( 1, "player", "player", "Players to give god status" );
+	target_set_default_target( 1, "self" );
 
-	givenotarget_cmd = cmd_add( "notarget", ::cmd_notarget_f, "notarget" );
-	givenotarget_cmd target_add_optional( 1, "player", "player", "Players to give notarget status" );
-	givenotarget_cmd executor_obj_add_cmd( "Player who will receive notarget status" );
+	cmd_add( "notarget", ::cmd_notarget_f, "notarget" );
+	target_add_optional( 1, "player", "player", "Players to give notarget status" );
+	target_set_default_target( 1, "self" );
 
-	giveinvisible_cmd = cmd_add( "invisible", ::cmd_invisible_f, "invisible" );
-	giveinvisible_cmd target_add_optional( 1, "player", "player", "Players to give invisible status" );
-	giveinvisible_cmd executor_obj_add_cmd( "Player who will be hidden" );
+	cmd_add( "invisible", ::cmd_invisible_f, "invisible" );
+	target_add_optional( 1, "player", "player", "Players to give invisible status" );
+	target_set_default_target( 1, "self" );
 
-	togglehud_cmd = cmd_add( "togglehud", ::cmd_togglehud_f, "togglehud" );
-	togglehud_cmd target_add_optional( 1, "player", "player", "Players to disable hud" );
-	togglehud_cmd executor_obj_add_cmd( "Player who's hud will be toggled" );
+	cmd_add( "togglehud", ::cmd_togglehud_f, "togglehud" );
+	target_add_optional( 1, "player", "player", "Players to disable hud" );
+	target_set_default_target( 1, "self" );
 
-	bottomlessclip_cmd = cmd_add( "bottomlessclip", ::cmd_bottomlessclip_f, "bottomlessclip" );
-	bottomlessclip_cmd target_add_optional( 1, "player", "player", "Players to give bottomless clip" );
-	bottomlessclip_cmd executor_obj_add_cmd( "Player who will receive bottomless clip" );
+	cmd_add( "bottomlessclip", ::cmd_bottomlessclip_f, "bottomlessclip" );
+	target_add_optional( 1, "player", "player", "Players to give bottomless clip" );
+	target_set_default_target( 1, "self" );
 
-	dvar_cmd = cmd_add( "dvar", ::cmd_server_dvar_f, "dvar <dvarname> <newval>" );
-	dvar_cmd arg_add_required( 1, "dvarname", "string", "Name of dvar" );
-	dvar_cmd arg_add_required( 2, "newval", "string", "New value to assign to dvar" );
+	cmd_add( "dvar", ::cmd_server_dvar_f, "dvar <dvarname> <newval>" );
+	arg_add_required( 1, "dvarname", "string", "Name of dvar" );
+	arg_add_required( 2, "newval", "string", "New value to assign to dvar" );
 
-	setrank_cmd = cmd_add( "setrank", ::cmd_setrank_f, "setrank {player} <rank>" );
-	setrank_cmd arg_add_required( 1, "rank", "rank", "New rank to assign to target player" );
-	setrank_cmd target_add_required( 1, "player", "player", "Player whos rank will be modified to be <rank>", 1 );
+	cmd_add( "setrank", ::cmd_setrank_f, "setrank {player} <rank>" );
+	arg_add_required( 1, "rank", "rank", "New rank to assign to target player" );
+	target_add_required( 1, "player", "player", "Player whos rank will be modified to be <rank>", 1 );
 
-	entitylist_cmd = cmd_add( "entitylist", ::cmd_entitylist_f, "entitylist {entities}" );
-	entitylist_cmd target_add_optional( 1, "entities", "general", "Entities to print info for" );
+	cmd_add( "entitylist", ::cmd_entitylist_f, "entitylist {entities}" );
+	target_add_optional( 1, "entities", "general", "Entities to print info for" );
 
-	dodamage_cmd = cmd_add( "dodamage", ::cmd_dodamage_f, "dodamage {victim} <damage> <origin> {attacker} {inflictor} [hitloc] [MOD] [idflags] [weapon]" );
-	dodamage_cmd arg_add_required( 1, "damage", "float", "Amount of damage to inflict upon entity" );
-	dodamage_cmd arg_add_optional_with_default( 2, "origin", "vector", "The position where the entity will take damage from", ( 0, 0, 0 ) );
-	dodamage_cmd arg_add_optional( 3, "hitloc", "hitloc", "Hit location on the entity the damage will hit" );
-	dodamage_cmd arg_add_optional_with_default( 4, "meansofdeath", "MOD", "The means of death(MOD) the damage will do", "MOD_UNKNOWN" );
-	dodamage_cmd arg_add_optional( 5, "idflags", "idflags", "Special damage flags modifying the damage effects" );
-	dodamage_cmd arg_add_optional( 6, "damageweapon", "weapon", "The weapon used for damage effects" );
-	dodamage_cmd target_add_required( 1, "victims", "general", "Entities who will receive <damage> from <origin>" );
-	dodamage_cmd target_add_optional( 2, "attacker", "general", "Entity who will be set as the <attacker>", 1 );
-	dodamage_cmd target_add_optional( 3, "inflictor", "general", "Entity who will be set as the <inflictor>", 1 );
+	cmd_add( "dodamage", ::cmd_dodamage_f, "dodamage {victim} <damage> <origin> {attacker} {inflictor} [hitloc] [MOD] [idflags] [weapon]" );
+	arg_add_required( 1, "damage", "float", "Amount of damage to inflict upon entity" );
+	arg_add_optional_with_default( 2, "origin", "vector", "The position where the entity will take damage from", ( 0, 0, 0 ) );
+	arg_add_optional( 3, "hitloc", "hitloc", "Hit location on the entity the damage will hit" );
+	arg_add_optional_with_default( 4, "meansofdeath", "MOD", "The means of death(MOD) the damage will do", "MOD_UNKNOWN" );
+	arg_add_optional( 5, "idflags", "idflags", "Special damage flags modifying the damage effects" );
+	arg_add_optional( 6, "damageweapon", "weapon", "The weapon used for damage effects" );
+	target_add_required( 1, "victims", "general", "Entities who will receive <damage> from <origin>" );
+	target_add_optional( 2, "attacker", "general", "Entity who will be set as the <attacker>", 1 );
+	target_add_optional( 3, "inflictor", "general", "Entity who will be set as the <inflictor>", 1 );
 
-	teleportentity_cmd = cmd_add( "teleportentity", ::cmd_teleportentity_f, "teleportentity {entity_from} {entity_to}" );
-	teleportentity_cmd target_add_optional( 1, "entity_from", "general", "Entity who will be teleported" );
-	teleportentity_cmd target_add_required( 2, "entity_to", "general", "Entity to teleport to", 1 );
+	cmd_add( "teleportentity", ::cmd_teleportentity_f, "teleportentity {entity_from} {entity_to}" );
+	target_add_optional( 1, "entity_from", "general", "Entity who will be teleported" );
+	target_add_required( 2, "entity_to", "general", "Entity to teleport to", 1 );
+	target_set_default_target( 1, "self" );
 
-	teleportorigin_cmd = cmd_add( "teleportorigin", ::cmd_teleportorigin_f, "teleportorigin {entity_from} <origin>" );
-	teleportorigin_cmd target_add_optional( 1, "entity_from", "general", "Entity who will be teleported" );
-	teleportorigin_cmd arg_add_required( 2, "origin", "vector", "Origin to teleport to" );
+	cmd_add( "teleportorigin", ::cmd_teleportorigin_f, "teleportorigin {entity_from} <origin>" );
+	target_add_optional( 1, "entity_from", "general", "Entity who will be teleported" );
+	arg_add_required( 2, "origin", "vector", "Origin to teleport to" );
+	target_set_default_target( 1, "self" );
 
 	// very nice builtin which allows get entities in an arbitrary abstract volume
 	// GetTouchingVolume( vec, vec, vec );
@@ -71,49 +72,47 @@ add_core_cmds()
 	// printentitiesinradius_cmd arg_add( "float", 0, 1 );
 	// printentitiesinradius_cmd target_add( "entity entity" );
 
-	scrnotify_cmd = cmd_add( "scrnotify", ::cmd_scrnotify_f, "scrnotify {entity} <notifyname> [notifyargs] ..." );
-	scrnotify_cmd arg_add_required( 1, "notifyname", "string", "Name of notify to notify on the entity" );
-	scrnotify_cmd arg_add_optional( 2, "notifyargs", "...", "Additional arguments to send with the notify" );
-	scrnotify_cmd target_add_optional( 1, "entity", "general", "Entity who will be notified", 1 );
-	scrnotify_cmd make_cmd_immune_to_unittest();
+	cmd_add( "scrnotify", ::cmd_scrnotify_f, "scrnotify {entity} <notifyname> [notifyargs] ..." );
+	arg_add_required( 1, "notifyname", "string", "Name of notify to notify on the entity" );
+	arg_add_optional( 2, "notifyargs", "...", "Additional arguments to send with the notify" );
+	target_add_optional( 1, "entity", "general", "Entity who will be notified", 1 );
+	make_cmd_immune_to_unittest();
 
 	cmd_block_set_rank_group( "none" );
-	cmdlist_cmd = cmd_add( "cmdlist", ::cmd_cmdlist_f );
+	cmd_add( "cmdlist", ::cmd_cmdlist_f );
 
-	playerlist_cmd = cmd_add( "playerlist", ::cmd_playerlist_f, "playerlist [team]" );
-	playerlist_cmd arg_add_optional( 1, "team", "team", "Filter players by team" );
+	cmd_add( "playerlist", ::cmd_playerlist_f, "playerlist [team]" );
+	arg_add_optional( 1, "team", "team", "Filter players by team" );
 
-	printorigin_cmd = cmd_add( "printorigin", ::cmd_printorigin_f, "printorigin {entity}" );
-	printorigin_cmd target_add_optional( 1, "entity", "general", "Entity who's origin will be printed; default the executor's" );
+	cmd_add( "printorigin", ::cmd_printorigin_f, "printorigin {entity}" );
+	target_add_optional( 1, "entity", "general", "Entity who's origin will be printed; default the executor's" );
+	target_set_default_target( 1, "self" );
 
-	printangles_cmd = cmd_add( "printangles", ::cmd_printangles_f, "printangles {entity}" );
-	printangles_cmd target_add_optional( 1, "entity", "general", "Entity who's angles will be printed; default the executor's" );
+	cmd_add( "printangles", ::cmd_printangles_f, "printangles {entity}" );
+	target_add_optional( 1, "entity", "general", "Entity who's angles will be printed; default the executor's" );
+	target_set_default_target( 1, "self" );
 
-	help_cmd = cmd_add( "help", ::cmd_help_f, "help [cmdalias]" );
-	help_cmd arg_add_optional( 1, "cmdalias", "cmdalias", "Provide help for specific command" );
+	cmd_add( "help", ::cmd_help_f, "help [cmdalias]" );
+	arg_add_optional( 1, "cmdalias", "cmdalias", "Provide help for specific command" );
 
 	// Sets the default cmd target for the executor(normally 'self'); this allows the server through rcon or otherwise to still use the default target functionality that makes the default target 'self' or another entity.
-	setdefaultcmdtarget_cmd = cmd_add( "setdefaultcmdtarget", ::cmd_setdefaultcmdtarget_f, "setdefaultcmdtarget {entity}" );
-	setdefaultcmdtarget_cmd target_add_required( 1, "entity", "general", "Entity set as the default target for commands with optional targets" );
+	cmd_add( "setdefaultcmdtarget", ::cmd_setdefaultcmdtarget_f, "setdefaultcmdtarget {entity}" );
+	target_add_required( 1, "entity", "general", "Entity set as the default target for commands with optional targets" );
 
-	setdefaultcmdexecutor_cmd = cmd_add( "setdefaultcmdexecutor", ::cmd_setdefaultcmdexecutor_f, "setdefaultcmdexecutor {player}" );
-	setdefaultcmdexecutor_cmd target_add_required( 1, "player", "player", "Players to run commands for" );
-	setdefaultcmdexecutor_cmd make_cmd_immune_to_unittest();
+	cmd_add( "debug", ::cmd_debug_f, "debug ..." );
+	arg_add_optional( 1, "additional_args", "...", "Special arguments for debugging" );
+	make_cmd_immune_to_unittest();
 
-	debug_cmd = cmd_add( "debug", ::cmd_debug_f, "debug ..." );
-	debug_cmd arg_add_optional( 1, "additional_args", "...", "Special arguments for debugging" );
-	debug_cmd make_cmd_immune_to_unittest();
+	cmd_add( "lastcmd", ::cmd_lastcmd_f, "lastcmd", "Execute the previous used command string, except this one." );
+	make_cmd_immune_to_lastcmd();
 
-	lastcmd_cmd = cmd_add( "lastcmd", ::cmd_lastcmd_f, "lastcmd", "Execute the previous used command string, except this one." );
-	lastcmd_cmd make_cmd_immune_to_lastcmd();
+	cmd_add( "listcmdhistory", ::cmd_listcmdhistory_f, "listcmdhistory", "Print the last 16 executed command strings." );
 
-	listcmdhistory_cmd = cmd_add( "listcmdhistory", ::cmd_listcmdhistory_f, "listcmdhistory", "Print the last 16 executed command strings." );
+	cmd_add( "kill", ::cmd_kill_f, "kill {entity}" );
+	target_add_required( 1, "victim", "general", "Entities to kill" );
 
-	kill_cmd = cmd_add( "kill", ::cmd_kill_f, "kill {entity}" );
-	kill_cmd target_add_required( 1, "victim", "general", "Entities to kill" );
-
-	delete_cmd = cmd_add( "delete", ::cmd_delete_f, "delete {entity}" );
-	delete_cmd target_add_required( 1, "victim", "general", "Entities to delete" );
+	cmd_add( "delete", ::cmd_delete_f, "delete {entity}" );
+	target_add_required( 1, "victim", "general", "Entities to delete" );
 }
 
 private cmd_setcvar_f( param )
@@ -127,13 +126,13 @@ private cmd_setcvar_f( param )
 		{
 			player = targets[ i ];
 			player setClientDvar( dvarname, dvarvalue );
-			param add_executor_cmdinfo( "Successfully set '" + player.name + "' '" + dvarname + "' to '" + dvarvalue + "'" );
-			param add_player_cmdinfo( player, "Your '" + dvarname + "' was modified to '" + dvarvalue + "'" );
+			param add_executor_cmdinfo( "Successfully set '{}' '{}' '{}'", player.name, dvarname, dvarvalue );
+			param add_player_cmdinfo( player, "Your '{}' was modified to '{}'", dvarname, dvarvalue );
 		}
 	}
 	else
 	{
-		param add_executor_cmdinfo( "Successfully set your '" + dvarname + "' to '" + dvarvalue + "'" );
+		param add_executor_cmdinfo( "Successfully set your '{}' to '{}'", dvarname, dvarvalue );
 		self setClientDvar( dvarname, dvarvalue );
 	}
 }
@@ -149,8 +148,8 @@ private cmd_god_f( param )
 		{
 			player = targets[ i ];
 			player toggle_invulnerability( on_off == "on" );
-			param add_executor_cmdinfo( "Successfully toggled '" + player.name + "' god status to '" + on_off + "'" );
-			param add_player_cmdinfo( player, "Your go status was toggled '" + on_off + "'" );
+			param add_executor_cmdinfo( "Successfully toggled '{}' god status to '{}'", player.name, on_off );
+			param add_player_cmdinfo( player, "Your god status was toggled '{}'", on_off );
 		}
 	}
 	else
@@ -171,8 +170,8 @@ private cmd_notarget_f( param )
 		{
 			player = targets[ i ];
 			player toggle_notarget( on_off == "on" );
-			param add_executor_cmdinfo( "Successfully toggled '" + player.name + "' notarget status to '" + on_off + "'" );
-			param add_player_cmdinfo( player, "Your notarget status was toggled '" + on_off + "'" );
+			param add_executor_cmdinfo( "Successfully toggled '{}' notarget status to '{}'", player.name, on_off );
+			param add_player_cmdinfo( player, "Your notarget status was toggled '{}'", on_off );
 		}
 	}
 	else
@@ -193,14 +192,14 @@ private cmd_invisible_f( param )
 		{
 			player = targets[ i ];
 			player toggle_invisibility( on_off == "on" );
-			param add_executor_cmdinfo( "Successfully toggled '" + player.name + "' invisibility status to '" + on_off + "'" );
-			param add_player_cmdinfo( player, "Your invisibility status was toggled '" + on_off + "'" );
+			param add_executor_cmdinfo( "Successfully toggled '{}' invisibility status to '{}'", player.name, on_off );
+			param add_player_cmdinfo( player, "Your invisibility status was toggled '{}'", on_off );
 		}
 	}
 	else
 	{
 		self toggle_invisibility( on_off == "on" );
-		param add_executor_cmdinfo( "Invisibility " + on_off );
+		param add_executor_cmdinfo( "Invisibility '{}'", on_off );
 	}
 }
 
@@ -215,14 +214,14 @@ private cmd_togglehud_f( param )
 		{
 			player = targets[ i ];
 			player toggle_hud( on_off == "on" );
-			param add_executor_cmdinfo( "Successfully toggled '" + player.name + "' hud status to '" + on_off + "'" );
-			param add_player_cmdinfo( player, "Your hud status was toggled '" + on_off + "'" );
+			param add_executor_cmdinfo( "Successfully toggled '{}' hud status to '", player.name, on_off );
+			param add_player_cmdinfo( player, "Your hud status was toggled '{}'", on_off );
 		}
 	}
 	else
 	{
 		self toggle_hud( on_off == "on" );
-		param add_executor_cmdinfo( "Your hud has been toggled " + on_off );
+		param add_executor_cmdinfo( "Your hud has been toggled '{}'", on_off );
 	}
 }
 
@@ -237,14 +236,14 @@ private cmd_bottomlessclip_f( param )
 		{
 			player = targets[ i ];
 			player toggle_bottomless_clip( on_off == "on" );
-			param add_executor_cmdinfo( "Successfully toggled '" + player.name + "' bottomless clip status to '" + on_off + "'" );
-			param add_player_cmdinfo( player, "Your bottomless clip status was toggled '" + on_off + "'" );
+			param add_executor_cmdinfo( "Successfully toggled '{}' bottomless clip status to '", player.name, on_off );
+			param add_player_cmdinfo( player, "Your bottomless clip status was toggled '{}'", on_off );
 		}
 	}
 	else
 	{
 		self toggle_bottomless_clip( on_off == "on" );
-		param add_executor_cmdinfo( "Bottomless Clip " + on_off );
+		param add_executor_cmdinfo( "Bottomless Clip '{}'", on_off );
 	}
 }
 
@@ -254,7 +253,7 @@ private cmd_server_dvar_f( param )
 	dvarvalue = param.a[ 1 ];
 	setDvar( dvarname, dvarvalue );
 
-	param add_executor_cmdinfo( "Successfully set " + dvarname + " to " + dvarvalue );
+	param add_executor_cmdinfo( "Successfully set '{}' to '{}'", dvarname, dvarvalue );
 }
 
 private cmd_setrank_f( param )
@@ -262,20 +261,20 @@ private cmd_setrank_f( param )
 	target = param.t[ 0 ][ 0 ];
 	if ( !self has_all_perms() )
 	{
-		return param add_executor_cmderror( "Insufficient rank to set " + target.name + "'s rank" );
+		return param add_executor_cmderror( "Insufficient rank to set '{}'s rank", target.name );
 	}
 
 	new_rank = param.a[ 0 ];
 	if ( !self has_all_perms() )
 	{
-		return param add_executor_cmderror( "You cannot set " + target.name + " to a rank higher than or equal to your own" );
+		return param add_executor_cmderror( "You cannot set '{}' to a rank higher than or equal to your own", target.name );
 	}
 
 	target.tcs_pl.tcs_rank = new_rank;
 	//add_player_perms_entry( target );
-	target com_printinfo( "Your new rank is " + new_rank );
+	target com_printinfo( "Your new rank is '{}'", new_rank );
 
-	param add_executor_cmdinfo( "Target's new rank is " + new_rank );
+	param add_executor_cmdinfo( "Target's new rank is '{}'", new_rank );
 }
 
 private cmd_playerlist_f( param )
@@ -315,11 +314,11 @@ private cmd_help_f( param )
 		valid_cmd_tokens = getDvar( "tcs_cmd_tokens" );
 		if ( level.tcs_glob.bhidden_cmds )
 		{
-			self com_printnotitle("^3Valid cmd prefixes are '/ " + valid_cmd_tokens + "'" );
+			self com_printnotitle("^3Valid cmd prefixes are '/ {}'", valid_cmd_tokens );
 		}
 		else 
 		{
-			self com_printnotitle( "^3Valid cmd prefixes are '" + valid_cmd_tokens + "'" );
+			self com_printnotitle( "^3Valid cmd prefixes are '{}'", valid_cmd_tokens );
 		}
 
 		self com_printnotitle( "^3To view cmds you can use 'cmdlist'" );
@@ -365,11 +364,11 @@ private cmd_dodamage_f( param )
 			inflictor_name = _DEFAULT( inflictor.name, inflictor.classname );
 		}
 		
-		param add_executor_cmdinfo( "Damaged entity: '" + victim_name + "' for points: '" + damage + "' of damage, from: '" + pos + "', by attacker: '" + attacker_name + "', by inflictor: '" + inflictor_name + "', at hitloc: '" + hitloc_name + "', with mod: '" + mod_name + "', using weapon: '" + weapon_name + "'" );
+		param add_executor_cmdinfo( "Damaged entity: '{}' for points: '{}' of damage, from: '{}', by attacker: '{}', by inflictor: '{}', at hitloc: '{}', with mod: '{}', using weapon: '{}'", victim_name, damage, pos, attacker_name, inflictor_name, hitloc_name, mod_name, weapon_name );
 		victim _dodamage( damage, pos, attacker, inflictor, hitloc, mod, idflags, weapon );
 	}
 
-	param add_executor_cmdinfo( "Damaged '" + victims.size + "' entities" );
+	param add_executor_cmdinfo( "Damaged '{}' entities", victims.size );
 }
 
 private cmd_entitylist_f( param )
@@ -402,7 +401,7 @@ private cmd_scrnotify_f( param )
 			return param add_executor_cmderror( "Max arguments is 3!" );
 	}
 
-	param add_executor_cmdinfo( "Successfully delivered notify " + notify_name );
+	param add_executor_cmdinfo( "Successfully delivered notify '{}'", notify_name );
 }
 
 private cmd_printorigin_f( param )
@@ -418,7 +417,7 @@ private cmd_printorigin_f( param )
 	{
 		ent = targets[ i ];
 		ent_name = _DEFAULT( ent.name, ent.classname );
-		param add_executor_cmdinfo( "Entity: '" + ent_name + "' origin is: '" + ent.origin + "'" );
+		param add_executor_cmdinfo( "Entity: '{}' origin is: '{}'", ent_name, ent.origin );
 	}
 }
 
@@ -435,7 +434,7 @@ private cmd_printangles_f( param )
 	{
 		ent = targets[ i ];
 		ent_name = _DEFAULT( ent.name, ent.classname );
-		param add_executor_cmdinfo( "Entity: '" + ent_name + "' angles is: '" + ent.origin + "'" );
+		param add_executor_cmdinfo( "Entity: '{}' angles is: '{}'", ent_name, ent.origin );
 	}
 }
 
@@ -467,7 +466,7 @@ private cmd_teleportentity_f( param )
 		if ( isplayer( from ) )
 		{
 			from._intersection_tracker_immune = true;
-			param add_player_cmdinfo( from, "You have been teleported to entity: '" + to_name + "' at: '" + to_target.origin + "'" );
+			param add_player_cmdinfo( from, "You have been teleported to entity: '{}' at: '{}'", to_name, to_target.origin );
 			from setOrigin( to_target.origin );
 		}
 		else
@@ -475,7 +474,7 @@ private cmd_teleportentity_f( param )
 			from.origin = to_target.origin;
 		}
 
-		param add_executor_cmdinfo( "Successfully teleported entity: '" + from_name + "' at: '" + from.origin + "' to: '" + to_target.origin + "'" );
+		param add_executor_cmdinfo( "Successfully teleported entity: '{}' at: '{}' to: '{}'", from_name, from.origin, to_target.origin );
 	}
 }
 
@@ -501,7 +500,7 @@ private cmd_teleportorigin_f( param )
 		if ( isplayer( from ) )
 		{
 			from._intersection_tracker_immune = true;
-			param add_player_cmdinfo( from, "You have been teleported to origin: '" + destination + "'" );
+			param add_player_cmdinfo( from, "You have been teleported to origin: '{}'", destination );
 			from setOrigin( destination );
 		}
 		else
@@ -509,15 +508,8 @@ private cmd_teleportorigin_f( param )
 			from.origin = destination;
 		}
 
-		param add_executor_cmdinfo( "Successfully teleported entity: '" + from_name + "' at: '" + from.origin + "' to: '" + destination + "'" );
+		param add_executor_cmdinfo( "Successfully teleported entity: '{}' at: '{}' to: '", from_name, from.origin, destination );
 	}
-}
-
-private cmd_setdefaultcmdexecutor_f( param )
-{
-	self.default_executors = param.t[ 0 ];
-
-	param add_executor_cmdinfo( "Successfully set your default cmd executors" );
 }
 
 private cmd_setdefaultcmdtarget_f( param )

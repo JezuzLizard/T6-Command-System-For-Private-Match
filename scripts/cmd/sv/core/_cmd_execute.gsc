@@ -35,11 +35,11 @@ private check_command_syntax_used( message, is_hidden )
 {
 	if ( !level.tcs_glob.bhidden_cmds && is_hidden )
 	{
-		self throw_exception( "Hidden cmds are not allowed" );
+		self throw_exception( undefined, "Hidden cmds are not allowed" );
 	}
 	if ( !is_hidden && !is_cmd_token( message[ 0 ] ) )
 	{
-		self throw_exception( "User was not using a command", false );
+		self throw_exception( undefined, "User was not using a command", false );
 	}
 }
 
@@ -47,7 +47,7 @@ private check_command_cooldown()
 {
 	if ( isDefined( self.cmd_cooldown ) && self.cmd_cooldown > 0 )
 	{
-		self throw_exception( "You cannot use another cmd for " + self.cmd_cooldown + " seconds" );
+		self throw_exception( undefined, "You cannot use another cmd for '{}' seconds", self.cmd_cooldown );
 	}
 }
 
@@ -55,7 +55,7 @@ private check_multi_commands( cmd_parse_obj )
 {
 	if ( cmd_parse_obj.cmds.size > 1 && !self can_use_multi_cmds() )
 	{
-		self throw_exception( "You do not have permission to use multi cmds" );
+		self throw_exception( undefined, "You do not have permission to use multi cmds" );
 	}
 }
 
@@ -162,12 +162,12 @@ cmd_execute_internal( message, initiator, is_hidden, is_team_chat )
 			{
 				if ( executor != initiator && !initiator has_permission_for_executor_syntax() )
 				{
-					initiator throw_exception( "You do not have permission to specify executors", cmd_obj );
+					initiator throw_exception( cmd_obj, "You do not have permission to specify executors " );
 				}
 
 				if ( !initiator has_permission_for_cmd( cmd_obj.cmd_data_source ) )
 				{
-					initiator throw_exception( "You do not have permission to use " + cmd_obj.cmd_data_source.cmd_name + " cmd", cmd_obj );
+					initiator throw_exception( cmd_obj, "You do not have permission to use '{}' cmd", cmd_obj.cmd_data_source.cmd_name );
 				}
 			}
 
@@ -207,20 +207,20 @@ private arg_cast( arg_type, arg )
 		return cast_result.value;
 	}
 
-	self throw_exception( "Failed to cast to one of the valid overloads for arg_type, attempted casts: " + repackage_args( msgs, "\n" ) );
+	self throw_exception( undefined, "Failed to cast to one of the valid overloads for arg_type, attempted casts: '{}'", repackage_args( msgs, "\n" ) );
 }
 
-private target_cast( cmd_data_source, ordinal, target_type, target_kvp )
+private target_cast( cmd_data_source, ordinal, target_type, target_kvp, default_value )
 {
 	foreach ( etype, val in target_type.overloads )
 	{
-		value = self get_entity_targets( etype, target_kvp );
+		value = self get_entity_targets( etype, target_kvp, default_value );
 
 		if ( array_validate( value ) )
 		{
 			if ( value.size > val.max_targets )
 			{
-				self throw_exception( "Command '" + cmd_data_source.cmd_name + "' expects a maximum of '" + val.max_targets + "' targets, for '" + target_type.name + "' got '" + value.size + "' instead" );
+				self throw_exception( undefined, "Command '{}' expects a maximum of '{}' targets, for '{}' got '{}' instead", cmd_data_source.cmd_name, val.max_targets, target_type.name, value.size );
 			}
 
 			return value;
@@ -312,11 +312,11 @@ private get_executors( directive )
 			return get_name_entities( directive, "player" );
 	}
 
-	self throw_exception( "Unknown directive.type: '" + directive.type + "'" );
+	self throw_exception( undefined, "Unknown directive.type: '{}'", directive.type );
 	return [];
 }
 
-private get_entity_targets( etype, directive )
+private get_entity_targets( etype, directive, default_value )
 {
 	getter_func = undefined;
 	if ( isdefined( level._entity_type_funcs[ etype ] ) )
@@ -331,6 +331,17 @@ private get_entity_targets( etype, directive )
 	{
 		assert( false );
 		return [];
+	}
+
+	if ( directive.type == "undefined" )
+	{
+		switch ( default_value )
+		{
+			case "self":
+				return add_to_array( undefined, self );
+			default:
+				break;
+		}
 	}
 
 	switch ( directive.type )
@@ -378,7 +389,7 @@ private get_entity_targets( etype, directive )
 			return get_name_entities( directive, etype );
 	}
 
-	self throw_exception( "Unknown directive.type: '" + directive.type + "'" );
+	self throw_exception( undefined, "Unknown directive.type: '{}'", directive.type );
 	return [];
 }
 
@@ -388,16 +399,11 @@ private cmd_execute_internal1( initiator, cmd_obj )
 
 	if ( cmd_obj.args.size < cmd_data_source get_min_args() )
 	{
-		initiator throw_exception( "Too few args: usage: " + cmd_data_source.usage );
+		initiator throw_exception( undefined, "Too few args: usage: '{}'", cmd_data_source.usage );
 	}
 	if ( cmd_obj.args.size > cmd_data_source get_max_args() )
 	{
-		initiator throw_exception( "Too many args: usage: " + cmd_data_source.usage );
-	}
-
-	if ( self == _GET_SERVER_ENTITY() && cmd_data_source.requires_player_executor && cmd_obj.kvps.size <= 0 )
-	{
-		initiator throw_exception( "Command '" + cmd_data_source.cmd_name + "' expects the executor to be a player; but executor is the server, use setdefaultcmdexecutor on a player to execute this command", cmd_obj );
+		initiator throw_exception( undefined, "Too many args: usage: '{}'", cmd_data_source.usage );
 	}
 
 	param = generic_obj_t_new( "param" );
@@ -462,7 +468,7 @@ private cmd_execute_internal1( initiator, cmd_obj )
 				{
 					if ( target_type.is_required )
 					{
-						initiator throw_exception( "'target" + ordinal_key + "' is required" );
+						initiator throw_exception( undefined, "'target '{}' is required", ordinal_key );
 					}
 
 					continue;
@@ -475,7 +481,7 @@ private cmd_execute_internal1( initiator, cmd_obj )
 
 				if ( !array_validate( param.t[ index ] ) && ( target_kvp.type != "undefined" && target_kvp.type != "default" ) )
 				{
-					initiator throw_exception( "Failed to find any compatible entities" );
+					initiator throw_exception( undefined, "Failed to find any compatible entities" );
 				}
 			}
 		}

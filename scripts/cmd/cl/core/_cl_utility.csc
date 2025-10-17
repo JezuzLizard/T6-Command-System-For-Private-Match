@@ -808,7 +808,6 @@ cmd_add( cmd_name, cmdfunc, cmd_usage, description )
 	new_cmd.desc = description;
 	new_cmd.func = cmdfunc;
 	new_cmd.is_cmd_object = true;
-	new_cmd.requires_player_executor = false;
 	new_cmd.arg_types = [];
 	new_cmd.target_types = [];
 	new_cmd.has_required_target = false;
@@ -1023,17 +1022,6 @@ arg_type_register( argtype, rand_gen_func, cast_func )
 has_permission_for_executor_syntax()
 {
 	return true;
-}
-
-executor_obj_add_cmd( doc )
-{
-	if ( !is_true( self.is_cmd_object ) )
-	{
-		assert( false );
-		return;
-	}
-
-	self.requires_player_executor = true;
 }
 
 make_cmd_immune_to_unittest()

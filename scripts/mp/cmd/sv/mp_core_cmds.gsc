@@ -39,7 +39,7 @@ cmd_sicdogsonplayer_f( param )
 	{
 		dog_manager_spawn_dog( target, other_team, invisible );
 	}
-	self com_printinfo( "Spawned in " + count + " dogs to hunt " + target.name );
+	self com_printinfo( "Spawned in '{}' dogs to hunt '{}'", count, target.name );
 	self com_printinfo( "Use cmd removedogs to remove the dogs spawned with this cmd" );
 }
 

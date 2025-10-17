@@ -49,20 +49,20 @@ add_debug_cmds()
 	}
 	level.debug_hud_y_offset = y;
 
-	drawtriggers_cmd = cmd_add( "drawtriggers", ::cmd_drawtriggers_f, "drawtriggers <types> [draw_text]" );
-	drawtriggers_cmd arg_add_required( 1, "trigger_type", "triggertype", "Trigger types to draw" );
-	drawtriggers_cmd arg_add_optional_with_default( 2, "draw_text", "boolean", "Toggle the additional text info drawn on triggers", true );
+	cmd_add( "drawtriggers", ::cmd_drawtriggers_f, "drawtriggers <types> [draw_text]" );
+	arg_add_required( 1, "trigger_type", "triggertype", "Trigger types to draw" );
+	arg_add_optional_with_default( 2, "draw_text", "boolean", "Toggle the additional text info drawn on triggers", true );
 
-	drawnodes_cmd = cmd_add( "drawnodes", ::cmd_drawnodes_f, "drawnodes <types> [draw_text]" );
-	drawnodes_cmd arg_add_required( 1, "node_type", "nodetype", "Trigger types to draw" );
-	drawnodes_cmd arg_add_optional_with_default( 2, "draw_text", "boolean", "Toggle the additional text info drawn on nodes", true );
+	cmd_add( "drawnodes", ::cmd_drawnodes_f, "drawnodes <types> [draw_text]" );
+	arg_add_required( 1, "node_type", "nodetype", "Trigger types to draw" );
+	arg_add_optional_with_default( 2, "draw_text", "boolean", "Toggle the additional text info drawn on nodes", true );
 
-	drawlocation_cmd = cmd_add( "drawlocation", ::cmd_drawlocation_f, "drawlocation" );
+	cmd_add( "drawlocation", ::cmd_drawlocation_f, "drawlocation" );
 
-	drawentities_cmd = cmd_add( "drawentities", ::cmd_drawentities_f, "drawentities {explicit_entities} [enttypes] [draw_text]" );
-	drawentities_cmd arg_add_optional( 1, "ent_type", "enttype", "Types of entities to draw" );
-	drawentities_cmd arg_add_optional_with_default( 2, "draw_text", "boolean", "Toggle the additional text info drawn on entities", true );
-	drawentities_cmd target_add_optional( 1, "entity", "general", "Explicit entities to draw" );
+	cmd_add( "drawentities", ::cmd_drawentities_f, "drawentities {explicit_entities} [enttypes] [draw_text]" );
+	arg_add_optional( 1, "ent_type", "enttype", "Types of entities to draw" );
+	arg_add_optional_with_default( 2, "draw_text", "boolean", "Toggle the additional text info drawn on entities", true );
+	target_add_optional( 1, "entity", "general", "Explicit entities to draw" );
 }
 
 private cmd_drawtriggers_f( param )

@@ -52,10 +52,10 @@ private cmd_createcamera_f( param )
 
 	if ( !self register_placed_camera( camera_name, origin, angles, model ) )
 	{
-		return param add_executor_cmderror( "Reached limit of '" + get_dvar_int_default( "max_user_cameras", 8 ) + "' cameras for your user" );
+		return param add_executor_cmderror( "Reached limit of '{}' cameras for your user", get_dvar_int_default( "max_user_cameras", 8 ) );
 	}
 
-	param add_executor_cmdinfo( "Created a camera named: '" + camera_name + "' at position: '" + origin + "' with angles: '" + angles + "' with model: " + model );
+	param add_executor_cmdinfo( "Created a camera named: '{}' at position: '{}' with angles: '{}' with model: '{}'", camera_name, origin, angles, model );
 }
 
 private cmd_setcamera_f( param )
@@ -67,14 +67,14 @@ private cmd_setcamera_f( param )
 	camera_ent = self get_camera_for_user( camera_name );
 	if ( !isdefined( camera_ent ) )
 	{
-		return param add_executor_cmderror( "No camera with name '" + camera_name + "' exists!" );
+		return param add_executor_cmderror( "No camera with name '{}' exists!", camera_name );
 	}
 
 	player camerasetposition( camera_ent );
 	player camerasetlookat();
 	player cameraactivate( camera_flags );
 
-	param add_executor_cmdinfo( "Set camera lookat to a camera named: '" + camera_name + "' at: '" + self.origin + "' with angles: '" + self.angles + "'" );
+	param add_executor_cmdinfo( "Set camera lookat to a camera named: '{}' at: '{}' with angles: '{}'", camera_name, self.origin, self.angles );
 }
 
 private cmd_unsetcamera_f( param )
@@ -83,7 +83,7 @@ private cmd_unsetcamera_f( param )
 	player cameraactivate( 0 );
 	camera_name = param.a[ 0 ];
 
-	param add_executor_cmdinfo( "Set camera lookat to a camera named: '" + camera_name + "' at: '" + self.origin + "' with angles: '" + self.angles + "'" );
+	param add_executor_cmdinfo( "Set camera lookat to a camera named: '{}' at: '{}' with angles: '{}'", camera_name, self.origin, self.angles );
 }
 
 private cmd_deletecamera_f( param )
@@ -95,12 +95,12 @@ private cmd_deletecamera_f( param )
 	camera_ent = self get_camera_for_user( camera_name );;
 	if ( !isdefined( camera_ent ) )
 	{
-		return param add_executor_cmderror( "No camera with name '" + camera_name + "' exists!" );
+		return param add_executor_cmderror( "No camera with name '{}' exists!", camera_name );
 	}
 
 	camera_ent unlink();
 	camera_ent delete();
-	param add_executor_cmdinfo( "Deleted camera lookat for a camera named: '" + camera_name + "' at: '" + self.origin + " with angles: '" + self.angles + "'" );
+	param add_executor_cmdinfo( "Deleted camera lookat for a camera named: '{}' at: '{}' with angles: '{}'", camera_name, self.origin, self.angles );
 }
 
 private cmd_linkcameratoent_f( param )
@@ -113,24 +113,24 @@ private cmd_linkcameratoent_f( param )
 	camera_ent = self get_camera_for_user( camera_name );;
 	if ( !isdefined( camera_ent ) )
 	{
-		return param add_executor_cmderror( "No camera with name '" + camera_name + "' exists!" );
+		return param add_executor_cmderror( "No camera with name '{}' exists!", camera_name );
 	}
 
 	self link_camera_to_ent( camera_name, entity, tag_name, origin_offset, angles_offset );
-	param add_executor_cmdinfo( "Linked camera '" + camera_name + "' to ent '" + entity.classname + "'!"  );
+	param add_executor_cmdinfo( "Linked camera '{}' to ent '{}'!", camera_name, entity.classname  );
 }
 
 private cmd_unlinkcamera_f( param )
 {
 	camera_name = param.a[ 0 ];
-	camera_ent = self get_camera_for_user( camera_name );;
+	camera_ent = self get_camera_for_user( camera_name );
 	if ( !isdefined( camera_ent ) )
 	{
-		return add_executor_cmderror( "No camera with name '" + camera_name + "' exists!" );
+		return add_executor_cmderror( "No camera with name '{}' exists!", camera_name );
 	}
 	
 	camera_ent unlink();
-	param add_executor_cmdinfo( "Unlinked camera '" + camera_name + "'!"  );
+	param add_executor_cmdinfo( "Unlinked camera '{}'!", camera_name );
 }
 
 private cmd_spectateactor_f( param )
@@ -146,5 +146,5 @@ private cmd_spectateactor_f( param )
 	self link_camera_to_ent( "auto1", actor, tag_name );
 	self cmd_setcamera_f( args3 );
 
-	param add_executor_cmdinfo( "You are now linked to actor: " + actor getentitynumber() );
+	param add_executor_cmdinfo( "You are now linked to actor: '{}'", actor getentitynumber() );
 }

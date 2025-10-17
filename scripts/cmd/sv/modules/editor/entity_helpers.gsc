@@ -1380,3 +1380,39 @@ assign_editor_move_ent( target_entity )
 		target_entity._associated_ents[ "blocker_model" ] = target_entity.blocker_model;
 	}
 }
+
+draw_custom_nodes()
+{
+	level notify( "stop_drawing_nodes" );
+	level endon( "stop_drawing_nodes" );
+
+	for ( ;; )
+	{
+		wait 0.05;
+
+		for ( i = 0; i < _SIZE( level._mapents[ "path_nodes" ].size ); i++ )
+		{
+			node = level._mapents[ "path_nodes" ][ i ];
+			if ( !isdefined( node.origin ) )
+			{
+				continue;
+			}
+
+			box( node.origin );
+			print3d( node.origin, i );
+		}
+	}
+}
+
+generate_pathnode_for_mapents( keys )
+{
+	if ( !array_validate( level._mapents[ "path_nodes" ] ) )
+	{
+		level thread draw_custom_nodes();
+	}
+
+	pathnode = new_mapent_struct();
+	pathnode.keys = keys;
+	add_mapent_entity( pathnode, "path_nodes", pathnode.keys[ "id" ] );
+}
+

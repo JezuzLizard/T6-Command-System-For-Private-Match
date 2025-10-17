@@ -31,30 +31,37 @@ do_unit_test( required_bots, duration, rate )
 		}
 	}
 	level.doing_cmd_system_unittest = false;
+
+	set_cmd_rate( undefined );
 }
 
-test_cmd_for_time( cmd, threadcount, duration )
+do_module_test( module, sequential, duration, rate )
 {
-	level thread test_cmd_kick_bots_at_end();
-	if ( isDefined( duration ) )
+	if ( duration > 0 )
 	{
-		level thread end_testcmd_after_time( duration );
+		level thread end_unittest_after_time( duration );
 	}
-	// Need at least one bot because most cmds use a player as a target
-	if ( !isDefined( level.players ) || level.players.size <= 0 )
+
+	level.unittest_total_cmds_used = 0;
+	set_cmd_module( module );
+	set_cmd_sequential( sequential );
+	set_cmd_duration( duration );
+	set_cmd_rate( rate );
+	level thread manage_unittest_bots( 1 );
+	level waittill( "unittest_stop" );
+
+	for ( i = 0; i < _SIZE( level.players.size ); i++ )
 	{
-		manage_unittest_bots( 1 );
-	}
-	for ( i = 0; i < _SIZE( threadcount ); i++ )
-	{
-		cmd_object = level.tcs_cmds[ cmd ];
-		if ( level.players.size < getDvarInt( "sv_maxclients" ) )
+		if ( is_true( level.players[ i ].pers["isBot"] ) )
 		{
-			break;
+			kick( level.players[ i ] getEntityNumber() );
 		}
-		//manage_unittest_bots( 1, cmd_object.cmd_name );
-		level thread testcmd_thread_server( cmd_object.cmd_name );
 	}
+	level.doing_cmd_system_unittest = false;
+	set_cmd_module( undefined );
+	set_cmd_sequential( undefined );
+	set_cmd_duration( undefined );
+	set_cmd_rate( undefined );
 }
 
 private unittest_connect()
@@ -63,16 +70,35 @@ private unittest_connect()
 	{
 		if ( is_true( level.doing_cmd_system_testcmd ) )
 		{
-			if ( isdefined( self.specific_cmd ) )
-			{
-				self thread activate_specific_cmd();
-			}
+
 		}
 		else if ( is_true( level.doing_cmd_system_unittest ) )
 		{
-			self thread activate_random_cmds();
+			if ( isdefined( self.module_cmd ) )
+			{
+				self thread activate_cmds_from_module();
+			}
+			else
+			{
+				self thread activate_random_cmds();
+			}
 		}
 	}
+}
+
+private set_cmd_module( module )
+{
+	level.unittest_cmd_module = module;
+}
+
+private set_cmd_sequential( sequential )
+{
+	level.unittest_cmd_sequential = sequential;
+}
+
+private set_cmd_duration( duration )
+{
+	level.unittest_cmd_duration = duration;
 }
 
 private set_cmd_rate( rate )
@@ -80,7 +106,7 @@ private set_cmd_rate( rate )
 	level.unittest_cmd_rate = rate;
 }
 
-private manage_unittest_bots( required_bots, cmd )
+private manage_unittest_bots( required_bots, module )
 {
 	bot_count = 0;
 	for ( i = 0; i < _SIZE( level.players.size ); i++ )
@@ -109,10 +135,38 @@ private manage_unittest_bots( required_bots, cmd )
 		{
 			bot [[ reset_rampage_func ]]();
 		}
-		if ( isDefined( cmd ) )
+		if ( isDefined( module ) )
 		{
-			bot.specific_cmd = cmd;
+			bot.module_cmd = module;
 		}
+	}
+}
+
+private activate_cmds_from_module()
+{
+	self endon( "disconnect" );
+	self.health = 2100000000;
+
+	if ( !isdefined( level._unittest_host ) )
+	{
+		level._unittest_host = _GET_SERVER_ENTITY();
+		level._unittest_host.default_executors = [];
+	}
+
+	level._unittest_host.default_executors[ level._unittest_host.default_executors.size ] = self;
+	if ( sessionModeIsZombiesGame() )
+	{	
+		flag_clear( "solo_game" );
+	}
+	while ( !isDefined( self._connected ) )
+	{
+		wait 1;
+	}
+
+	while ( true )
+	{
+		self construct_chat_message_for_unittest();
+		wait level.unittest_cmd_rate;
 	}
 }
 
@@ -218,7 +272,22 @@ private create_random_valid_targets( cmd )
 
 private construct_chat_message_for_unittest()
 {
-	cmd_find_result = level [[ level.tcs_arg_type_handlers[ "cmdalias" ].rand_gen_func ]]();
+	cmd_find_result = undefined;
+	if ( isdefined( level.unittest_cmd_module ) )
+	{
+		index = undefined;
+		if ( is_true( level.unittest_cmd_sequential ) )
+		{
+			index = ( level.unittest_total_cmds_used % level._cmd_modules[ level.unittest_cmd_module ].size );
+		}
+
+		cmd_find_result = level [[ level.tcs_arg_type_handlers[ "cmdalias" ].rand_gen_func ]]( level.unittest_cmd_module, index );
+	}
+	else
+	{
+		cmd_find_result = level [[ level.tcs_arg_type_handlers[ "cmdalias" ].rand_gen_func ]]();
+	}
+	
 	if ( cmd_find_result.errored )
 	{
 		com_printdebugerror( cmd_find_result.msg );
@@ -257,7 +326,7 @@ private construct_chat_message_for_unittest()
 		message += " " + repackage_args( arg_gen_obj.value );
 	}
 
-	cmd_log = self.name + " executed " + message + " count " + level.unittest_total_cmds_used;
+	cmd_log = format( "'{}' executed '{}' count: '{}'", self.name, message, level.unittest_total_cmds_used );
 	com_printdebuginfo( cmd_log );
 	level notify( "say", message, level._unittest_host, true, false );
 	level.unittest_total_cmds_used++;
@@ -339,66 +408,4 @@ private end_unittest_after_time( time_required_in_seconds )
 	}
 
 	level notify( "unittest_stop" );
-}
-
-private end_testcmd_after_time( time_in_seconds )
-{
-	level endon( "stop_testcmd" );
-	for ( i = 0; i < _SIZE( time_in_seconds ); i++ )
-	{
-		wait 1;
-	}
-	level notify( "stop_testcmd" );
-}
-
-private testcmd_thread_server( cmd )
-{
-	level endon( "stop_testcmd" );
-	while ( true )
-	{
-		_GET_SERVER_ENTITY() construct_chat_message_for_testcmd( cmd );
-		wait level.unittest_cmd_rate;
-	}
-}
-
-private construct_chat_message_for_testcmd( cmd )
-{
-	cmdargs = self create_random_valid_args2( cmd );
-	if ( cmdargs.size == 0 )
-	{
-		message = cmd;
-	}
-	else 
-	{
-		arg_str = repackage_args( cmdargs );
-		message = cmd + " " + arg_str;
-	}
-	cmd_log = self.name + " executed " + message + " count " + level.unittest_total_cmds_used;
-	level com_printf( "con", "notitle", cmd_log );
-	level com_printf( "g_log", "cmdinfo", cmd_log );
-	level notify( "say", message, self, true );
-	level.unittest_total_cmds_used++;
-}
-
-private activate_specific_cmd()
-{
-	level endon( "stop_testcmd" );
-	self endon( "disconnect" );
-	while ( true )
-	{
-		self construct_chat_message_for_testcmd( self.specific_cmd );
-		wait level.unittest_cmd_rate;
-	}
-}
-
-private test_cmd_kick_bots_at_end()
-{
-	level waittill( "stop_testcmd" );
-	for ( i = 0; i < _SIZE( level.players.size ); i++ )
-	{
-		if ( is_true( level.players[ i ].pers["isBot"] ) )
-		{
-			kick( level.players[ i ] getEntityNumber() );
-		}
-	}
 }

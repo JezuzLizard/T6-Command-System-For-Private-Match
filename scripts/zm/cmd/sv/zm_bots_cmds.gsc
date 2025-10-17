@@ -12,19 +12,18 @@
 
 add_zm_bot_cmds()
 {
-	waittillframeend;
 	cmd_block_set_module_group( "bots_zm" );
 	cmd_block_set_rank_group( "cheat" );
-	setscriptgoal = cmd_add( "setscriptgoal", "scriptgoal {<bot>} <goal|entity> [dist]", ::cmd_setscriptgoal_f );
-	setscriptgoal arg_add_required( 1, "goal", "goal", "Goal to force the bot to go to" );
-	setscriptgoal arg_add_required( 2, "dist", "positive_float", "Distance from <goal> until bot considers goal reached" );
-	setscriptgoal target_add_required( 1, "bot", "bot", "Bot to set goal for" );
+	cmd_add( "setscriptgoal", "scriptgoal {<bot>} <goal|entity> [dist]", ::cmd_setscriptgoal_f );
+	arg_add_required( 1, "goal", "goal", "Goal to force the bot to go to" );
+	arg_add_required( 2, "dist", "positive_float", "Distance from <goal> until bot considers goal reached" );
+	target_add_required( 1, "bot", "bot", "Bot to set goal for" );
 
-	clearscriptgoal = cmd_add( "clearscriptgoal", "clearscriptgoal {<bot>}", ::cmd_clearscriptgoal_f );
-	setscriptgoal target_add_required( 1, "bot", "bot", "Bot to clear goal for" );
+	cmd_add( "clearscriptgoal", "clearscriptgoal {<bot>}", ::cmd_clearscriptgoal_f );
+	target_add_required( 1, "bot", "bot", "Bot to clear goal for" );
 
-	hasscriptgoal = cmd_add( "hasscriptgoal", "hasscriptgoal {<bot>}", ::cmd_hasscriptgoal_f );
-	hasscriptgoal target_add_required( 1, "bot", "bot", "Bot to print goal for" );
+	cmd_add( "hasscriptgoal", "hasscriptgoal {<bot>}", ::cmd_hasscriptgoal_f );
+	target_add_required( 1, "bot", "bot", "Bot to print goal for" );
 }
 
 private cmd_setscriptgoal_f( param )
@@ -73,19 +72,19 @@ private cmd_setscriptgoal_f( param )
 		}
 	}
 
-	param add_executor_cmdinfo( "Set " + bot.name + " goal to " + goal );
+	param add_executor_cmdinfo( "Set '{}' goal to", bot.name, goal );
 }
 
 private cmd_clearscriptgoal_f( param )
 {
 	bot = param.t[ 0 ][ 0 ];
 	bot ClearScriptGoal();
-	param add_executor_cmdinfo( "Cleared " + bot.name + " goal" );
+	param add_executor_cmdinfo( "Cleared '{}' goal", bot.name );
 }
 
 private cmd_hasscriptgoal_f( param )
 {
 	bot = param.t[ 0 ][ 0 ];
 	bot ClearScriptGoal();
-	param add_executor_cmdinfo( "Bot " + bot.name + " has goal: " + cast_bool_to_str( bot HasScriptGoal(), "yes no" ) );
+	param add_executor_cmdinfo( "Bot '{}' has goal:", bot.name, cast_bool_to_str( bot HasScriptGoal(), "yes no" ) );
 }

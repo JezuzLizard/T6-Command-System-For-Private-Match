@@ -11,9 +11,9 @@ private com_printparse( msg )
 	}
 }
 
-private throw_parse_exception( msg )
+private throw_parse_exception( msg, a, b, c, d, e, f, g, h, i, j, k )
 {
-	throw_exception( msg, level._parse_obj );
+	throw_exception( level._parse_obj, msg, a, b, c, d, e, f, g, h, i, j, k );
 }
 
 private parse_array()
@@ -185,11 +185,6 @@ private parse_directive()
 	com_printparse( "parse_directive: '" + check_str + "'" );
 
 	if ( check_str[ 0 ] == "t" || check_str == "target" )
-	{
-		parse_target_value();
-		return;
-	}
-	else if ( check_str[ 0 ] == "e" || check_str == "executor" ) // allows you to specify the 'executor' or who executes the command
 	{
 		parse_target_value();
 		return;
