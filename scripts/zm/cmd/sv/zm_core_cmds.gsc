@@ -15,7 +15,7 @@
 
 add_zm_core_cmds()
 {
-	cmd_block_set_module_group( "core_zm" );
+	cmd_block_set_module_group( "zm_core_cmds" );
 	cmd_block_set_rank_group( "cheat" );
 
 	cmd_add( "spectator", ::cmd_spectator_f, "spectator {player}" );

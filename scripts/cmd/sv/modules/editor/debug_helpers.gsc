@@ -27,7 +27,7 @@ draw_nodes( draw_text )
 		throttle_at = 400;
 		throttle_count = 0;
 		nodes = getallnodes();
-		for ( i = 0; i < nodes.size; i++ )
+		for ( i = 0; i < _SIZE( nodes.size ); i++ )
 		{
 			node = nodes[ i ];
 			color = ( 0, 0, 0 );
@@ -52,7 +52,7 @@ draw_nodes( draw_text )
 				throttle_count = 0;
 			}
 
-			draw_node_data( draw_text, node.type, color, type );
+			draw_node_data( draw_text, node, color, type );
 			throttle_count++;
 		}
 		wait 0.05;
@@ -78,7 +78,7 @@ draw_triggers( draw_text )
 			continue;
 		}
 
-		for ( i = 0; i < level._debug_draw_triggers_types.size; i++ )
+		for ( i = 0; i < _SIZE( level._debug_draw_triggers_types.size ); i++ )
 		{
 			type = level._debug_draw_triggers_types[ i ];
 			if ( type == "all" || type == "radius" )
@@ -262,7 +262,7 @@ private draw_node_data( draw_text, node, color, type )
 	}
 
 	found_type = false;
-	for ( i = 0; i < draw_types.size; i++ )
+	for ( i = 0; i < _SIZE( draw_types.size ); i++ )
 	{
 		if ( draw_types[ i ] == "all" || draw_types[ i ] == tolower( type ) )
 		{
@@ -365,7 +365,7 @@ draw_entities( manual_targets, draw_text )
 
 		if ( array_validate( manual_targets ) )
 		{
-			for ( j = 0; j < manual_targets.size; j++ )
+			for ( j = 0; j < _SIZE( manual_targets.size ); j++ )
 			{
 				ent = manual_targets[ j ];
 
@@ -380,12 +380,12 @@ draw_entities( manual_targets, draw_text )
 		}
 		else
 		{
-			for ( i = 0; i < level._debug_draw_entities_types.size; i++ )
+			for ( i = 0; i < _SIZE( level._debug_draw_entities_types.size ); i++ )
 			{
 				type = level._debug_draw_entities_types[ i ];
 				entities = [[ level._entity_type_funcs[ type ].getter ]]();
 
-				for ( j = 0; j < entities.size; j++ )
+				for ( j = 0; j < _SIZE( entities.size ); j++ )
 				{
 					ent = entities[ j ];
 

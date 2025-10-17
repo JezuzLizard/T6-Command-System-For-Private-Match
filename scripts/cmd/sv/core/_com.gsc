@@ -121,17 +121,17 @@ com_printf_internal( channels, filter, message, players )
 {
 	if ( !isDefined( channels ) )
 	{
-		assert( false );
+		_MY_ASSERT_HANDLER( false, "com_printf_internal: channels was not defined!" );
 		return;
 	}
 	if ( !isDefined( filter ) )
 	{
-		assert( false );
+		_MY_ASSERT_HANDLER( false, "com_printf_internal: filter was not defined!" );
 		return;
 	}
-	if ( !isDefined( message ) || isstring( message ) && message == "" )
+	if ( !isDefined( message ) || !isstring( message ) || message == "" )
 	{
-		assert( false );
+		_MY_ASSERT_HANDLER( false, "com_printf_internal: message was invalid(undefined,!string,blank)!" );
 		return;
 	}
 	channel_keys = strTok( channels, "|" );
@@ -154,7 +154,17 @@ com_printf_internal( channels, filter, message, players )
 			{
 				message_color_code = "^8";
 			}
-			message_modified = com_caps_msg_title( channel, filter ) + message_color_code + message;
+
+			colored_prefix = com_caps_msg_title( channel, filter );
+			if ( channel == "con" )
+			{
+				print( colored_prefix );
+				message_modified = message;
+			}
+			else
+			{
+				message_modified = colored_prefix + message_color_code + message;
+			}
 
 			if ( array_validate( players ) )
 			{

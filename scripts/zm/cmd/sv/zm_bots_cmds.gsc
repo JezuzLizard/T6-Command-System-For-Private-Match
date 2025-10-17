@@ -12,7 +12,7 @@
 
 add_zm_bot_cmds()
 {
-	cmd_block_set_module_group( "bots_zm" );
+	cmd_block_set_module_group( "zm_bots_cmds" );
 	cmd_block_set_rank_group( "cheat" );
 	cmd_add( "setscriptgoal", "scriptgoal {<bot>} <goal|entity> [dist]", ::cmd_setscriptgoal_f );
 	arg_add_required( 1, "goal", "goal", "Goal to force the bot to go to" );

@@ -33,7 +33,7 @@
 private main()
 {
 	_INIT_SERVER();
-	level._developer = getdvarint( "developer" );
+	level._tcs_developer = getdvarint( "tcs_developer" );
 	level.tcs_glob = spawnstruct();
 	level.tcs_glob.irestart_countdown = 5;
 	level.tcs_glob.icmd_total = 0;
@@ -175,4 +175,6 @@ tcs_on_connect()
 	self.default_targets = []; // the default target is by default the default_executors instead as most commands would prefer 'self' which is the executor to be the assumed default target
 	self.default_executors = [];
 	self.default_executors[ 0 ] = self;
+
+	self.cmd_history = [];
 }

@@ -16,7 +16,7 @@ add_zm_debug_cmds()
 	level._debug_zombie_spawn_loc_draw_aitypes = "";
 	level._debug_zombie_spawn_loc_draw_text = false;
 
-	cmd_block_set_module_group( "debug_zm" );
+	cmd_block_set_module_group( "zm_debug_cmds" );
 	cmd_block_set_rank_group( "cheat" );
 	cmd_add( "setdoground", ::cmd_setdoground_f, "setdoground [round]" );
 	arg_add_optional( 1, "next_dog_round", "int", "Number to set the next dog round to" );

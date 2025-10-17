@@ -188,7 +188,7 @@ com_printcmd_help( cmd_object )
 		{
 			targ_ordinal = _MAKE_ORDINAL_KEY( ( i + 1 ) );
 			target_typenames = getarraykeys( target_types[ targ_ordinal ].overloads );
-			assert( target_typenames.size == 1 );
+			_MY_ASSERT_HANDLER( target_typenames.size == 1, "com_printcmd_help: Target overloading is not yet implemented!" );
 			target_name = target_types[ targ_ordinal ].name;
 			target_desc = target_types[ targ_ordinal ].desc;
 			target_is_required = target_types[ targ_ordinal ].is_required;
@@ -269,7 +269,7 @@ com_printconsoleprintlore()
 
 com_printdebuginfo( format, a, b, c, d, e, f, g, h, i, j, k )
 {
-	if ( level._developer )
+	if ( level._tcs_developer )
 	{
 		_GET_SERVER_ENTITY() com_printinfo( format, a, b, c, d, e, f, g, h, i, j, k );
 	}
@@ -277,7 +277,7 @@ com_printdebuginfo( format, a, b, c, d, e, f, g, h, i, j, k )
 
 com_printdebugwarning( format, a, b, c, d, e, f, g, h, i, j, k )
 {
-	if ( level._developer )
+	if ( level._tcs_developer )
 	{
 		_GET_SERVER_ENTITY() com_printwarning( format, a, b, c, d, e, f, g, h, i, j, k );
 	}
@@ -285,11 +285,9 @@ com_printdebugwarning( format, a, b, c, d, e, f, g, h, i, j, k )
 
 com_printdebugerror( format, a, b, c, d, e, f, g, h, i, j, k )
 {
-	if ( level._developer )
+	if ( level._tcs_developer )
 	{
 		_GET_SERVER_ENTITY() com_printerror( format, a, b, c, d, e, f, g, h, i, j, k );
-
-		assert( false );
 	}
 }
 
@@ -1001,6 +999,7 @@ add_executor_cmdwarning( format, a, b, c, d, e, f, g, h, i, j, k )
 
 add_executor_cmderror( format, a, b, c, d, e, f, g, h, i, j, k )
 {
+	self.error_count++;
 	message = format( format, a, b, c, d, e, f, g, h, i, j, k );
 	self add_player_msg( self.executor, message, "cmderror", undefined );
 }
@@ -1019,6 +1018,7 @@ add_player_cmdwarning( player, format, a, b, c, d, e, f, g, h, i, j, k )
 
 add_player_cmderror( player, format, a, b, c, d, e, f, g, h, i, j, k )
 {
+	self.error_count++;
 	message = format( format, a, b, c, d, e, f, g, h, i, j, k );
 	self add_player_msg( player, message, "cmderror", undefined );
 }
@@ -1219,14 +1219,12 @@ private arg_add( ordinal, name, arg_type, is_required, desc, default_value )
 	}
 	else
 	{
-		assert( false );
-		com_printdebugerror( "Cannot overload argument ordinal: '" + ordinal + "' for command: '" + working_cmd.cmd_name + "' with type: '" + arg_type + "' as it is already overloaded with that type" );
+		_MY_ASSERT_HANDLER( false, "Cannot overload argument ordinal: '{}' for command: '{}' with type: '{}' as it is already overloaded with that type", ordinal, working_cmd.cmd_name, arg_type );
 	}
 
 	if ( !isdefined( level.tcs_arg_type_handlers[ arg_type ] ) )
 	{
-		assert( false );
-		com_printdebugerror( "Unknown arg type: '" + arg_type + "' being registered for cmd: '" + working_cmd.cmd_name + "' at ordinal '" + ordinal + "'" );
+		_MY_ASSERT_HANDLER( false, "Unknown arg type: '{}' being registered for cmd: '{}' at ordinal '{}", arg_type, working_cmd.cmd_name, ordinal );
 	}
 }
 
@@ -1284,8 +1282,7 @@ private target_add( ordinal, name, target_type, is_required, desc, max_targets )
 	}
 	else
 	{
-		assert( false );
-		com_printdebugerror( "Cannot overload target ordinal: '" + ordinal + "' for command: '" + working_cmd.cmd_name + "' with type: '" + target_type + "' as it is already overloaded with that type" );
+		_MY_ASSERT_HANDLER( false, "Cannot overload target ordinal: '{}' for command: '{}' with type: '{}' as it is already overloaded with that type", ordinal, working_cmd.cmd_name, target_type );
 		return;
 	}
 
@@ -1293,8 +1290,7 @@ private target_add( ordinal, name, target_type, is_required, desc, max_targets )
 
 	if ( !isdefined( level._entity_type_funcs[ target_type ] ) )
 	{
-		assert( false );
-		com_printdebugerror( "Unknown entity type: '" + target_type + "' registered for command: '" + working_cmd.cmd_name + "'" );
+		_MY_ASSERT_HANDLER( false, "Unknown entity type: '{}' registered for command: '{}'", target_type, working_cmd.cmd_name );
 	}
 }
 
@@ -1326,7 +1322,7 @@ target_set_default_target( ordinal, default_value )
 			return;
 	}
 
-	working_cmd.target_types[ ordinal ].default_value = default_value;
+	working_cmd.target_types[ _MAKE_ORDINAL_KEY( ordinal ) ].default_value = default_value;
 }
 
 get_target_type_from_ordinal( cmd_data_source, ordinal )
@@ -1492,9 +1488,9 @@ remove_notify_callback( notify_name, ent )
 
 	if ( !self script_breakpoint( generic_obj, error_msg ) )
 	{
-		if ( level._developer )
+		if ( level._tcs_developer )
 		{
-			assert( false );
+			//assert( false );
 			//generic_obj print_obj();
 		}
 		self notify( "cmd_exception", generic_obj );
@@ -1513,7 +1509,7 @@ remove_notify_callback( notify_name, ent )
 
 	if ( !self script_breakpoint( generic_obj, error_msg ) )
 	{
-		if ( level._developer )
+		if ( level._tcs_developer )
 		{
 			assert( false );
 			//generic_obj print_obj();
@@ -1699,6 +1695,7 @@ _INIT_SERVER()
 	{
 		level.server = spawnStruct();
 		entity = spawnstruct();
+		entity.cmd_history = [];
 		entity.playername = getdvar( "sv_hostname" );
 		entity.name = getdvar( "sv_hostname" );
 		entity.is_server = true;
@@ -1953,6 +1950,51 @@ pack( a, b, c, d, e, f, g, h, i, j, k )
 
 	return arr;
 }
+ 
+private _GET_IDX_CHAR_AT( i )
+{
+	c = "";
+	//println( "t1: " + t );
+	if ( i < level._fmt_str.size )
+	{
+		c = level._fmt_str[ i ];
+		//println( "t2: " +  t2 );
+	}
+
+	return c;
+}
+
+private _C_LEFT()
+{
+	return level._fmt_str.size - level._fmt_pos;
+}
+
+private _PUSH_POS_UNTIL_CHAR( c )
+{
+	start = level._fmt_pos;
+	while ( _C_LEFT() > 0 )
+	{
+		if ( _GET_IDX_CHAR_AT( level._fmt_pos ) == c )
+		{
+			break;
+		}
+		level._fmt_pos++;
+	}
+
+	remaining = _C_LEFT();
+	if ( remaining <= 0 )
+	{
+		// consume remaining
+		level._fmt_final_str += getsubstr( level._fmt_str, start );
+	}
+	else
+	{
+		// we found the char!
+		end = level._fmt_pos;
+		level._fmt_final_str += getsubstr( level._fmt_str, start, end );
+	}
+	return remaining;
+}
 
 format( fmt, a, b, c, d, e, f, g, h, i, j, k )
 {
@@ -1965,45 +2007,56 @@ format( fmt, a, b, c, d, e, f, g, h, i, j, k )
 
 	assert( isstring( fmt ) );
 
-	new_str = "";
 	insert_arg_index = 0;
-	for ( i = 0; i < _SIZE( fmt.size ); i++ )
+
+	level._fmt_pos = 0;
+	level._fmt_str = fmt;
+	level._fmt_final_str = "";
+	for ( ;; )
 	{
-		t = fmt[ i ];
-		t2 = ( fmt.size + 1 ) < fmt.size ? fmt[ i + 1 ] : "";
-		if ( t != "{" )
+		remaining = _PUSH_POS_UNTIL_CHAR( "{" );
+		if ( remaining <= 0 )
 		{
-			new_str += fmt[ i ];
-			continue;
-		}
-
-		if ( t2 != "}" )
-		{
-			new_str += fmt[ i ];
-			continue;
-		}
-
-		new_str += args[ insert_arg_index ];
-		insert_arg_index++;
-		i += 2; // push past t2's index
-
-		if ( insert_arg_index >= args.size )
-		{
-			// consume remaining str
-			new_str += getsubstr( fmt, i );
 			break;
 		}
+
+		if ( _GET_IDX_CHAR_AT( level._fmt_pos + 1 ) == "}" )
+		{
+			level._fmt_final_str += args[ insert_arg_index ];
+			insert_arg_index++;
+			level._fmt_pos++;
+		}
+
+		level._fmt_pos++;
 	}
 
 	if ( insert_arg_index != args.size )
 	{
 		assert( false );
+		_GET_SERVER_ENTITY() com_printerror( "format: Mismatched inserts to args!" );
 	}
 
-	return new_str;
+	level._fmt_pos = undefined;
+	level._fmt_str = undefined;
+
+	return level._fmt_final_str;
 }
 
 _MAKE_ORDINAL_KEY( integer )
 {
 	return integer + "";
+}
+
+_MY_ASSERT_HANDLER( condition, fmt, a, b, c, d, e, f, g, h, i, j, k )
+{
+	if ( condition )
+	{
+		return;
+	}
+
+	message = format( fmt, a, b, c, d, e, f, g, h, i, j, k );
+
+	assert( false );
+
+	_GET_SERVER_ENTITY() com_printerror( message );
 }

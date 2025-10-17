@@ -49,6 +49,8 @@ add_debug_cmds()
 	}
 	level.debug_hud_y_offset = y;
 
+	cmd_block_set_module_group( "core_debug_cmds" );
+	cmd_block_set_rank_group( "cheat" );
 	cmd_add( "drawtriggers", ::cmd_drawtriggers_f, "drawtriggers <types> [draw_text]" );
 	arg_add_required( 1, "trigger_type", "triggertype", "Trigger types to draw" );
 	arg_add_optional_with_default( 2, "draw_text", "boolean", "Toggle the additional text info drawn on triggers", true );
@@ -121,7 +123,7 @@ private cmd_drawentities_f( param )
 {
 	manual_targets = param.t[ 0 ];
 	was_on = level._debug_draw_entities_enabled;
-	level._debug_draw_entities_types = param.a[ 0 ];
+	level._debug_draw_entities_types = _DEFAULT( param.a[ 0 ], [] );
 	draw_text = param.a[ 1 ];
 	if ( !array_validate( manual_targets ) && !array_validate( level._debug_draw_entities_types ) )
 	{

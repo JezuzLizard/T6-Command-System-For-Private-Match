@@ -127,9 +127,13 @@ _dodamage( damage, pos, attacker, inflictor, hitloc, mod, idflags, weapon )
 	hitloc_default = _DEFAULT( hitloc, "head" );
 	mod_default = _DEFAULT( mod, "MOD_UNKNOWN" );
 	idflags_default = _DEFAULT( idflags, 0 );
-	weapon_default = _DEFAULT( weapon, self getcurrentweapon() );
+	weapon_default = undefined;
+	if ( isplayer( self ) )
+	{
+		weapon_default = _DEFAULT( weapon, self getcurrentweapon() );
+	}
 
-	if ( isdefined( weapon ) )
+	if ( isdefined ( weapon_default ) )
 	{
 		self dodamage( damage, pos, attacker_default, inflictor_default, hitloc_default, mod_default, idflags_default, weapon_default );
 	}

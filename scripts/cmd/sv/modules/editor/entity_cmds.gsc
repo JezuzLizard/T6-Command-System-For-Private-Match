@@ -7,7 +7,7 @@
 
 add_entity_cmds()
 {
-	cmd_block_set_module_group( "addon_entity_tools" );
+	cmd_block_set_module_group( "core_entity_cmds" );
 	cmd_block_set_rank_group( "cheat" );
 
 	// entity manipulation
@@ -17,8 +17,8 @@ add_entity_cmds()
 	cmd_add( "cleartargetent", ::cmd_cleartargetent_f, "cleartargetent" );
 
 	cmd_add( "editentfield", ::cmd_editentfield_f, "editentfield {[entity]} <fieldname> <fieldvalue> [scale] [relative]" );
-	arg_add_required( 1, "fieldname", "string", "New angles to set the target entity to" );
-	arg_add_optional( 2, "fieldvalue", "string", "Causes the entity angles to be modified by <angles> instead of assigned" );
+	arg_add_required( 1, "fieldname", "entfield", "New angles to set the target entity to" );
+	arg_add_required( 2, "fieldvalue", "string", "Causes the entity angles to be modified by <angles> instead of assigned" );
 	arg_add_optional( 3, "scale", "float", "The scale of the angle modification" );
 	arg_add_optional( 4, "relative", "boolean", "The scale of the angle modification" );
 	target_add_optional( 1, "entity", "general", "Manual entity to target for editing" );
@@ -155,7 +155,7 @@ add_entity_cmds()
 	cmd_add( "editmapentfield", ::cmd_editmapentfield_f, "editmapentfield <mapent_type> <id> <fieldname> <fieldvalue> [scale] [relative]" );
 	arg_add_required( 1, "mapent_type", "string", "Type of map entity to edit" );
 	arg_add_required( 2, "id", "string", "Identifier of entity" );
-	arg_add_required( 3, "fieldname", "string", "Fieldname to edit" );
+	arg_add_required( 3, "fieldname", "entfield", "Fieldname to edit" );
 	arg_add_required( 4, "fieldvalue", "string", "Fieldvalue to modify <fieldname>" );
 	arg_add_optional( 5, "scale", "float", "The scale of the angle modification" );
 	arg_add_optional( 6, "relative", "boolean", "The scale of the angle modification" );
@@ -254,7 +254,12 @@ private cmd_seteditortargetorigin_f( param )
 
 private cmd_setviewpos_f( param )
 {
-	self com_printerror( "UNIMPLEMENTED" );
+	new_origin = param.a[ 0 ];
+	new_angles = _DEFAULT( param.a[ 1 ], self.angles );
+
+	self setorigin( new_origin );
+	self setplayerangles( new_angles );
+	param add_executor_cmdinfo( "View pos set to: '" + new_origin + "' and angles: '" + new_angles + "'" );
 }
 
 private cmd_editheldmodel_f( param )
@@ -542,9 +547,9 @@ private cmd_editentfield_f( param )
 	scale = _DEFAULT( param.a[ 2 ], 1.0 );
 	is_relative = _DEFAULT( param.a[ 3 ], false );
 
-	editor_ent = self hud_binding_get_subscribed_entity( "editor_selected_ent_context" );
 	if ( targets.size == 0 )
 	{
+		editor_ent = self hud_binding_get_subscribed_entity( "editor_selected_ent_context" );
 		targets[ 0 ] = editor_ent;
 		if ( targets.size == 0 )
 		{
@@ -554,7 +559,7 @@ private cmd_editentfield_f( param )
 
 	if ( is_relative )
 	{
-		for ( i = 0; i < targets.size; i++ )
+		for ( i = 0; i < _SIZE( targets.size ); i++ )
 		{
 			targ = targets[ i ];
 			assign_result = targ set_entfield( fieldname, fieldvalue );
@@ -566,7 +571,7 @@ private cmd_editentfield_f( param )
 	}
 	else
 	{
-		for ( i = 0; i < targets.size; i++ )
+		for ( i = 0; i < _SIZE( targets.size ); i++ )
 		{
 			targ = targets[ i ];
 			assign_result = targ set_entfield_relative( fieldname, fieldvalue, scale );
@@ -696,6 +701,11 @@ private cmd_savemapents_f( param )
 {
 	filename = param.a[ 0 ];
 
+	if ( is_true( level.doing_cmd_system_unittest ) )
+	{
+		filename = "unittest";
+	}
+
 	paths_file = fs_fopen( filename + ".mapents", "write" );
 
 	if ( paths_file <= 0 )
@@ -721,6 +731,11 @@ private cmd_savemapents_f( param )
 private cmd_loadmapents_f( param )
 {
 	filename = param.a[ 0 ];
+
+	if ( is_true( level.doing_cmd_system_unittest ) )
+	{
+		filename = "unittest";
+	}
 
 	paths_file = fs_fopen( filename + ".mapents", "read" );
 
@@ -771,12 +786,12 @@ private cmd_editmapentfield_f( param )
 
 	if ( !isdefined( level._mapents[ mapent_type ] ) )
 	{
-		return param add_executor_cmderror( "'" + mapent_type + "' is not a valid type" );
+		return param add_executor_cmderror( "'{}' is not a valid type", mapent_type );
 	}
 
 	if ( !isdefined( level._mapents[ mapent_type ][ id ] ) )
 	{
-		return param add_executor_cmderror( "'" + id + "' is not a valid identifier" );
+		return param add_executor_cmderror( "'{}' is not a valid identifier", id );
 	}
 
 	targ = level._mapents[ mapent_type ][ id ];

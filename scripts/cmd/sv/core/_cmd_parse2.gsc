@@ -411,7 +411,7 @@ private set_type( new_type )
 private add_value( value_string )
 {
 	key_string = level._parse_obj.current_key_string;
-	assert( isdefined( level._parse_obj.kvps[ key_string ] ) );
+	_MY_ASSERT_HANDLER( isdefined( level._parse_obj.kvps[ key_string ] ), "Key '{}' was not added to level._parse_obj.kvps for add_value()!", key_string );
 
 	level._parse_obj.current_value_string = value_string;
 	level._parse_obj.current_value_index = level._parse_obj.kvps[ key_string ].v.size;
@@ -421,7 +421,7 @@ private add_value( value_string )
 
 private add_key( key_string )
 {
-	assert( !isdefined( level._parse_obj.kvps[ key_string ] ) );
+	_MY_ASSERT_HANDLER( !isdefined( level._parse_obj.kvps[ key_string ] ), "Attempting to overwrite existing key '{}' in level._parse_obj.kvps for add_key()", key_string );
 
 	base_key = key_string;
 	ordinal_argument = int( key_string[ key_string.size - 1 ] );

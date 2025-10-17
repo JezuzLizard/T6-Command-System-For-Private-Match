@@ -76,6 +76,7 @@ hud_binding_set( binding_name, new_value )
 		return undefined;
 	}
 
+	_MY_ASSERT_HANDLER( hud_binding_obj.binding_type == "text", "hud_binding_set: Unhandled binding_type '{}'", hud_binding_obj.binding_type );
 	if ( hud_binding_obj.binding_type == "text" )
 	{
 		if ( hud_binding_obj.binding_val == hud_binding_obj.binding_default_val || hud_binding_obj.binding_val != new_value )
@@ -94,10 +95,6 @@ hud_binding_set( binding_name, new_value )
 
 			hud_binding_obj.binding_val = new_value;
 		}
-	}
-	else
-	{
-		assert( false );
 	}
 
 	return hud_binding_obj;
@@ -156,6 +153,7 @@ hud_binding_update( hud_binding_obj, hud )
 {
 	entity = hud_binding_obj.binding_subscribed_entity;
 
+	_MY_ASSERT_HANDLER( hud_binding_obj.binding_type == "entity", "hud_binding_update: Unhandled binding_type '{}'", hud_binding_obj.binding_type );
 	if ( hud_binding_obj.binding_type == "entity" )
 	{
 		switch ( hud_binding_obj.binding_subtype )
@@ -176,13 +174,9 @@ hud_binding_update( hud_binding_obj, hud )
 				hud_binding_obj.prev_val = hud_binding_obj.binding_val;
 				break;
 			default:
-				assert( false );
+				_MY_ASSERT_HANDLER( false, "hud_binding_update: Unhandled binding_subtype '{}'", hud_binding_obj.binding_subtype );
 				break;
 		}
-	}
-	else
-	{
-		assert( false );
 	}
 }
 

@@ -317,7 +317,7 @@ set_safe_text( text, prev_text, is_label )
 			level._text_count++;
 		}
 
-		com_printdebugerror( "Had to clear the text cache..." );
+		com_printwarning( "Had to clear the text cache..." );
 	}
 
 	if ( is_label )

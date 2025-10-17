@@ -68,22 +68,25 @@ private reset_in_command()
 
 private debug_print_execute( index, cmd_obj )
 {
-	self com_printdebuginfo( "Printing info for cmd index '" + index + "'" );
-	self com_printdebuginfo( "cmd_name: '" + cmd_obj.cmd_data_source.cmd_name + "'" );
-	self com_printdebuginfo( "cmd_string: '" + cmd_obj.cmd_string + "'" );
-	for ( i = 0; i < _SIZE( cmd_obj.args.size ); i++ )
+	if ( getdvarint( "tcs_debug_execute" ) == 1 )
 	{
-		self com_printdebuginfo( "args[ '" + i + "' ]: " + cmd_obj.args[ i ] );
-	}
-
-	foreach ( key, value in cmd_obj.kvps )
-	{
-		self com_printdebuginfo( "kvps[ '" + key + "' ]:" );
-		self com_printdebuginfo( "base_key: " + value.base_key );
-		self com_printdebuginfo( "type: " + value.type );
-		for ( i = 0; i < _SIZE( value.v.size ); i++ )
+		self com_printdebuginfo( "Printing info for cmd index '" + index + "'" );
+		self com_printdebuginfo( "cmd_name: '" + cmd_obj.cmd_data_source.cmd_name + "'" );
+		self com_printdebuginfo( "cmd_string: '" + cmd_obj.cmd_string + "'" );
+		for ( i = 0; i < _SIZE( cmd_obj.args.size ); i++ )
 		{
-			self com_printdebuginfo( "v[ '" + i + "' ]: " + value.v[ i ] );
+			self com_printdebuginfo( "args[ '" + i + "' ]: " + cmd_obj.args[ i ] );
+		}
+
+		foreach ( key, value in cmd_obj.kvps )
+		{
+			self com_printdebuginfo( "kvps[ '" + key + "' ]:" );
+			self com_printdebuginfo( "base_key: " + value.base_key );
+			self com_printdebuginfo( "type: " + value.type );
+			for ( i = 0; i < _SIZE( value.v.size ); i++ )
+			{
+				self com_printdebuginfo( "v[ '" + i + "' ]: " + value.v[ i ] );
+			}
 		}
 	}
 }
@@ -210,11 +213,11 @@ private arg_cast( arg_type, arg )
 	self throw_exception( undefined, "Failed to cast to one of the valid overloads for arg_type, attempted casts: '{}'", repackage_args( msgs, "\n" ) );
 }
 
-private target_cast( cmd_data_source, ordinal, target_type, target_kvp, default_value )
+private target_cast( cmd_data_source, ordinal, target_type, target_kvp )
 {
 	foreach ( etype, val in target_type.overloads )
 	{
-		value = self get_entity_targets( etype, target_kvp, default_value );
+		value = self get_entity_targets( etype, target_kvp, target_type.default_value );
 
 		if ( array_validate( value ) )
 		{
@@ -329,11 +332,11 @@ private get_entity_targets( etype, directive, default_value )
 	}
 	else
 	{
-		assert( false );
+		_MY_ASSERT_HANDLER( false, "Unhandled etype: '{}'", etype );
 		return [];
 	}
 
-	if ( directive.type == "undefined" )
+	if ( isdefined( default_value ) && directive.type == "undefined" )
 	{
 		switch ( default_value )
 		{
@@ -409,6 +412,7 @@ private cmd_execute_internal1( initiator, cmd_obj )
 	param = generic_obj_t_new( "param" );
 	param.t = []; // targets
 	param.a = cmd_obj.args; // arguments
+	param.error_count = 0;
 
 	// Cast the args using the cast handlers
 	// Arg types without a cast handler don't get casted
@@ -544,22 +548,29 @@ private handle_feedback( initiator, cmd_obj, param )
 		level com_printf( param.result_array[ i ].channels, param.result_array[ i ].filter, param.result_array[ i ].msg, player );
 	}
 
-	if ( initiator.tcs_feedback_mode == 2 )
+	if ( param.error_count > 0 && is_true( level.doing_cmd_system_unittest ) )
 	{
-		if ( initiator != self )
+		_GET_SERVER_ENTITY() print_feedback( param );
+	}
+	else
+	{
+		if ( initiator.tcs_feedback_mode == 2 )
+		{
+			if ( initiator != self )
+			{
+				initiator print_feedback( param );
+			}
+			
+			self print_feedback( param );
+		}
+		else if ( initiator.tcs_feedback_mode == 1 )
 		{
 			initiator print_feedback( param );
 		}
-		
-		self print_feedback( param );
-	}
-	else if ( initiator.tcs_feedback_mode == 1 )
-	{
-		initiator print_feedback( param );
-	}
-	else if ( initiator.tcs_feedback_mode == 0 )
-	{
-		self print_feedback( param );
+		else if ( initiator.tcs_feedback_mode == 0 )
+		{
+			self print_feedback( param );
+		}
 	}
 }
 
@@ -568,7 +579,7 @@ private print_feedback( param )
 	for ( i = 0; i < _SIZE( param.result_array.size ); i++ )
 	{
 		player = param.result_array[ i ].player;
-		if ( player != self )
+		if ( player != self && !is_true( level.doing_cmd_system_unittest ) )
 		{
 			continue;
 		}

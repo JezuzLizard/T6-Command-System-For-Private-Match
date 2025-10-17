@@ -185,11 +185,12 @@ init_consts()
 	arg_type_register( "enttype", ::arg_obj_enttype_generate, ::arg_obj_enttype_cast );
 	arg_type_register( "nodetype", ::arg_obj_nodetype_generate, ::arg_obj_nodetype_cast );
 	arg_type_register( "triggertype", ::arg_obj_triggertype_generate, ::arg_obj_triggertype_cast );
+	arg_type_register( "entfield", ::arg_obj_entfield_generate, ::arg_obj_entfield_cast );
 	arg_type_register( "...", undefined, undefined );
 
 	register_entity_string_field( "classname", "string", true );
 	register_entity_string_field( "origin", "vector" );
-	register_entity_string_field( "model", "model", true );
+	register_entity_string_field( "model", "model" );
 	register_entity_string_field( "spawnflags", "spawnflags", true );
 	register_entity_string_field( "target", "string" );
 	register_entity_string_field( "targetname", "string" );
@@ -311,7 +312,9 @@ get_item_array()
 */
 get_missile_array( classnames_str )
 {
-	classnames = strtok( classnames_str, " " );
+	classnames = [];
+	classnames[ 0 ] = "rocket";
+	classnames[ 1 ] = "grenade";
 
 	entities = [];
 	for ( i = 0; i < _SIZE( classnames.size ); i++ )
@@ -387,9 +390,7 @@ get_vehicle_array()
 
 get_vehicle_corpse_array()
 {
-	start = level._ent_num_ranges[ "vehicle_corpse" ].first_entnum;
-	end = level._ent_num_ranges[ "vehicle_corpse" ].last_entnum;
-	return get_entities_by_etype( "vehicle_corpse", start, end + 1 );
+	return get_entities_by_etype( "vehicle_corpse", level._ent_num_ranges[ "any" ].first_entnum );
 }
 
 get_actor_array()
@@ -409,7 +410,7 @@ get_actor_corpse_array()
 
 get_streamer_hint_array()
 {
-	return get_entities_by_etype( "streamer_hint", 109 );
+	return get_entities_by_etype( "streamer_hint", level._ent_num_ranges[ "any" ].first_entnum );
 }
 
 get_zbarrier_array()
@@ -419,7 +420,7 @@ get_zbarrier_array()
 
 get_temp_entity_array()
 {
-	return get_entities_by_etype( "temp_entity", 109 );
+	return getentarray( "tempEntity", "classname" );
 }
 
 get_bot_array()
@@ -435,7 +436,7 @@ get_bot_array()
 			continue;
 		}
 
-		bots[ bots.size ]= player;
+		bots[ bots.size ] = player;
 	}
 
 	return bots;
@@ -1209,6 +1210,7 @@ arg_obj_triggertype_cast( arg )
 
 	additional_types = [];
 	guard = false;
+	errors = 0;
 	for ( i = 0; i < types.size; i++ )
 	{
 		if ( types[ i ] == "use" )
@@ -1257,6 +1259,27 @@ arg_obj_triggertype_cast( arg )
 	}
 
 	return set_cast_success( find, types, "trigger_type==" + arg );
+}
+
+arg_obj_entfield_generate( arg1, arg2, arg3 )
+{
+	find = generic_obj_t_new();
+
+	entfield = random_key( level._entity_string_fields );
+	find.str_value = entfield;
+	return set_cast_success( find, entfield, "entfield==" + entfield );
+}
+
+arg_obj_entfield_cast( arg )
+{
+	find = generic_obj_t_new();
+	entfield_arg = tolower( arg );
+	if ( !isdefined( level._entity_string_fields[ entfield_arg ] ) )
+	{
+		msg = get_possible_array_values_msg( arg, level._entity_string_fields, "entfield" );
+		return set_cast_error( find, msg );
+	}
+	return set_cast_success( find, entfield_arg, "entfield==" + arg );
 }
 
 clamp_array( arr, limit )

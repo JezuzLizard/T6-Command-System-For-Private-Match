@@ -6,13 +6,14 @@
 
 add_core_cmds()
 {
-	cmd_block_set_module_group( "core_common" );
+	cmd_block_set_module_group( "core_cmds" );
 	cmd_block_set_rank_group( "cheat" );
 	cmd_add( "cvar", ::cmd_setcvar_f, "cvar <cvarname> <newval>" );
 	arg_add_required( 1, "cvarname", "string", "Name of client dvar" );
 	arg_add_required( 2, "newval", "string", "New value to assign to client dvar" );
 	target_add_optional( 1, "player", "player", "Players to modify cvar for" );
 	target_set_default_target( 1, "self" );
+	make_cmd_immune_to_unittest();
 
 	cmd_add( "god", ::cmd_god_f, "god" );
 	target_add_optional( 1, "player", "player", "Players to give god status" );
@@ -37,10 +38,12 @@ add_core_cmds()
 	cmd_add( "dvar", ::cmd_server_dvar_f, "dvar <dvarname> <newval>" );
 	arg_add_required( 1, "dvarname", "string", "Name of dvar" );
 	arg_add_required( 2, "newval", "string", "New value to assign to dvar" );
+	make_cmd_immune_to_unittest();
 
 	cmd_add( "setrank", ::cmd_setrank_f, "setrank {player} <rank>" );
 	arg_add_required( 1, "rank", "rank", "New rank to assign to target player" );
 	target_add_required( 1, "player", "player", "Player whos rank will be modified to be <rank>", 1 );
+	make_cmd_immune_to_unittest();
 
 	cmd_add( "entitylist", ::cmd_entitylist_f, "entitylist {entities}" );
 	target_add_optional( 1, "entities", "general", "Entities to print info for" );
@@ -113,6 +116,7 @@ add_core_cmds()
 
 	cmd_add( "delete", ::cmd_delete_f, "delete {entity}" );
 	target_add_required( 1, "victim", "general", "Entities to delete" );
+	make_cmd_immune_to_unittest();
 }
 
 private cmd_setcvar_f( param )
@@ -214,7 +218,7 @@ private cmd_togglehud_f( param )
 		{
 			player = targets[ i ];
 			player toggle_hud( on_off == "on" );
-			param add_executor_cmdinfo( "Successfully toggled '{}' hud status to '", player.name, on_off );
+			param add_executor_cmdinfo( "Successfully toggled '{}' hud status to '{}'", player.name, on_off );
 			param add_player_cmdinfo( player, "Your hud status was toggled '{}'", on_off );
 		}
 	}
@@ -236,7 +240,7 @@ private cmd_bottomlessclip_f( param )
 		{
 			player = targets[ i ];
 			player toggle_bottomless_clip( on_off == "on" );
-			param add_executor_cmdinfo( "Successfully toggled '{}' bottomless clip status to '", player.name, on_off );
+			param add_executor_cmdinfo( "Successfully toggled '{}' bottomless clip status to '{}'", player.name, on_off );
 			param add_player_cmdinfo( player, "Your bottomless clip status was toggled '{}'", on_off );
 		}
 	}
@@ -508,7 +512,7 @@ private cmd_teleportorigin_f( param )
 			from.origin = destination;
 		}
 
-		param add_executor_cmdinfo( "Successfully teleported entity: '{}' at: '{}' to: '", from_name, from.origin, destination );
+		param add_executor_cmdinfo( "Successfully teleported entity: '{}' at: '{}' to: '{}'", from_name, from.origin, destination );
 	}
 }
 
@@ -588,6 +592,12 @@ private cmd_delete_f( param )
 	for ( i = 0; i < targets.size; i++ )
 	{
 		target = targets[ i ];
+		if ( isplayer( target ) )
+		{
+			param add_executor_cmderror( "Cannot delete a player, failed to delete '{}'", target.name );
+			continue;
+		}
+
 		target delete();
 	}
 }

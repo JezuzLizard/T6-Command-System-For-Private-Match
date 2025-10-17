@@ -7,7 +7,7 @@
 
 add_unittest_cmds()
 {
-	cmd_block_set_module_group( "unittest" );
+	cmd_block_set_module_group( "unittest_cmds" );
 	cmd_block_set_rank_group( "cheat" );
 	cmd_add( "unittest", ::cmd_unittest_validargs_f, "unittest [botcount] [duration] [rate]" );
 	arg_add_optional_with_default( 1, "botcount", "positive_int", "Number of bots to spawn for spamming commands", 1 );
@@ -19,7 +19,7 @@ add_unittest_cmds()
 	arg_add_required( 1, "cmdmodule", "string", "Module to test" );
 	arg_add_optional_with_default( 2, "sequential", "boolean", "Test each command in sequential order as defined by the module", true );
 	arg_add_optional_with_default( 3, "duration", "positive_int", "Duration of automated testing", 0 );
-	arg_add_optional_with_default( 3, "rate", "positive_float", "Rate of command execution", 0.5 );
+	arg_add_optional_with_default( 4, "rate", "positive_float", "Rate of command execution", 0.5 );
 	make_cmd_immune_to_unittest();
 }
 
@@ -40,7 +40,7 @@ private cmd_unittest_validargs_f( param )
 		level notify( "unittest_stop" );
 	}
 
-	on_off = cast_bool_to_str( !is_true( level.doing_cmd_system_unittest ), "activated deactivated" );
+	on_off = cast_bool_to_str( level.doing_cmd_system_unittest, "activated deactivated" );
 
 	param add_executor_cmdinfo( "Cmd system unit test '{}'", on_off );
 }
@@ -68,7 +68,7 @@ private cmd_testmodule_f( param )
 		level notify( "unittest_stop" );
 	}
 
-	on_off = cast_bool_to_str( !is_true( level.doing_cmd_system_unittest ), "activated deactivated" );
+	on_off = cast_bool_to_str( level.doing_cmd_system_unittest, "activated deactivated" );
 
-	param add_executor_cmdinfo( "Cmd system unit test for '{}' module '{}'", on_off, module );
+	param add_executor_cmdinfo( "Cmd system unit test for '{}' module '{}'", module, on_off );
 }

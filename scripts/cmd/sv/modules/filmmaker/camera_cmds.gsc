@@ -7,40 +7,39 @@
 
 add_camera_cmds()
 {
-	waittillframeend;
 	// camera commands
-	cmd_block_set_module_group( "addon_entity_tools" );
+	cmd_block_set_module_group( "filmmaker_camera_cmds" );
 	cmd_block_set_rank_group( "cheat" );
 
-	createcamera_cmd = cmd_add( "createcamera", ::cmd_createcamera_f, "createcamera <camera_name> [origin] [angles] [model]" );
-	createcamera_cmd arg_add_required( 1, "camera_name", "string", "Name of camera to identify it later" );
-	createcamera_cmd arg_add_optional( 2, "origin", "vector", "Where the camera will be placed" );
-	createcamera_cmd arg_add_optional( 3, "angles", "vector", "The angles of the camera" );
-	createcamera_cmd arg_add_optional_with_default( 4, "model", "model", "Model of the camera", "tag_origin" );
+	cmd_add( "createcamera", ::cmd_createcamera_f, "createcamera <camera_name> [origin] [angles] [model]" );
+	arg_add_required( 1, "camera_name", "string", "Name of camera to identify it later" );
+	arg_add_optional( 2, "origin", "vector", "Where the camera will be placed" );
+	arg_add_optional( 3, "angles", "vector", "The angles of the camera" );
+	arg_add_optional_with_default( 4, "model", "model", "Model of the camera", "tag_origin" );
 
-	setcamera_cmd = cmd_add( "setcamera", ::cmd_setcamera_f, "setcamera <camera_name> [flags]" );
-	setcamera_cmd arg_add_required( 1, "camera_name", "string", "Name of camera to use" );
-	setcamera_cmd arg_add_optional_with_default( 2, "flags", "cameraflags", "Optional flags to control how the camera operates", 1 );
+	cmd_add( "setcamera", ::cmd_setcamera_f, "setcamera <camera_name> [flags]" );
+	arg_add_required( 1, "camera_name", "string", "Name of camera to use" );
+	arg_add_optional_with_default( 2, "flags", "cameraflags", "Optional flags to control how the camera operates", 1 );
 
-	unsetcamera_cmd = cmd_add( "unsetcamera", ::cmd_unsetcamera_f, "unsetcamera <camera_name>" );
-	unsetcamera_cmd arg_add_required( 1, "camera_name", "string", "Name of camera to unset" );
+	cmd_add( "unsetcamera", ::cmd_unsetcamera_f, "unsetcamera <camera_name>" );
+	arg_add_required( 1, "camera_name", "string", "Name of camera to unset" );
 
-	deletecamera_cmd = cmd_add( "deletecamera", ::cmd_deletecamera_f, "deletecamera <camera_name>" );
-	deletecamera_cmd arg_add_required( 1, "camera_name", "string", "Name of camera to delete" );
+	cmd_add( "deletecamera", ::cmd_deletecamera_f, "deletecamera <camera_name>" );
+	arg_add_required( 1, "camera_name", "string", "Name of camera to delete" );
 
-	linkcameratoent_cmd = cmd_add( "linkcameratoent", ::cmd_linkcameratoent_f, "linkcameratoent {entity} <camera_name> [tagname] [origin_offset] [angles_offset]" );
-	linkcameratoent_cmd arg_add_required( 1, "camera_name", "string", "Name of camera to attempt to link to {entity}" );
-	linkcameratoent_cmd arg_add_optional_with_default( 2, "tagname", "string", "Tagname of {entity} to link to", "" );
-	linkcameratoent_cmd arg_add_optional_with_default( 3, "origin_offset", "vector", "Origin offset from {entity} origin", ( 0, 0, 0 ) );
-	linkcameratoent_cmd arg_add_optional_with_default( 4, "angles_offset", "vector", "Angles offset from {entity} angles", ( 0, 0, 0 ) );
-	linkcameratoent_cmd target_add_required( 1, "entity", "general", "Entity to link a spawned camera to", 1 );
+	cmd_add( "linkcameratoent", ::cmd_linkcameratoent_f, "linkcameratoent {entity} <camera_name> [tagname] [origin_offset] [angles_offset]" );
+	arg_add_required( 1, "camera_name", "string", "Name of camera to attempt to link to {entity}" );
+	arg_add_optional_with_default( 2, "tagname", "string", "Tagname of {entity} to link to", "" );
+	arg_add_optional_with_default( 3, "origin_offset", "vector", "Origin offset from {entity} origin", ( 0, 0, 0 ) );
+	arg_add_optional_with_default( 4, "angles_offset", "vector", "Angles offset from {entity} angles", ( 0, 0, 0 ) );
+	target_add_required( 1, "entity", "general", "Entity to link a spawned camera to", 1 );
 
-	linkcameratoent_cmd = cmd_add( "unlinkcamera", ::cmd_unlinkcamera_f, "unlinkcamera <camera_name>" );
-	linkcameratoent_cmd arg_add_required( 1, "camera_name", "string", "Name of camera to attempt to unlink from an entity" );
+	cmd_add( "unlinkcamera", ::cmd_unlinkcamera_f, "unlinkcamera <camera_name>" );
+	arg_add_required( 1, "camera_name", "string", "Name of camera to attempt to unlink from an entity" );
 
-	spectateactor_cmd = cmd_add( "spectateactor", ::cmd_spectateactor_f, "spectateactor {actor} <tagname>" );
-	spectateactor_cmd arg_add_required( 1, "tagname", "string", "Begin spectating {actor}'s POV" );
-	spectateactor_cmd target_add_required( 1, "actor", "actor", "Actor to spectate", 1 );
+	cmd_add( "spectateactor", ::cmd_spectateactor_f, "spectateactor {actor} <tagname>" );
+	arg_add_required( 1, "tagname", "string", "Begin spectating {actor}'s POV" );
+	target_add_required( 1, "actor", "actor", "Actor to spectate", 1 );
 }
 
 private cmd_createcamera_f( param )

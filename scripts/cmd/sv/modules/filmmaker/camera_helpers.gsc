@@ -6,31 +6,27 @@
 
 init_camera_helpers()
 {
-	level._placed_cameras = [];
-	addcallback( "on_player_connect", ::on_connect );
 	addcallback( "on_player_disconnect", ::on_disconnect );
 
-	_GET_SERVER_ENTITY() init_user_cameras(); // init the cameras for the server "player"
-}
-
-private on_connect()
-{
 	max_user_cameras = get_dvar_int_default( "max_user_cameras", 8 ); // 144 total...
 
-	self init_user_cameras( max_user_cameras );
+	init_user_cameras( max_user_cameras );
 }
 
 private on_disconnect()
 {
-	if ( isdefined( level._placed_cameras ) )
+	if ( array_validate( level._placed_cameras ) )
 	{
 		foreach ( camera_name, cam in level._placed_cameras.cams )
 		{
+			if ( cam.user != self )
+			{
+				continue;
+			}
+			
 			level._placed_cameras.cams[ camera_name ] delete();
 			level._placed_cameras.cams[ camera_name ] = undefined;
 		}
-
-		level._placed_cameras = undefined;
 	}
 }
 
@@ -66,7 +62,8 @@ get_camera_for_user( camera_name )
 
 register_placed_camera( camera_name, origin, angles, model = "tag_origin" )
 {
-	if ( ( level._placed_cameras.cams.size + 1 ) > level._placed_cameras.limit )
+	owned_cams = get_cameras_by_username( self.name );
+	if ( ( owned_cams.size + 1 ) > level._placed_cameras.limit )
 	{
 		return false;
 	}
@@ -79,6 +76,7 @@ register_placed_camera( camera_name, origin, angles, model = "tag_origin" )
 	}
 
 	cam_ent.username = self.name;
+	cam_ent.user = self;
 	level._placed_cameras.cams[ camera_name ] = cam_ent;
 	return true;
 }

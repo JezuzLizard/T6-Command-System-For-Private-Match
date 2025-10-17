@@ -7,7 +7,7 @@
 
 add_path_cmds()
 {
-	cmd_block_set_module_group( "pathnode_cmds" );
+	cmd_block_set_module_group( "core_pathnode_cmds" );
 	cmd_block_set_rank_group( "cheat" );
 
 	cmd_add( "spawncustompathnode", ::cmd_spawncustompathnode_f, "spawncustompathnode <id> [origin] [kvps...]" );
@@ -19,6 +19,10 @@ add_path_cmds()
 	arg_add_required( 1, "id", "string", "Pathnode identifier, must be unique" );
 	arg_add_optional( 2, "origin", "vector", "Pathnode origin" );
 	arg_add_optional( 3, "kvps", "...", "Key value pairs to define on pathnode entity" );
+
+	cmd_add( "drawcustompathnodes", ::cmd_drawextrapathnodes_f, "drawcustompathnodes [draw_text] [filter]" );
+
+	cmd_add( "selectcustompathnode", ::cmd_selectcustompathnode_f, "selectcustompathnode [id]" );
 	// save
 	// load
 	// draw
@@ -53,4 +57,38 @@ private cmd_spawncustompathnode_f( param )
 private cmd_modifycustompathnode_f( param )
 {
 
+}
+
+private cmd_selectcustompathnode_f( param )
+{
+	id = _DEFAULT( param.a[ 0 ], "" );
+
+	if ( !isdefined( self._selected_pathnode ) )
+	{
+		self._selected_pathnode = undefined;
+	}
+
+	if ( id == "" )
+	{
+		if ( isdefined( self._selected_pathnode ) )
+		{
+			self._selected_pathnode notify( "deselected" );
+		}
+		
+		self._selected_pathnode = undefined;
+	}
+	else
+	{
+		self._selected_pathnode = get_custom_pathnode_by_id( id );
+	}
+
+	if ( isdefined( self._selected_pathnode ) )
+	{
+		param add_executor_cmdinfo( "Selected pathnode at origin: '{}'", self._selected_pathnode.origin );
+		self._selected_pathnode thread draw_custom_pathnode( ( 0.6, 0.8, 0.2 ) );
+	}
+	else
+	{
+		param add_executor_cmderror( "Could not find pathnode by id, using id '{}'", id );
+	}
 }
