@@ -63,10 +63,6 @@ private zm_debug_connect()
 	self._debug_draw[ "sph" ] = false;
 	self._debug_draw[ "zombie_total" ] = false;
 	self._debug_draw[ "zombie_current" ] = false;
-	self._debug_draw_zones_enabled = false;
-	self._debug_draw_sph_enabled = false;
-	self._debug_draw_zombie_total_enabled = false;
-	self._debug_draw_zombie_current_enabled = false;
 	self zone_hud_init();
 	self sph_hud_init();
 	self zombie_total_hud_init();
@@ -98,7 +94,7 @@ private zone_hud_thread( zone_hud )
 
 	for ( ;; )
 	{
-		while ( !self._debug_draw_zones_enabled )
+		while ( !self._debug_draw[ "zones" ] )
 		{
 			zone_hud.alpha = 0;
 			wait 1;
@@ -454,9 +450,9 @@ private sph_hud_thread( sph_hud_counter )
 
 	for ( ;; )
 	{
-		while ( !self._debug_draw_sph_enabled )
+		while ( !self._debug_draw[ "sph" ] )
 		{
-			sph_hud_counter.alpha = 1;
+			sph_hud_counter.alpha = 0;
 			wait 1;
 		}
 		while ( level.sph_hud_counter == 0 )
@@ -524,7 +520,7 @@ private zombie_total_hud_thread( zombie_total_hud )
 	zombie_total_hud.alpha = 1;
 	for ( ;; )
 	{
-		while ( !self._debug_draw_zombie_total_enabled )
+		while ( !self._debug_draw[ "zombie_total" ] )
 		{
 			zombie_total_hud.alpha = 0;
 			wait 1;
@@ -561,7 +557,7 @@ private zombie_count_hud_thread( zombie_count_hud )
 	zombie_count_hud.alpha = 1;
 	for ( ;; )
 	{
-		while ( !self._debug_draw_zombie_current_enabled )
+		while ( !self._debug_draw[ "zombie_current" ] )
 		{
 			zombie_count_hud.alpha = 0;
 			wait 1;

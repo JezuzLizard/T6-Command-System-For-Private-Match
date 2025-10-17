@@ -800,7 +800,7 @@ spawn_wallbuy_dynamically( internal_name, targetname, weapon_name, origin, angle
 
 	model_ent._entfield_custom_handler = ::custom_wallbuy_field_handler;
 	model_ent._entfield_custom_callback = ::custom_wallbuy_field_callback;
-	add_mapent_entity( model_ent, "wallbuy_locations", internal_name );
+	add_mapent_entity( wallbuy_struct, "wallbuy_locations", internal_name );
 	level notify( "refresh_wall_buys" );
 
 	return wallbuy_struct;

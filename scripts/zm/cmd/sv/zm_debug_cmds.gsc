@@ -102,9 +102,9 @@ private cmd_drawzombiespawnlocations_f( param )
 
 private cmd_drawzones_f( param )
 {
-	self._debug_draw_zones_enabled = !is_true( self._debug_draw_zones_enabled );
+	self._debug_draw[ "zones" ] = !is_true( self._debug_draw[ "zones" ] );
 
-	on_off = cast_bool_to_str( self._debug_draw_zones_enabled, "Started Stopped" );
+	on_off = cast_bool_to_str( self._debug_draw[ "zones" ], "Started Stopped" );
 	return param add_executor_cmdinfo( on_off + " drawing your active zone" );
 }
 

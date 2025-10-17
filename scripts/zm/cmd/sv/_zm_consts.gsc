@@ -47,6 +47,11 @@ private register_spawnable_perk_machines()
 	register_spawnable_perk_machine( "specialty_nomotionsensor" );
 }
 
+register_spawnable_zombie_location( script_noteworthy )
+{
+	
+}
+
 register_spawnable_perk_machine( script_noteworthy )
 {
 	if ( !isdefined( level._spawnable_perk_machines ) )

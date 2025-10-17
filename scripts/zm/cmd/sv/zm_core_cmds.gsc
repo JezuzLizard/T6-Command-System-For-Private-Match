@@ -599,7 +599,7 @@ private cmd_spawnperkmachine_f( param )
 	keys[ "id" ] = internal_name;
 	keys[ "script_noteworthy" ] = perk_specialty;
 	keys[ "model" ] = model;
-	keys[ "angles" ] = model;
+	keys[ "angles" ] = angles;
 
 	// push past origin argument
 	for ( i = 1; i < _SIZE( param.a ); i += 2 )
@@ -638,9 +638,8 @@ private cmd_spawnwallbuy_f( param )
 	keys = [];
 	keys[ "origin" ] = origin;
 	keys[ "id" ] = internal_name;
-	keys[ "script_noteworthy" ] = perk_specialty;
 	keys[ "targetname" ] = targetname;
-	keys[ "angles" ] = model;
+	keys[ "angles" ] = angles;
 
 	// push past origin argument
 	for ( i = 1; i < _SIZE( param.a ); i += 2 )
@@ -654,6 +653,7 @@ private cmd_spawnwallbuy_f( param )
 		return param add_executor_cmderror( wallbuy_struct.msg );
 	}
 
+	wallbuy_struct.keys = keys;
 	return param add_executor_cmdinfo( "Sucessfully spawned wallbuy with id '" + internal_name + "' at '" + wallbuy_struct.origin + "'"  );
 }
 
