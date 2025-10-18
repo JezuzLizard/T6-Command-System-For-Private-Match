@@ -338,12 +338,12 @@ set_entfield_relative( entfield_name, new_value, scale )
 		case "classname":
 		case "spawnflags":
 		case "birthtime":
-			return set_cast_error( result_obj, entfield_name + " is read only!" );
+			return set_cast_error( result_obj, "'{}' is read only!", entfield_name );
 		case "model":
 		case "target":
 		case "targetname":
 		case "script_noteworthy":
-			return set_cast_error( result_obj, entfield_name + " cannot be changed relatively!" );
+			return set_cast_error( result_obj, "'{}' cannot be changed relatively!", entfield_name );
 		case "count":
 			if ( int_cast.errored )
 			{
@@ -410,12 +410,12 @@ set_entfield_relative( entfield_name, new_value, scale )
 				return result_obj;
 			}
 
-			return set_cast_error( result_obj, entfield_name + " is unsupported!" );
+			return set_cast_error( result_obj, "'{}' is unsupported!", entfield_name );
 	}
 
 	self add_change_history( entfield_name, new_value );
 
-	return set_cast_success( result_obj, self, "Successfully set: " + entfield_name + " to value: " + new_value );
+	return set_cast_success( result_obj, new_value, "Successfully set: '{}' to value: '{}'", entfield_name, new_value );
 }
 
 set_entfield( entfield_name, new_value )
@@ -433,7 +433,7 @@ set_entfield( entfield_name, new_value )
 		{
 			self add_change_history( entfield_name, new_value );
 
-			return set_cast_success( result_obj, self, "Successfully set: " + entfield_name + " to value: " + new_value );
+			return set_cast_success( result_obj, self, "Successfully set: '{}' to value: '{}'", entfield_name, new_value );
 		}
 	}
 
@@ -446,11 +446,11 @@ set_entfield( entfield_name, new_value )
 		case "classname":
 		case "spawnflags":
 		case "birthtime":
-			return set_cast_error( result_obj, entfield_name + " is read only!" );
+			return set_cast_error( result_obj, "'{}' is read only!", entfield_name );
 		case "model":
 			if ( !_MODEL_EXISTS( str_cast ) )
 			{
-				return set_cast_error( result_obj, "Model '" + str_cast + "' is not precached, cannot set model" );
+				return set_cast_error( result_obj, "Model '{}' is not precached, cannot set model", str_cast );
 			}
 			self setmodel( str_cast );
 			break;
@@ -566,12 +566,12 @@ set_entfield( entfield_name, new_value )
 				result_obj = self [[ self._entfield_custom_handler ]]( entfield_name, new_value, false );
 				return result_obj;
 			}
-			return set_cast_error( result_obj, entfield_name + " is unsupported!" );
+			return set_cast_error( result_obj, "'{}' is unsupported!", entfield_name );
 	}
 
 	self add_change_history( entfield_name, new_value );
 
-	return set_cast_success( result_obj, self, "Successfully set: " + entfield_name + " to value: " + new_value );
+	return set_cast_success( result_obj, self, "Successfully set: '{}' to value: '{}'", entfield_name, new_value );
 }
 
 get_entfield( entfield_name )
@@ -580,60 +580,60 @@ get_entfield( entfield_name )
 	switch ( entfield_name )
 	{
 		case "classname":
-			return set_cast_success( result_obj, self.classname, "classname==" + self.classname, "string" );
+			return set_cast_success( result_obj, self.classname, "classname=='{}'", self.classname );
 		case "spawnflags":
-			return set_cast_success( result_obj, self.spawnflags, "spawnflags==" + self.spawnflags, "spawnflags" );
+			return set_cast_success( result_obj, self.spawnflags, "spawnflags=='{}'", self.spawnflags );
 		case "birthtime":
-			return set_cast_success( result_obj, self.birthtime, "birthtime==" + self.birthtime, "int" );
+			return set_cast_success( result_obj, self.birthtime, "birthtime=='{}'", self.birthtime );
 		case "model":
-			return set_cast_success( result_obj, self.model, "model==" + self.model, "string" );
+			return set_cast_success( result_obj, self.model, "model=='{}'", self.model );
 		case "target":
-			return set_cast_success( result_obj, self.target, "target==" + self.target, "string" );
+			return set_cast_success( result_obj, self.target, "target=='{}'", self.target );
 		case "targetname":
-			return set_cast_success( result_obj, self.targetname, "targetname==" + self.targetname, "string" );
+			return set_cast_success( result_obj, self.targetname, "targetname=='{}'", self.targetname );
 		case "script_noteworthy":
-			return set_cast_success( result_obj, self.script_noteworthy, "script_noteworthy==" + self.script_noteworthy, "string" );
+			return set_cast_success( result_obj, self.script_noteworthy, "script_noteworthy=='{}'", self.script_noteworthy );
 		case "count":
-			return set_cast_success( result_obj, self.count, "count==" + self.count, "int" );
+			return set_cast_success( result_obj, self.count, "count=='{}'", self.count );
 		case "health":
-			return set_cast_success( result_obj, self.health, "health==" + self.health, "int" );
+			return set_cast_success( result_obj, self.health, "health=='{}'", self.health );
 		case "dmg":
-			return set_cast_success( result_obj, self.dmg, "dmg==" + self.dmg, "int" );
+			return set_cast_success( result_obj, self.dmg, "dmg=='{}'", self.dmg );
 		case "index":
-			return set_cast_success( result_obj, self.index, "index==" + self.index, "int" );
+			return set_cast_success( result_obj, self.index, "index=='{}'", self.index );
 		case "lerp_to_lighter":
-			return set_cast_success( result_obj, self.lerp_to_lighter, "lerp_to_lighter==" + self.lerp_to_lighter, "float" );
+			return set_cast_success( result_obj, self.lerp_to_lighter, "lerp_to_lighter=='{}'", self.lerp_to_lighter );
 		case "lerp_to_dark":
-			return set_cast_success( result_obj, self.lerp_to_dark, "lerp_to_dark==" + self.lerp_to_dark, "float" );
+			return set_cast_success( result_obj, self.lerp_to_dark, "lerp_to_dark=='{}'", self.lerp_to_dark );
 		case "origin":
-			return set_cast_success( result_obj, self.origin, "origin==" + self.origin, "vector" );
+			return set_cast_success( result_obj, self.origin, "origin=='{}'", self.origin );
 		case "angles":
-			return set_cast_success( result_obj, self.angles, "angles==" + self.angles, "vector" );
+			return set_cast_success( result_obj, self.angles, "angles=='{}'", self.angles );
 		case "contents":
 			old_contents = self setcontents( 1 );
 			self setcontents( old_contents );
-			return set_cast_success( result_obj, old_contents, "contents==" + old_contents, "contents" );
+			return set_cast_success( result_obj, old_contents, "contents=='{}'", old_contents );
 		case "centroid":
 			centroid = self getcentroid();
-			return set_cast_success( result_obj, centroid, "centroid==" + centroid, "vector" );
+			return set_cast_success( result_obj, centroid, "centroid=='{}'", centroid );
 		case "mins":
 			mins = self getmins();
-			return set_cast_success( result_obj, mins, "mins==" + mins, "vector" );
+			return set_cast_success( result_obj, mins, "mins=='{}'", mins );
 		case "maxs":
 			maxs = self getmaxs();
-			return set_cast_success( result_obj, maxs, "maxs==" + maxs, "vector" );
+			return set_cast_success( result_obj, maxs, "maxs=='{}'", maxs );
 		case "absmins":
 			absmins = self getabsmins();
-			return set_cast_success( result_obj, absmins, "absmins==" + absmins, "vector" );
+			return set_cast_success( result_obj, absmins, "absmins=='{}'", absmins );
 		case "absmaxs":
 			absmaxs = self getabsmaxs();
-			return set_cast_success( result_obj, absmaxs, "absmaxs==" + absmaxs, "vector" );
+			return set_cast_success( result_obj, absmaxs, "absmaxs=='{}'", absmaxs );
 		case "velocity":
 			velocity = self getvelocity();
-			return set_cast_success( result_obj, velocity, "velocity==" + velocity, "vector" );
+			return set_cast_success( result_obj, velocity, "velocity=='{}'", velocity );
 		case "takedamage":
 		default:
-			return set_cast_error( result_obj, entfield_name + " is unsupported!" );
+			return set_cast_error( result_obj, "'{}' is unsupported!", entfield_name );
 	}
 }
 /*
@@ -1086,26 +1086,9 @@ write_ent_delta_to_file( entity )
 	ent_history_obj.hash = hash_ent( self );
 }
 
-/*
-get_mapents_vector( vector_str )
-{
-	final_vector_str = "";
-	for ( i = 0; i < _SIZE( vector_str.size ); i++ )
-	{
-		if ( vector_str[ i ] == "(" || vector_str[ i ] == ")" || vector_str[ i ] == "," )
-		{
-			continue;
-		}
-		final_vector_str += vector_str[ i ];
-	}
-
-	return final_vector_str;
-}
-*/
-
 get_mapents_vector( vector )
 {
-	mapents_vector_str = "\"" + vector[ 0 ] + " " + vector[ 1 ] + 90.0 + " " + vector[ 2 ] + "\""; // [1]+90 to handle player location offset
+	mapents_vector_str = "\"" + vector[ 0 ] + " " + vector[ 1 ] + " " + vector[ 2 ] + "\"";
 
 	return mapents_vector_str;
 }
@@ -1380,39 +1363,3 @@ assign_editor_move_ent( target_entity )
 		target_entity._associated_ents[ "blocker_model" ] = target_entity.blocker_model;
 	}
 }
-
-draw_custom_nodes()
-{
-	level notify( "stop_drawing_nodes" );
-	level endon( "stop_drawing_nodes" );
-
-	for ( ;; )
-	{
-		wait 0.05;
-
-		for ( i = 0; i < _SIZE( level._mapents[ "path_nodes" ].size ); i++ )
-		{
-			node = level._mapents[ "path_nodes" ][ i ];
-			if ( !isdefined( node.origin ) )
-			{
-				continue;
-			}
-
-			box( node.origin );
-			print3d( node.origin, i );
-		}
-	}
-}
-
-generate_pathnode_for_mapents( keys )
-{
-	if ( !array_validate( level._mapents[ "path_nodes" ] ) )
-	{
-		level thread draw_custom_nodes();
-	}
-
-	pathnode = new_mapent_struct();
-	pathnode.keys = keys;
-	add_mapent_entity( pathnode, "path_nodes", pathnode.keys[ "id" ] );
-}
-

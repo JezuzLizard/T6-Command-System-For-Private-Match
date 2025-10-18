@@ -30,6 +30,8 @@
 #include scripts\cmd\sv\modules\unittest_cmds;
 #include scripts\cmd\sv\modules\unittest_helpers;
 
+#include scripts\cmd\sv\core\_radiant_keys_parser;
+
 private main()
 {
 	_INIT_SERVER();
@@ -83,6 +85,8 @@ private main()
 	init_debug_helpers();
 	init_entity_helpers();
 	init_perms();
+	init_path_helpers();
+	parse_radiant_keys();
 	level thread start_cmd_buffer_thread();
 
 	addcallback( "on_player_connect", ::tcs_on_connect );

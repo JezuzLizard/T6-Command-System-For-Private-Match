@@ -723,7 +723,7 @@ arg_obj_positive_int_generate( arg1, arg2, arg3 )
 
 	int_val = randomint( 1000000 );
 	find.str_value = int_val + "";
-	return set_cast_success( find, int_val, "positive_int==" + find.str_value );
+	return set_cast_success( find, int_val, "positive_int=='{}'", find.str_value );
 }
 
 arg_obj_natural_int_cast( arg )
@@ -737,7 +737,7 @@ arg_obj_natural_int_generate( arg1, arg2, arg3 )
 
 	int_val = randomintrange( 1, 1000000 );
 	find.str_value = int_val + "";
-	return set_cast_success( find, int_val, "natural_int==" + find.str_value );
+	return set_cast_success( find, int_val, "natural_int=='{}'", find.str_value );
 }
 
 arg_obj_boolean_generate( arg1, arg2, arg3 )
@@ -747,7 +747,7 @@ arg_obj_boolean_generate( arg1, arg2, arg3 )
 	bool_val = cointoss();
 	bool_val_str = cointoss() ? cast_bool_to_str( bool_val, "true false" ) : bool_val + "";
 	find.str_value = bool_val_str;
-	return set_cast_success( find, bool_val, "boolean==" + find.str_value );
+	return set_cast_success( find, bool_val, "boolean=='{}'", find.str_value );
 }
 
 arg_obj_boolean_cast( arg )
@@ -761,7 +761,7 @@ arg_obj_int_generate( arg1, arg2, arg3 )
 
 	int_val = cointoss() ? randomFloat( 1000000 ) : randomFloat( 1000000 ) * -1;
 	find.str_value = int_val + "";
-	return set_cast_success( find, int_val, "int==" + find.str_value );
+	return set_cast_success( find, int_val, "int=='{}'", find.str_value );
 }
 
 arg_obj_int_cast( arg )
@@ -775,7 +775,7 @@ arg_obj_float_generate( arg1, arg2, arg3 )
 
 	float_val = cointoss() ? randomFloat( 1000000 ) : randomFloat( 1000000 ) * -1;
 	find.str_value = float_val + "";
-	return set_cast_success( find, float_val, "float==" + find.str_value );
+	return set_cast_success( find, float_val, "float=='{}'", find.str_value );
 }
 
 arg_obj_float_cast( arg )
@@ -789,7 +789,7 @@ arg_obj_positive_float_generate( arg1, arg2, arg3 )
 
 	float_val = randomfloat( 1000000 );
 	find.str_value = float_val + "";
-	return set_cast_success( find, float_val, "positive_float==" + find.str_value );
+	return set_cast_success( find, float_val, "positive_float=='{}'", find.str_value );
 }
 
 arg_obj_positive_float_cast( arg )
@@ -807,7 +807,7 @@ arg_obj_vector_generate( arg1, arg2, arg3 )
 	vec = ( x, y, z );
 
 	find.str_value = x + "," + y + "," + z;
-	return set_cast_success( find, vec, "vector==" + find.str_value );
+	return set_cast_success( find, vec, "vector=='{}'", find.str_value );
 }
 
 arg_obj_vector_cast( arg )
@@ -829,14 +829,14 @@ arg_obj_string_generate( arg1, arg2, arg3 )
 	}
 
 	find.str_value = str;
-	return set_cast_success( find, str, "string==" + str );
+	return set_cast_success( find, str, "string=='{}'", str );
 }
 
 arg_obj_string_cast( arg )
 {
 	find = generic_obj_t_new();
 
-	return set_cast_success( find, arg, "string==" + arg );
+	return set_cast_success( find, arg, "string=='{}'", arg );
 }
 
 arg_obj_team_cast( arg )
@@ -849,7 +849,7 @@ arg_obj_team_cast( arg )
 		return set_cast_error( find, msg );
 	}
 
-	return set_cast_success( find, arg, "team==" + arg );
+	return set_cast_success( find, arg, "team=='{}'", arg );
 }
 
 arg_obj_team_generate( arg1, arg2, arg3 )
@@ -858,7 +858,7 @@ arg_obj_team_generate( arg1, arg2, arg3 )
 
 	team = random_val( level.teams );
 	find.str_value = team;
-	return set_cast_success( find, team, "team==" + team );
+	return set_cast_success( find, team, "team=='{}'", team );
 }
 
 arg_obj_cmdalias_generate( module, index, arg3 )
@@ -892,7 +892,7 @@ arg_obj_cmdalias_generate( module, index, arg3 )
 		return set_cast_error( find, "Unreachable" );	
 	}
 
-	return set_cast_success( find, cmd, "cmd==" + cmd.cmd_name );
+	return set_cast_success( find, cmd, "cmd=='{},", cmd.cmd_name );
 }
 
 arg_obj_cmdalias_cast( arg )
@@ -907,7 +907,7 @@ arg_obj_rank_generate( arg1, arg2, arg3 )
 
 	rank = random_key( level.tcs_perms.ranks );
 	find.str_value = rank;
-	return set_cast_success( find, rank, "rank==" + rank );
+	return set_cast_success( find, rank, "rank=='{}'", rank );
 }
 
 arg_obj_rank_cast( arg )
@@ -919,7 +919,7 @@ arg_obj_rank_cast( arg )
 		return set_cast_error( find, msg );
 	}
 
-	return set_cast_success( find, arg, "rank==" + arg );
+	return set_cast_success( find, arg, "rank=='{}'", arg );
 }
 
 arg_obj_hitloc_cast( arg )
@@ -931,7 +931,7 @@ arg_obj_hitloc_cast( arg )
 		return set_cast_error( find, msg );
 	}
 
-	return set_cast_success( find, arg, "hitloc==" + arg );
+	return set_cast_success( find, arg, "hitloc=='{}'", arg );
 }
 
 arg_obj_hitloc_generate( arg1, arg2, arg3 )
@@ -940,7 +940,7 @@ arg_obj_hitloc_generate( arg1, arg2, arg3 )
 
 	hitloc = random_key( level.tcs_hitlocs );
 	find.str_value = hitloc;
-	return set_cast_success( find, hitloc, "hitloc==" + hitloc );
+	return set_cast_success( find, hitloc, "hitloc=='{}'", hitloc );
 }
 
 arg_obj_mod_generate( arg1, arg2, arg3 )
@@ -949,7 +949,7 @@ arg_obj_mod_generate( arg1, arg2, arg3 )
 
 	mod = random_key( level.tcs_mods );
 	find.str_value = mod;
-	return set_cast_success( find, mod, "mod==" + mod );
+	return set_cast_success( find, mod, "mod=='{}'", mod );
 }
 
 arg_obj_mod_cast( arg )
@@ -958,7 +958,7 @@ arg_obj_mod_cast( arg )
 	toupper_arg = toupper( arg );
 	if ( isdefined( level.tcs_mods[ toupper_arg ] ) )
 	{
-		return set_cast_success( find, toupper_arg, "MOD==" + toupper_arg );
+		return set_cast_success( find, toupper_arg, "MOD=='{}'", toupper_arg );
 	}
 
 	msg = get_possible_array_values_msg( toupper_arg, level.tcs_mods, "mod" );
@@ -987,7 +987,7 @@ arg_obj_idflags_generate( arg1, arg2, arg3 )
 		arrayremoveindex( idflags_array, random_flag_index );
 	}
 
-	return set_cast_success( find, flags, "idflags==" + find.str_value );
+	return set_cast_success( find, flags, "idflags=='{}'", find.str_value );
 }
 
 // type is FLAG, so delimited by |
@@ -1018,14 +1018,14 @@ arg_obj_idflags_cast( arg )
 		flags |= level.tcs_idflags[ flag_strs[ i ] ];
 	}
 
-	return set_cast_success( find, flags, "flags==" + arg );
+	return set_cast_success( find, flags, "flags=='{}'", arg );
 }
 
 arg_obj_model_generate( arg1, arg2, arg3 )
 {
 	find = generic_obj_t_new();
 	find.rand_gen_unimplemented = true;
-	return set_cast_success( find, "Unimplemented", "model==" + "null" );
+	return set_cast_success( find, "Unimplemented: model=='{}'", "null" );
 }
 
 arg_obj_model_cast( arg )
@@ -1035,10 +1035,10 @@ arg_obj_model_cast( arg )
 	model_exists = _MODEL_EXISTS( arg );
 	if ( !model_exists )
 	{
-		return set_cast_error( find, "Model not precached: '" + arg + "'" );
+		return set_cast_error( find, "Model not precached: '{}'", arg );
 	}
 
-	return set_cast_success( find, arg, "model==" + arg );
+	return set_cast_success( find, arg, "model=='{}'", arg );
 }
 
 arg_obj_spawnable_classname_generate( arg1, arg2, arg3 )
@@ -1047,7 +1047,7 @@ arg_obj_spawnable_classname_generate( arg1, arg2, arg3 )
 
 	classname = random_key( level.tcs_dynamic_spawns );
 	find.str_value = classname;
-	return set_cast_success( find, classname, "classname==" + classname );
+	return set_cast_success( find, classname, "classname=='{}'", classname );
 }
 
 arg_obj_spawnable_classname_cast( arg )
@@ -1058,19 +1058,19 @@ arg_obj_spawnable_classname_cast( arg )
 	{
 		if ( isdefined( level.tcs_bsp_spawns[ arg ] ) )
 		{
-			return set_cast_error( find, "Classname: '" + arg + "' cannot be spawned dynamically; only through mapents" );
+			return set_cast_error( find, "Classname: '{}' cannot be spawned dynamically; only through mapents", arg );
 		}
-		return set_cast_error( find, "Unsupported classname: '" + arg + "'" );
+		return set_cast_error( find, "Unsupported classname: '{}'", arg );
 	}
 
-	return set_cast_success( find, arg, "classname==" + arg );
+	return set_cast_success( find, arg, "classname=='{}'", arg );
 }
 
 arg_obj_weapon_generate( arg1, arg2, arg3 )
 {
 	find = generic_obj_t_new();
 	find.rand_gen_unimplemented = true;
-	return set_cast_success( find, "Unimplemented", "model==" + "null" );
+	return set_cast_success( find, "Unimplemented: model=='{}'", "null" );
 }
 
 arg_obj_weapon_cast( arg )
@@ -1081,10 +1081,10 @@ arg_obj_weapon_cast( arg )
 
 	if ( !exists )
 	{
-		return set_cast_error( find, "Weapon: '" + arg + "' not precached" );
+		return set_cast_error( find, "Weapon: '{}' not precached", arg );
 	}
 
-	return set_cast_success( find, arg, "weapon==" + arg );
+	return set_cast_success( find, arg, "weapon=='{}'", arg );
 }
 
 arg_obj_enttype_generate( arg1, arg2, arg3 )
@@ -1093,7 +1093,7 @@ arg_obj_enttype_generate( arg1, arg2, arg3 )
 
 	ent_type = random_key( level._entity_type_funcs );
 	find.str_value = ent_type;
-	return set_cast_success( find, ent_type, "ent_type==" + ent_type );
+	return set_cast_success( find, ent_type, "ent_type=='{}'", ent_type );
 }
 
 arg_obj_enttype_cast( arg )
@@ -1124,7 +1124,7 @@ arg_obj_enttype_cast( arg )
 		return set_cast_error( find, msg );
 	}
 
-	return set_cast_success( find, types, "ent_type==" + arg );
+	return set_cast_success( find, types, "ent_type=='{}'", arg );
 }
 
 arg_obj_nodetype_generate( arg1, arg2, arg3 )
@@ -1133,7 +1133,7 @@ arg_obj_nodetype_generate( arg1, arg2, arg3 )
 
 	node_type = random_key( level._node_types );
 	find.str_value = node_type;
-	return set_cast_success( find, node_type, "node_type==" + node_type );
+	return set_cast_success( find, node_type, "node_type=='{}'", node_type );
 }
 
 arg_obj_nodetype_cast( arg )
@@ -1186,7 +1186,7 @@ arg_obj_nodetype_cast( arg )
 		return set_cast_error( find, msg );
 	}
 
-	return set_cast_success( find, types, "node_type==" + arg );
+	return set_cast_success( find, types, "node_type=='{}'", arg );
 }
 
 arg_obj_triggertype_generate( arg1, arg2, arg3 )
@@ -1195,7 +1195,7 @@ arg_obj_triggertype_generate( arg1, arg2, arg3 )
 
 	trigger_type = random_key( level._trigger_types );
 	find.str_value = trigger_type;
-	return set_cast_success( find, trigger_type, "trigger_type==" + trigger_type );
+	return set_cast_success( find, trigger_type, "trigger_type=='{}'", trigger_type );
 }
 
 arg_obj_triggertype_cast( arg )
@@ -1258,7 +1258,7 @@ arg_obj_triggertype_cast( arg )
 		return set_cast_error( find, msg );
 	}
 
-	return set_cast_success( find, types, "trigger_type==" + arg );
+	return set_cast_success( find, types, "trigger_type=='{}'", arg );
 }
 
 arg_obj_entfield_generate( arg1, arg2, arg3 )
@@ -1267,7 +1267,7 @@ arg_obj_entfield_generate( arg1, arg2, arg3 )
 
 	entfield = random_key( level._entity_string_fields );
 	find.str_value = entfield;
-	return set_cast_success( find, entfield, "entfield==" + entfield );
+	return set_cast_success( find, entfield, "entfield=='{}'", entfield );
 }
 
 arg_obj_entfield_cast( arg )
@@ -1279,7 +1279,7 @@ arg_obj_entfield_cast( arg )
 		msg = get_possible_array_values_msg( arg, level._entity_string_fields, "entfield" );
 		return set_cast_error( find, msg );
 	}
-	return set_cast_success( find, entfield_arg, "entfield==" + arg );
+	return set_cast_success( find, entfield_arg, "entfield=='{}'", arg );
 }
 
 clamp_array( arr, limit )

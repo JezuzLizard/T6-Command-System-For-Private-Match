@@ -866,37 +866,6 @@ private custom_wallbuy_field_handler( field, value, is_relative, scale )
 
 }
 
-/*
-		case "classname":
-		case "spawnflags":
-		case "birthtime":
-			return set_cast_error( result_obj, entfield_name + " is read only!" );
-		case "model":
-		case "target":
-		case "targetname":
-		case "script_noteworthy":
-			return set_cast_error( result_obj, entfield_name + " cannot be changed relatively!" );
-		case "count":
-			self.count += int( int( new_value ) * scale );
-			break;
-		case "health":
-			self.health += int( int( new_value ) * scale );
-			break;
-		case "dmg":
-			self.dmg += int( int( new_value ) * scale );
-			break;
-		case "index":
-			self.index += int( int( new_value ) * scale );
-			break;
-		case "lerp_to_lighter":
-			self.lerp_to_lighter += float( new_value ) * scale;
-			break;
-		case "lerp_to_dark":
-			self.lerp_to_dark += float( new_value ) * scale;
-			break;
-*/
-
-
 private custom_wallbuy_field_callback( field, str_value, is_relative, scale )
 {
 	result_obj = generic_obj_t_new( "entfield" );

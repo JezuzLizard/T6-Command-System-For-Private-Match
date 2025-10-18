@@ -568,7 +568,7 @@ cast_origin_to_ent_array( result_obj, origin, maxdist, max )
 
 	if ( entities.size <= 0 )
 	{
-		return set_cast_error( entity_obj, "No entities found for etype: " + etype );
+		return set_cast_error( entity_obj, "No entities found for etype: '{}'", etype );
 	}
 
 	cast_number_obj = cast_str_to_number( str, "positive_int" );
@@ -634,7 +634,7 @@ cast_origin_to_ent_array( result_obj, origin, maxdist, max )
 			}
 		}
 
-		return set_cast_error( entity_obj, "Could not cast numeric value: '" + entnum + "' to etype: '" + etype + "'" );
+		return set_cast_error( entity_obj, "Could not cast numeric value: '{}' to etype: '{}'", entnum, etype );
 	}
 
 	for ( i = 0; i < _SIZE( entities.size ); i++ )
@@ -661,7 +661,7 @@ cast_origin_to_ent_array( result_obj, origin, maxdist, max )
 		}
 	}
 
-	return set_cast_error( entity_obj, "Couldn't find entity of etype: '" + etype + "' from input: " + str );
+	return set_cast_error( entity_obj, "Couldn't find entity of etype: '{}' from input: '{}'", etype, str );
 }
 
 is_str_int( str )
@@ -703,7 +703,7 @@ is_str_positive_float( str )
 	if ( !isdefined( type ) || !isdefined( level._number_strings[ type ] ) )
 	{
 		assert( false );
-		return set_cast_error( str_cast_obj, "Unknown type: " + type );
+		return set_cast_error( str_cast_obj, "Unknown type: '{}'", type );
 	}
 	if ( !isdefined( str_value ) || str_value == "" )
 	{
@@ -765,7 +765,7 @@ cast_str_to_number( str, type )
 		}
 		if ( !is_numeric( str[ i ] ) )
 		{
-			return set_cast_error( str_cast_obj, "Invalid character for type '" + type + "': '" + str[ i ] + "'" );
+			return set_cast_error( str_cast_obj, "Invalid character for type '{}': '{}'", type, str[ i ] );
 		}
 	}
 
@@ -783,7 +783,7 @@ cast_str_to_number( str, type )
 			break;
 	}
 
-	return set_cast_success( str_cast_obj, value, type + "==" + str );
+	return set_cast_success( str_cast_obj, value, "'{}'=='{}'", type, str );
 }
 
 cast_str_to_vector( str )
@@ -801,12 +801,12 @@ cast_str_to_vector( str )
 		casted_floats[ i ] = cast_str_to_number( float_strs[ i ], "float" );
 		if ( casted_floats[ i ].errored )
 		{
-			return set_cast_error( result_obj, "Error at vector component '" + i + "': " + casted_floats[ i ].msg );
+			return set_cast_error( result_obj, "Error at vector component '{}': '{}'", i, casted_floats[ i ].msg );
 		}
 	}
 
 	new_vector = ( casted_floats[ 0 ].value, casted_floats[ 1 ].value, casted_floats[ 2 ].value );
-	return set_cast_success( result_obj, new_vector, "vector==" + new_vector );
+	return set_cast_success( result_obj, new_vector, "vector=='{}'", new_vector );
 }
 
 cast_bool_to_str( bool, binary_string_options )
@@ -852,10 +852,32 @@ cast_str_to_cmd( alias )
 
 	if ( !isdefined( level.tcs_cmds[ alias ] ) )
 	{
-		return set_cast_error( result_obj, "Unknown cmd: '" + alias + "'" );
+		return set_cast_error( result_obj, "Unknown cmd: '{}'", alias );
 	}
 
-	return set_cast_success( result_obj, level.tcs_cmds[ alias ], "cmd==" + alias );
+	return set_cast_success( result_obj, level.tcs_cmds[ alias ], "cmd=='{}'", alias );
+}
+
+cast_str_to_primitive_type( str, type )
+{
+	result_obj = generic_obj_t_new( "cmdobj" );
+
+	switch ( type )
+	{
+		case "boolean":
+			return cast_str_to_bool( str );
+		case "vector":
+			return cast_str_to_vector( str );
+		case "int":
+		case "positive_int":
+		case "natural_int":
+		case "float":
+		case "positive_float":
+			return cast_str_to_number( str );
+	}
+
+	_MY_ASSERT_HANDLER( false, "cast_str_to_primitive_type: Unexpected type '{}' while casting string '{}'", type, str );
+	return set_cast_error( result_obj, "Unknown type: '{}' while casting string '{}'", type, str );
 }
 
 is_alpha( chr, start, end )
@@ -1023,21 +1045,21 @@ add_player_cmderror( player, format, a, b, c, d, e, f, g, h, i, j, k )
 	self add_player_msg( player, message, "cmderror", undefined );
 }
 
-/*result_obj_t*/ set_cast_error( result_obj, error_msg, expected_value_type )
+/*result_obj_t*/ set_cast_error( result_obj, format, a, b, c, d, e, f, g, h, i, j, k )
 {
+	message = format( format, a, b, c, d, e, f, g, h, i, j, k );
 	result_obj.errored = true;
 	result_obj.value = undefined;
-	result_obj.type = _DEFAULT( expected_value_type, undefined );
-	result_obj.msg = error_msg;
+	result_obj.msg = message;
 
 	return result_obj;
 }
 
-/*result_obj_t*/ set_cast_success( result_obj, new_value, success_msg, expected_value_type )
+/*result_obj_t*/ set_cast_success( result_obj, new_value, format, a, b, c, d, e, f, g, h, i, j, k )
 {
+	message = format( format, a, b, c, d, e, f, g, h, i, j, k );
 	result_obj.value = new_value;
-	result_obj.msg = success_msg;
-	result_obj.type = _DEFAULT( expected_value_type, undefined );
+	result_obj.msg = message;
 
 	return result_obj;
 }
@@ -1951,7 +1973,7 @@ pack( a, b, c, d, e, f, g, h, i, j, k )
 	return arr;
 }
  
-private _GET_IDX_CHAR_AT( i )
+_GET_IDX_CHAR_AT( i )
 {
 	c = "";
 	//println( "t1: " + t );
@@ -1964,12 +1986,12 @@ private _GET_IDX_CHAR_AT( i )
 	return c;
 }
 
-private _C_LEFT()
+_C_LEFT()
 {
 	return level._fmt_str.size - level._fmt_pos;
 }
 
-private _PUSH_POS_UNTIL_CHAR( c )
+_PUSH_POS_UNTIL_CHAR( c )
 {
 	start = level._fmt_pos;
 	while ( _C_LEFT() > 0 )
@@ -1993,7 +2015,180 @@ private _PUSH_POS_UNTIL_CHAR( c )
 		end = level._fmt_pos;
 		level._fmt_final_str += getsubstr( level._fmt_str, start, end );
 	}
+
 	return remaining;
+}
+
+_PUSH_POS_UNTIL_CHARS( chars )
+{
+	start = level._fmt_pos;
+	exit = false;
+	while ( _C_LEFT() > 0 )
+	{
+		for ( i = 0; i < _SIZE( chars.size ); i++ )
+		{
+			c = chars[ i ];
+			exit = _GET_IDX_CHAR_AT( level._fmt_pos ) == c;
+			if ( exit )
+			{
+				break;
+			}
+		}
+
+		if ( exit )
+		{
+			break;
+		}
+
+		level._fmt_pos++;
+	}
+
+	remaining = _C_LEFT();
+	if ( remaining <= 0 )
+	{
+		// consume remaining
+		level._fmt_final_str += getsubstr( level._fmt_str, start );
+	}
+	else
+	{
+		// we found the char!
+		end = level._fmt_pos;
+		level._fmt_final_str += getsubstr( level._fmt_str, start, end );
+	}
+
+	return remaining;
+}
+
+_PUSH_POS_WHILE_CHARS( chars )
+{
+	start = level._fmt_pos;
+	while ( _C_LEFT() > 0 )
+	{
+		found = false;
+		for ( i = 0; i < _SIZE( chars.size ); i++ )
+		{
+			c = chars[ i ];
+			found = _GET_IDX_CHAR_AT( level._fmt_pos ) == c;
+			if ( found )
+			{
+				break;
+			}
+		}
+
+		if ( !found )
+		{
+			break;
+		}
+
+		level._fmt_pos++;
+	}
+
+	remaining = _C_LEFT();
+	if ( remaining <= 0 )
+	{
+		// consume remaining
+		level._fmt_final_str += getsubstr( level._fmt_str, start );
+	}
+	else
+	{
+		// we found the char!
+		end = level._fmt_pos;
+		level._fmt_final_str += getsubstr( level._fmt_str, start, end );
+	}
+
+	return remaining;
+}
+
+_PUSH_POS_UNTIL_PREDICATE( predicate, negate, arg1, arg2, arg3 )
+{
+	start = level._fmt_pos;
+	while ( _C_LEFT() > 0 )
+	{
+		c = level._fmt_str[ level._fmt_pos ];
+		result = undefined;
+		if ( isdefined( arg3 ) )
+		{
+			result = [[ predicate ]]( c, arg1, arg2, arg3 );
+		}
+		else if ( isdefined( arg2 ) )
+		{
+			result = [[ predicate ]]( c, arg1, arg2 );
+		}
+		else if ( isdefined( arg1 ) )
+		{
+			result = [[ predicate ]]( c, arg1 );
+		}
+		else
+		{
+			result = [[ predicate ]]( c );
+		}
+
+		if ( negate )
+		{
+			result = !result;
+		}
+
+		if ( result )
+		{
+			break;
+		}
+
+		level._fmt_pos++;
+	}
+
+	remaining = _C_LEFT();
+	if ( remaining <= 0 )
+	{
+		// consume remaining
+		level._fmt_final_str += getsubstr( level._fmt_str, start );
+	}
+	else
+	{
+		// we found the char!
+		end = level._fmt_pos;
+		level._fmt_final_str += getsubstr( level._fmt_str, start, end );
+	}
+
+	return remaining;
+}
+
+_RESET_POS()
+{
+	level._fmt_pos = 0;
+}
+
+_RESET_FINAL_STR()
+{
+	level._fmt_final_str = "";
+}
+
+_SAVE_FMT()
+{
+	level._fmt_pos_save = level._fmt_pos;
+	level._fmt_str_save = level._fmt_str;
+	level._fmt_final_str_save = level._fmt_final_str;
+}
+
+_RESTORE_FMT()
+{
+	level._fmt_pos = level._fmt_pos_save;
+	level._fmt_str = level._fmt_str_save;
+	level._fmt_final_str = level._fmt_final_str_save;
+}
+
+_RESET_FMT( str )
+{
+	str = _DEFAULT( str, "" );
+	level._fmt_pos = 0;
+	level._fmt_str = str;
+	level._fmt_final_str = "";
+}
+
+_CLEAR_FMT()
+{
+	level._fmt_pos = undefined;
+	level._fmt_str = undefined;
+	level._fmt_final_str = undefined;
 }
 
 format( fmt, a, b, c, d, e, f, g, h, i, j, k )
@@ -2005,13 +2200,13 @@ format( fmt, a, b, c, d, e, f, g, h, i, j, k )
 		return fmt;
 	}
 
+	_SAVE_FMT();
 	assert( isstring( fmt ) );
 
 	insert_arg_index = 0;
 
-	level._fmt_pos = 0;
-	level._fmt_str = fmt;
-	level._fmt_final_str = "";
+	_RESET_FMT( fmt );
+
 	for ( ;; )
 	{
 		remaining = _PUSH_POS_UNTIL_CHAR( "{" );
@@ -2039,7 +2234,9 @@ format( fmt, a, b, c, d, e, f, g, h, i, j, k )
 	level._fmt_pos = undefined;
 	level._fmt_str = undefined;
 
-	return level._fmt_final_str;
+	result = level._fmt_final_str;
+	_RESTORE_FMT();
+	return result;
 }
 
 _MAKE_ORDINAL_KEY( integer )
@@ -2051,7 +2248,7 @@ _MY_ASSERT_HANDLER( condition, fmt, a, b, c, d, e, f, g, h, i, j, k )
 {
 	if ( condition )
 	{
-		return;
+		return false;
 	}
 
 	message = format( fmt, a, b, c, d, e, f, g, h, i, j, k );
@@ -2059,4 +2256,73 @@ _MY_ASSERT_HANDLER( condition, fmt, a, b, c, d, e, f, g, h, i, j, k )
 	assert( false );
 
 	_GET_SERVER_ENTITY() com_printerror( message );
+
+	return true;
+}
+
+_GET_RADIANT_KEYS_OBJ()
+{
+	if ( !isdefined( level._radiant_keys_obj ) || !array_validate( level._radiant_keys_obj.data ) )
+	{
+		_MY_ASSERT_HANDLER( false, "_GET_RADIANT_KEYS_OBJ: level._radiant_keys_obj was not setup!" );
+		return undefined;
+	}
+
+	return level._radiant_keys_obj;
+}
+
+_IS_KEY_VALID_FOR_RADIANT( key )
+{
+	keys_obj = _GET_RADIANT_KEYS_OBJ();
+
+	if ( !isdefined( keys_obj ) )
+	{
+		return false;
+	}
+
+	return isdefined( keys_obj.data[ key ] );
+}
+
+_CAST_RADIANT_KVP( key, value )
+{
+	if ( !_IS_KEY_VALID_FOR_RADIANT( key ) )
+	{
+		return undefined;
+	}
+
+	keys_obj = _GET_RADIANT_KEYS_OBJ();
+
+	if ( keys_obj.data[ key ].type == "string" )
+	{
+		return value;
+	}
+
+	result_obj = cast_str_to_primitive_type( value, keys_obj.data[ key ].type );
+
+	_MY_ASSERT_HANDLER( !result_obj.errored, "_CAST_RADIANT_KVP: '{}'", result_obj.msg );
+	return result_obj;
+}
+
+_TYPE_FOR_RADIANT_KEY( key )
+{
+	keys_obj = _GET_RADIANT_KEYS_OBJ();
+
+	if ( !isdefined( keys_obj ) )
+	{
+		return "";
+	}
+
+	return keys_obj.data[ key ].type;
+}
+
+_DESC_FOR_RADIANT_KEY( key )
+{
+	keys_obj = _GET_RADIANT_KEYS_OBJ();
+
+	if ( !isdefined( keys_obj ) )
+	{
+		return "";
+	}
+
+	return keys_obj.data[ key ].desc;
 }

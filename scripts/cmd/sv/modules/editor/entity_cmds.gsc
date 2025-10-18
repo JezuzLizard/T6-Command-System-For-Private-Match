@@ -758,7 +758,7 @@ private cmd_loadmapents_f( param )
 
 	for ( i = 0; i < _SIZE( entities.size ); i++ )
 	{
-		generate_pathnode_for_mapents( get_gsc_vector( entities[ i ].kvps[ "origin" ] ) );
+		//generate_pathnode_for_mapents( get_gsc_vector( entities[ i ].kvps[ "origin" ] ) );
 	}
 }
 

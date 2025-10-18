@@ -89,7 +89,7 @@ arg_obj_perk_cast( arg )
 		return set_cast_error( find, msg );
 	}
 
-	return set_cast_success( find, arg, "perk==" + arg );
+	return set_cast_success( find, arg, "perk=='{}'", arg );
 }
 
 arg_obj_perk_generate()
@@ -124,7 +124,7 @@ arg_obj_weapon_cast( arg )
 		return set_cast_error( find, msg );
 	}
 
-	return set_cast_success( find, arg, "weapon==" + arg );
+	return set_cast_success( find, arg, "weapon=='{}'", arg );
 }
 
 arg_obj_weapon_generate()
@@ -156,7 +156,7 @@ arg_obj_powerup_cast( arg )
 		return set_cast_error( find, msg );
 	}
 
-	return set_cast_success( find, arg, "powerup==" + arg );
+	return set_cast_success( find, arg, "powerup=='{}'", arg );
 }
 
 arg_obj_powerup_generate()
@@ -183,7 +183,7 @@ arg_obj_permaperk_cast( arg )
 		return set_cast_error( find, msg );
 	}
 
-	return set_cast_success( find, arg, "permaperk==" + arg );
+	return set_cast_success( find, arg, "permaperk=='{}'", arg );
 }
 
 arg_obj_permaperk_generate()

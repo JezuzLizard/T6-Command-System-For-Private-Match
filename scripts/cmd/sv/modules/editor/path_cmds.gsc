@@ -4,6 +4,7 @@
 #include scripts\cmd\sv\core\_utility;
 #include scripts\cmd\sv\core\_hud_utility;
 #include scripts\cmd\sv\modules\editor\entity_helpers;
+#include scripts\cmd\sv\modules\editor\path_helpers;
 
 add_path_cmds()
 {
@@ -17,10 +18,11 @@ add_path_cmds()
 
 	cmd_add( "modifycustompathnode", ::cmd_modifycustompathnode_f, "modifycustompathnode <id> [kvps...]" );
 	arg_add_required( 1, "id", "string", "Pathnode identifier, must be unique" );
-	arg_add_optional( 2, "origin", "vector", "Pathnode origin" );
 	arg_add_optional( 3, "kvps", "...", "Key value pairs to define on pathnode entity" );
 
-	cmd_add( "drawcustompathnodes", ::cmd_drawextrapathnodes_f, "drawcustompathnodes [draw_text] [filter]" );
+	cmd_add( "drawcustompathnodes", ::cmd_drawcustompathnodes_f, "drawcustompathnodes [draw_text] [filter]" );
+	arg_add_optional( 1, "draw_text", "boolean", "Toggle the drawing of text" );
+	arg_add_optional( 2, "filter", "string", "Filter string separated by | to denote node draw filtering" );
 
 	cmd_add( "selectcustompathnode", ::cmd_selectcustompathnode_f, "selectcustompathnode [id]" );
 	// save
@@ -36,18 +38,35 @@ private cmd_spawncustompathnode_f( param )
 	id = param.a[ 0 ];
 	origin = _DEFAULT( param.a[ 1 ], self.origin );
 	kvps = param.a;
-	if ( array_validate( kvps ) && ( ( kvps.size - 1 ) % 2 ) != 0 )
+	if ( ( kvps.size - 2 ) > 0 && ( ( kvps.size - 2 ) % 2 ) != 0 )
 	{
 		return param add_executor_cmderror( "You must input an even number of key value pairs" );
 	}
 
 	keys = [];
+	keys[ "id" ] = id;
 	keys[ "origin" ] = origin;
 
 	// push past origin argument
-	for ( i = 1; i < _SIZE( param.a ); i += 2 )
+	for ( i = 2; i < _SIZE( param.a ); i += 2 )
 	{
-		keys[ param.a[ i ] ] = param.a[ i + 1 ];
+		key = param.a[ i ];
+		value = param.a[ i + 1 ];
+
+		if ( !_IS_KEY_VALID_FOR_RADIANT( key ) )
+		{
+			param add_executor_cmdinfo( "Key '{}' is not a valid radiant key, please see the scriptdata/cmd/assets/keys.txt for a full list", key );
+			continue;
+		}
+
+		result_obj = _CAST_RADIANT_KVP( key, value );
+		if ( result_obj.errored )
+		{
+			param add_executor_cmdinfo( "Invalid value '{}' for '{}', expected type to be castable to '{}'", key, value, _TYPE_FOR_RADIANT_KEY( key ) );
+			continue;
+		}
+
+		keys[ key ] = cast_str_to_primitive_type( value, level._entity_string_fields[ key ].type_value );
 	}
 
 	node = generate_pathnode_for_mapents( keys );
@@ -70,11 +89,6 @@ private cmd_selectcustompathnode_f( param )
 
 	if ( id == "" )
 	{
-		if ( isdefined( self._selected_pathnode ) )
-		{
-			self._selected_pathnode notify( "deselected" );
-		}
-		
 		self._selected_pathnode = undefined;
 	}
 	else
@@ -85,10 +99,31 @@ private cmd_selectcustompathnode_f( param )
 	if ( isdefined( self._selected_pathnode ) )
 	{
 		param add_executor_cmdinfo( "Selected pathnode at origin: '{}'", self._selected_pathnode.origin );
-		self._selected_pathnode thread draw_custom_pathnode( ( 0.6, 0.8, 0.2 ) );
 	}
 	else
 	{
 		param add_executor_cmderror( "Could not find pathnode by id, using id '{}'", id );
+	}
+}
+
+private cmd_drawcustompathnodes_f( param )
+{
+	was_on = level._debug_draw_custom_pathnodes_enabled;
+	level._debug_draw_custom_pathnodes_draw_text = param.a[ 0 ];
+	level._debug_draw_custom_pathnodes_filters = param.a[ 1 ];
+	level._debug_draw_custom_pathnodes_enabled = !level._debug_draw_custom_pathnodes_enabled;
+
+	if ( was_on && !level._debug_draw_custom_pathnodes_enabled )
+	{
+		level._debug_draw_custom_pathnodes_enabled = false;
+		level notify( "draw_custom_pathnodes_stop" );
+
+		return param add_executor_cmdinfo( "Stopped drawing custom pathnodes" );
+	}
+
+	if ( !was_on && level._debug_draw_custom_pathnodes_enabled )
+	{
+		level thread draw_custom_pathnodes();
+		return param add_executor_cmdinfo( "Started drawing custom pathnodes" );
 	}
 }

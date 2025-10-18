@@ -1,3 +1,9 @@
+#include common_scripts\utility;
+#include maps\mp\_utility;
+
+#include scripts\cmd\sv\core\_utility;
+#include scripts\cmd\sv\core\_hud_utility;
+
 // RULE 1: 'self' is always a radiant_keys_parse_obj_t object
 
 /*radiant_keys_parse_obj_t*/ private radiant_keys_parse_obj_t_new()
@@ -18,6 +24,52 @@
 	self.data[ key ] = struc;
 }
 
+format( fmt, a, b, c, d, e, f, g, h, i, j, k )
+{
+	args = pack( a, b, c, d, e, f, g, h, i, j, k );
+
+	if ( !array_validate( args ) )
+	{
+		return fmt;
+	}
+
+	assert( isstring( fmt ) );
+
+	insert_arg_index = 0;
+
+	level._fmt_pos = 0;
+	level._fmt_str = fmt;
+	level._fmt_final_str = "";
+	for ( ;; )
+	{
+		remaining = _PUSH_POS_UNTIL_CHAR( "{" );
+		if ( remaining <= 0 )
+		{
+			break;
+		}
+
+		if ( _GET_IDX_CHAR_AT( level._fmt_pos + 1 ) == "}" )
+		{
+			level._fmt_final_str += args[ insert_arg_index ];
+			insert_arg_index++;
+			level._fmt_pos++;
+		}
+
+		level._fmt_pos++;
+	}
+
+	if ( insert_arg_index != args.size )
+	{
+		assert( false );
+		_GET_SERVER_ENTITY() com_printerror( "format: Mismatched inserts to args!" );
+	}
+
+	level._fmt_pos = undefined;
+	level._fmt_str = undefined;
+
+	return level._fmt_final_str;
+}
+
 parse_radiant_keys()
 {
 	level._radiant_key_types = [];
@@ -26,62 +78,115 @@ parse_radiant_keys()
 	level._radiant_key_types[ 2 ] = "vector";
 	level._radiant_key_types[ 3 ] = "string";
 
+	for ( i = 0 ; i < _SIZE( level._radiant_key_types.size ); i++ )
+	{
+		key = level._radiant_key_types[ i ];
+		level._radiant_key_types_keys[ key ] = i;
+	}
+
 	level._radiant_keys_file = fs_fopen( "cmd/assets/keys.txt", "read" );
 
 	level._radiant_keys_obj = radiant_keys_parse_obj_t_new();
 
+	level._fmt_pos = 0;
+	level._fmt_str = "";
+	level._fmt_final_str = "";
+
 	for ( ;; )
 	{
-		line = fs_readline( level._radiant_keys_file )
+		line = fs_readline( level._radiant_keys_file );
 
 		if ( !isdefined( line ) )
 		{
 			break;
 		}
 
-		start_pos = 0;
-		end_pos = start_pos;
-		found_token = false;
-		tokens = [];
-		for ( i = 0; i < _SIZE( line.size ); i++ )
+		// skip empty lines
+		if ( line == "" )
 		{
-			token = line[ i ];
-			if ( token == " " )
-			{
-				if ( found_token )
-				{
-					found_token = false;
-					end_pos = ( i - 1 );
-					tokens[ tokens.size ] = getsubstr( line, start_pos, end_pos );
-				}
-				continue;
-			}
-
-			if ( is_alpha_numeric( token, true ) && !found_token )
-			{
-				found_token = true;
-				start_pos = i;
-				continue;
-			}
-
-			if ( token == "/" )
-			{
-				j = i;
-				for ( ; j < _SIZE( line.size ); j++ )
-				{
-					if ( token == "/" || token = " " )
-					{
-						continue;
-					}
-
-					break;
-				}
-
-				tokens[ tokens.size ] = getsubstr( line, j );
-				break;
-			}
+			continue;
 		}
 
-		level._radiant_keys_obj radiant_key_obj_t_new( tokens[ 0 ], tokens[ 1 ], tokens[ 2 ] );
+		// skip lines with comments at the start
+		if ( line[ 0 ] == "/" )
+		{
+			continue;
+		}
+
+		_RESET_FMT( line );
+		
+		// consume type
+		remaining = _PUSH_POS_UNTIL_PREDICATE( ::is_alpha_numeric, true, true );
+		type = level._fmt_final_str;
+		_RESET_FINAL_STR();
+		if ( _MY_ASSERT_HANDLER( remaining > 0, "1Early end to radiant line parse Line: '{}', ParseToken: '{}', Remaining '{}'", level._fmt_str, type, remaining ) )
+		{
+			continue;
+		}
+
+		// skip this token
+		if ( type == "client" )
+		{
+			continue;
+		}
+
+		if ( _MY_ASSERT_HANDLER( isdefined( level._radiant_key_types_keys[ type ] ), "Invalid type '{}', Line: '{}', ParseToken: '{}', Remaining '{}'", type, level._fmt_str, type, remaining ) )
+		{
+			continue;
+		}
+
+		// skip arbitrary characters between the type and the key
+		remaining = _PUSH_POS_UNTIL_PREDICATE( ::is_alpha_numeric, false, true );
+		_RESET_FINAL_STR();
+		if ( _MY_ASSERT_HANDLER( remaining > 0, "2Early end to radiant line parse Line: '{}', ParseToken: '{}', Remaining '{}'", level._fmt_str, level._fmt_final_str, remaining ) )
+		{
+			continue;
+		}
+
+		// consume the key
+		remaining = _PUSH_POS_UNTIL_PREDICATE( ::is_alpha_numeric, true, true );
+		key = level._fmt_final_str;
+		_RESET_FINAL_STR();
+		if ( remaining <= 0 )
+		{
+			level._radiant_keys_obj radiant_key_obj_t_new( key, type );
+			continue;
+		}
+
+		// skip the characters between the comment
+		remaining = _PUSH_POS_WHILE_CHARS( "/ \t\r" );
+		_RESET_FINAL_STR();
+		if ( remaining <= 0 )
+		{
+			level._radiant_keys_obj radiant_key_obj_t_new( key, type );
+			continue;
+		}
+
+		// find the start of the description
+		// remaining = _PUSH_POS_UNTIL_PREDICATE( ::is_alpha_numeric, false, true );
+		// if ( _MY_ASSERT_HANDLER( remaining > 0, "5Early end to radiant line parse Line: '{}', ParseToken: '{}', Remaining '{}'", level._fmt_str, level._fmt_final_str, remaining ) )
+		// {
+		// 	continue;
+		// }
+		
+		desc =  getsubstr( line, level._fmt_pos );
+		level._radiant_keys_obj radiant_key_obj_t_new( key, type, desc );
+	}
+
+	_CLEAR_FMT();
+
+	fs_fclose( level._radiant_keys_file );
+
+	print_radiant_keys();
+}
+
+print_radiant_keys()
+{
+	keys = getarraykeys( level._radiant_keys_obj.data );
+	for ( i = 0; i < _SIZE( keys.size ); i++ )
+	{
+		member = level._radiant_keys_obj.data[ keys[ i ] ];
+
+		_GET_SERVER_ENTITY() com_printnotitle( "Key: '{}', Type: '{}', Desc: '{}'", keys[ i ], member.type, member.desc );
 	}
 }
