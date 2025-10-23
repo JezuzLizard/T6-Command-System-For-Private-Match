@@ -24,52 +24,6 @@
 	self.data[ key ] = struc;
 }
 
-format( fmt, a, b, c, d, e, f, g, h, i, j, k )
-{
-	args = pack( a, b, c, d, e, f, g, h, i, j, k );
-
-	if ( !array_validate( args ) )
-	{
-		return fmt;
-	}
-
-	assert( isstring( fmt ) );
-
-	insert_arg_index = 0;
-
-	level._fmt_pos = 0;
-	level._fmt_str = fmt;
-	level._fmt_final_str = "";
-	for ( ;; )
-	{
-		remaining = _PUSH_POS_UNTIL_CHAR( "{" );
-		if ( remaining <= 0 )
-		{
-			break;
-		}
-
-		if ( _GET_IDX_CHAR_AT( level._fmt_pos + 1 ) == "}" )
-		{
-			level._fmt_final_str += args[ insert_arg_index ];
-			insert_arg_index++;
-			level._fmt_pos++;
-		}
-
-		level._fmt_pos++;
-	}
-
-	if ( insert_arg_index != args.size )
-	{
-		assert( false );
-		_GET_SERVER_ENTITY() com_printerror( "format: Mismatched inserts to args!" );
-	}
-
-	level._fmt_pos = undefined;
-	level._fmt_str = undefined;
-
-	return level._fmt_final_str;
-}
-
 parse_radiant_keys()
 {
 	level._radiant_key_types = [];

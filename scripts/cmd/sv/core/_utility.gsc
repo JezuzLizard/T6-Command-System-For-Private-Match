@@ -1711,6 +1711,28 @@ _WEAPON_EXISTS( name )
 	return weaponclass( name ) != "none";
 }
 
+_FX_EXISTS( alias )
+{
+	return isdefined( level._effect[ alias ] );
+}
+
+_GET_REAL_FX()
+{
+	arr = [];
+	keys = getarraykeys( level._effect );
+	for ( i = 0; i < keys.size; i++ )
+	{
+		if ( !isdefined( level._effect[ keys[ i ] ] ) )
+		{
+			continue;
+		}
+
+		arr[ keys[ i ] ] = level._effect[ keys[ i ] ];
+	}
+
+	return arr;
+}
+
 _INIT_SERVER()
 {
 	if ( !isdefined( level.server ) )
@@ -2325,4 +2347,60 @@ _DESC_FOR_RADIANT_KEY( key )
 	}
 
 	return keys_obj.data[ key ].desc;
+}
+
+_IS_WHITESPACE( c )
+{
+	return c == " " || c == "\t" || c == "\r";
+}
+
+// removes all preceding and succeeding whitespace
+_TRIM( str )
+{
+	new_str = "";
+	for ( i = 0; i < _SIZE( str.size ); i++ )
+	{
+		if ( !_IS_WHITESPACE( str[ i ] ) )
+		{
+			new_str = getsubstr( str, i );
+			break;
+		}
+	}
+
+	new_str2 = "";
+	for ( i = _SIZE( new_str.size ) - 1; i >= 0; i-- )
+	{
+		if ( !_IS_WHITESPACE( str[ i ] ) )
+		{
+			new_str2 = getsubstr( new_str, 0, i );
+			break;
+		}
+	}
+
+	return new_str2;
+}
+
+_REMOVE_WHITESPACE( str )
+{
+	new_str = "";
+	for ( i = 0; i < _SIZE( str.size ); i++ )
+	{
+		if ( _IS_WHITESPACE( str[ i ] ) )
+		{
+			continue;
+		}
+
+		new_str += str[ i ];
+	}
+
+	return new_str;
+}
+
+_I_STRICMP( str1, str2, length )
+{
+	length = _DEFAULT( length, _SIZE( str2.size ) );
+
+	lower1 = tolower( str1 );
+	lower2 = tolower( str2 );
+	return !( getsubstr( lower1, 0, length ) == lower2 );
 }

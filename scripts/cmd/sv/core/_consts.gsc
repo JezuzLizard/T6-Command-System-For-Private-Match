@@ -127,6 +127,13 @@ init_consts()
 	level._node_types[ "Turret" ] = 19;
 	level._node_types[ "Guard" ] = 20;
 
+	level._camera_flags = [];
+	level._camera_flags[ "CLEAR" ] = 0;
+	level._camera_flags[ "CUSTOM" ] = 2;
+	level._camera_flags[ "ENTITY" ] = 4;
+	level._camera_flags[ "LOOKAT" ] = 8;
+	level._camera_flags[ "LOOKAT_ENTITY" ] = 16;
+	level._camera_flags[ "REMOVE_LOOKAT" ] = 32;
 
 	register_entity_type( "undefined", ::get_null_entity_array );
 	register_entity_type( "world", ::get_world_entity_array );
@@ -186,6 +193,8 @@ init_consts()
 	arg_type_register( "nodetype", ::arg_obj_nodetype_generate, ::arg_obj_nodetype_cast );
 	arg_type_register( "triggertype", ::arg_obj_triggertype_generate, ::arg_obj_triggertype_cast );
 	arg_type_register( "entfield", ::arg_obj_entfield_generate, ::arg_obj_entfield_cast );
+	arg_type_register( "fx", ::arg_obj_fx_generate, ::arg_obj_fx_cast );
+	arg_type_register( "cameraflags", ::arg_obj_cameraflags_generate, ::arg_obj_cameraflags_cast );
 	arg_type_register( "...", undefined, undefined );
 
 	register_entity_string_field( "classname", "string", true );
@@ -1025,7 +1034,7 @@ arg_obj_model_generate( arg1, arg2, arg3 )
 {
 	find = generic_obj_t_new();
 	find.rand_gen_unimplemented = true;
-	return set_cast_success( find, "Unimplemented: model=='{}'", "null" );
+	return set_cast_success( find, undefined, "Unimplemented: model=='{}'", "null" );
 }
 
 arg_obj_model_cast( arg )
@@ -1060,6 +1069,7 @@ arg_obj_spawnable_classname_cast( arg )
 		{
 			return set_cast_error( find, "Classname: '{}' cannot be spawned dynamically; only through mapents", arg );
 		}
+
 		return set_cast_error( find, "Unsupported classname: '{}'", arg );
 	}
 
@@ -1280,6 +1290,54 @@ arg_obj_entfield_cast( arg )
 		return set_cast_error( find, msg );
 	}
 	return set_cast_success( find, entfield_arg, "entfield=='{}'", arg );
+}
+
+arg_obj_fx_generate( arg1, arg2, arg3 )
+{
+	find = generic_obj_t_new();
+
+	available_fx = _GET_REAL_FX();
+
+	rand_fx = random_key( available_fx );
+
+	return set_cast_success( find, rand_fx, "fx=='{}'", rand_fx );
+}
+
+arg_obj_fx_cast( arg )
+{
+	find = generic_obj_t_new();
+
+	fx_exists = _FX_EXISTS( arg );
+	if ( !fx_exists )
+	{
+		return set_cast_error( find, "FX not precached: '{}'", arg );
+	}
+
+	return set_cast_success( find, level._effect[ arg ], "fx=='{}'", arg );
+}
+
+arg_obj_cameraflags_generate( arg1, arg2, arg3 )
+{
+	find = generic_obj_t_new();
+
+	available_fx = _GET_REAL_FX();
+
+	rand_fx = random_key( available_fx );
+
+	return set_cast_success( find, rand_fx, "cameraflags=='{}'", rand_fx );
+}
+
+arg_obj_cameraflags_cast( arg )
+{
+	find = generic_obj_t_new();
+
+	fx_exists = _FX_EXISTS( arg );
+	if ( !fx_exists )
+	{
+		return set_cast_error( find, "FX not precached: '{}'", arg );
+	}
+
+	return set_cast_success( find, level._effect[ arg ], "cameraflags=='{}'", arg );
 }
 
 clamp_array( arr, limit )
