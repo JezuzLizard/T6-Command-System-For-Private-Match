@@ -2,7 +2,7 @@
 #include maps\mp\_utility;
 
 #include scripts\cmd\sv\core\_utility;
-#include scripts\cmd\sv\core\_hud_utility;
+#include scripts\cmd\sv\core\_utility_hud;
 
 init_camera_helpers()
 {
@@ -15,7 +15,7 @@ init_camera_helpers()
 
 private on_disconnect()
 {
-	if ( array_validate( level._placed_cameras ) )
+	if ( _ARRAY_VALIDATE( level._placed_cameras ) )
 	{
 		foreach ( camera_name, cam in level._placed_cameras.cams )
 		{

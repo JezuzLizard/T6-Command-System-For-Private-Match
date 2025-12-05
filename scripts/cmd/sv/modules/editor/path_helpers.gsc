@@ -2,8 +2,8 @@
 #include maps\mp\_utility;
 
 #include scripts\cmd\sv\core\_utility;
-#include scripts\cmd\sv\core\_hud_api;
-#include scripts\cmd\sv\core\_hud_utility;
+#include scripts\cmd\sv\core\_api_hud;
+#include scripts\cmd\sv\core\_utility_hud;
 
 init_path_helpers()
 {
@@ -64,7 +64,7 @@ draw_custom_pathnodes()
 		for ( i = 0; i < _SIZE( level._mapents[ "path_nodes" ].size ); i++ )
 		{
 			node = level._mapents[ "path_nodes" ][ i ];
-			if ( !isdefined( node.keys[ "origin" ] ) )
+			if ( !isdefined( node ) || !isdefined( node.keys[ "origin" ] ) )
 			{
 				continue;
 			}

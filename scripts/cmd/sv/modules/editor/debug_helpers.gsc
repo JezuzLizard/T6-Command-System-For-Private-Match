@@ -3,8 +3,8 @@
 
 #include scripts\cmd\sv\core\_utility;
 
-#include scripts\cmd\sv\core\_hud_api;
-#include scripts\cmd\sv\core\_hud_utility;
+#include scripts\cmd\sv\core\_api_hud;
+#include scripts\cmd\sv\core\_utility_hud;
 
 init_debug_helpers()
 {
@@ -363,7 +363,7 @@ draw_entities( manual_targets, draw_text )
 			continue;
 		}
 
-		if ( array_validate( manual_targets ) )
+		if ( _ARRAY_VALIDATE( manual_targets ) )
 		{
 			for ( j = 0; j < _SIZE( manual_targets.size ); j++ )
 			{

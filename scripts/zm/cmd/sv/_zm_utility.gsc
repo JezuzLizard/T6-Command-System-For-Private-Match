@@ -873,9 +873,9 @@ private custom_wallbuy_field_callback( field, str_value, is_relative, scale )
 	trigger_stub = self.wallbuy_struct.trigger_stub;
 	wallbuy_struct = self.wallbuy_struct;
 
-	vector_cast = cast_str_to_vector( str_value );
-	int_cast = cast_str_to_number( str_value, "int" );
-	float_cast = cast_str_to_number( str_value, "float" );
+	vector_cast = cast_str_to_type( str_value, "vector" );
+	int_cast = cast_str_to_type( str_value, "int" );
+	float_cast = cast_str_to_type( str_value, "float" );
 	str_cast = str_value;
 	switch ( field )
 	{

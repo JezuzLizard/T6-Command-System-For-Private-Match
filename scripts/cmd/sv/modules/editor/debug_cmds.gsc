@@ -1,6 +1,8 @@
 #include common_scripts\utility;
 #include maps\mp\_utility;
 
+#include scripts\cmd\sv\core\_api_cmd;
+
 #include scripts\cmd\sv\core\_utility;
 #include scripts\cmd\sv\modules\editor\debug_helpers;
 
@@ -115,7 +117,7 @@ private cmd_drawlocation_f( param )
 {
 	self._debug_draw_location_enabled = !is_true( self._debug_draw_location_enabled );
 
-	on_off = cast_bool_to_str( !is_true( self._debug_draw_location_enabled ), "Started Stopped" );
+	on_off = cast_boolean_to_str( !is_true( self._debug_draw_location_enabled ), "Started Stopped" );
 	return param add_executor_cmdinfo( on_off + " drawing your location" );
 }
 
@@ -125,12 +127,12 @@ private cmd_drawentities_f( param )
 	was_on = level._debug_draw_entities_enabled;
 	level._debug_draw_entities_types = _DEFAULT( param.a[ 0 ], [] );
 	draw_text = param.a[ 1 ];
-	if ( !array_validate( manual_targets ) && !array_validate( level._debug_draw_entities_types ) )
+	if ( !_ARRAY_VALIDATE( manual_targets ) && !_ARRAY_VALIDATE( level._debug_draw_entities_types ) )
 	{
 		return param add_executor_cmderror( "This command requires either a target specifier or a list of enttypes" );
 	}
 
-	level._debug_draw_entities_enabled = array_validate( manual_targets ) || level._debug_draw_entities_types[ 0 ] != "none";
+	level._debug_draw_entities_enabled = _ARRAY_VALIDATE( manual_targets ) || level._debug_draw_entities_types[ 0 ] != "none";
 
 	if ( was_on && !level._debug_draw_entities_enabled )
 	{

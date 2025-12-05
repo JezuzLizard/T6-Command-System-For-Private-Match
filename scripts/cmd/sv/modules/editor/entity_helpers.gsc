@@ -2,8 +2,8 @@
 #include maps\mp\_utility;
 
 #include scripts\cmd\sv\core\_utility;
-#include scripts\cmd\sv\core\_hud_api;
-#include scripts\cmd\sv\core\_hud_utility;
+#include scripts\cmd\sv\core\_api_hud;
+#include scripts\cmd\sv\core\_utility_hud;
 
 init_entity_helpers()
 {
@@ -150,7 +150,7 @@ cast_non_entity_raycast_from_player_mouse_pos()
 
 	debug_line( ray[ 0 ], ray[ 1 ], ( 0, 0, 1 ), 100 );
 
-	if ( array_validate( level._mapents[ "path_nodes" ] ) )
+	if ( _ARRAY_VALIDATE( level._mapents[ "path_nodes" ] ) )
 	{
 		foreach ( node in level._mapents[ "path_nodes" ] )
 		{
@@ -329,9 +329,9 @@ set_entfield_relative( entfield_name, new_value, scale )
 		}
 	}
 
-	vector_cast = cast_str_to_vector( new_value );
-	int_cast = cast_str_to_number( new_value, "int" );
-	float_cast = cast_str_to_number( new_value, "float" );
+	vector_cast = cast_str_to_type( new_value, "vector" );
+	int_cast = cast_str_to_type( new_value, "int" );
+	float_cast = cast_str_to_type( new_value, "float" );
 	str_cast = new_value;
 	switch ( entfield_name )
 	{
@@ -437,9 +437,9 @@ set_entfield( entfield_name, new_value )
 		}
 	}
 
-	vector_cast = cast_str_to_vector( new_value );
-	int_cast = cast_str_to_number( new_value, "int" );
-	float_cast = cast_str_to_number( new_value, "float" );
+	vector_cast = cast_str_to_type( new_value, "vector" );
+	int_cast = cast_str_to_type( new_value, "int" );
+	float_cast = cast_str_to_type( new_value, "float" );
 	str_cast = new_value;
 	switch ( entfield_name )
 	{

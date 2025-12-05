@@ -3,6 +3,86 @@
 
 #include scripts\cmd\sv\core\_utility;
 
+// Last command token to execute the last command implicitly
+/*cmd_parse_obj_array_t export*/ parse_cmd_message_internal( message )
+{
+	cmd_parse_array = cmd_parse_obj_array_t_new();
+	if ( message == "" )
+	{
+		throw_parse_exception( "Command string is empty" );
+	}
+
+	com_printparse( message );
+
+	multiple_cmds_keys = strtok( message, "^" );
+	for ( i = 0; i < _SIZE( multiple_cmds_keys.size ); i++ )
+	{
+		cmd_strings = custom_split( multiple_cmds_keys[ i ] );
+		cmd_find_result = cast_str_to_type( cmd_strings[ 0 ], "cmdalias" );
+		if ( cmd_find_result.errored )
+		{
+			throw_parse_exception( cmd_find_result.msg );
+		}
+
+		parse_obj_t_new( multiple_cmds_keys[ i ], cmd_find_result.value );
+
+		for ( j = 1; j < _SIZE( cmd_strings.size ); j++ )
+		{
+			level._parse_obj.current_token = cmd_strings[ j ];
+			com_printparse( level._parse_obj.current_token );
+			if ( level._parse_obj.current_token != "" && level._parse_obj.current_token[ 0 ] == "@" )
+			{
+				if ( level._parse_obj.current_token.size <= 1 || level._parse_obj.current_token[ 1 ] != "{" )
+				{
+					throw_parse_exception( "Directive block '@' must be immediately followed by a opening '{' curly brace" );
+				}
+
+				if ( level._parse_obj.current_token[ level._parse_obj.current_token.size - 1 ] != "}" )
+				{
+					throw_parse_exception( "Directive block '@' must be closed with a closing '}' curly brace" );
+				}
+
+				// remove the @{...}, so that it is easier to parse
+				level._parse_obj.current_token = getsubstr( level._parse_obj.current_token, 2, ( level._parse_obj.current_token.size - 1 ) );
+				
+
+				combined_kvps = split_kvps();
+				for ( k = 0; k < _SIZE( combined_kvps.size ); k++ )
+				{
+					kvps = strtok( combined_kvps[ k ], "=" );
+					key = kvps[ 0 ];
+					value = kvps[ 1 ];
+
+					if ( !is_alpha_numeric( key ) )
+					{
+						throw_parse_exception( "Directive key: '" + key + "' contains an invalid character; only alnum and '_' characters are allowed" );
+					}
+
+					if ( value[ 0 ] == "{" )
+					{
+						throw_parse_exception( "Nested keys are not supported" );
+					}
+
+					add_key( key );
+					com_printparse( "parse_cmd_message() key: '" + key + "'" );
+					add_value( value );
+					com_printparse( "parse_cmd_message() value: '" + value + "'" );
+					parse_directive();
+				}
+			}
+			else
+			{
+				add_arg( level._parse_obj.current_token );
+				level.players[ 0 ] script_breakpoint( level._parse_obj );
+			}
+		}
+
+		cmd_parse_array.cmds[ cmd_parse_array.cmds.size ] = copy_parse_obj_t( level._parse_obj );
+	}
+
+	return cmd_parse_array;
+}
+
 private com_printparse( msg )
 {
 	if ( getdvarint( "tcs_debug_parser" ) == 1 )
@@ -411,7 +491,7 @@ private set_type( new_type )
 private add_value( value_string )
 {
 	key_string = level._parse_obj.current_key_string;
-	_MY_ASSERT_HANDLER( isdefined( level._parse_obj.kvps[ key_string ] ), "Key '{}' was not added to level._parse_obj.kvps for add_value()!", key_string );
+	_ASSERT_MSG( isdefined( level._parse_obj.kvps[ key_string ] ), "Key '{}' was not added to level._parse_obj.kvps for add_value()!", key_string );
 
 	level._parse_obj.current_value_string = value_string;
 	level._parse_obj.current_value_index = level._parse_obj.kvps[ key_string ].v.size;
@@ -421,7 +501,7 @@ private add_value( value_string )
 
 private add_key( key_string )
 {
-	_MY_ASSERT_HANDLER( !isdefined( level._parse_obj.kvps[ key_string ] ), "Attempting to overwrite existing key '{}' in level._parse_obj.kvps for add_key()", key_string );
+	_ASSERT_MSG( !isdefined( level._parse_obj.kvps[ key_string ] ), "Attempting to overwrite existing key '{}' in level._parse_obj.kvps for add_key()", key_string );
 
 	base_key = key_string;
 	ordinal_argument = int( key_string[ key_string.size - 1 ] );
@@ -542,84 +622,4 @@ private custom_split( str )
 	}
 
 	return tokens;
-}
-
-// Last command token to execute the last command implicitly
-/*cmd_parse_obj_array_t export*/ parse_cmd_message_internal( message )
-{
-	cmd_parse_array = cmd_parse_obj_array_t_new();
-	if ( message == "" )
-	{
-		throw_parse_exception( "Command string is empty" );
-	}
-
-	com_printparse( message );
-
-	multiple_cmds_keys = strtok( message, "^" );
-	for ( i = 0; i < _SIZE( multiple_cmds_keys.size ); i++ )
-	{
-		cmd_strings = custom_split( multiple_cmds_keys[ i ] );
-		cmd_find_result = cast_str_to_cmd( cmd_strings[ 0 ] );
-		if ( cmd_find_result.errored )
-		{
-			throw_parse_exception( cmd_find_result.msg );
-		}
-
-		parse_obj_t_new( multiple_cmds_keys[ i ], cmd_find_result.value );
-
-		for ( j = 1; j < _SIZE( cmd_strings.size ); j++ )
-		{
-			level._parse_obj.current_token = cmd_strings[ j ];
-			com_printparse( level._parse_obj.current_token );
-			if ( level._parse_obj.current_token[ 0 ] == "@" )
-			{
-				if ( level._parse_obj.current_token[ 1 ] != "{" )
-				{
-					throw_parse_exception( "Directive block '@' must be immediately followed by a opening '{' curly brace" );
-				}
-
-				if ( level._parse_obj.current_token[ level._parse_obj.current_token.size - 1 ] != "}" )
-				{
-					throw_parse_exception( "Directive block '@' must be closed with a closing '}' curly brace" );
-				}
-
-				// remove the @{...}, so that it is easier to parse
-				level._parse_obj.current_token = getsubstr( level._parse_obj.current_token, 2, ( level._parse_obj.current_token.size - 1 ) );
-				
-
-				combined_kvps = split_kvps();
-				for ( k = 0; k < _SIZE( combined_kvps.size ); k++ )
-				{
-					kvps = strtok( combined_kvps[ k ], "=" );
-					key = kvps[ 0 ];
-					value = kvps[ 1 ];
-
-					if ( !is_alpha_numeric( key ) )
-					{
-						throw_parse_exception( "Directive key: '" + key + "' contains an invalid character; only alnum and '_' characters are allowed" );
-					}
-
-					if ( value[ 0 ] == "{" )
-					{
-						throw_parse_exception( "Nested keys are not supported" );
-					}
-
-					add_key( key );
-					com_printparse( "parse_cmd_message() key: '" + key + "'" );
-					add_value( value );
-					com_printparse( "parse_cmd_message() value: '" + value + "'" );
-					parse_directive();
-				}
-			}
-			else
-			{
-				add_arg( level._parse_obj.current_token );
-				level.players[ 0 ] script_breakpoint( level._parse_obj );
-			}
-		}
-
-		cmd_parse_array.cmds[ cmd_parse_array.cmds.size ] = copy_parse_obj_t( level._parse_obj );
-	}
-
-	return cmd_parse_array;
 }

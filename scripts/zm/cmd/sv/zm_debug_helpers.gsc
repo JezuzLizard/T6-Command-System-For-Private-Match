@@ -89,8 +89,11 @@ private zone_hud_thread( zone_hud )
 	flag_wait_until_set_once( "initial_blackscreen_passed" );
 
 	zone = self get_current_zone();
-	prev_zone = zone;
-	zone_hud settext( zone );
+	if ( isdefined( zone ) )
+	{
+		zone_hud settext( zone );
+	}
+	prev_zone = "";
 
 	for ( ;; )
 	{

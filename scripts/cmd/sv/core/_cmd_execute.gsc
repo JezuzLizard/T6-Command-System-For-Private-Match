@@ -3,6 +3,8 @@
 
 #include scripts\cmd\sv\core\_utility;
 
+#include scripts\cmd\sv\core\_api_cmd;
+
 start_cmd_buffer_thread()
 {
 	level thread scr_dvar_cmd_watcher();
@@ -10,84 +12,6 @@ start_cmd_buffer_thread()
 	{
 		level waittill( "say", message, user, is_hidden, is_team_chat );
 		user thread cmd_execute_internal( message, user, is_hidden, is_team_chat );
-	}
-}
-
-private handle_parse_exception_feedback( user )
-{
-	if ( isplayer( user ) )
-	{
-		user endon( "disconnect" );
-	}
-	for ( ;; )
-	{
-		user waittill( "cmd_exception", generic_parse_obj );
-		user.in_command_frame = false;
-		if ( !generic_parse_obj.do_print )
-		{
-			continue;
-		}
-		user com_printerror( generic_parse_obj.msg );
-	}
-}
-
-private check_command_syntax_used( message, is_hidden )
-{
-	if ( !level.tcs_glob.bhidden_cmds && is_hidden )
-	{
-		self throw_exception( undefined, "Hidden cmds are not allowed" );
-	}
-	if ( !is_hidden && !is_cmd_token( message[ 0 ] ) )
-	{
-		self throw_exception( undefined, "User was not using a command", false );
-	}
-}
-
-private check_command_cooldown()
-{
-	if ( isDefined( self.cmd_cooldown ) && self.cmd_cooldown > 0 )
-	{
-		self throw_exception( undefined, "You cannot use another cmd for '{}' seconds", self.cmd_cooldown );
-	}
-}
-
-private check_multi_commands( cmd_parse_obj )
-{
-	if ( cmd_parse_obj.cmds.size > 1 && !self can_use_multi_cmds() )
-	{
-		self throw_exception( undefined, "You do not have permission to use multi cmds" );
-	}
-}
-
-// just in case the thread would end before reseting it
-private reset_in_command()
-{
-	wait 0.05;
-	self.in_command_frame = false;
-}
-
-private debug_print_execute( index, cmd_obj )
-{
-	if ( getdvarint( "tcs_debug_execute" ) == 1 )
-	{
-		self com_printdebuginfo( "Printing info for cmd index '" + index + "'" );
-		self com_printdebuginfo( "cmd_name: '" + cmd_obj.cmd_data_source.cmd_name + "'" );
-		self com_printdebuginfo( "cmd_string: '" + cmd_obj.cmd_string + "'" );
-		for ( i = 0; i < _SIZE( cmd_obj.args.size ); i++ )
-		{
-			self com_printdebuginfo( "args[ '" + i + "' ]: " + cmd_obj.args[ i ] );
-		}
-
-		foreach ( key, value in cmd_obj.kvps )
-		{
-			self com_printdebuginfo( "kvps[ '" + key + "' ]:" );
-			self com_printdebuginfo( "base_key: " + value.base_key );
-			self com_printdebuginfo( "type: " + value.type );
-			for ( i = 0; i < _SIZE( value.v.size ); i++ )
-			{
-				self com_printdebuginfo( "v[ '" + i + "' ]: " + value.v[ i ] );
-			}
-		}
 	}
 }
 
@@ -148,8 +72,7 @@ cmd_execute_internal( message, initiator, is_hidden, is_team_chat )
 	i = 0;
 	foreach ( key, cmd_obj in cmd_parse_obj.cmds )
 	{
-		executor_directive = cmd_obj.kvps[ "executor" ];
-		executors = initiator get_executors( executor_directive );
+		executors = initiator get_executors();
 		debug_print_execute( i, cmd_obj );
 
 		if ( is_true( cmd_obj.cmd_data_source.immune_to_lastcmd ) && is_true( initiator.in_lastcmd_execution_block ) )
@@ -163,11 +86,6 @@ cmd_execute_internal( message, initiator, is_hidden, is_team_chat )
 
 			if ( !has_all_perms )
 			{
-				if ( executor != initiator && !initiator has_permission_for_executor_syntax() )
-				{
-					initiator throw_exception( cmd_obj, "You do not have permission to specify executors " );
-				}
-
 				if ( !initiator has_permission_for_cmd( cmd_obj.cmd_data_source ) )
 				{
 					initiator throw_exception( cmd_obj, "You do not have permission to use '{}' cmd", cmd_obj.cmd_data_source.cmd_name );
@@ -189,7 +107,125 @@ cmd_execute_internal( message, initiator, is_hidden, is_team_chat )
 	}
 }
 
-private arg_cast( arg_type, arg )
+private handle_parse_exception_feedback( user )
+{
+	if ( isplayer( user ) )
+	{
+		user endon( "disconnect" );
+	}
+	for ( ;; )
+	{
+		user waittill( "cmd_exception", generic_parse_obj );
+		user.in_command_frame = false;
+		if ( !generic_parse_obj.do_print )
+		{
+			continue;
+		}
+		user com_printerror( generic_parse_obj.msg );
+	}
+}
+
+private is_cmd_token( char )
+{
+	if ( isdefined( level.tcs_glob.acmd_tokens ) && isdefined( level.tcs_glob.acmd_tokens[ char ] ) )
+	{
+		return true;
+	}
+	return false;
+}
+
+private check_command_syntax_used( message, is_hidden )
+{
+	if ( !level.tcs_glob.bhidden_cmds && is_hidden )
+	{
+		self throw_exception( undefined, "Hidden cmds are not allowed" );
+	}
+	if ( !is_hidden && !is_cmd_token( message[ 0 ] ) )
+	{
+		self throw_exception( undefined, "User was not using a command", false );
+	}
+}
+
+private check_command_cooldown()
+{
+	if ( isDefined( self.cmd_cooldown ) && self.cmd_cooldown > 0 )
+	{
+		self throw_exception( undefined, "You cannot use another cmd for '{}' seconds", self.cmd_cooldown );
+	}
+}
+
+private can_use_multi_cmds()
+{
+	if ( is_true( level.doing_cmd_system_unittest ) )
+	{
+		return true;
+	}
+	if ( self has_all_perms() )
+	{
+		return true;
+	}
+	return false;
+}
+
+private check_multi_commands( cmd_parse_obj )
+{
+	if ( cmd_parse_obj.cmds.size > 1 && !self can_use_multi_cmds() )
+	{
+		self throw_exception( undefined, "You do not have permission to use multi cmds" );
+	}
+}
+
+// just in case the thread would end before reseting it
+private reset_in_command()
+{
+	wait 0.05;
+	self.in_command_frame = false;
+}
+
+private debug_print_execute( index, cmd_obj )
+{
+	if ( getdvarint( "tcs_debug_execute" ) == 1 )
+	{
+		self com_printdebuginfo( "Printing info for cmd index '" + index + "'" );
+		self com_printdebuginfo( "cmd_name: '" + cmd_obj.cmd_data_source.cmd_name + "'" );
+		self com_printdebuginfo( "cmd_string: '" + cmd_obj.cmd_string + "'" );
+		for ( i = 0; i < _SIZE( cmd_obj.args.size ); i++ )
+		{
+			self com_printdebuginfo( "args[ '" + i + "' ]: " + cmd_obj.args[ i ] );
+		}
+
+		foreach ( key, value in cmd_obj.kvps )
+		{
+			self com_printdebuginfo( "kvps[ '" + key + "' ]:" );
+			self com_printdebuginfo( "base_key: " + value.base_key );
+			self com_printdebuginfo( "type: " + value.type );
+			for ( i = 0; i < _SIZE( value.v.size ); i++ )
+			{
+				self com_printdebuginfo( "v[ '" + i + "' ]: " + value.v[ i ] );
+			}
+		}
+	}
+}
+
+private cmd_cooldown()
+{
+	if ( is_true( level.doing_cmd_system_unittest ) )
+	{
+		return;
+	}
+	if ( self has_all_perms() )
+	{
+		return;
+	}
+	self.cmd_cooldown = level.custom_cmds_cooldown_time;
+	while ( self.cmd_cooldown > 0 )
+	{
+		self.cmd_cooldown--;
+		wait 1;
+	}
+}
+
+private arg_cast( cmd_data_source, arg_type, arg )
 {
 	msgs = [];
 	foreach ( atype, val in arg_type.overloads )
@@ -210,7 +246,7 @@ private arg_cast( arg_type, arg )
 		return cast_result.value;
 	}
 
-	self throw_exception( undefined, "Failed to cast to one of the valid overloads for arg_type, attempted casts: '{}'", repackage_args( msgs, "\n" ) );
+	self throw_exception( undefined, "Failed to cast to one of the valid overloads for arg_type '{}', attempted casts: '{}'", arg_type.name, repackage_args( msgs, "\n" ) );
 }
 
 private target_cast( cmd_data_source, ordinal, target_type, target_kvp )
@@ -219,7 +255,7 @@ private target_cast( cmd_data_source, ordinal, target_type, target_kvp )
 	{
 		value = self get_entity_targets( etype, target_kvp, target_type.default_value );
 
-		if ( array_validate( value ) )
+		if ( _ARRAY_VALIDATE( value ) )
 		{
 			if ( value.size > val.max_targets )
 			{
@@ -247,7 +283,13 @@ private get_random_limited_array( array, limit )
 
 private get_array_entities( directive, etype )
 {
-	str_no_brackets = getsubstr( directive.v[ 0 ], 1, directive.v[ 0 ].size - 1 );
+	str = directive.v;
+	start = 1;
+	if ( directive.type == "array_random" )
+	{
+		start = 2;
+	}
+	str_no_brackets = getsubstr( str[ 0 ], 1, str[ 0 ].size - 1 );
 	values = strtok( str_no_brackets, "," );
 	ents = [];
 	foreach ( presumed_ent in values )
@@ -255,14 +297,15 @@ private get_array_entities( directive, etype )
 		ent_obj = cast_str_to_entity( presumed_ent, etype );
 		if ( ent_obj.errored )
 		{
-			return [];
+			// TODO: return list of entities that failed to be found
+			continue;
 		}
 
 		ents[ ents.size ] = ent_obj.value;
 	}
 
 	// no point in doing further randomization...
-	if ( directive.type == "array" || ents.size == 1 )
+	if ( directive.type == "array" || ents.size <= 1 )
 	{
 		return ents;
 	}
@@ -283,40 +326,9 @@ private get_name_entities( directive, etype )
 	return ents;
 }
 
-private get_executors( directive )
+private get_executors()
 {
-	if ( !isdefined( directive ) )
-	{
-		return self.default_executors;
-	}
-	switch ( directive.type )
-	{
-		case "all":
-			return level.players;
-		case "undefined": // error
-			return [];
-		case "random":
-			limit = 1;
-			if ( isdefined( directive.v[ 0 ] ) )
-			{
-				directive_str_trimmed = getsubstr( directive.v[ 0 ], 1 );
-				limit = int( directive_str_trimmed );
-			}
-			
-			return get_random_limited_array( level.players, limit );
-		case "array":
-		case "array_random":
-			return get_array_entities( directive, "player" );
-		case "self":
-			return add_to_array( undefined, self );
-		case "default":
-			return self.default_executors;
-		case "name":
-			return get_name_entities( directive, "player" );
-	}
-
-	self throw_exception( undefined, "Unknown directive.type: '{}'", directive.type );
-	return [];
+	return self.default_executors;
 }
 
 private get_entity_targets( etype, directive, default_value )
@@ -332,7 +344,7 @@ private get_entity_targets( etype, directive, default_value )
 	}
 	else
 	{
-		_MY_ASSERT_HANDLER( false, "Unhandled etype: '{}'", etype );
+		_ASSERT_MSG_ONLY( "Unhandled etype: '{}'", etype );
 		return [];
 	}
 
@@ -396,6 +408,11 @@ private get_entity_targets( etype, directive, default_value )
 	return [];
 }
 
+private get_target_type_from_ordinal( cmd_data_source, ordinal )
+{
+	return cmd_data_source.target_types[ _MAKE_ORDINAL_KEY( ordinal ) ];
+}
+
 private cmd_execute_internal1( initiator, cmd_obj )
 {
 	cmd_data_source = cmd_obj.cmd_data_source;
@@ -417,7 +434,7 @@ private cmd_execute_internal1( initiator, cmd_obj )
 	// Cast the args using the cast handlers
 	// Arg types without a cast handler don't get casted
 	// Leaving the casting up to the cmd itself
-	if ( array_validate( cmd_data_source.arg_types ) )
+	if ( _ARRAY_VALIDATE( cmd_data_source.arg_types ) )
 	{
 		i = 0;
 		foreach ( key, val in cmd_data_source.arg_types )
@@ -449,14 +466,14 @@ private cmd_execute_internal1( initiator, cmd_obj )
 				break;
 			}
 
-			param.a[ i ] = initiator arg_cast( arg_type, arg );
+			param.a[ i ] = initiator arg_cast( cmd_data_source, arg_type, arg );
 			i++;
 		}
 	}
 
-	if ( array_validate( cmd_obj.kvps ) )
+	if ( _ARRAY_VALIDATE( cmd_obj.kvps ) )
 	{
-		if ( array_validate( cmd_data_source.target_types ) )
+		if ( _ARRAY_VALIDATE( cmd_data_source.target_types ) )
 		{
 			// find target kvps
 			cmd_target_keys = getarraykeys( cmd_obj.kvps );
@@ -483,7 +500,7 @@ private cmd_execute_internal1( initiator, cmd_obj )
 				target_type = get_target_type_from_ordinal( cmd_data_source, ordinal );
 				param.t[ index ] = initiator target_cast( cmd_data_source, ordinal, target_type, target_kvp );
 
-				if ( !array_validate( param.t[ index ] ) && ( target_kvp.type != "undefined" && target_kvp.type != "default" ) )
+				if ( !_ARRAY_VALIDATE( param.t[ index ] ) && ( target_kvp.type != "undefined" && target_kvp.type != "default" ) )
 				{
 					initiator throw_exception( undefined, "Failed to find any compatible entities" );
 				}
@@ -529,7 +546,7 @@ private handle_feedback( initiator, cmd_obj, param )
 		
 		initiator com_printinfo( cmd_log );
 	}
-	if ( !array_validate( param.result_array ) || is_true( initiator.tcs_silent_cmds ) )
+	if ( !_ARRAY_VALIDATE( param.result_array ) || is_true( initiator.tcs_silent_cmds ) )
 	{
 		return;
 	}

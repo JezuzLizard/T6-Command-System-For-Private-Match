@@ -1,6 +1,8 @@
 #include common_scripts\utility;
 #include maps\mp\_utility;
 
+#include scripts\cmd\sv\core\_api_cmd;
+
 #include scripts\cmd\sv\core\_utility;
 #include scripts\cmd\sv\modules\core_helpers;
 
@@ -60,9 +62,9 @@ add_core_cmds()
 	target_add_optional( 3, "inflictor", "general", "Entity who will be set as the <inflictor>", 1 );
 
 	cmd_add( "teleportentity", ::cmd_teleportentity_f, "teleportentity {entity_from} {entity_to}" );
-	target_add_optional( 1, "entity_from", "general", "Entity who will be teleported" );
-	target_add_required( 2, "entity_to", "general", "Entity to teleport to", 1 );
-	target_set_default_target( 1, "self" );
+	target_add_required( 1, "entity_from", "general", "Entity who will be teleported" );
+	target_add_optional( 2, "entity_to", "general", "Entity to teleport to", 1 );
+	target_set_default_target( 2, "self" );
 
 	cmd_add( "teleportorigin", ::cmd_teleportorigin_f, "teleportorigin {entity_from} <origin>" );
 	target_add_optional( 1, "entity_from", "general", "Entity who will be teleported" );
@@ -124,7 +126,7 @@ private cmd_setcvar_f( param )
 	dvarname = param.a[ 0 ];
 	dvarvalue = param.a[ 1 ];
 	targets = param.t[ 0 ];
-	if ( array_validate( targets ) )
+	if ( _ARRAY_VALIDATE( targets ) )
 	{
 		for ( i = 0; i < _SIZE( targets.size ); i++ )
 		{
@@ -145,8 +147,8 @@ private cmd_god_f( param )
 {
 	targets = param.t[ 0 ];
 
-	on_off = cast_bool_to_str( !is_true( self.tcs_is_invulnerable ), "on off" );
-	if ( array_validate( targets ) )
+	on_off = cast_boolean_to_str( !is_true( self.tcs_is_invulnerable ), "on off" );
+	if ( _ARRAY_VALIDATE( targets ) )
 	{
 		for ( i = 0; i < _SIZE( targets.size ); i++ )
 		{
@@ -167,8 +169,8 @@ private cmd_notarget_f( param )
 {
 	targets = param.t[ 0 ];
 
-	on_off = cast_bool_to_str( !is_true( self.ignoreme ), "on off" );
-	if ( array_validate( targets ) )
+	on_off = cast_boolean_to_str( !is_true( self.ignoreme ), "on off" );
+	if ( _ARRAY_VALIDATE( targets ) )
 	{
 		for ( i = 0; i < _SIZE( targets.size ); i++ )
 		{
@@ -189,8 +191,8 @@ private cmd_invisible_f( param )
 {
 	targets = param.t[ 0 ];
 
-	on_off = cast_bool_to_str( !is_true( self.tcs_is_invisible ), "on off" );
-	if ( array_validate( targets ) )
+	on_off = cast_boolean_to_str( !is_true( self.tcs_is_invisible ), "on off" );
+	if ( _ARRAY_VALIDATE( targets ) )
 	{
 		for ( i = 0; i < _SIZE( targets.size ); i++ )
 		{
@@ -211,8 +213,8 @@ private cmd_togglehud_f( param )
 {
 	targets = param.t[ 0 ];
 
-	on_off = cast_bool_to_str( is_true( self.tcs_hud_toggled ), "on off" );
-	if ( array_validate( targets ) )
+	on_off = cast_boolean_to_str( is_true( self.tcs_hud_toggled ), "on off" );
+	if ( _ARRAY_VALIDATE( targets ) )
 	{
 		for ( i = 0; i < _SIZE( targets.size ); i++ )
 		{
@@ -233,8 +235,8 @@ private cmd_bottomlessclip_f( param )
 {
 	targets = param.t[ 0 ];
 
-	on_off = cast_bool_to_str( !is_true( self.tcs_bottomless_clip ), "on off" );
-	if ( array_validate( targets ) )
+	on_off = cast_boolean_to_str( !is_true( self.tcs_bottomless_clip ), "on off" );
+	if ( _ARRAY_VALIDATE( targets ) )
 	{
 		for ( i = 0; i < _SIZE( targets.size ); i++ )
 		{
@@ -412,7 +414,7 @@ private cmd_printorigin_f( param )
 {
 	targets = param.t[ 0 ];
 
-	if ( !array_validate( targets ) )
+	if ( !_ARRAY_VALIDATE( targets ) )
 	{
 		targets[ 0 ] = self;
 	}
@@ -429,7 +431,7 @@ private cmd_printangles_f( param )
 {
 	targets = param.t[ 0 ];
 
-	if ( !array_validate( targets ) )
+	if ( !_ARRAY_VALIDATE( targets ) )
 	{
 		targets[ 0 ] = self;
 	}
@@ -448,7 +450,7 @@ private cmd_teleportentity_f( param )
 	to_target = param.t[ 1 ][ 0 ];
 
 	// allow implicitly teleporting the executor to an entity if not specified
-	from_targets[ 0 ] = _DEFAULT( from_targets[ 0 ], self );
+	to_target = _DEFAULT( to_target, self );
 
 	if ( isplayer( to_target ) )
 	{
@@ -487,8 +489,11 @@ private cmd_teleportorigin_f( param )
 	from_targets = param.t[ 0 ];
 	destination = param.a[ 0 ];
 
-	// allow implicitly teleporting the executor to an entity if not specified
-	from_targets[ 0 ] = _DEFAULT( from_targets[ 0 ], self );
+	if ( !_ARRAY_VALIDATE( from_targets ) )
+	{
+		// allow implicitly teleporting the executor to an entity if not specified
+		from_targets[ 0 ] =  self;
+	}
 
 	if ( !isdefined( level.player_intersection_tracker_override_original ) )
 	{

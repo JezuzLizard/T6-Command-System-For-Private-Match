@@ -8,7 +8,7 @@
 init_sv_zm_consts()
 {
 	arg_type_register( "perk", ::arg_obj_perk_generate, ::arg_obj_perk_cast );
-	arg_type_register( "zm_weapon", ::arg_obj_weapon_generate, ::arg_obj_weapon_cast );
+	arg_type_register( "weapon", ::arg_obj_weapon_generate, ::arg_obj_weapon_cast );
 	arg_type_register( "powerup", ::arg_obj_powerup_generate, ::arg_obj_powerup_cast );
 
 	arg_type_register( "permaperk", ::arg_obj_permaperk_generate, ::arg_obj_permaperk_cast );
@@ -112,7 +112,7 @@ arg_obj_perk_generate()
 arg_obj_weapon_cast( arg )
 {
 	find = generic_obj_t_new();
-	if ( !isdefined( level.zombie_include_weapons ) || level.zombie_include_weapons.size <= 0 )
+	if ( !_ARRAY_VALIDATE( level.zombie_include_weapons ) )
 	{
 		return set_cast_error( find, "There are no weapons on the map" );
 	}
@@ -124,13 +124,13 @@ arg_obj_weapon_cast( arg )
 		return set_cast_error( find, msg );
 	}
 
-	return set_cast_success( find, arg, "weapon=='{}'", arg );
+	return set_cast_success( find, arg, "zm_weapon=='{}'", arg );
 }
 
 arg_obj_weapon_generate()
 {
 	find = generic_obj_t_new();
-	if ( !isdefined( level.zombie_include_weapons ) || level.zombie_include_weapons.size <= 0 )
+	if ( !_ARRAY_VALIDATE( level.zombie_include_weapons ) )
 	{
 		find.rand_gen_unimplemented = true;
 		return set_cast_success( find, "", "No weapons" );
@@ -144,7 +144,7 @@ arg_obj_weapon_generate()
 arg_obj_powerup_cast( arg )
 {
 	find = generic_obj_t_new();
-	if ( !isdefined( level.zombie_include_powerups ) || level.zombie_include_powerups.size <= 0 )
+	if ( !_ARRAY_VALIDATE( level.zombie_include_powerups ) )
 	{
 		return set_cast_error( find, "There are no powerups on the map" );
 	}
@@ -162,7 +162,7 @@ arg_obj_powerup_cast( arg )
 arg_obj_powerup_generate()
 {
 	find = generic_obj_t_new();
-	if ( !isdefined( level.zombie_include_powerups ) || level.zombie_include_powerups.size <= 0 )
+	if ( !_ARRAY_VALIDATE( level.zombie_include_powerups ) )
 	{
 		find.rand_gen_unimplemented = true;
 		return set_cast_success( find, "", "No powerups" );
@@ -190,7 +190,7 @@ arg_obj_permaperk_generate()
 {
 	find = generic_obj_t_new();
 	
-	if ( !array_validate( level.pers_upgrades_keys ) )
+	if ( !_ARRAY_VALIDATE( level.pers_upgrades_keys ) )
 	{
 		find.rand_gen_unimplemented = true;
 		return set_cast_success( find, "", "No permaperks" );

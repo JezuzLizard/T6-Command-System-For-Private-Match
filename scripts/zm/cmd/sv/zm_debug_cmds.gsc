@@ -2,6 +2,8 @@
 #include maps\mp\_utility;
 #include maps\mp\zombies\_zm_utility;
 
+#include scripts\cmd\sv\core\_api_cmd;
+
 #include scripts\cmd\sv\core\_utility;
 
 // autoexec
@@ -104,7 +106,7 @@ private cmd_drawzones_f( param )
 {
 	self._debug_draw[ "zones" ] = !is_true( self._debug_draw[ "zones" ] );
 
-	on_off = cast_bool_to_str( self._debug_draw[ "zones" ], "Started Stopped" );
+	on_off = cast_boolean_to_str( self._debug_draw[ "zones" ], "Started Stopped" );
 	return param add_executor_cmdinfo( "'{}' drawing your active zone", on_off );
 }
 
@@ -119,7 +121,7 @@ private cmd_toggleflag_f( param )
 	}
 
 	level flag_toggle( flagname );
-	on_off = cast_bool_to_str( flag( flagname ), "on off" );
+	on_off = cast_boolean_to_str( flag( flagname ), "on off" );
 	param add_executor_cmdinfo( "Successfully toggled '{}' '", flagname, on_off );
 }
 

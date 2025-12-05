@@ -1,6 +1,8 @@
 #include common_scripts\utility;
 #include maps\mp\_utility;
 
+#include scripts\cmd\sv\core\_api_cmd;
+
 #include scripts\cmd\sv\core\_utility;
 
 #include scripts\mp\cmd\sv\mp_core_helpers;

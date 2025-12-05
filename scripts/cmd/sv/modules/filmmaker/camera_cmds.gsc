@@ -1,8 +1,10 @@
 #include common_scripts\utility;
 #include maps\mp\_utility;
 
+#include scripts\cmd\sv\core\_api_cmd;
+
 #include scripts\cmd\sv\core\_utility;
-#include scripts\cmd\sv\core\_hud_utility;
+#include scripts\cmd\sv\core\_utility_hud;
 #include scripts\cmd\sv\modules\filmmaker\camera_helpers;
 
 add_camera_cmds()

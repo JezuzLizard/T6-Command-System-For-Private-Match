@@ -1,8 +1,10 @@
 #include common_scripts\utility;
 #include maps\mp\_utility;
 
+#include scripts\cmd\sv\core\_api_cmd;
+
 #include scripts\cmd\sv\core\_utility;
-#include scripts\cmd\sv\core\_hud_utility;
+#include scripts\cmd\sv\core\_utility_hud;
 #include scripts\cmd\sv\modules\editor\entity_helpers;
 #include scripts\cmd\sv\modules\editor\path_helpers;
 
@@ -18,7 +20,7 @@ add_path_cmds()
 
 	cmd_add( "modifycustompathnode", ::cmd_modifycustompathnode_f, "modifycustompathnode <id> [kvps...]" );
 	arg_add_required( 1, "id", "string", "Pathnode identifier, must be unique" );
-	arg_add_optional( 3, "kvps", "...", "Key value pairs to define on pathnode entity" );
+	arg_add_optional( 2, "kvps", "...", "Key value pairs to define on pathnode entity" );
 
 	cmd_add( "drawcustompathnodes", ::cmd_drawcustompathnodes_f, "drawcustompathnodes [draw_text] [filter]" );
 	arg_add_optional( 1, "draw_text", "boolean", "Toggle the drawing of text" );
@@ -59,10 +61,10 @@ private cmd_spawncustompathnode_f( param )
 			continue;
 		}
 
-		result_obj = _CAST_RADIANT_KVP( key, value );
+		result_obj = _cast_radiant_kvp( key, value );
 		if ( result_obj.errored )
 		{
-			param add_executor_cmdinfo( "Invalid value '{}' for '{}', expected type to be castable to '{}'", key, value, _TYPE_FOR_RADIANT_KEY( key ) );
+			param add_executor_cmdinfo( "Invalid value '{}' for '{}', expected type to be castable to '{}'", key, value, _type_for_radiant_key( key ) );
 			continue;
 		}
 

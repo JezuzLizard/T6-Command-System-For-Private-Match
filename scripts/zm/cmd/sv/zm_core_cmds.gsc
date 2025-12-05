@@ -2,6 +2,8 @@
 #include maps\mp\_utility;
 #include maps\mp\zombies\_zm_utility;
 
+#include scripts\cmd\sv\core\_api_cmd;
+
 #include scripts\cmd\sv\core\_utility;
 
 #include maps\mp\zombies\_zm;
@@ -166,7 +168,7 @@ private cmd_togglerespawn_f( param )
 		}
 
 		param add_executor_cmdinfo( "'{}' has their respawn toggled", target.name );
-		param add_player_cmdinfo( "You will no longer respawn '{}'", target );
+		param add_player_cmdinfo( target, "You will no longer respawn '{}'", target );
 	}
 
 	param add_executor_cmdinfo( "Disabled respawning for '{}' players", targets.size );
@@ -175,7 +177,7 @@ private cmd_togglerespawn_f( param )
 private cmd_killactors_f( param )
 {
 	targets = param.t[ 0 ];
-	if ( !array_validate( targets ) )
+	if ( !_ARRAY_VALIDATE( targets ) )
 	{
 		targets = getaiarray( level.zombie_team );
 	}
@@ -251,7 +253,7 @@ private cmd_perk_f( param )
 	targets = param.t[ 0 ];
 
 	perk_name = param.a[ 0 ];
-	if ( array_validate( targets ) )
+	if ( _ARRAY_VALIDATE( targets ) )
 	{
 		for ( i = 0; i < _SIZE( targets.size ); i++ )
 		{
@@ -270,7 +272,7 @@ private cmd_takeperk_f( param )
 	targets = param.t[ 0 ];
 
 	perk_name = param.a[ 0 ];
-	if ( array_validate( targets ) )
+	if ( _ARRAY_VALIDATE( targets ) )
 	{
 		for ( i = 0; i < _SIZE( targets.size ); i++ )
 		{
@@ -304,7 +306,7 @@ private cmd_points_f( param )
 	targets = param.t[ 0 ];
 
 	points = param.a[ 0 ];
-	if ( array_validate( targets ) )
+	if ( _ARRAY_VALIDATE( targets ) )
 	{
 		for ( i = 0; i < _SIZE( targets.size ); i++ )
 		{
@@ -326,7 +328,7 @@ private cmd_powerup_f( param )
 	targets = param.t[ 0 ];
 
 	powerup_name = param.a[ 0 ];
-	if ( array_validate( targets ) )
+	if ( _ARRAY_VALIDATE( targets ) )
 	{
 		for ( i = 0; i < _SIZE( targets.size ); i++ )
 		{
@@ -359,7 +361,7 @@ private cmd_weapon_f( param )
 	targets = param.t[ 0 ];
 
 	weapon = param.a[ 0 ];
-	if ( array_validate( targets ) )
+	if ( _ARRAY_VALIDATE( targets ) )
 	{
 		for ( i = 0; i < _SIZE( targets.size ); i++ )
 		{
@@ -390,12 +392,12 @@ private cmd_weapon_f( param )
 private cmd_toggleperssystem_f( param )
 {
 	targets = param.t[ 0 ];
-	if ( array_validate( targets ) )
+	if ( _ARRAY_VALIDATE( targets ) )
 	{
 		for ( i = 0; i < _SIZE( targets.size ); i++ )
 		{
 			player = targets[ i ];
-			on_off = cast_bool_to_str( is_true( self.tcs_disable_pers_system ), "on off" );
+			on_off = cast_boolean_to_str( is_true( self.tcs_disable_pers_system ), "on off" );
 			self.tcs_disable_pers_system = !is_true( self.tcs_disable_pers_system );
 
 			param add_executor_cmdinfo( "Toggled '{}' perma perk system '{}'", player.name, on_off );
@@ -404,7 +406,7 @@ private cmd_toggleperssystem_f( param )
 	}
 	else
 	{
-		on_off = cast_bool_to_str( is_true( self.tcs_disable_pers_system ), "on off" );
+		on_off = cast_boolean_to_str( is_true( self.tcs_disable_pers_system ), "on off" );
 		self.tcs_disable_pers_system = !is_true( self.tcs_disable_pers_system );
 		param add_executor_cmdinfo( "Toggled the perma perk system '{}'", on_off );
 	}
@@ -412,7 +414,7 @@ private cmd_toggleperssystem_f( param )
 
 private cmd_toggleoutofplayableareamonitor_f( param )
 {
-	on_off = cast_bool_to_str( !is_true( level.player_out_of_playable_area_monitor ), "on off" );
+	on_off = cast_boolean_to_str( !is_true( level.player_out_of_playable_area_monitor ), "on off" );
 	level.player_out_of_playable_area_monitor = !level.player_out_of_playable_area_monitor;
 	if ( on_off == "on" )
 	{
@@ -541,7 +543,7 @@ private cmd_setallphysparams_f( param )
 		return param add_executor_cmderror( "Phys params of z cannot be greater than 100" );
 	}
 
-	if ( !array_validate( zombies ) )
+	if ( !_ARRAY_VALIDATE( zombies ) )
 	{
 		zombies = get_round_enemy_array();
 	}
@@ -589,7 +591,7 @@ private cmd_spawnperkmachine_f( param )
 
 	kvp_start = 4;
 	kvps = param.a;
-	if ( array_validate( kvps ) && ( kvps.size - kvp_start ) > 0 && ( ( kvps.size - kvp_start ) % 2 ) != 0 )
+	if ( _ARRAY_VALIDATE( kvps ) && ( kvps.size - kvp_start ) > 0 && ( ( kvps.size - kvp_start ) % 2 ) != 0 )
 	{
 		return param add_executor_cmderror( "You must input an even number of key value pairs" );
 	}
@@ -602,7 +604,7 @@ private cmd_spawnperkmachine_f( param )
 	keys[ "angles" ] = angles;
 
 	// push past origin argument
-	for ( i = 1; i < _SIZE( param.a ); i += 2 )
+	for ( i = kvp_start; i < _SIZE( param.a.size ); i += 2 )
 	{
 		keys[ param.a[ i ] ] = param.a[ i + 1 ];
 	}
@@ -630,7 +632,7 @@ private cmd_spawnwallbuy_f( param )
 
 	kvp_start = 5;
 	kvps = param.a;
-	if ( array_validate( kvps ) && ( kvps.size - kvp_start ) > 0 && ( ( kvps.size - kvp_start ) % 2 ) != 0 )
+	if ( _ARRAY_VALIDATE( kvps ) && ( kvps.size - kvp_start ) > 0 && ( ( kvps.size - kvp_start ) % 2 ) != 0 )
 	{
 		return param add_executor_cmderror( "You must input an even number of key value pairs" );
 	}
@@ -661,8 +663,8 @@ private cmd_magicbulletshield_f( param )
 {
 	targets = param.t[ 0 ];
 
-	on_off = cast_bool_to_str( !is_true( self.magic_bullet_shield ), "on off" );
-	if ( array_validate( targets ) )
+	on_off = cast_boolean_to_str( !is_true( self.magic_bullet_shield ), "on off" );
+	if ( _ARRAY_VALIDATE( targets ) )
 	{
 		for ( i = 0; i < _SIZE( targets.size ); i++ )
 		{
@@ -695,7 +697,7 @@ show_custom_spawns()
 
 private cmd_showcustomspawns_f( param )
 {
-	on_off = cast_bool_to_str( !is_true( level._showing_custom_spawns ), "on off" );
+	on_off = cast_boolean_to_str( !is_true( level._showing_custom_spawns ), "on off" );
 	if ( on_off == "on" )
 	{
 		level thread show_custom_spawns();
@@ -720,7 +722,7 @@ private cmd_spawnzombieloc_f( param )
 
 	kvp_start = 2;
 	kvps = param.a;
-	if ( array_validate( kvps ) && ( kvps.size - kvp_start ) > 0 && ( ( kvps.size - kvp_start ) % 2 ) != 0 )
+	if ( _ARRAY_VALIDATE( kvps ) && ( kvps.size - kvp_start ) > 0 && ( ( kvps.size - kvp_start ) % 2 ) != 0 )
 	{
 		return param add_executor_cmderror( "You must input an even number of key value pairs" );
 	}

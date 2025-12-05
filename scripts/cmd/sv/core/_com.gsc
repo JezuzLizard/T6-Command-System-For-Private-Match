@@ -28,6 +28,85 @@ com_init()
 	com_channel_add( "iprint_array", ::com_iprintln_array );
 }
 
+com_printf_internal( channels, filter, message, players )
+{
+	if ( !isDefined( channels ) )
+	{
+		_ASSERT_MSG_ONLY( "com_printf_internal: channels was not defined!" );
+		return;
+	}
+	if ( !isDefined( filter ) )
+	{
+		_ASSERT_MSG_ONLY( "com_printf_internal: filter was not defined!" );
+		return;
+	}
+	if ( !isDefined( message ) || !isstring( message ) || message == "" )
+	{
+		_ASSERT_MSG_ONLY( "com_printf_internal: message was invalid(undefined,!string,blank)!" );
+		return;
+	}
+	channel_keys = strTok( channels, "|" );
+	for ( i = 0; i < _SIZE( channel_keys.size ); i++ )
+	{
+		channel = channel_keys[ i ];
+
+		if ( !com_channel_exists( channel ) )
+		{
+			com_printf_internal( "iprint|con|g_log", "cmdwarning", "Channel '" + channel + "' does not exist!", players );
+			continue;
+		}
+		if ( com_channel_is_active( channel ) && com_filter_is_active( filter ) )
+		{
+			if ( channel == "g_log" || channel == "notitle" )
+			{
+				message_color_code = "";
+			}
+			else 
+			{
+				message_color_code = "^8";
+			}
+
+			colored_prefix = com_caps_msg_title( channel, filter );
+			if ( channel == "con" )
+			{
+				print( colored_prefix );
+				message_modified = message;
+			}
+			else
+			{
+				message_modified = colored_prefix + message_color_code + message;
+			}
+
+			if ( _ARRAY_VALIDATE( players ) )
+			{
+				channel = channel + "_array";
+			}
+			[[ level.com_channels[ channel ] ]]( message_modified, players );
+		}
+	}
+}
+
+com_get_cmd_feedback_channel_internal()
+{
+	custom_channels = get_dvar_string_default( "tcs_custom_feedback_channels", "" );
+	if ( custom_channels != "" )
+	{
+		return custom_channels;
+	}
+	if ( is_true( self.is_server ) )
+	{
+		return "con|g_log";
+	}
+	else if ( is_true( self.is_host ) )
+	{
+		return "iprint|con|g_log";
+	}
+	else
+	{
+		return "iprint";
+	}
+}
+
 private com_filter_is_active( filter )
 {
 	return is_true( level.com_filters[ filter ] );
@@ -114,84 +193,5 @@ private com_iprintlnbold( message, players )
 	for ( i = 0; i < _SIZE( level.players.size ); i++ )
 	{
 		level.players[ i ] iprintlnbold( message );
-	}
-}
-
-com_printf_internal( channels, filter, message, players )
-{
-	if ( !isDefined( channels ) )
-	{
-		_MY_ASSERT_HANDLER( false, "com_printf_internal: channels was not defined!" );
-		return;
-	}
-	if ( !isDefined( filter ) )
-	{
-		_MY_ASSERT_HANDLER( false, "com_printf_internal: filter was not defined!" );
-		return;
-	}
-	if ( !isDefined( message ) || !isstring( message ) || message == "" )
-	{
-		_MY_ASSERT_HANDLER( false, "com_printf_internal: message was invalid(undefined,!string,blank)!" );
-		return;
-	}
-	channel_keys = strTok( channels, "|" );
-	for ( i = 0; i < _SIZE( channel_keys.size ); i++ )
-	{
-		channel = channel_keys[ i ];
-
-		if ( !com_channel_exists( channel ) )
-		{
-			com_printf_internal( "iprint|con|g_log", "cmdwarning", "Channel '" + channel + "' does not exist!", players );
-			continue;
-		}
-		if ( com_channel_is_active( channel ) && com_filter_is_active( filter ) )
-		{
-			if ( channel == "g_log" || channel == "notitle" )
-			{
-				message_color_code = "";
-			}
-			else 
-			{
-				message_color_code = "^8";
-			}
-
-			colored_prefix = com_caps_msg_title( channel, filter );
-			if ( channel == "con" )
-			{
-				print( colored_prefix );
-				message_modified = message;
-			}
-			else
-			{
-				message_modified = colored_prefix + message_color_code + message;
-			}
-
-			if ( array_validate( players ) )
-			{
-				channel = channel + "_array";
-			}
-			[[ level.com_channels[ channel ] ]]( message_modified, players );
-		}
-	}
-}
-
-com_get_cmd_feedback_channel_internal()
-{
-	custom_channels = get_dvar_string_default( "tcs_custom_feedback_channels", "" );
-	if ( custom_channels != "" )
-	{
-		return custom_channels;
-	}
-	if ( is_true( self.is_server ) )
-	{
-		return "con|g_log";
-	}
-	else if ( is_true( self.is_host ) )
-	{
-		return "iprint|con|g_log";
-	}
-	else
-	{
-		return "iprint";
 	}
 }

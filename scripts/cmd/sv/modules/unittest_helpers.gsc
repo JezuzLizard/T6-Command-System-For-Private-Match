@@ -3,8 +3,8 @@
 
 #include scripts\cmd\sv\core\_utility;
 
-#include scripts\cmd\sv\core\_hud_api;
-#include scripts\cmd\sv\core\_hud_utility;
+#include scripts\cmd\sv\core\_api_hud;
+#include scripts\cmd\sv\core\_utility_hud;
 
 init_unittest_helpers()
 {
@@ -229,7 +229,7 @@ private create_random_valid_targets( cmd )
 		random_overload = random_val( val.overloads );
 		if ( !isdefined( level._entity_type_funcs[ random_overload.etype ] ) )
 		{
-			_MY_ASSERT_HANDLER( false,  "Unknown entity type: '{}' registered for command: '{}'", random_overload.etype, cmd.cmd_name );
+			_ASSERT_MSG_ONLY( "Unknown entity type: '{}' registered for command: '{}'", random_overload.etype, cmd.cmd_name );
 			target_gen_obj.errored = true;
 			return target_gen_obj;
 		}
@@ -254,7 +254,7 @@ private create_random_valid_targets( cmd )
 		target_str = self [[ level._target_obj_generate ]]( val, random_overload );
 		if ( target_str == "" )
 		{
-			_MY_ASSERT_HANDLER( false, "Could not generate entities of etype: '{}' max_targets: '{}'", random_overload.etype, random_overload.max_targets );
+			_ASSERT_MSG_ONLY( "Could not generate entities of etype: '{}' max_targets: '{}'", random_overload.etype, random_overload.max_targets );
 			target_gen_obj.errored = true;
 			return target_gen_obj;
 		}
@@ -303,7 +303,7 @@ private construct_chat_message_for_unittest()
 	
 	if ( cmd_find_result.errored )
 	{
-		_MY_ASSERT_HANDLER( false, cmd_find_result.msg );
+		_ASSERT_MSG_ONLY( cmd_find_result.msg );
 		return;
 	}
 
@@ -324,10 +324,10 @@ private construct_chat_message_for_unittest()
 		return;
 	}
 
-	message = cmd_object.cmd_name;
+	message = format( "{}", cmd_object.cmd_name );
 	if ( target_gen_obj.value != "" )
 	{
-		message += " " + target_gen_obj.value;
+		message = format( "{} {}", message, target_gen_obj.value );
 	}
 	else if ( cmd_object.has_required_target )
 	{
@@ -337,6 +337,11 @@ private construct_chat_message_for_unittest()
 	if ( arg_gen_obj.value.size > 0 )
 	{
 		message += " " + repackage_args( arg_gen_obj.value );
+	}
+
+	if ( message[ message.size - 1 ] == " " )
+	{
+		message = getsubstr( message, 0, message.size - 1 );
 	}
 
 	cmd_log = format( "'{}' executed '{}' count: '{}'", self.name, message, level.unittest_total_cmds_used );
@@ -367,6 +372,12 @@ private create_random_valid_args2( cmd_object )
 			}
 		}
 
+		// TODO: write logic to handle generating variadic command args
+		if ( isdefined( type.overloads[ "..." ] ) )
+		{
+			break;
+		}
+
 		random_overloaded_type = random_key( type.overloads );
 		arg = self generate_args_from_type( random_overloaded_type );
 		if ( arg.errored || is_true( arg.rand_gen_unimplemented ) )
@@ -391,12 +402,12 @@ private generate_args_from_type( type )
 		rand_obj = self [[ level.tcs_arg_type_handlers[ type ].rand_gen_func ]]();
 		if ( rand_obj.errored )
 		{
-			_MY_ASSERT_HANDLER( false, "generate_args_from_type: Error that should never happen has happened: '{}' msg: '{}'", type, rand_obj.msg );
+			_ASSERT_MSG_ONLY( "generate_args_from_type: Error that should never happen has happened: '{}' msg: '{}'", type, rand_obj.msg );
 			return rand_obj;
 		}
 		else if ( is_true( rand_obj.rand_gen_unimplemented ) )
 		{
-			_MY_ASSERT_HANDLER( false, "generate_args_from_type: Tried to generate args for type: '{}' but generation was unimplemented", type );
+			_ASSERT_MSG_ONLY( "generate_args_from_type: Tried to generate args for type: '{}' but generation was unimplemented", type );
 			return rand_obj;
 		}
 
@@ -404,7 +415,7 @@ private generate_args_from_type( type )
 	}
 
 	rand_obj.errored = true;
-	_MY_ASSERT_HANDLER( "Tried to generate args for '{}' but no rand_gen_func handler exists for it", type );
+	_ASSERT_MSG_ONLY( "Tried to generate args for '{}' but no rand_gen_func handler exists for it", type );
 	return rand_obj;
 }
 

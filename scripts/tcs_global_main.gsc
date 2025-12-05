@@ -5,9 +5,9 @@
 #include scripts\cmd\sv\core\_cmd_execute;
 #include scripts\cmd\sv\core\_cmd_parse2;
 #include scripts\cmd\sv\core\_com;
-#include scripts\cmd\sv\core\_consts;
-#include scripts\cmd\sv\core\_hud_api;
-#include scripts\cmd\sv\core\_hud_utility;
+#include scripts\cmd\sv\core\_api_cast;
+#include scripts\cmd\sv\core\_api_hud;
+#include scripts\cmd\sv\core\_utility_hud;
 #include scripts\cmd\sv\core\_perms;
 #include scripts\cmd\sv\core\_utility;
 
@@ -30,11 +30,11 @@
 #include scripts\cmd\sv\modules\unittest_cmds;
 #include scripts\cmd\sv\modules\unittest_helpers;
 
-#include scripts\cmd\sv\core\_radiant_keys_parser;
+#include scripts\cmd\sv\core\parsers\_radiant_keys_parser;
 
 private main()
 {
-	_INIT_SERVER();
+	_init_server();
 	level._tcs_developer = getdvarint( "tcs_developer" );
 	level.tcs_glob = spawnstruct();
 	level.tcs_glob.irestart_countdown = 5;
@@ -55,28 +55,6 @@ private main()
 			level.tcs_glob.acmd_tokens[ level.tcs_glob.acmd_tokens.size ] = tokens[ i ];
 		}
 	}
-	// "\" is always useable by default
-
-	// Special target syntax for players/entities:
-	// {*} - if the argument expects a player/entity, execute on all of them
-	// {playername1,playername2} - execute only on these players
-	// certain reserved syntaxes also apply:
-	// {*[team=allies&classname=player]} - only execute on <team> AND <classname>
-	// {*[team=axis|classname=player]} - execute on <team> OR <classname>
-	// {*[target=self]} - manually set the target to an entity in this case self or the executor, default behavior; if server is executing they must specify the target
-	// {$39} - pick random targets up to $<x> from possible pool of targets, <x> defaults to 1
-	// {$[team=allies&classname=player]} - pick one random target matching the criteria
-	// %{player} - forces this player to be the executor of the command as if they typed the command in the chat
-	// {(some_func(arg1,arg2,arg3))} - execute a script function to retrieve targets
-
-	// TLDR;
-	// {} by itself represents targets of the command
-	// %{} represents executors of the command
-	// you can specify both the executor and targets syntax since they have different enough syntax
-
-	// Target Hierarchy:
-	// Entity{Everything}
-	// Player{Bot}, Sentient{Actor, Bot}
 	
 	com_init();
 	init_consts();
@@ -150,10 +128,6 @@ tcs_on_connect()
 	tcs_pl_obj = tcs_p_obj_new();
 	self.tcs_pl = tcs_pl_obj;
 
-	foreach ( index, dvar in level.clientdvars )
-	{
-		self thread set_client_dvar_thread( dvar[ "name" ], dvar[ "value" ], index );
-	}
 	found_entry = false;
 	if ( self ishost() )
 	{
@@ -162,7 +136,7 @@ tcs_on_connect()
 		self.is_host = true;
 		found_entry = true;
 	}
-	else if ( array_validate( level.tcs_player_entries ) )
+	else if ( _ARRAY_VALIDATE( level.tcs_player_entries ) )
 	{
 		foreach ( entry in level.tcs_player_entries )
 		{

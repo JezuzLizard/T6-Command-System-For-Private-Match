@@ -6,6 +6,8 @@
 #include maps\mp\zombies\_zm_score;
 #include maps\mp\zombies\_zm_weapons;
 
+#include scripts\cmd\sv\core\_api_cmd;
+
 #include scripts\cmd\sv\core\_utility;
 
 #include maps\mp\bots\_bot_api;
@@ -67,7 +69,7 @@ private cmd_setscriptgoal_f( param )
 		}
 		else
 		{
-			goal = cast_str_to_vector( goal );
+			goal = cast_str_to_type( goal, "vector" );
 			bot SetScriptGoalPos( goal, dist );
 		}
 	}
@@ -86,5 +88,5 @@ private cmd_hasscriptgoal_f( param )
 {
 	bot = param.t[ 0 ][ 0 ];
 	bot ClearScriptGoal();
-	param add_executor_cmdinfo( "Bot '{}' has goal:", bot.name, cast_bool_to_str( bot HasScriptGoal(), "yes no" ) );
+	param add_executor_cmdinfo( "Bot '{}' has goal:", bot.name, cast_boolean_to_str( bot HasScriptGoal(), "yes no" ) );
 }

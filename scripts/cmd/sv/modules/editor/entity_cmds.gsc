@@ -1,8 +1,10 @@
 #include common_scripts\utility;
 #include maps\mp\_utility;
 
+#include scripts\cmd\sv\core\_api_cmd;
+
 #include scripts\cmd\sv\core\_utility;
-#include scripts\cmd\sv\core\_hud_utility;
+#include scripts\cmd\sv\core\_utility_hud;
 #include scripts\cmd\sv\modules\editor\entity_helpers;
 
 add_entity_cmds()
@@ -748,7 +750,7 @@ private cmd_loadmapents_f( param )
 	entities = parse_mapents( paths_file );
 	fs_fclose( paths_file );
 
-	if ( !array_validate( entities ) )
+	if ( !_ARRAY_VALIDATE( entities ) )
 	{
 		param add_executor_cmderror( "You have no nodes to load, why don't you work on that first" );
 		return;

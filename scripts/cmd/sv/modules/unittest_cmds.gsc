@@ -1,6 +1,8 @@
 #include common_scripts\utility;
 #include maps\mp\_utility;
 
+#include scripts\cmd\sv\core\_api_cmd;
+
 #include scripts\cmd\sv\core\_utility;
 
 #include scripts\cmd\sv\modules\unittest_helpers;
@@ -16,7 +18,7 @@ add_unittest_cmds()
 	make_cmd_immune_to_unittest();
 
 	cmd_add( "testmodule", ::cmd_testmodule_f, "testmodule <cmdmodule> [sequential] [duration] [rate]" );
-	arg_add_required( 1, "cmdmodule", "string", "Module to test" );
+	arg_add_required( 1, "cmdmodule", "cmdmodule", "Module to test" );
 	arg_add_optional_with_default( 2, "sequential", "boolean", "Test each command in sequential order as defined by the module", true );
 	arg_add_optional_with_default( 3, "duration", "positive_int", "Duration of automated testing", 0 );
 	arg_add_optional_with_default( 4, "rate", "positive_float", "Rate of command execution", 0.5 );
@@ -40,7 +42,7 @@ private cmd_unittest_validargs_f( param )
 		level notify( "unittest_stop" );
 	}
 
-	on_off = cast_bool_to_str( level.doing_cmd_system_unittest, "activated deactivated" );
+	on_off = cast_boolean_to_str( level.doing_cmd_system_unittest, "activated deactivated" );
 
 	param add_executor_cmdinfo( "Cmd system unit test '{}'", on_off );
 }
@@ -51,11 +53,6 @@ private cmd_testmodule_f( param )
 	sequential = _DEFAULT( param.a[ 1 ], true );
 	duration = _DEFAULT( param.a[ 2 ], 0 );
 	rate = _DEFAULT( param.a[ 3 ], 0.5 );
-
-	if ( !array_validate( level._cmd_modules[ module ] ) )
-	{
-		return param add_executor_cmderror( "Module '{}' does not exist!", module );
-	}
 
 	level.doing_cmd_system_unittest = !is_true( level.doing_cmd_system_unittest );
 	if ( level.doing_cmd_system_unittest )
@@ -68,7 +65,7 @@ private cmd_testmodule_f( param )
 		level notify( "unittest_stop" );
 	}
 
-	on_off = cast_bool_to_str( level.doing_cmd_system_unittest, "activated deactivated" );
+	on_off = cast_boolean_to_str( level.doing_cmd_system_unittest, "activated deactivated" );
 
 	param add_executor_cmdinfo( "Cmd system unit test for '{}' module '{}'", module, on_off );
 }
