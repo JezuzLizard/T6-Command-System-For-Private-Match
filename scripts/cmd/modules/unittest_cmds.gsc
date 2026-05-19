@@ -1,15 +1,15 @@
 #include common_scripts\utility;
 #include maps\mp\_utility;
 
-#include scripts\cmd\sv\core\_api_cmd;
+#include scripts\cmd\core\_api_cmd;
 
-#include scripts\cmd\sv\core\_utility;
+#include scripts\cmd\core\_utility;
 
-#include scripts\cmd\sv\modules\unittest_helpers;
+#include scripts\cmd\modules\unittest_helpers;
 
 add_unittest_cmds()
 {
-	cmd_block_set_module_group( "unittest_cmds" );
+	cmd_block_set_module_group( "unittest" );
 	cmd_block_set_rank_group( "cheat" );
 	cmd_add( "unittest", ::cmd_unittest_validargs_f, "unittest [botcount] [duration] [rate]" );
 	arg_add_optional_with_default( 1, "botcount", "positive_int", "Number of bots to spawn for spamming commands", 1 );

@@ -1,14 +1,14 @@
 #include common_scripts\utility;
 #include maps\mp\_utility;
 
-#include scripts\cmd\sv\core\_api_cmd;
+#include scripts\cmd\core\_api_cmd;
 
-#include scripts\cmd\sv\core\_utility;
-#include scripts\cmd\sv\modules\core_helpers;
+#include scripts\cmd\core\_utility;
+#include scripts\cmd\modules\core_helpers;
 
 add_core_cmds()
 {
-	cmd_block_set_module_group( "core_cmds" );
+	cmd_block_set_module_group( "core" );
 	cmd_block_set_rank_group( "cheat" );
 	cmd_add( "cvar", ::cmd_setcvar_f, "cvar <cvarname> <newval>" );
 	arg_add_required( 1, "cvarname", "string", "Name of client dvar" );

@@ -14,9 +14,9 @@
 #include maps\mp\zombies\_zm_weap_cymbal_monkey;
 #include maps\mp\zombies\_zm_weapons;
 
-#include scripts\cmd\sv\core\_utility;
+#include scripts\cmd\core\_utility;
 
-#include scripts\zm\cmd\sv\_zm_utility;
+#include scripts\zm\cmd\_zm_utility;
 
 init_zm_core_helpers()
 {

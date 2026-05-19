@@ -8,7 +8,7 @@
 #include maps\mp\zombies\_zm_weapons;
 #include maps\mp\zombies\_zm_weap_claymore;
 
-#include scripts\cmd\sv\core\_utility;
+#include scripts\cmd\core\_utility;
 
 permaperk_list_zm()
 {

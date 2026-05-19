@@ -1,10 +1,10 @@
 #include common_scripts\utility;
 #include maps\mp\_utility;
 
-#include scripts\cmd\sv\core\_utility;
+#include scripts\cmd\core\_utility;
 
-#include scripts\cmd\sv\core\_api_hud;
-#include scripts\cmd\sv\core\_utility_hud;
+#include scripts\cmd\core\_api_hud;
+#include scripts\cmd\core\_utility_hud;
 
 init_unittest_helpers()
 {
@@ -219,6 +219,7 @@ private create_random_valid_targets( cmd )
 		return target_gen_obj;
 	}
 
+	count = 0;
 	foreach ( ordinal, val in types )
 	{
 		if ( !val.is_required && cointoss() )
@@ -259,6 +260,7 @@ private create_random_valid_targets( cmd )
 			return target_gen_obj;
 		}
 		targets += target_str;
+		count++;
 
 		targets += ",";
 	}

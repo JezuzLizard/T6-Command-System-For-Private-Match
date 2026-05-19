@@ -1,16 +1,16 @@
 #include common_scripts\utility;
 #include maps\mp\_utility;
 
-#include scripts\cmd\sv\core\_api_cmd;
+#include scripts\cmd\core\_api_cmd;
 
-#include scripts\cmd\sv\core\_utility;
-#include scripts\cmd\sv\core\_utility_hud;
-#include scripts\cmd\sv\modules\editor\entity_helpers;
-#include scripts\cmd\sv\modules\editor\path_helpers;
+#include scripts\cmd\core\_utility;
+#include scripts\cmd\core\_utility_hud;
+#include scripts\cmd\modules\editor\entity_helpers;
+#include scripts\cmd\modules\editor\path_helpers;
 
 add_path_cmds()
 {
-	cmd_block_set_module_group( "core_pathnode_cmds" );
+	cmd_block_set_module_group( "core_pathnode" );
 	cmd_block_set_rank_group( "cheat" );
 
 	cmd_add( "spawncustompathnode", ::cmd_spawncustompathnode_f, "spawncustompathnode <id> [origin] [kvps...]" );

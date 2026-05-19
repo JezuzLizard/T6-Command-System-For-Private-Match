@@ -1,10 +1,10 @@
 #include common_scripts\utility;
 #include maps\mp\_utility;
 
-#include scripts\cmd\sv\core\_api_cmd;
+#include scripts\cmd\core\_api_cmd;
 
-#include scripts\cmd\sv\core\_utility;
-#include scripts\cmd\sv\modules\editor\debug_helpers;
+#include scripts\cmd\core\_utility;
+#include scripts\cmd\modules\editor\debug_helpers;
 
 add_debug_cmds()
 {
@@ -51,7 +51,7 @@ add_debug_cmds()
 	}
 	level.debug_hud_y_offset = y;
 
-	cmd_block_set_module_group( "core_debug_cmds" );
+	cmd_block_set_module_group( "core_debug" );
 	cmd_block_set_rank_group( "cheat" );
 	cmd_add( "drawtriggers", ::cmd_drawtriggers_f, "drawtriggers <types> [draw_text]" );
 	arg_add_required( 1, "trigger_type", "triggertype", "Trigger types to draw" );

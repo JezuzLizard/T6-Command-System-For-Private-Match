@@ -1,15 +1,15 @@
 #include common_scripts\utility;
 #include maps\mp\_utility;
 
-#include scripts\cmd\sv\core\_api_cmd;
+#include scripts\cmd\core\_api_cmd;
 
-#include scripts\cmd\sv\core\_utility;
-#include scripts\cmd\sv\core\_utility_hud;
-#include scripts\cmd\sv\modules\editor\entity_helpers;
+#include scripts\cmd\core\_utility;
+#include scripts\cmd\core\_utility_hud;
+#include scripts\cmd\modules\editor\entity_helpers;
 
 add_entity_cmds()
 {
-	cmd_block_set_module_group( "core_entity_cmds" );
+	cmd_block_set_module_group( "core_entity" );
 	cmd_block_set_rank_group( "cheat" );
 
 	// entity manipulation

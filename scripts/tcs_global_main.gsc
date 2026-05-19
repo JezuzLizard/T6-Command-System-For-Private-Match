@@ -2,35 +2,35 @@
 #include maps\mp\_utility;
 
 // reference all scripts for autoexec
-#include scripts\cmd\sv\core\_cmd_execute;
-#include scripts\cmd\sv\core\_cmd_parse2;
-#include scripts\cmd\sv\core\_com;
-#include scripts\cmd\sv\core\_api_cast;
-#include scripts\cmd\sv\core\_api_hud;
-#include scripts\cmd\sv\core\_utility_hud;
-#include scripts\cmd\sv\core\_perms;
-#include scripts\cmd\sv\core\_utility;
+#include scripts\cmd\core\_cmd_execute;
+#include scripts\cmd\core\_cmd_parse2;
+#include scripts\cmd\core\_com;
+#include scripts\cmd\core\_api_cast;
+#include scripts\cmd\core\_api_hud;
+#include scripts\cmd\core\_utility_hud;
+#include scripts\cmd\core\_perms;
+#include scripts\cmd\core\_utility;
 
 // common cmds
-#include scripts\cmd\sv\modules\core_cmds;
-#include scripts\cmd\sv\modules\core_helpers;
+#include scripts\cmd\modules\core_cmds;
+#include scripts\cmd\modules\core_helpers;
 // entity cmds
-#include scripts\cmd\sv\modules\editor\entity_cmds;
-#include scripts\cmd\sv\modules\editor\entity_helpers;
+#include scripts\cmd\modules\editor\entity_cmds;
+#include scripts\cmd\modules\editor\entity_helpers;
 // path cmds
-#include scripts\cmd\sv\modules\editor\path_cmds;
-#include scripts\cmd\sv\modules\editor\path_helpers;
+#include scripts\cmd\modules\editor\path_cmds;
+#include scripts\cmd\modules\editor\path_helpers;
 // debug cmds
-#include scripts\cmd\sv\modules\editor\debug_cmds;
-#include scripts\cmd\sv\modules\editor\debug_helpers;
+#include scripts\cmd\modules\editor\debug_cmds;
+#include scripts\cmd\modules\editor\debug_helpers;
 // filmmaker cmds
-#include scripts\cmd\sv\modules\filmmaker\camera_cmds;
-#include scripts\cmd\sv\modules\filmmaker\camera_helpers;
+#include scripts\cmd\modules\filmmaker\camera_cmds;
+#include scripts\cmd\modules\filmmaker\camera_helpers;
 // unittest cmds
-#include scripts\cmd\sv\modules\unittest_cmds;
-#include scripts\cmd\sv\modules\unittest_helpers;
+#include scripts\cmd\modules\unittest_cmds;
+#include scripts\cmd\modules\unittest_helpers;
 
-#include scripts\cmd\sv\core\parsers\_radiant_keys_parser;
+#include scripts\cmd\core\parsers\_radiant_keys_parser;
 
 private main()
 {
@@ -39,6 +39,7 @@ private main()
 	level.tcs_glob = spawnstruct();
 	level.tcs_glob.irestart_countdown = 5;
 	level.tcs_glob.icmd_total = 0;
+	level.tcs_glob.max_cmd_length = 512;
 	level.tcs_glob.icooldown = getdvarintdefault( "tcs_cmd_cd", 5 );
 	level.tcs_glob.bsilent_cmds = getdvarintdefault( "tcs_silent_cmds", 0 );
 	level.tcs_glob.blog_cmds = getdvarintdefault( "tcs_logprint_cmd_usage", 1 );
@@ -62,9 +63,8 @@ private main()
 	init_camera_helpers();
 	init_debug_helpers();
 	init_entity_helpers();
-	init_perms();
 	init_path_helpers();
-	parse_radiant_keys();
+	// parse_radiant_keys();
 	level thread start_cmd_buffer_thread();
 
 	addcallback( "on_player_connect", ::tcs_on_connect );
@@ -72,6 +72,9 @@ private main()
 
 	level thread drive_connected_notifies_for_mp();
 	level thread drive_disconnected_notifies();
+
+	_GET_SERVER_ENTITY() thread catch_uncaught_exceptions();
+	_GET_SERVER_ENTITY() thread catch_exception( "debug" );
 
 	wait 0.05;
 	waittillframeend;

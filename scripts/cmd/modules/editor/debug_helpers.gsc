@@ -1,10 +1,10 @@
 #include common_scripts\utility;
 #include maps\mp\_utility;
 
-#include scripts\cmd\sv\core\_utility;
+#include scripts\cmd\core\_utility;
 
-#include scripts\cmd\sv\core\_api_hud;
-#include scripts\cmd\sv\core\_utility_hud;
+#include scripts\cmd\core\_api_hud;
+#include scripts\cmd\core\_utility_hud;
 
 init_debug_helpers()
 {

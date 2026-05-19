@@ -1,16 +1,16 @@
 #include common_scripts\utility;
 #include maps\mp\_utility;
 
-#include scripts\cmd\sv\core\_api_cmd;
+#include scripts\cmd\core\_api_cmd;
 
-#include scripts\cmd\sv\core\_utility;
-#include scripts\cmd\sv\core\_utility_hud;
-#include scripts\cmd\sv\modules\filmmaker\camera_helpers;
+#include scripts\cmd\core\_utility;
+#include scripts\cmd\core\_utility_hud;
+#include scripts\cmd\modules\filmmaker\camera_helpers;
 
 add_camera_cmds()
 {
 	// camera commands
-	cmd_block_set_module_group( "filmmaker_camera_cmds" );
+	cmd_block_set_module_group( "film" );
 	cmd_block_set_rank_group( "cheat" );
 
 	cmd_add( "createcamera", ::cmd_createcamera_f, "createcamera <camera_name> [origin] [angles] [model]" );

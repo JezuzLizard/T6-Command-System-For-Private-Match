@@ -1,9 +1,9 @@
 #include common_scripts\utility;
 #include maps\mp\_utility;
 
-#include scripts\cmd\sv\core\_utility;
+#include scripts\cmd\core\_utility;
 
-#include scripts\zm\cmd\sv\_zm_utility;
+#include scripts\zm\cmd\_zm_utility;
 
 init_sv_zm_consts()
 {

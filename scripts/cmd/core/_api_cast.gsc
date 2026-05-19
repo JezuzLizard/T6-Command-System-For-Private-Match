@@ -1,7 +1,7 @@
 #include common_scripts\utility;
 #include maps\mp\_utility;
 
-#include scripts\cmd\sv\core\_utility;
+#include scripts\cmd\core\_utility;
 
 init_consts()
 {
@@ -1177,6 +1177,11 @@ private target_obj_generate( target_type, overload )
 					target_str += ents[ i ] getentitynumber();
 				}
 
+				if ( i >= 32 )
+				{
+					break;
+				}
+
 				if ( ( i + 1 ) < rand_limit )
 				{
 					target_str += ",";
@@ -1186,22 +1191,30 @@ private target_obj_generate( target_type, overload )
 			target_str += "]";
 			break;
 		case 2: // name
-			rand = randomint( 100 );
-			if ( rand == 0 )
+			if ( ( etype == "player" || etype == "bot" ) && cointoss() )
 			{
 				if ( cointoss() )
 				{
-					target_str += "1022";
+					target_str += ents[ 0 ].name;
+				}
+				else if ( cointoss() )
+				{
+					target_str += "&";
+				}
+				else if ( cointoss() )
+				{
+					target_str += ents[ 0 ].guid;
 				}
 				else
 				{
-					target_str += "1023";
+					target_str += ents[ 0 ] getentitynumber();
 				}
 			}
 			else
 			{
 				target_str += ents[ 0 ] getentitynumber();
 			}
+
 			break;
 	}
 

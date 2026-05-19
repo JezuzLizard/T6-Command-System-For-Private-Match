@@ -1,8 +1,8 @@
 #include common_scripts\utility;
 #include maps\mp\_utility;
 
-#include scripts\cmd\sv\core\_utility;
-#include scripts\cmd\sv\core\_api_hud;
+#include scripts\cmd\core\_utility;
+#include scripts\cmd\core\_api_hud;
 // RULE 1
 /*
 	'self' is always a player in this file

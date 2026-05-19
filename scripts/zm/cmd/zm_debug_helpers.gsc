@@ -3,8 +3,8 @@
 #include maps\mp\zombies\_zm_utility;
 #include maps\mp\zombies\_zm_zonemgr;
 
-#include scripts\cmd\sv\core\_utility;
-#include scripts\zm\cmd\sv\_zm_utility;
+#include scripts\cmd\core\_utility;
+#include scripts\zm\cmd\_zm_utility;
 
 init_zm_debug_helpers()
 {

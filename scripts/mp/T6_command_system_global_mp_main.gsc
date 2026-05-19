@@ -1,7 +1,7 @@
 #include common_scripts\utility;
 #include maps\mp\_utility;
-#include scripts\mp\cmd\sv\_mp_consts;
-#include scripts\mp\cmd\sv\mp_core_cmds;
+#include scripts\mp\cmd\_mp_consts;
+#include scripts\mp\cmd\mp_core_cmds;
 
 main()
 {

@@ -3,16 +3,16 @@
 #include maps\mp\zombies\_zm_utility;
 #include maps\mp\zombies\_zm_weapons;
 
-#include scripts\cmd\sv\core\_utility;
+#include scripts\cmd\core\_utility;
 
 // zm only cmds registered by autoexec
-#include scripts\zm\cmd\sv\_zm_utility;
-#include scripts\zm\cmd\sv\_zm_consts;
-//#include scripts\zm\cmd\sv\zm_bots_cmds;
-#include scripts\zm\cmd\sv\zm_core_cmds;
-#include scripts\zm\cmd\sv\zm_debug_cmds;
-#include scripts\zm\cmd\sv\zm_core_helpers;
-#include scripts\zm\cmd\sv\zm_debug_helpers;
+#include scripts\zm\cmd\_zm_utility;
+#include scripts\zm\cmd\_zm_consts;
+//#include scripts\zm\cmd\zm_bots_cmds;
+#include scripts\zm\cmd\zm_core_cmds;
+#include scripts\zm\cmd\zm_debug_cmds;
+#include scripts\zm\cmd\zm_core_helpers;
+#include scripts\zm\cmd\zm_debug_helpers;
 
 main()
 {

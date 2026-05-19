@@ -1,9 +1,9 @@
 #include common_scripts\utility;
 #include maps\mp\_utility;
 
-#include scripts\cmd\sv\core\_utility;
+#include scripts\cmd\core\_utility;
 
-#include scripts\cmd\sv\core\_api_cmd;
+#include scripts\cmd\core\_api_cmd;
 
 com_printdebuginfo_internal( format, a, b, c, d, e, f, g, h, i, j, k )
 {
@@ -52,7 +52,7 @@ script_breakpoint_internal( generic_obj, msg, display_callstack, should_print )
 	{
 		if ( isdefined( msg ) )
 		{
-			self com_printerror( msg );
+			generic_obj com_printerror( msg );
 		}
 
 		generic_obj print_obj_internal();
@@ -60,7 +60,7 @@ script_breakpoint_internal( generic_obj, msg, display_callstack, should_print )
 
 	for ( ;; )
 	{
-		evt = self waittill_any_return( "debug_continue", "debug_abort" );
+		evt = generic_obj waittill_any_return( "debug_continue", "debug_abort" );
 
 		if ( evt == "debug_continue" )
 		{
@@ -68,7 +68,7 @@ script_breakpoint_internal( generic_obj, msg, display_callstack, should_print )
 		}
 		else if ( evt == "debug_abort" )
 		{
-			self notify( "cmd_exception", generic_obj );
+			generic_obj notify( "cmd_execute_internal" );
 			return false;
 		}
 	}
@@ -161,14 +161,10 @@ _MY_ASSERT_HANDLER( condition, fmt, a, b, c, d, e, f, g, h, i, j, k )
 		return false;
 	}
 
-	message = format( fmt, a, b, c, d, e, f, g, h, i, j, k );
-	_GET_SERVER_ENTITY() com_printerror( message );
-
-	if ( getdvarint( "do_assert_debug_box" ) )
-	{
-		assert( false );
-		debugbox( fmt );
-	}
+	generic_obj = generic_obj_t_new( "debug_exception" );
+	generic_obj.callstack = true;
+	generic_obj.debugbox = true;
+	throw_exception( "debug", generic_obj, fmt, a, b, c, d, e, f, g, h, i, j, k );
 
 	return true;
 }

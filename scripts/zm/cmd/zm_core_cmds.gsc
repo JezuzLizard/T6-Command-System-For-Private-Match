@@ -2,22 +2,22 @@
 #include maps\mp\_utility;
 #include maps\mp\zombies\_zm_utility;
 
-#include scripts\cmd\sv\core\_api_cmd;
+#include scripts\cmd\core\_api_cmd;
 
-#include scripts\cmd\sv\core\_utility;
+#include scripts\cmd\core\_utility;
 
 #include maps\mp\zombies\_zm;
 #include maps\mp\zombies\_zm_perks;
 #include maps\mp\zombies\_zm_score;
 #include maps\mp\zombies\_zm_weapons;
 
-#include scripts\zm\cmd\sv\_zm_utility;
+#include scripts\zm\cmd\_zm_utility;
 
-#include scripts\zm\cmd\sv\zm_core_helpers;
+#include scripts\zm\cmd\zm_core_helpers;
 
 add_zm_core_cmds()
 {
-	cmd_block_set_module_group( "zm_core_cmds" );
+	cmd_block_set_module_group( "core_zm" );
 	cmd_block_set_rank_group( "cheat" );
 
 	cmd_add( "spectator", ::cmd_spectator_f, "spectator {player}" );

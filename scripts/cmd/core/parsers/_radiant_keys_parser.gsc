@@ -1,9 +1,9 @@
 #include common_scripts\utility;
 #include maps\mp\_utility;
 
-#include scripts\cmd\sv\core\_utility;
-#include scripts\cmd\sv\core\_utility_hud;
-#include scripts\cmd\sv\core\_api_str;
+#include scripts\cmd\core\_utility;
+#include scripts\cmd\core\_utility_hud;
+#include scripts\cmd\core\_api_str;
 
 // RULE 1: 'self' is always a radiant_keys_parse_obj_t object
 
@@ -142,6 +142,6 @@ print_radiant_keys()
 	{
 		member = level._radiant_keys_obj.data[ keys[ i ] ];
 
-		_GET_SERVER_ENTITY() com_printnotitle( "Key: '{}', Type: '{}', Desc: '{}'", keys[ i ], member.type, member.desc );
+		//_GET_SERVER_ENTITY() com_printnotitle( "Key: '{}', Type: '{}', Desc: '{}'", keys[ i ], member.type, member.desc );
 	}
 }

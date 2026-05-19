@@ -2,14 +2,14 @@
 #include maps\mp\_utility;
 
 // forwarded imports
-#include scripts\cmd\sv\core\_api_cast;
-#include scripts\cmd\sv\core\_api_str;
-#include scripts\cmd\sv\core\_utility_debug;
-#include scripts\cmd\sv\core\_utility_str;
+#include scripts\cmd\core\_api_cast;
+#include scripts\cmd\core\_api_str;
+#include scripts\cmd\core\_utility_debug;
+#include scripts\cmd\core\_utility_str;
 
-#include scripts\cmd\sv\core\_com;
-#include scripts\cmd\sv\core\_cmd_parse2;
-#include scripts\cmd\sv\core\_cmd_execute;
+#include scripts\cmd\core\_com;
+#include scripts\cmd\core\_cmd_parse2;
+#include scripts\cmd\core\_cmd_execute;
 
 _ASSERT_MSG_ONLY( fmt, a, b, c, d, e, f, g, h, i, j, k )
 {
@@ -130,46 +130,6 @@ has_permission_for_cmd( cmd )
 	if ( self has_all_perms() )
 	{
 		return true;
-	}
-	if ( isDefined( level.tcs_perms.ranks[ self.tcs_rank ] ) && isDefined( level.tcs_perms.ranks[ self.tcs_rank ].disallowed_cmds ) )
-	{
-		for ( i = 0; i < _SIZE( level.tcs_perms.ranks[ self.tcs_rank ].disallowed_cmds.size ); i++ )
-		{
-			disallowed_cmd = level.tcs_perms.ranks[ self.tcs_rank ].disallowed_cmds[ i ];
-			if ( disallowed_cmd == "all_cmds" )
-			{
-				return false;
-			}
-			if ( cmd == disallowed_cmd )
-			{
-				return false;
-			}
-			// In this case the token must be a rank name
-			else if ( isDefined( level.cmd_groups[ disallowed_cmd ] ) && isDefined( level.cmd_groups[ disallowed_cmd ][ cmd ] ) )
-			{
-				return false;
-			}
-		}
-	}
-	if ( isDefined( level.tcs_perms.ranks[ self.tcs_rank ] ) && isDefined( level.tcs_perms.ranks[ self.tcs_rank ].allowed_cmds ) )
-	{
-		for ( i = 0; i < _SIZE( level.tcs_perms.ranks[ self.tcs_rank ].allowed_cmds.size ); i++ )
-		{
-			allowed_cmd = level.tcs_perms.ranks[ self.tcs_rank ].allowed_cmds[ i ];
-			if ( allowed_cmd == "all_cmds" )
-			{
-				return true;
-			}
-			if ( cmd == allowed_cmd )
-			{
-				return true;
-			}
-			// In this case the token must be a rank name
-			else if ( isDefined( level.cmd_groups[ allowed_cmd ] ) && isDefined( level.cmd_groups[ allowed_cmd ][ cmd ] ) )
-			{
-				return true;
-			}
-		}
 	}
 
 	return false;
@@ -340,6 +300,7 @@ cast_str_to_type( str, type )
 
 is_alpha( chr, start, end )
 {
+	_REQUIRED( chr, "is_alpha:chr is a required argument" );
 	start = _DEFAULT( start, 0 );
 	end = _DEFAULT( end, chr.size );
 	if ( end > chr.size )
@@ -359,6 +320,7 @@ is_alpha( chr, start, end )
 
 is_alpha_numeric( chr, check_underscore, start, end )
 {
+	_REQUIRED( chr, "is_alpha_numeric:chr is a required argument" );
 	check_underscore = _DEFAULT( check_underscore, false );
 	start = _DEFAULT( start, 0 );
 	end = _DEFAULT( end, chr.size );
@@ -386,6 +348,7 @@ is_alpha_numeric( chr, check_underscore, start, end )
 
 is_numeric( chr, start, end )
 {
+	_REQUIRED( chr, "is_numeric:chr is a required argument" );
 	start = _DEFAULT( start, 0 );
 	end = _DEFAULT( end, chr.size );
 	if ( end > chr.size )
@@ -639,25 +602,184 @@ remove_notify_callback( notify_name, ent )
 	ent._notify_callbacks[ notify_name ] = undefined;
 }
 
-/*noreturn*/ throw_exception( generic_obj, format, a, b, c, d, e, f, g, h, i, j, k )
+private _init_exceptions( entity )
+{
+	if ( !isdefined( level._exception_entities ) )
+	{
+		level._exception_entities = [];
+	}
+
+	if ( !isdefined( entity._exception_handlers ) )
+	{
+		entity._exception_handlers = [];
+	}
+}
+
+add_exception( entity, exception_handler )
+{
+	_init_exceptions( entity );
+
+	level._exception_entities[ level._exception_entities.size ] = entity;
+
+	if ( isdefined( entity._exception_handlers[ exception_handler ] ) )
+	{
+		assert( false );
+		return;
+	}
+
+	entity._exception_handlers[ exception_handler ] = true;
+}
+
+remove_exceptions( destruct, destruct_handler )
+{
+	self waittill( destruct );
+
+	for ( entry = 0; entry < _SIZE( level._exception_entities.size ); entry++ )
+	{
+		entity_check = level._exception_entities[ entry ];
+		if ( isdefined( entity_check ) && entity_check == self )
+		{
+			while ( entry < _SIZE( level._exception_entities.size ) - 1 )
+			{
+				level._exception_entities[entry] = level._exception_entities[entry + 1];
+				entry++;
+			}
+
+			level._exception_entities[entry] = undefined;
+			break;
+		}
+	}
+	if ( isdefined( destruct_handler ) )
+	{
+		self [[ destruct_handler ]]();
+	}
+}
+
+entity_handles_exception( entity, exception_handler )
+{
+	_init_exceptions( entity );
+	for ( entry = 0; entry < _SIZE( level._exception_entities.size ); entry++ )
+	{
+		entity_check = level._exception_entities[ entry ];
+
+		if ( isdefined( entity_check ) && entity_check == entity )
+		{
+			keys = getarraykeys( entity._exception_handlers );
+			for ( handler = 0; handler < _SIZE( keys.size ); handler++ )
+			{
+				key = keys[ handler ];
+				if ( exception_handler == key )
+				{
+					return true;
+				}
+			}
+
+			return false;
+		}
+	}
+
+	return false;
+}
+
+catch_exception( exception_handler, destructor )
+{
+	_REQUIRED( exception_handler, "catch_exception:exception_handler is a required argument" );
+	destructor = _DEFAULT( destructor, undefined );
+	if ( entity_handles_exception( self, exception_handler ) )
+	{
+		return;
+	}
+
+	add_exception( self, exception_handler );
+
+	if ( isdefined( destructor ) )
+	{
+		self endon( destructor );
+	}
+	
+	for ( ;; )
+	{
+		self waittill( exception_handler, exception_obj );
+		self.in_command_frame = false;
+		if ( !exception_obj.do_print )
+		{
+			continue;
+		}
+		self com_printerror( exception_obj.msg );
+	}
+}
+
+catch_uncaught_exceptions()
+{
+	exception_handler = "uncaught_exception";
+	if ( entity_handles_exception( self, exception_handler ) )
+	{
+		return;
+	}
+
+	add_exception( self, exception_handler );
+
+	for ( ;; )
+	{
+		self waittill( exception_handler, exception_obj );
+		self.in_command_frame = false;
+		if ( !exception_obj.do_print )
+		{
+			continue;
+		}
+
+		self com_printerror( "UNCAUGHT EXCEPTION!!!" );
+		self com_printerror( exception_obj.msg );
+	}
+}
+
+/*noreturn*/ throw_exception( handler, generic_obj, format, a, b, c, d, e, f, g, h, i, j, k )
 {
 	error_msg = format( format, a, b, c, d, e, f, g, h, i, j, k );
-	generic_obj = _DEFAULT( generic_obj, generic_obj_t_new( "cmd_exception" ) );
+	generic_obj = _DEFAULT( generic_obj, generic_obj_t_new( handler ) );
 	generic_obj.errored = true;
 	generic_obj.msg = error_msg;
 	generic_obj.do_print = true;
 
-	if ( !self script_breakpoint( generic_obj, error_msg ) )
+	if ( !isdefined( self._exception_handlers ) || !isdefined( self._exception_handlers[ handler ] ) )
+	{
+		assert( false );
+		_GET_SERVER_ENTITY() notify( "uncaught_exception", generic_obj );
+		return;
+	}
+
+	if ( !generic_obj script_breakpoint( generic_obj, error_msg ) )
 	{
 		if ( level._tcs_developer )
 		{
-			//assert( false );
-			//generic_obj print_obj();
+			if ( is_true( generic_obj.callstack ) )
+			{
+				assert( false );
+			}
+
+			if ( is_true( generic_obj.debugbox ) )
+			{
+				self com_printerror( generic_obj.msg );
+				debugbox( handler );
+			}
 		}
-		self notify( "cmd_exception", generic_obj );
+
+		self notify( handler, generic_obj );
+		generic_obj.handled = 1;
+		waittillframeend;
+		generic_obj.handled = 2;
+		_GET_SERVER_ENTITY() notify( "uncaught_exception", generic_obj );
 	}
 
 	return;
+}
+
+/*noreturn*/ throw_cmd_exception( generic_obj, format, a, b, c, d, e, f, g, h, i, j, k )
+{
+	generic_obj = _DEFAULT( generic_obj, generic_obj_t_new( "cmd_exception" ) );
+	generic_obj.callstack = true;
+	generic_obj.debugbox = true;
+	throw_exception( "cmd_exception", generic_obj, format, a, b, c, d, e, f, g, h, i, j, k );
 }
 
 /*noreturn*/ throw_silent_exception( generic_obj, format, a, b, c, d, e, f, g, h, i, j, k )
@@ -786,6 +908,17 @@ _DEFAULT( value, default_value )
 	}
 
 	return value;
+}
+
+_REQUIRED( value, fmt, a, b, c, d, e, f, g, h, i, j, k )
+{
+	if ( !isdefined( value ) )
+	{
+		generic_obj = generic_obj_t_new( "debug_exception" );
+		generic_obj.callstack = true;
+		generic_obj.debugbox = true;
+		throw_exception( "debug", generic_obj, fmt, a, b, c, d, e, f, g, h, i, j, k );
+	}
 }
 
 _OPTIONAL( value )

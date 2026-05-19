@@ -1,7 +1,7 @@
 #include common_scripts\utility;
 #include maps\mp\_utility;
 
-#include scripts\cmd\sv\core\_utility;
+#include scripts\cmd\core\_utility;
 
 cmd_add( cmd_name, cmdfunc, cmd_usage, description )
 {
@@ -15,11 +15,6 @@ cmd_add( cmd_name, cmdfunc, cmd_usage, description )
 	level.tcs_cmd_register_working_cmd = undefined;
 
 	rank_group = level.tcs_cmd_register_rank_group;
-	if ( !isdefined( rank_group ) || !isdefined( level.tcs_perms.ranks[ rank_group ] ) )
-	{
-		level com_printf( "con|g_log", "cmderror", "Failed to register cmd " + cmd_name + ", attempted to use an unregistered rank_group!" );
-		return;
-	}
 
 	module_group = level.tcs_cmd_register_module_group;
 	if ( !isdefined( module_group ) )
@@ -200,7 +195,7 @@ com_printcmd( cmd_object )
 	self com_printnotitle( "func: " + getfunctionname( cmd_object.func ) );
 	self com_printnotitle( "min_args: " + cmd_object get_min_args() );
 	self com_printnotitle( "max_args: " + cmd_object get_max_args() );
-	self com_printnotitle( "rank_group: " + cmd_object.rank_group );
+	//self com_printnotitle( "rank_group: " + cmd_object.rank_group );
 	self com_printnotitle( "module_group: " + cmd_object.module_group );
 	self com_printnotitle( "desc: " + cmd_object.desc );
 	self com_printnotitle( "example: " + cmd_object.example );
@@ -212,7 +207,7 @@ com_printcmd_help( cmd_object )
 	self com_printnotitle( "Usage: '{}'", cmd_object.usage );
 	self com_printnotitle( "Min Args: '{}'", cmd_object get_min_args() );
 	self com_printnotitle( "Max Args: '{}'", cmd_object get_max_args() );
-	self com_printnotitle( "Rank: '{}'", cmd_object.rank_group );
+	//self com_printnotitle( "Rank: '{}'", cmd_object.rank_group );
 	self com_printnotitle( "Module: '{}'", cmd_object.module_group );
 	self com_printnotitle( "Desc: '{}'", cmd_object.desc );
 	self com_printnotitle( "Example: '{}'", cmd_object.example );
@@ -220,12 +215,11 @@ com_printcmd_help( cmd_object )
 	arg_types = cmd_object.arg_types;
 	if ( _ARRAY_VALIDATE( arg_types ) )
 	{
-		for ( i = 0; i < _SIZE( arg_types.size ); i++ )
+		foreach ( arg_ordinal, arg_type in arg_types )
 		{
-			arg_ordinal = _MAKE_ORDINAL_KEY( ( i + 1 ) );
-			arg_name = arg_types[ arg_ordinal ].name;
-			arg_desc = arg_types[ arg_ordinal ].desc;
-			arg_is_required = arg_types[ arg_ordinal ].is_required;
+			arg_name = arg_type.name;
+			arg_desc = arg_type.desc;
+			arg_is_required = arg_type.is_required;
 			self com_printnotitle( "Arg Name: {}", arg_name );
 			self com_printnotitle( "Arg Desc: '{}'", arg_desc );
 			if ( arg_is_required )
@@ -247,15 +241,14 @@ com_printcmd_help( cmd_object )
 	target_types = cmd_object.target_types;
 	if ( _ARRAY_VALIDATE( target_types ) )
 	{
-		for ( i = 0; i < _SIZE( target_types.size ); i++ )
+		foreach ( targ_ordinal, targ_type in target_types )
 		{
-			targ_ordinal = _MAKE_ORDINAL_KEY( ( i + 1 ) );
-			target_typenames = getarraykeys( target_types[ targ_ordinal ].overloads );
+			target_typenames = getarraykeys( targ_type.overloads );
 			_ASSERT_MSG( target_typenames.size == 1, "com_printcmd_help: Target overloading is not yet implemented!" );
-			target_name = target_types[ targ_ordinal ].name;
-			target_desc = target_types[ targ_ordinal ].desc;
-			target_is_required = target_types[ targ_ordinal ].is_required;
-			overload = target_types[ targ_ordinal ].overloads[ target_typenames[ 0 ] ]; // overloading isn't implemented yet
+			target_name = targ_type.name;
+			target_desc = targ_type.desc;
+			target_is_required = targ_type.is_required;
+			overload = targ_type.overloads[ target_typenames[ 0 ] ]; // overloading isn't implemented yet
 			target_etype = overload.etype;
 			target_max_targets = overload.max_targets;
 

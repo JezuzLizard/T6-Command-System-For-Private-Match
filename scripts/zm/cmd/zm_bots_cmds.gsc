@@ -6,15 +6,15 @@
 #include maps\mp\zombies\_zm_score;
 #include maps\mp\zombies\_zm_weapons;
 
-#include scripts\cmd\sv\core\_api_cmd;
+#include scripts\cmd\core\_api_cmd;
 
-#include scripts\cmd\sv\core\_utility;
+#include scripts\cmd\core\_utility;
 
 #include maps\mp\bots\_bot_api;
 
 add_zm_bot_cmds()
 {
-	cmd_block_set_module_group( "zm_bots_cmds" );
+	cmd_block_set_module_group( "zm_bots" );
 	cmd_block_set_rank_group( "cheat" );
 	cmd_add( "setscriptgoal", "scriptgoal {<bot>} <goal|entity> [dist]", ::cmd_setscriptgoal_f );
 	arg_add_required( 1, "goal", "goal", "Goal to force the bot to go to" );

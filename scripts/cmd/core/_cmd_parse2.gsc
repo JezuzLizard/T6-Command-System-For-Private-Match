@@ -1,7 +1,7 @@
 #include common_scripts\utility;
 #include maps\mp\_utility;
 
-#include scripts\cmd\sv\core\_utility;
+#include scripts\cmd\core\_utility;
 
 // Last command token to execute the last command implicitly
 /*cmd_parse_obj_array_t export*/ parse_cmd_message_internal( message )
@@ -10,6 +10,11 @@
 	if ( message == "" )
 	{
 		throw_parse_exception( "Command string is empty" );
+	}
+
+	if ( message.size > level.tcs_glob.max_cmd_length )
+	{
+		throw_parse_exception( "Command string total length cannot exceed 512" );
 	}
 
 	com_printparse( message );
@@ -53,6 +58,19 @@
 					key = kvps[ 0 ];
 					value = kvps[ 1 ];
 
+					com_printparse( "parse_cmd_message() key: '" + key + "'" );
+					com_printparse( "parse_cmd_message() value: '" + value + "'" );
+
+					if ( value == "" )
+					{
+						throw_parse_exception( "Value cannot be empty; it must be at least #(default) or $(random) or &(self) or the key must not be specified" );
+					}
+
+					if ( key == "" )
+					{
+						throw_parse_exception( "You must specifiy a key to go with your value i.e 't1=$69'" );
+					}
+
 					if ( !is_alpha_numeric( key ) )
 					{
 						throw_parse_exception( "Directive key: '" + key + "' contains an invalid character; only alnum and '_' characters are allowed" );
@@ -64,9 +82,7 @@
 					}
 
 					add_key( key );
-					com_printparse( "parse_cmd_message() key: '" + key + "'" );
 					add_value( value );
-					com_printparse( "parse_cmd_message() value: '" + value + "'" );
 					parse_directive();
 				}
 			}
@@ -93,7 +109,10 @@ private com_printparse( msg )
 
 private throw_parse_exception( msg, a, b, c, d, e, f, g, h, i, j, k )
 {
-	throw_exception( level._parse_obj, msg, a, b, c, d, e, f, g, h, i, j, k );
+	generic_obj = _DEFAULT( level._parse_obj, generic_obj_t_new( "cmd_execute_internal" ) );
+	generic_obj.callstack = true;
+	generic_obj.debugbox = true;
+	throw_exception( "cmd_execute_internal", generic_obj, msg, a, b, c, d, e, f, g, h, i, j, k );
 }
 
 private parse_array()
