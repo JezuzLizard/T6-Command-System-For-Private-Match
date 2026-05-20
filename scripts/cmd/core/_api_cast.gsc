@@ -1161,10 +1161,6 @@ private target_obj_generate( target_type, overload )
 				{
 					if ( cointoss() )
 					{
-						target_str += ents[ i ].name;
-					}
-					else if ( cointoss() )
-					{
 						target_str += "&";
 					}
 					else
@@ -1194,10 +1190,6 @@ private target_obj_generate( target_type, overload )
 			if ( ( etype == "player" || etype == "bot" ) && cointoss() )
 			{
 				if ( cointoss() )
-				{
-					target_str += ents[ 0 ].name;
-				}
-				else if ( cointoss() )
 				{
 					target_str += "&";
 				}
@@ -1428,12 +1420,12 @@ private /*str_cast_obj_t*/ str_cast_obj_t_new( type, str_value )
 
 	if ( !isdefined( type ) || !isdefined( level._number_strings[ type ] ) )
 	{
-		assert( false );
+		_ASSERT_MSG( false );
 		return set_cast_error( str_cast_obj, "Unknown type: '{}'", type );
 	}
 	if ( !isdefined( str_value ) || str_value == "" )
 	{
-		assert( false );
+		_ASSERT_MSG( false );
 		return set_cast_error( str_cast_obj, "Unknown str_value" );
 	}
 	return str_cast_obj;

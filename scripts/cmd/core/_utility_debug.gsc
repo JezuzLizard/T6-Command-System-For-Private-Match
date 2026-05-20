@@ -7,7 +7,7 @@
 
 com_printdebuginfo_internal( format, a, b, c, d, e, f, g, h, i, j, k )
 {
-	if ( level._tcs_developer )
+	if ( getdvarint( "tcs_developer" ) )
 	{
 		_GET_SERVER_ENTITY() com_printinfo( format, a, b, c, d, e, f, g, h, i, j, k );
 	}
@@ -15,7 +15,7 @@ com_printdebuginfo_internal( format, a, b, c, d, e, f, g, h, i, j, k )
 
 com_printdebugwarning_internal( format, a, b, c, d, e, f, g, h, i, j, k )
 {
-	if ( level._tcs_developer )
+	if ( getdvarint( "tcs_developer" ) )
 	{
 		_GET_SERVER_ENTITY() com_printwarning( format, a, b, c, d, e, f, g, h, i, j, k );
 	}
@@ -23,54 +23,9 @@ com_printdebugwarning_internal( format, a, b, c, d, e, f, g, h, i, j, k )
 
 com_printdebugerror_internal( format, a, b, c, d, e, f, g, h, i, j, k )
 {
-	if ( level._tcs_developer )
+	if ( getdvarint( "tcs_developer" ) )
 	{
 		_GET_SERVER_ENTITY() com_printerror( format, a, b, c, d, e, f, g, h, i, j, k );
-	}
-}
-
-script_breakpoint_internal( generic_obj, msg, display_callstack, should_print )
-{
-	msg = _DEFAULT( msg, undefined );
-	display_callstack = _DEFAULT( display_callstack, true );
-	should_print = _DEFAULT( should_print, true );
-	if ( !getdvarint( "script_breakpoint" ) )
-	{
-		return false;
-	}
-	if ( !isdefined( level.script_breakpoints ) )
-	{
-		level.script_breakpoints = [];
-	}
-
-	if ( display_callstack )
-	{
-		assert( false );
-	}
-
-	if ( should_print )
-	{
-		if ( isdefined( msg ) )
-		{
-			generic_obj com_printerror( msg );
-		}
-
-		generic_obj print_obj_internal();
-	}
-
-	for ( ;; )
-	{
-		evt = generic_obj waittill_any_return( "debug_continue", "debug_abort" );
-
-		if ( evt == "debug_continue" )
-		{
-			return true;
-		}
-		else if ( evt == "debug_abort" )
-		{
-			generic_obj notify( "cmd_execute_internal" );
-			return false;
-		}
 	}
 }
 
@@ -78,7 +33,7 @@ print_obj_internal()
 {
 	if ( !isdefined( self ) || !isdefined( self.obj_type ) )
 	{
-		assert( false );
+		_ASSERT_MSG( false );
 		return;
 	}
 	// print relevant data

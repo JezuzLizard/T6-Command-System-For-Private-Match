@@ -35,7 +35,6 @@
 private main()
 {
 	_init_server();
-	level._tcs_developer = getdvarint( "tcs_developer" );
 	level.tcs_glob = spawnstruct();
 	level.tcs_glob.irestart_countdown = 5;
 	level.tcs_glob.icmd_total = 0;

@@ -89,7 +89,6 @@
 			else
 			{
 				add_arg( level._parse_obj.current_token );
-				level.players[ 0 ] script_breakpoint( level._parse_obj );
 			}
 		}
 

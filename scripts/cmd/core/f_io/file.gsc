@@ -26,19 +26,19 @@ read_file( filename, mode )
 
 private fs_fopen( filename, mode )
 {
-	assert( isdefined( filename ) && filename.size > 0 );
-	assert( mode == "read" || mode == "write" || mode == "append" );
+	_ASSERT_MSG( isdefined( filename ) && filename.size > 0 );
+	_ASSERT_MSG( mode == "read" || mode == "write" || mode == "append" );
 
 	f = fs_fopen( filename, mode );
-	assert( f > 0 );
+	_ASSERT_MSG( f > 0 );
 
 	return f;
 }
 
 private fs_read( f, byte_count )
 {
-	assert( f > 0 );
-	assert( byte_count > 0 );
+	_ASSERT_MSG( f > 0 );
+	_ASSERT_MSG( byte_count > 0 );
 
 	buffer = fs_read( f, byte_count );
 
@@ -47,7 +47,7 @@ private fs_read( f, byte_count )
 
 private fs_fclose( f )
 {
-	assert( f > 0 );
+	_ASSERT_MSG( f > 0 );
 
 	fs_fclose( f );
 }

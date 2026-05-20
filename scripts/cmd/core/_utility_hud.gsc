@@ -124,7 +124,7 @@ hud_binding_set_default( hud_binding_obj, hud )
 	hud_binding_obj = self hud_binding_get( binding_name );
 	if ( !isdefined( hud_binding_obj ) || !isdefined( entity ) )
 	{
-		assert( isdefined( entity ) );
+		_ASSERT_MSG( isdefined( entity ) );
 		return undefined;
 	}
 

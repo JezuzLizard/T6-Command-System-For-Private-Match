@@ -31,7 +31,7 @@ cmd_execute_internal( message, initiator, is_hidden, is_team_chat )
 	}
 
 	_DISCONNECT_DESTRUCT( initiator );
-	_ADD_EXCEPTION( initiator, "cmd_execute_internal", "disconnect" )
+	_ADD_EXCEPTION( initiator, "cmd_exception", "disconnect" )
 
 	if ( !isdefined( initiator.in_command_frame ) )
 	{
@@ -88,7 +88,7 @@ cmd_execute_internal( message, initiator, is_hidden, is_team_chat )
 			{
 				if ( !initiator has_permission_for_cmd( cmd_obj.cmd_data_source ) )
 				{
-					initiator throw_cmd_exception( cmd_obj, "You do not have permission to use '{}' cmd", cmd_obj.cmd_data_source.cmd_name );
+					initiator throw_user_cmd_exception( cmd_obj, "You do not have permission to use '{}' cmd", cmd_obj.cmd_data_source.cmd_name );
 				}
 			}
 
@@ -120,11 +120,11 @@ private check_command_syntax_used( message, is_hidden )
 {
 	if ( !level.tcs_glob.bhidden_cmds && is_hidden )
 	{
-		self throw_cmd_exception( undefined, "Hidden cmds are not allowed" );
+		self throw_user_cmd_exception( undefined, "Hidden cmds are not allowed" );
 	}
 	if ( !is_hidden && !is_cmd_token( message[ 0 ] ) )
 	{
-		self throw_cmd_exception( undefined, "User was not using a command", false );
+		self throw_user_cmd_exception( undefined, "User was not using a command", false );
 	}
 }
 
@@ -132,7 +132,7 @@ private check_command_cooldown()
 {
 	if ( isDefined( self.cmd_cooldown ) && self.cmd_cooldown > 0 )
 	{
-		self throw_cmd_exception( undefined, "You cannot use another cmd for '{}' seconds", self.cmd_cooldown );
+		self throw_user_cmd_exception( undefined, "You cannot use another cmd for '{}' seconds", self.cmd_cooldown );
 	}
 }
 
@@ -153,7 +153,7 @@ private check_multi_commands( cmd_parse_obj )
 {
 	if ( cmd_parse_obj.cmds.size > 1 && !self can_use_multi_cmds() )
 	{
-		self throw_cmd_exception( undefined, "You do not have permission to use multi cmds" );
+		self throw_user_cmd_exception( undefined, "You do not have permission to use multi cmds" );
 	}
 }
 
@@ -228,7 +228,7 @@ private arg_cast( cmd_data_source, arg_type, arg )
 		return cast_result.value;
 	}
 
-	self throw_cmd_exception( undefined, "Failed to cast to one of the valid overloads for arg_type '{}', attempted casts: '{}'", arg_type.name, repackage_args( msgs, "\n" ) );
+	self throw_user_cmd_exception( undefined, "Failed to cast to one of the valid overloads for arg_type '{}', attempted casts: '{}'", arg_type.name, repackage_args( msgs, "\n" ) );
 }
 
 private target_cast( cmd_data_source, ordinal, target_type, target_kvp )
@@ -241,7 +241,7 @@ private target_cast( cmd_data_source, ordinal, target_type, target_kvp )
 		{
 			if ( value.size > val.max_targets )
 			{
-				self throw_cmd_exception( undefined, "Command '{}' expects a maximum of '{}' targets, for '{}' got '{}' instead", cmd_data_source.cmd_name, val.max_targets, target_type.name, value.size );
+				self throw_user_cmd_exception( undefined, "Command '{}' expects a maximum of '{}' targets, for '{}' got '{}' instead", cmd_data_source.cmd_name, val.max_targets, target_type.name, value.size );
 			}
 
 			return value;
@@ -386,7 +386,7 @@ private get_entity_targets( etype, directive, default_value )
 			return get_name_entities( directive, etype );
 	}
 
-	self throw_cmd_exception( undefined, "Unknown directive.type: '{}'", directive.type );
+	self throw_user_cmd_exception( undefined, "Unknown directive.type: '{}'", directive.type );
 	return [];
 }
 
@@ -401,11 +401,11 @@ private cmd_execute_internal1( initiator, cmd_obj )
 
 	if ( cmd_obj.args.size < cmd_data_source get_min_args() )
 	{
-		initiator throw_cmd_exception( undefined, "Too few args: usage: '{}'", cmd_data_source.usage );
+		initiator throw_user_cmd_exception( undefined, "Too few args: usage: '{}'", cmd_data_source.usage );
 	}
 	if ( cmd_obj.args.size > cmd_data_source get_max_args() )
 	{
-		initiator throw_cmd_exception( undefined, "Too many args: usage: '{}'", cmd_data_source.usage );
+		initiator throw_user_cmd_exception( undefined, "Too many args: usage: '{}'", cmd_data_source.usage );
 	}
 
 	param = generic_obj_t_new( "param" );
@@ -471,7 +471,7 @@ private cmd_execute_internal1( initiator, cmd_obj )
 				{
 					if ( target_type.is_required )
 					{
-						initiator throw_cmd_exception( undefined, "'target '{}' is required", ordinal_key );
+						initiator throw_user_cmd_exception( undefined, "'target '{}' is required", ordinal_key );
 					}
 
 					continue;
@@ -484,7 +484,7 @@ private cmd_execute_internal1( initiator, cmd_obj )
 
 				if ( !_ARRAY_VALIDATE( param.t[ index ] ) && ( target_kvp.type != "undefined" && target_kvp.type != "default" ) )
 				{
-					initiator throw_cmd_exception( undefined, "Failed to find any compatible entities" );
+					initiator throw_user_cmd_exception( undefined, "Failed to find any compatible entities" );
 				}
 			}
 		}

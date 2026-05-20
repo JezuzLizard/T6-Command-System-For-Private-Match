@@ -67,7 +67,7 @@ cmd_add_detailed_desc( long_description )
 	working_cmd = level.tcs_cmd_register_working_cmd;
 	if ( !is_true( working_cmd.is_cmd_object ) )
 	{
-		assert( false );
+		_ASSERT_MSG( false );
 		return;
 	}
 
@@ -90,7 +90,7 @@ get_min_args()
 {
 	if ( !is_true( self.is_cmd_object ) )
 	{
-		assert( false );
+		_ASSERT_MSG( false );
 		return 0;
 	}
 
@@ -111,7 +111,7 @@ get_max_args()
 {
 	if ( !is_true( self.is_cmd_object ) )
 	{
-		assert( false );
+		_ASSERT_MSG( false );
 		return 0;
 	}
 
@@ -148,7 +148,7 @@ target_set_default_target( ordinal, default_value )
 	working_cmd = level.tcs_cmd_register_working_cmd;
 	if ( !isdefined( working_cmd ) || !is_true( working_cmd.is_cmd_object ) )
 	{
-		assert( false );
+		_ASSERT_MSG( false );
 		return;
 	}
 
@@ -157,7 +157,7 @@ target_set_default_target( ordinal, default_value )
 		case "self":
 			break;
 		default:
-			assert( false );
+			_ASSERT_MSG( false );
 			return;
 	}
 
@@ -169,7 +169,7 @@ make_cmd_immune_to_unittest()
 	working_cmd = level.tcs_cmd_register_working_cmd;
 	if ( !is_true( working_cmd.is_cmd_object ) || is_true( working_cmd.immune_to_unittest ) )
 	{
-		assert( false );
+		_ASSERT_MSG( false );
 		return;
 	}
 
@@ -181,7 +181,7 @@ make_cmd_immune_to_lastcmd()
 	working_cmd = level.tcs_cmd_register_working_cmd;
 	if ( !is_true( working_cmd.is_cmd_object ) || is_true( working_cmd.immune_to_lastcmd ) )
 	{
-		assert( false );
+		_ASSERT_MSG( false );
 		return;
 	}
 
@@ -288,7 +288,7 @@ private arg_add( ordinal, name, arg_type, is_required, desc, default_value )
 
 	if ( !isdefined( working_cmd ) || !is_true( working_cmd.is_cmd_object ) )
 	{
-		assert( false );
+		_ASSERT_MSG( false );
 		return;
 	}
 
@@ -332,7 +332,7 @@ private target_add( ordinal, name, target_type, is_required, desc, max_targets )
 	working_cmd = level.tcs_cmd_register_working_cmd;
 	if ( !isdefined( working_cmd ) || !is_true( working_cmd.is_cmd_object ) )
 	{
-		assert( false );
+		_ASSERT_MSG( false );
 		return;
 	}
 

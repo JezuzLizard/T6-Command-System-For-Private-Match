@@ -11,30 +11,6 @@ init_unittest_helpers()
 	addcallback( "on_player_connect", ::unittest_connect );
 }
 
-do_unit_test( required_bots, duration, rate )
-{
-	if ( duration > 0 )
-	{
-		level thread end_unittest_after_time( duration );
-	}
-
-	level.unittest_total_cmds_used = 0;
-	set_cmd_rate( rate );
-	level thread manage_unittest_bots( required_bots );
-	level waittill( "unittest_stop" );
-
-	for ( i = 0; i < _SIZE( level.players.size ); i++ )
-	{
-		if ( is_true( level.players[ i ].pers["isBot"] ) )
-		{
-			kick( level.players[ i ] getEntityNumber() );
-		}
-	}
-	level.doing_cmd_system_unittest = false;
-
-	set_cmd_rate( undefined );
-}
-
 do_module_test( module, sequential, duration, rate )
 {
 	if ( duration > 0 )
@@ -68,20 +44,11 @@ private unittest_connect()
 {
 	if ( self istestclient() )
 	{
-		if ( is_true( level.doing_cmd_system_testcmd ) )
+		self.pers[ "isBot" ] = true;
+		if ( isdefined( level.unittest_cmd_module ) )
 		{
-
-		}
-		else if ( is_true( level.doing_cmd_system_unittest ) )
-		{
-			if ( isdefined( self.module_cmd ) )
-			{
-				self thread activate_cmds_from_module();
-			}
-			else
-			{
-				self thread activate_random_cmds();
-			}
+			self.module_cmd = level.unittest_cmd_module;
+			self thread activate_cmds_from_module();
 		}
 	}
 }
@@ -106,16 +73,28 @@ private set_cmd_rate( rate )
 	level.unittest_cmd_rate = rate;
 }
 
-private manage_unittest_bots( required_bots, module )
+private manage_unittest_bots( required_bots, override_module )
 {
 	bot_count = 0;
-	for ( i = 0; i < _SIZE( level.players.size ); i++ )
+	foreach ( player in level.players )
 	{
-		if ( is_true( level.players[ i ].pers["isBot"] ) )
+		if ( is_true( player.pers["isBot"] ) )
 		{
 			bot_count++;
+			if ( !isdefined( player.module_cmd ) )
+			{
+				if ( isDefined( override_module ) )
+				{
+					player.module_cmd = override_module;
+				}
+				else
+				{
+					player.module_cmd = level.unittest_cmd_module;
+				}
+			}
 		}
 	}
+	
 	if ( bot_count < required_bots )
 	{
 		bot = undefined;
@@ -135,9 +114,13 @@ private manage_unittest_bots( required_bots, module )
 		{
 			bot [[ reset_rampage_func ]]();
 		}
-		if ( isDefined( module ) )
+		if ( isDefined( override_module ) )
 		{
-			bot.module_cmd = module;
+			bot.module_cmd = override_module;
+		}
+		else
+		{
+			bot.module_cmd = level.unittest_cmd_module;
 		}
 	}
 }
@@ -153,7 +136,7 @@ private activate_cmds_from_module()
 		level._unittest_host.default_executors = [];
 	}
 
-	if ( level._unittest_host.is_server )
+	//if ( is_true( level._unittest_host.is_server ) )
 	{
 		level._unittest_host.default_executors[ level._unittest_host.default_executors.size ] = self;
 	}
@@ -174,34 +157,6 @@ private activate_cmds_from_module()
 			level.doing_cmd_system_unittest = get_dvar_int_default( "tcs_resume_test", 0 );
 			wait 1;
 		}
-		self construct_chat_message_for_unittest();
-		wait level.unittest_cmd_rate;
-	}
-}
-
-private activate_random_cmds()
-{
-	self endon( "disconnect" );
-	self.health = 2100000000;
-
-	if ( !isdefined( level._unittest_host ) )
-	{
-		level._unittest_host = _GET_SERVER_ENTITY();
-		level._unittest_host.default_executors = [];
-	}
-
-	level._unittest_host.default_executors[ level._unittest_host.default_executors.size ] = self;
-	if ( sessionModeIsZombiesGame() )
-	{	
-		flag_clear( "solo_game" );
-	}
-	while ( !isDefined( self._connected ) )
-	{
-		wait 1;
-	}
-
-	while ( true )
-	{
 		self construct_chat_message_for_unittest();
 		wait level.unittest_cmd_rate;
 	}
@@ -255,7 +210,7 @@ private create_random_valid_targets( cmd )
 		target_str = self [[ level._target_obj_generate ]]( val, random_overload );
 		if ( target_str == "" )
 		{
-			_ASSERT_MSG_ONLY( "Could not generate entities of etype: '{}' max_targets: '{}'", random_overload.etype, random_overload.max_targets );
+			com_printdebugerror( "Could not generate entities of etype: '{}' max_targets: '{}'", random_overload.etype, random_overload.max_targets );
 			target_gen_obj.errored = true;
 			return target_gen_obj;
 		}
@@ -381,7 +336,7 @@ private create_random_valid_args2( cmd_object )
 		}
 
 		random_overloaded_type = random_key( type.overloads );
-		arg = self generate_args_from_type( random_overloaded_type );
+		arg = self generate_args_from_type( random_overloaded_type, type );
 		if ( arg.errored || is_true( arg.rand_gen_unimplemented ) )
 		{
 			arg_gen_obj.errored = true;
@@ -395,21 +350,26 @@ private create_random_valid_args2( cmd_object )
 	return arg_gen_obj;
 }
 
-private generate_args_from_type( type )
+private generate_args_from_type( rand_typename, arg_type )
 {
 	rand_obj = generic_obj_t_new();
-	if ( isDefined( level.tcs_arg_type_handlers[ type ] ) && isdefined( level.tcs_arg_type_handlers[ type ].rand_gen_func ) )
+	if ( isDefined( level.tcs_arg_type_handlers[ rand_typename ] ) && isdefined( level.tcs_arg_type_handlers[ rand_typename ].rand_gen_func ) )
 	{
-		com_printdebugwarning( "generate_args_from_type: '" + type + "'" );
-		rand_obj = self [[ level.tcs_arg_type_handlers[ type ].rand_gen_func ]]();
+		com_printdebugwarning( "generate_args_from_type: '" + rand_typename + "'" );
+		rand_obj = self [[ level.tcs_arg_type_handlers[ rand_typename ].rand_gen_func ]]();
 		if ( rand_obj.errored )
 		{
-			_ASSERT_MSG_ONLY( "generate_args_from_type: Error that should never happen has happened: '{}' msg: '{}'", type, rand_obj.msg );
+			_ASSERT_MSG_ONLY( "generate_args_from_type: Error that should never happen has happened: '{}' msg: '{}'", rand_typename, rand_obj.msg );
 			return rand_obj;
 		}
 		else if ( is_true( rand_obj.rand_gen_unimplemented ) )
 		{
-			_ASSERT_MSG_ONLY( "generate_args_from_type: Tried to generate args for type: '{}' but generation was unimplemented", type );
+			_ASSERT_MSG_ONLY( "generate_args_from_type: Tried to generate args for type: '{}' but generation was unimplemented", rand_typename );
+			return rand_obj;
+		}
+		else if ( arg_type.is_required && ( !isdefined( rand_obj.str_value ) || rand_obj.str_value == "" ) )
+		{
+			rand_obj.errored = true; // edge case where commands that are conditionally usable depending on context external to commands(the current map)
 			return rand_obj;
 		}
 
@@ -417,7 +377,7 @@ private generate_args_from_type( type )
 	}
 
 	rand_obj.errored = true;
-	_ASSERT_MSG_ONLY( "Tried to generate args for '{}' but no rand_gen_func handler exists for it", type );
+	_ASSERT_MSG_ONLY( "Tried to generate args for '{}' but no rand_gen_func handler exists for it", rand_typename );
 	return rand_obj;
 }
 

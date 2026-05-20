@@ -38,7 +38,7 @@ wait_for_removal()
 
 init_dog()
 {
-	assert( isai( self ) );
+	_ASSERT_MSG( isai( self ) );
 	self.targetname = "attack_dog";
 	self.animtree = "dog.atr";
 	self.type = "dog";

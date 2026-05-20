@@ -144,14 +144,15 @@ arg_obj_weapon_generate()
 arg_obj_powerup_cast( arg )
 {
 	find = generic_obj_t_new();
-	if ( !_ARRAY_VALIDATE( level.zombie_include_powerups ) )
+	if ( !_ARRAY_VALIDATE( level.zombie_powerups ) )
 	{
 		return set_cast_error( find, "There are no powerups on the map" );
 	}
 
-	if ( !isdefined( level.zombie_include_powerups[ arg ] ) )
+	// teller_withdrawl is included but not added...
+	if ( !isdefined( level.zombie_powerups[ arg ] ) )
 	{
-		msg = get_possible_array_values_msg( arg, level.zombie_include_powerups, "powerup" );
+		msg = get_possible_array_values_msg( arg, level.zombie_powerups, "powerup" );
 
 		return set_cast_error( find, msg );
 	}
@@ -162,13 +163,13 @@ arg_obj_powerup_cast( arg )
 arg_obj_powerup_generate()
 {
 	find = generic_obj_t_new();
-	if ( !_ARRAY_VALIDATE( level.zombie_include_powerups ) )
+	if ( !_ARRAY_VALIDATE( level.zombie_powerups ) )
 	{
 		find.rand_gen_unimplemented = true;
 		return set_cast_success( find, "", "No powerups" );
 	}
 
-	powerup = random_key( level.zombie_include_powerups );
+	powerup = random_key( level.zombie_powerups );
 	find.str_value = powerup;
 	return set_cast_success( find, powerup );
 }
@@ -176,6 +177,12 @@ arg_obj_powerup_generate()
 arg_obj_permaperk_cast( arg )
 {
 	find = generic_obj_t_new();
+
+	if ( !_ARRAY_VALIDATE( level.pers_upgrades ) )
+	{
+		return set_cast_success( find, "", "No permaperks" );
+	}
+
 	if ( !isdefined( level.pers_upgrades[ arg ] ) )
 	{
 		msg = get_possible_array_values_msg( arg, level.pers_upgrades, "permaperk" );
@@ -190,13 +197,21 @@ arg_obj_permaperk_generate()
 {
 	find = generic_obj_t_new();
 	
-	if ( !_ARRAY_VALIDATE( level.pers_upgrades_keys ) )
+	// only Victis story mode maps support perma perks...
+	if ( !_ARRAY_VALIDATE( level.pers_upgrades ) )
 	{
-		find.rand_gen_unimplemented = true;
+		find.arg_count_generated = 0;
 		return set_cast_success( find, "", "No permaperks" );
 	}
 
-	permaperk = random_key( level.pers_upgrades_keys );
+	rand = randomint( 100 );
+	permaperk = "all";
+	if ( rand != 0 )
+	{
+		permaperk = random_key( level.pers_upgrades );
+	}
+
+	find.arg_count_generated = 1;
 	find.str_value = permaperk;
 	return set_cast_success( find, permaperk );
 }

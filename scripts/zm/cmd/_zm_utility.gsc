@@ -842,7 +842,7 @@ chalk_manager()
 		for ( i = 0; i < level._mapents[ "wallbuy_locations" ].size; i++ )
 		{
 			model_ent = level._mapents[ "wallbuy_locations" ][ keys[ i ] ];
-			assert( !isdefined( model_ent.fx ) );
+			_ASSERT_MSG( !isdefined( model_ent.fx ) );
 			model_ent.fx = spawnfx( level._effect[ model_ent.zombie_weapon_upgrade + "_fx" ], model_ent.origin, anglestoforward( model_ent.angles ), anglestoup( model_ent.angles ) );
 			triggerfx( model_ent.fx );
 		}

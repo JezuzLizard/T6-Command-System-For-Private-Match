@@ -168,7 +168,7 @@ private cmd_togglerespawn_f( param )
 		}
 
 		param add_executor_cmdinfo( "'{}' has their respawn toggled", target.name );
-		param add_player_cmdinfo( target, "You will no longer respawn '{}'", target );
+		param add_player_cmdinfo( target, "You will no longer respawn '{}'", target.name );
 	}
 
 	param add_executor_cmdinfo( "Disabled respawning for '{}' players", targets.size );
@@ -340,7 +340,7 @@ private cmd_powerup_f( param )
 				continue;
 			}
 
-			param add_executor_cmdinfo( "Spawned '{}' ' a powerup", player.name, powerup_name );
+			param add_executor_cmdinfo( "Spawned '{}' a '{}' powerup", player.name, powerup_name );
 			param add_player_cmdinfo( player, "Spawned you '{}' powerup", powerup_name );
 		}
 	}
@@ -510,7 +510,6 @@ private cmd_setglobalzombiestat_f( param )
 private cmd_listglobalzombiestats_f( param )
 {
 	self thread list_zombie_stats_throttled();
-	return param add_executor_cmderror( "" );
 }
 
 private cmd_setallphysparams_f( param )
@@ -643,8 +642,8 @@ private cmd_spawnwallbuy_f( param )
 	keys[ "targetname" ] = targetname;
 	keys[ "angles" ] = angles;
 
-	// push past origin argument
-	for ( i = 1; i < _SIZE( param.a ); i += 2 )
+	// parse kvps(if any)
+	for ( i = kvp_start; i < _SIZE( param.a.size ); i += 2 )
 	{
 		keys[ param.a[ i ] ] = param.a[ i + 1 ];
 	}
@@ -731,8 +730,8 @@ private cmd_spawnzombieloc_f( param )
 	keys[ "origin" ] = origin;
 	keys[ "id" ] = internal_name;
 
-	// push past origin argument
-	for ( i = 1; i < _SIZE( param.a ); i += 2 )
+	// parse kvps(if any)
+	for ( i = kvp_start; i < _SIZE( param.a.size ); i += 2 )
 	{
 		keys[ param.a[ i ] ] = param.a[ i + 1 ];
 	}

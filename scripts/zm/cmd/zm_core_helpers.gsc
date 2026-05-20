@@ -159,6 +159,7 @@ give_powerup_zm( powerup_name )
 		self com_printerror( "Cannot spawn a powerup this far from the map center" );
 		return false;
 	}
+
 	powerup_loc = self.origin + anglestoforward( self.angles ) * 64 + anglestoright( self.angles ) * 64;
 	powerup = specific_powerup_drop( powerup_name, powerup_loc );
 	if ( powerup_name == "teller_withdrawl" )

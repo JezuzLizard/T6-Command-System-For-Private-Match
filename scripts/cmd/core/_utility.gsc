@@ -13,17 +13,12 @@
 
 _ASSERT_MSG_ONLY( fmt, a, b, c, d, e, f, g, h, i, j, k )
 {
-	return _MY_ASSERT_HANDLER( false, fmt, a, b, c, d, e, f, g, h, i, j, k );
+	return _GET_SERVER_ENTITY() _MY_ASSERT_HANDLER( false, fmt, a, b, c, d, e, f, g, h, i, j, k );
 }
 
 _ASSERT_MSG( condition, fmt, a, b, c, d, e, f, g, h, i, j, k )
 {
-	return _MY_ASSERT_HANDLER( condition, fmt, a, b, c, d, e, f, g, h, i, j, k );
-}
-
-script_breakpoint( generic_obj, msg, display_callstack, should_print )
-{
-	return script_breakpoint_internal( generic_obj, msg, display_callstack, should_print );
+	return _GET_SERVER_ENTITY() _MY_ASSERT_HANDLER( condition, fmt, a, b, c, d, e, f, g, h, i, j, k );
 }
 
 com_printdebuginfo( format, a, b, c, d, e, f, g, h, i, j, k )
@@ -722,14 +717,8 @@ catch_uncaught_exceptions()
 	for ( ;; )
 	{
 		self waittill( exception_handler, exception_obj );
-		self.in_command_frame = false;
-		if ( !exception_obj.do_print )
-		{
-			continue;
-		}
-
-		self com_printerror( "UNCAUGHT EXCEPTION!!!" );
-		self com_printerror( exception_obj.msg );
+		self com_printdebugerror( "UNCAUGHT EXCEPTION!!!" );
+		self com_printdebugerror( exception_obj.msg );
 	}
 }
 
@@ -740,6 +729,18 @@ catch_uncaught_exceptions()
 	generic_obj.errored = true;
 	generic_obj.msg = error_msg;
 	generic_obj.do_print = true;
+	generic_obj.callstack = _DEFAULT( generic_obj.callstack, getdvarint( "tcs_developer" ) );
+	generic_obj.debugbox = _DEFAULT( generic_obj.debugbox, getdvarint( "tcs_developer" ) );
+
+	if ( is_true( generic_obj.callstack ) )
+	{
+		assert( false );
+	}
+
+	if ( is_true( generic_obj.debugbox ) )
+	{
+		debugbox( handler );
+	}
 
 	if ( !isdefined( self._exception_handlers ) || !isdefined( self._exception_handlers[ handler ] ) )
 	{
@@ -748,59 +749,30 @@ catch_uncaught_exceptions()
 		return;
 	}
 
-	if ( !generic_obj script_breakpoint( generic_obj, error_msg ) )
-	{
-		if ( level._tcs_developer )
-		{
-			if ( is_true( generic_obj.callstack ) )
-			{
-				assert( false );
-			}
-
-			if ( is_true( generic_obj.debugbox ) )
-			{
-				self com_printerror( generic_obj.msg );
-				debugbox( handler );
-			}
-		}
-
-		self notify( handler, generic_obj );
-		generic_obj.handled = 1;
-		waittillframeend;
-		generic_obj.handled = 2;
-		_GET_SERVER_ENTITY() notify( "uncaught_exception", generic_obj );
-	}
+	self notify( handler, generic_obj );
+	generic_obj.handled = 1;
+	waittillframeend;
+	assert( false ); // you should not see this assert unless the exception try/catch system using endons wasn't setup to kill execution
+	generic_obj.handled = 2;
+	_GET_SERVER_ENTITY() notify( "uncaught_exception", generic_obj );
 
 	return;
 }
 
+// likely undefined behavior
 /*noreturn*/ throw_cmd_exception( generic_obj, format, a, b, c, d, e, f, g, h, i, j, k )
 {
 	generic_obj = _DEFAULT( generic_obj, generic_obj_t_new( "cmd_exception" ) );
-	generic_obj.callstack = true;
-	generic_obj.debugbox = true;
 	throw_exception( "cmd_exception", generic_obj, format, a, b, c, d, e, f, g, h, i, j, k );
 }
 
-/*noreturn*/ throw_silent_exception( generic_obj, format, a, b, c, d, e, f, g, h, i, j, k )
+// normal exceptions for user feedback
+/*noreturn*/ throw_user_cmd_exception( generic_obj, format, a, b, c, d, e, f, g, h, i, j, k )
 {
-	error_msg = format( format, a, b, c, d, e, f, g, h, i, j, k );
 	generic_obj = _DEFAULT( generic_obj, generic_obj_t_new( "cmd_exception" ) );
-	generic_obj.errored = true;
-	generic_obj.msg = error_msg;
-	generic_obj.do_print = false;
-
-	if ( !self script_breakpoint( generic_obj, error_msg ) )
-	{
-		if ( level._tcs_developer )
-		{
-			assert( false );
-			//generic_obj print_obj();
-		}
-		self notify( "cmd_exception", generic_obj );
-	}
-
-	return;
+	generic_obj.callstack = false;
+	generic_obj.debugbox = false;
+	throw_exception( "cmd_exception", generic_obj, format, a, b, c, d, e, f, g, h, i, j, k );
 }
 
 has_all_perms()
@@ -834,14 +806,14 @@ get_possible_array_values_msg( arg, array, type, key_indexed )
 random_key( arr )
 {
 	keys = getarraykeys( arr );
-	assert( isstring( keys[ 0 ] ) );
+	_ASSERT_MSG( isstring( keys[ 0 ] ) );
 	return keys[ randomint( keys.size ) ];
 }
 
 random_index( arr )
 {
 	keys = getarraykeys( arr );
-	assert( isint( keys[ 0 ] ) );
+	_ASSERT_MSG( isint( keys[ 0 ] ) );
 	return keys[ randomint( keys.size ) ];
 }
 
@@ -938,7 +910,7 @@ _SIZE( arr_size )
 	if ( !isdefined( arr_size ) || !isint( arr_size ) )
 	{
 		// exits the loop as undefined is used in a truthy way
-		assert( false );
+		_ASSERT_MSG_ONLY( "Infinite loop prevented by invalid array!" );
 		return 0;
 	}
 
@@ -1161,7 +1133,7 @@ destroy_on_intermission()
 
 is_player_looking_at( origin, dot, do_trace, ignore_ent )
 {
-	assert( isplayer( self ), "player_looking_at must be called on a player." );
+	_ASSERT_MSG( isplayer( self ), "player_looking_at must be called on a player." );
 
 	if ( !isdefined( dot ) )
 		dot = 0.7;
@@ -1282,7 +1254,7 @@ format( fmt, a, b, c, d, e, f, g, h, i, j, k )
 	}
 
 	_SAVE_FMT();
-	assert( isstring( fmt ) );
+	_ASSERT_MSG( isstring( fmt ) );
 
 	insert_arg_index = 0;
 
@@ -1308,8 +1280,7 @@ format( fmt, a, b, c, d, e, f, g, h, i, j, k )
 
 	if ( insert_arg_index != args.size )
 	{
-		assert( false );
-		_GET_SERVER_ENTITY() com_printerror( "format: Mismatched inserts to args!" );
+		_ASSERT_MSG_ONLY( "format: Mismatched inserts to args!" );
 	}
 
 	level._fmt_pos = undefined;

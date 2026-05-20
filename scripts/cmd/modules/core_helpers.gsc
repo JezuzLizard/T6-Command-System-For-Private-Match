@@ -130,7 +130,11 @@ _dodamage( damage, pos, attacker, inflictor, hitloc, mod, idflags, weapon )
 	weapon_default = undefined;
 	if ( isplayer( self ) )
 	{
-		weapon_default = _DEFAULT( weapon, self getcurrentweapon() );
+		cur_weapon = self getcurrentweapon();
+		if ( cur_weapon != "none" )
+		{
+			weapon_default = cur_weapon;
+		}
 	}
 
 	if ( isdefined ( weapon_default ) )
